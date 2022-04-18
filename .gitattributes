@@ -1,0 +1,2 @@
+esbuild.mjs linguist-vendor=true
+esbuild.mjs linguist-detectable=false
