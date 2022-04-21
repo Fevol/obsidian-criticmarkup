@@ -14,22 +14,22 @@
 	"standard-version": {
 		"t": "",
 		"types": [
-            {
-                "type": "perf",
-                "hidden": false,
-                "section": "Performance"
-            },
-            {
-                "type": "feat",
-                "hidden": false,
-                "section": "Features"
-            },
-            {
-                "type": "fix",
-                "hidden": false,
-                "section": "Bug Fixes"
-            }
-        ],
+			{
+				"type": "perf",
+				"hidden": false,
+				"section": "Performance"
+			},
+			{
+				"type": "feat",
+				"hidden": false,
+				"section": "Features"
+			},
+			{
+				"type": "fix",
+				"hidden": false,
+				"section": "Bug Fixes"
+			}
+		],
 		"releaseCommitMessageFormat": "<Sample_Plugin>: {{currentTag}}"
 	},
 	"keywords": [],
@@ -38,8 +38,8 @@
 	"devDependencies": {
 		"@types/jest": "^27.0.3",
 		"@types/node": "^14.14.37",
-		"@typescript-eslint/eslint-plugin": "^5.14.0",
-		"@typescript-eslint/parser": "^5.14.0",
+		"@typescript-eslint/eslint-plugin": "^5.19.0",
+		"@typescript-eslint/parser": "^5.19.0",
 		"builtin-modules": "^3.2.0",
 		"cross-env": "^7.0.3",
 		"esbuild": "^0.14.25",
@@ -52,5 +52,11 @@
 		"ts-jest": "^27.0.7",
 		"tslib": "^2.2.0",
 		"typescript": "^4.5.2"
+	},
+	"dependencies": {
+		"@codemirror/language": "^0.20.0",
+		"@lezer/generator": "^0.16.0",
+		"@lezer/lr": "^0.16.1",
+		"lang-criticmarkup": "github:kometenstaub/lang-criticmarkup"
 	}
 }
