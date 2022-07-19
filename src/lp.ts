@@ -14,17 +14,26 @@ function selectionAndRangeOverlap(selection: EditorSelection, rangeFrom: number,
     return false;
 }
 
-function makeHtml(cursor: TreeCursor[], text: string): HTMLElement {
+function makeHtml(name: string, text: string): HTMLElement {
+    console.log("nodetype", name)
     // it's a Highlight
-    if (cursor.length === 2) {
-        const contentStart = text.slice(cursor[0].from, cursor[1].from)
-        const contentEnd = text.slice(cursor[1].to, cursor[0].to)
-        const separator = "🠚"
+    if (name === "Substitution") {
+        const regexStart = new RegExp("^(.+?)~>");
+        let contentStart = regexStart.exec(text)
+        const regexEnd = new RegExp("~>(.+?)$");
+        let contentEnd = regexEnd.exec(text);
+        let start, end;
+        if (contentStart && contentEnd) {
+            start = contentStart[1];
+            end = contentEnd[1];
+        }
+        const separator = "🠚";
         let el = createSpan({
             cls: ["criticmarkup", "substitution", "substitution-all"]
         })
+        console.log(el)
         el.createSpan({
-            text: contentStart,
+            text: start,
             cls: ["criticmarkup", "substitution", "substitution-start"]
         })
         el.createSpan({
@@ -32,13 +41,13 @@ function makeHtml(cursor: TreeCursor[], text: string): HTMLElement {
             cls: ["criticmarkup", "substitution", "substitution-separator"]
         })
         el.createSpan({
-            text: contentEnd,
+            text: end,
             cls: ["criticmarkup", "substitution", "substitution-end"]
         })
         return el;
     } else {
         const cssClasses = ["criticmarkup"]
-        switch(cursor[0].name){
+        switch(name){
             case "Deletion":
                 cssClasses.push("deletion")
                 break;
@@ -54,6 +63,7 @@ function makeHtml(cursor: TreeCursor[], text: string): HTMLElement {
             default:
                 break;
         }
+        console.log(cssClasses)
         let el = createSpan({
             text: text,
             cls: cssClasses
@@ -65,7 +75,7 @@ function makeHtml(cursor: TreeCursor[], text: string): HTMLElement {
 
 class InlineWidget extends WidgetType {
     constructor(
-        readonly nodeType: TreeCursor[],
+        readonly name: string,
         readonly text: string,
         private view: EditorView,
     ) {
@@ -82,7 +92,7 @@ class InlineWidget extends WidgetType {
     }
 
     toDOM(view: EditorView): HTMLElement {
-        return makeHtml(this.nodeType, this.text);
+        return makeHtml(this.name, this.text);
     }
 
     /* Make queries only editable when shift is pressed (or navigated inside with the keyboard
@@ -116,7 +126,7 @@ function inlineRender(view: EditorView) {
     const widgets: Range<Decoration>[] = [];
     const selection = view.state.selection;
 
-    let waitNode: {cursor: TreeCursor, text: string} | null = null;
+    // let waitNode: {cursor: TreeCursor, text: string} | null = null;
     //console.log(tree.iterate({enter(type, from, to, get() => {forNode(type, from, to)})}))
     //while (cursor.next()){
     // }
@@ -130,7 +140,7 @@ function inlineRender(view: EditorView) {
             const name = cursor.name;
             console.log(cursor.name)
             // doesn't work
-            if (name === "Criticmarkup") continue;
+            if (name === "Criticmarkup" || name === "DivideSubs") continue;
 
             if (selectionAndRangeOverlap(selection, start, end)) continue;
 
@@ -138,31 +148,14 @@ function inlineRender(view: EditorView) {
             console.log(content)
             console.log(`Node ${cursor.name} from ${cursor.from} to ${cursor.to}`);
 
-            if (cursor.name === "Substitution") {
-                //@ts-ignore
-                waitNode = {cursor: cursor, text: content};
-            }
-            else if (waitNode === null) {
-                widgets.push(
-                    Decoration.replace({
-                        //@ts-ignore
-                        widget: new InlineWidget([cursor], content, view),
-                        inclusive: false,
-                        block: false,
-                    }).range(start, end)
-                );
-            }
-            else {
-                widgets.push(
-                    Decoration.replace({
-                        //@ts-ignore
-                        widget: new InlineWidget([waitNode.cursor, cursor], waitNode.text, view),
-                        inclusive: false,
-                        block: false,
-                    }).range(start, end)
-                );
-                waitNode = null;
-            }
+            widgets.push(
+                Decoration.replace({
+                    //@ts-ignore
+                    widget: new InlineWidget(name, content, view),
+                    inclusive: false,
+                    block: false,
+                }).range(start, end)
+            );
         } while (cursor.next());
     }
 
