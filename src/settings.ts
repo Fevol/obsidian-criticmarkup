@@ -1,10 +1,10 @@
 import { App, PluginSettingTab, Setting } from 'obsidian';
-import type TemplatePlugin from './main';
+import type CriticMarkupPlugin from './main';
 
-export default class TemplateSettingTab extends PluginSettingTab {
-	plugin: TemplatePlugin;
+export default class CriticSettingTab extends PluginSettingTab {
+	plugin: CriticMarkupPlugin;
 
-	constructor(app: App, plugin: TemplatePlugin) {
+	constructor(app: App, plugin: CriticMarkupPlugin) {
 		super(app, plugin);
 		this.plugin = plugin;
 	}

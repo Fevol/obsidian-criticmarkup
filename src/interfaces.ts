@@ -1,1 +1,1 @@
-export interface TemplateSettings {}
+export interface CriticSettings {}

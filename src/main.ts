@@ -1,13 +1,13 @@
 import { App, Plugin } from 'obsidian';
-import type { TemplateSettings } from './interfaces';
-//import TemplateSettingTab from './settings';
+import type { CriticSettings } from './interfaces';
+//import CriticSettingTab from './settings';
 import { criticmarkupLanguage } from 'lang-criticmarkup';
 import { inlinePlugin } from './lp';
 
-const DEFAULT_SETTINGS: TemplateSettings = {};
+const DEFAULT_SETTINGS: CriticSettings = {};
 
-export default class TemplatePlugin extends Plugin {
-	//settings: TemplateSettings;
+export default class CriticMarkupPlugin extends Plugin {
+	//settings: CriticSettings;
 
 	async onload() {
 		console.log('loading ... plugin');
@@ -17,15 +17,10 @@ export default class TemplatePlugin extends Plugin {
 		/*
 		await this.loadSettings();
 
-		this.addSettingTab(new TemplateSettingTab(this.app, this));
+		this.addSettingTab(new CriticSettingTab(this.app, this));
 	}
 
-	buildCMPlugin() {
-		const viewPlugin = viewPlugin.fromClass(
-			class {}
-		)
-		return viewPlugin
-*/
+        */
 	}
 
 	onunload() {
@@ -44,5 +39,5 @@ export default class TemplatePlugin extends Plugin {
 	async saveSettings() {
 		await this.saveData(this.settings);
 	}
-*/
+    */
 }
