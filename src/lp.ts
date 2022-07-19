@@ -2,8 +2,6 @@ import { Decoration, DecorationSet, EditorView, ViewPlugin, ViewUpdate, WidgetTy
 import type { EditorSelection, Range } from "@codemirror/state";
 import { editorEditorField, editorViewField, editorLivePreviewField } from "obsidian";
 import {criticmarkupLanguage} from 'lang-criticmarkup'
-import type { TreeCursor } from "@lezer/common";
-import {create} from "domain";
 
 function selectionAndRangeOverlap(selection: EditorSelection, rangeFrom: number, rangeTo: number) {
     for (const range of selection.ranges) {
