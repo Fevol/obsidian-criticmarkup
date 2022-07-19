@@ -16,7 +16,7 @@ export default class CriticSettingTab extends PluginSettingTab {
 		containerEl.empty();
 
 		containerEl.createEl('h2', {
-			text: ' ... Settings',
+			text: 'CriticMarkupPlugin Settings',
 		});
 
 		// keys for YAML

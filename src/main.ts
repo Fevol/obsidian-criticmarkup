@@ -10,7 +10,7 @@ export default class CriticMarkupPlugin extends Plugin {
 	//settings: CriticSettings;
 
 	async onload() {
-		console.log('loading ... plugin');
+		console.log('loading CriticMarkup plugin');
 		const ext = inlinePlugin();
 		this.registerEditorExtension(ext);
 
@@ -24,7 +24,7 @@ export default class CriticMarkupPlugin extends Plugin {
 	}
 
 	onunload() {
-		console.log('unloading ... plugin');
+		console.log('unloading CriticMarkup plugin');
 	}
 
 	/*
