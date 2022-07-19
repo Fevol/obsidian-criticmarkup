@@ -21,7 +21,7 @@ class InlineWidget extends WidgetType {
         readonly name: string,
         readonly text: string,
         private view: EditorView,
-        private marker?: boolean = false
+        private marker: boolean = false
     ) {
         super();
     }
