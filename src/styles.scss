@@ -1,25 +1,15 @@
-.criticmarkup {
-
-    &.substitution {
-        &.substitution-start {
-            background-color: red;
-        }
-        &.substitution-end {
-            background-color: green;
-        }
-        
-    }
-
-    &.addition {
-        background-color: green;
-    }
-    &.deletion {
-        background-color: red;
-    }
-    &.comment {
-        background-color: grey;
-    }
-    &.highlight {
-        background-color: yellow;
-    }
+.criticmarkup-substitution {
+    background-color: pink;
+}
+.criticmarkup-addition {
+    background-color: green;
+}
+.criticmarkup-deletion {
+    background-color: red;
+}
+.criticmarkup-comment {
+    background-color: grey;
+}
+.criticmarkup-highlight {
+    background-color: yellow;
 }

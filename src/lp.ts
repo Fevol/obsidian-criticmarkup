@@ -137,7 +137,7 @@ function inlineRender(view: EditorView) {
                 if (start+3 !== end-3) {
                     widgets.push(
                         Decoration.mark({
-                            classes: `criticmarkup-${cssClass}`,
+                            class: `criticmarkup-${cssClass}`,
                             attributes: {"data-contents": "string"},
                         }).range(start+3, end-3)
                     );
