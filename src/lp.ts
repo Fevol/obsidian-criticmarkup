@@ -3,6 +3,7 @@ import type { EditorSelection, Range } from "@codemirror/state";
 import { editorEditorField, editorViewField, editorLivePreviewField } from "obsidian";
 import {criticmarkupLanguage} from 'lang-criticmarkup'
 import type { TreeCursor } from "@lezer/common";
+import {create} from "domain";
 
 function selectionAndRangeOverlap(selection: EditorSelection, rangeFrom: number, rangeTo: number) {
     for (const range of selection.ranges) {
@@ -14,61 +15,6 @@ function selectionAndRangeOverlap(selection: EditorSelection, rangeFrom: number,
     return false;
 }
 
-function makeHtml(name: string, text: string): HTMLElement {
-    // it's a Highlight
-    if (name === "Substitution") {
-        const regexStart = new RegExp("^(.+?)~>");
-        let contentStart = regexStart.exec(text)
-        const regexEnd = new RegExp("~>(.+?)$");
-        let contentEnd = regexEnd.exec(text);
-        let start, end;
-        if (contentStart && contentEnd) {
-            start = contentStart[1];
-            end = contentEnd[1];
-        }
-        const separator = "🠚";
-        let el = createSpan({
-            cls: ["criticmarkup", "substitution", "substitution-all"]
-        })
-        el.createSpan({
-            text: start,
-            cls: ["criticmarkup", "substitution", "substitution-start"]
-        })
-        el.createSpan({
-            text: separator,
-            cls: ["criticmarkup", "substitution", "substitution-separator"]
-        })
-        el.createSpan({
-            text: end,
-            cls: ["criticmarkup", "substitution", "substitution-end"]
-        })
-        return el;
-    } else {
-        const cssClasses = ["criticmarkup"]
-        switch(name){
-            case "Deletion":
-                cssClasses.push("deletion")
-                break;
-            case "Addition":
-                cssClasses.push("addition")
-                break;
-            case "Comment":
-                cssClasses.push("comment")
-                break;
-            case "Highlight":
-                cssClasses.push("highlight")
-                break;
-            default:
-                break;
-        }
-        let el = createSpan({
-            text: text,
-            cls: cssClasses
-        })
-        return el;
-    }
-
-}
 
 class InlineWidget extends WidgetType {
     constructor(
@@ -89,7 +35,7 @@ class InlineWidget extends WidgetType {
     }
 
     toDOM(view: EditorView): HTMLElement {
-        return makeHtml(this.name, this.text);
+        return createSpan({cls: "criticmarkup-marker"})
     }
 
     /* Make queries only editable when shift is pressed (or navigated inside with the keyboard
@@ -132,20 +78,64 @@ function inlineRender(view: EditorView) {
             const end = cursor.to;
             const name = cursor.name;
             // doesn't work
-            if (name === "Criticmarkup" || name === "DivideSubs") continue;
+            if (name === "Criticmarkup") continue;
 
             if (selectionAndRangeOverlap(selection, start, end)) continue;
 
             const content = view.state.doc.sliceString(start + 3, end - 3);
 
-            widgets.push(
-                Decoration.replace({
-                    //@ts-ignore
-                    widget: new InlineWidget(name, content, view),
-                    inclusive: false,
-                    block: false,
-                }).range(start, end)
-            );
+            if (name === "DivideSubs") {
+                widgets.push(
+                    Decoration.replace({
+                        widget: new InlineWidget(name, content, view),
+                        inclusive: false,
+                        block: false,
+                    }).range(start, end))
+            } else {
+                widgets.push(
+                    Decoration.replace({
+                        widget: new InlineWidget(name, content, view),
+                        inclusive: false,
+                        block: false,
+                    }).range(start, start+3))
+                widgets.push(
+                    Decoration.replace({
+                        widget: new InlineWidget(name, content, view),
+                        inclusive: false,
+                        block: false,
+                    }).range(end-3, end))
+
+
+                let cssClass = "";
+                switch(name){
+                    case "Deletion":
+                        cssClass = "deletion";
+                        break;
+                    case "Addition":
+                        cssClass = "addition";
+                        break;
+                    case "Comment":
+                        cssClass = "comment";
+                        break;
+                    case "Highlight":
+                        cssClass = "highlight";
+                        break;
+                    case "Substitution":
+                        cssClass = "substitution";
+                        break;
+                    default:
+                        break;
+                }
+                if (start+3 !== end-3) {
+                    widgets.push(
+                        Decoration.mark({
+                            classes: `criticmarkup-${cssClass}`,
+                            attributes: {"data-contents": "string"},
+                        }).range(start+3, end-3)
+                    );
+                }
+            }
+
         } while (cursor.next());
     }
 
