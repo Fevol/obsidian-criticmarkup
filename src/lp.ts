@@ -15,7 +15,6 @@ function selectionAndRangeOverlap(selection: EditorSelection, rangeFrom: number,
 }
 
 function makeHtml(name: string, text: string): HTMLElement {
-    console.log("nodetype", name)
     // it's a Highlight
     if (name === "Substitution") {
         const regexStart = new RegExp("^(.+?)~>");
@@ -31,7 +30,6 @@ function makeHtml(name: string, text: string): HTMLElement {
         let el = createSpan({
             cls: ["criticmarkup", "substitution", "substitution-all"]
         })
-        console.log(el)
         el.createSpan({
             text: start,
             cls: ["criticmarkup", "substitution", "substitution-start"]
@@ -63,7 +61,6 @@ function makeHtml(name: string, text: string): HTMLElement {
             default:
                 break;
         }
-        console.log(cssClasses)
         let el = createSpan({
             text: text,
             cls: cssClasses
@@ -126,10 +123,6 @@ function inlineRender(view: EditorView) {
     const widgets: Range<Decoration>[] = [];
     const selection = view.state.selection;
 
-    // let waitNode: {cursor: TreeCursor, text: string} | null = null;
-    //console.log(tree.iterate({enter(type, from, to, get() => {forNode(type, from, to)})}))
-    //while (cursor.next()){
-    // }
     for (const {from, to } of view.visibleRanges) {
         const text = view.state.doc.sliceString(from, to)
         const tree = criticmarkupLanguage.parser.parse(text)
@@ -138,15 +131,12 @@ function inlineRender(view: EditorView) {
             const start = cursor.from;
             const end = cursor.to;
             const name = cursor.name;
-            console.log(cursor.name)
             // doesn't work
             if (name === "Criticmarkup" || name === "DivideSubs") continue;
 
             if (selectionAndRangeOverlap(selection, start, end)) continue;
 
             const content = view.state.doc.sliceString(start + 3, end - 3);
-            console.log(content)
-            console.log(`Node ${cursor.name} from ${cursor.from} to ${cursor.to}`);
 
             widgets.push(
                 Decoration.replace({
