@@ -1,8 +1,8 @@
 import { App, Plugin } from 'obsidian';
 import type { TemplateSettings } from './interfaces';
 //import TemplateSettingTab from './settings';
-import {criticmarkupLanguage} from 'lang-criticmarkup'
-import { inlinePlugin } from "./lp"
+import { criticmarkupLanguage } from 'lang-criticmarkup';
+import { inlinePlugin } from './lp';
 
 const DEFAULT_SETTINGS: TemplateSettings = {};
 
@@ -12,9 +12,9 @@ export default class TemplatePlugin extends Plugin {
 	async onload() {
 		console.log('loading ... plugin');
 		const ext = inlinePlugin();
-		this.registerEditorExtension(ext)
+		this.registerEditorExtension(ext);
 
-/*
+		/*
 		await this.loadSettings();
 
 		this.addSettingTab(new TemplateSettingTab(this.app, this));
@@ -26,15 +26,13 @@ export default class TemplatePlugin extends Plugin {
 		)
 		return viewPlugin
 */
-
 	}
-
 
 	onunload() {
 		console.log('unloading ... plugin');
 	}
 
-/*
+	/*
 	async loadSettings() {
 		this.settings = Object.assign(
 			{},
