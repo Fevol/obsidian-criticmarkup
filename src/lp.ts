@@ -21,6 +21,7 @@ class InlineWidget extends WidgetType {
         readonly name: string,
         readonly text: string,
         private view: EditorView,
+        private marker?: boolean = false
     ) {
         super();
     }
@@ -35,7 +36,14 @@ class InlineWidget extends WidgetType {
     }
 
     toDOM(view: EditorView): HTMLElement {
-        return createSpan({cls: "criticmarkup-marker"})
+        if (!this.marker) {
+            return createSpan({cls: "criticmarkup-marker"})
+        } else {
+            return createSpan({
+                cls: ["criticmarkup-marker", "dividesubs"],
+                text: "🠚"
+            })
+        }
     }
 
     /* Make queries only editable when shift is pressed (or navigated inside with the keyboard
@@ -87,7 +95,7 @@ function inlineRender(view: EditorView) {
             if (name === "DivideSubs") {
                 widgets.push(
                     Decoration.replace({
-                        widget: new InlineWidget(name, content, view),
+                        widget: new InlineWidget(name, content, view, true),
                         inclusive: false,
                         block: false,
                     }).range(start, end))
