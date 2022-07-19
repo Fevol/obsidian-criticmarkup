@@ -69,8 +69,6 @@ class InlineWidget extends WidgetType {
     }
 }
 
-//function forNode (type: nodeType, from: number, to: number):  {}
-
 
 function inlineRender(view: EditorView) {
 
