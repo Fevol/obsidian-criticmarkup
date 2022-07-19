@@ -1,0 +1,25 @@
+.criticmarkup {
+
+    &.substitution {
+        &.substitution-start {
+            background-color: red;
+        }
+        &.substitution-end {
+            background-color: green;
+        }
+        
+    }
+
+    &.addition {
+        background-color: green;
+    }
+    &.deletion {
+        background-color: red;
+    }
+    &.comment {
+        background-color: grey;
+    }
+    &.highlight {
+        background-color: yellow;
+    }
+}

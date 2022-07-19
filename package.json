@@ -57,6 +57,8 @@
 		"@codemirror/language": "^0.20.0",
 		"@lezer/generator": "^0.16.0",
 		"@lezer/lr": "^0.16.1",
-		"lang-criticmarkup": "github:kometenstaub/lang-criticmarkup"
+		"css-minify": "^2.0.0",
+		"lang-criticmarkup": "github:kometenstaub/lang-criticmarkup",
+		"sass": "^1.53.0"
 	}
 }
