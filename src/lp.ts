@@ -151,6 +151,7 @@ function inlineRender(view: EditorView) {
 					default:
 						break;
 				}
+				// make sure that mark decoration isn't empty
 				if (start + 3 !== end - 3) {
 					widgets.push(
 						Decoration.mark({
