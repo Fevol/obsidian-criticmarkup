@@ -1,6 +1,6 @@
 # CriticMarkup prototype for Obsidian
 
-This repo is a prototype for CriticMarkup in Obsidian (for collaborating on documents). 
+This plugin is a prototype for CriticMarkup in Obsidian (for collaborating on documents). 
 
 If you're interested in developing this further, you can fork the repo.
 
