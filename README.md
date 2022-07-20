@@ -6,6 +6,8 @@ If you're interested in developing this further, you can fork the repo.
 
 What is currently implemented is highlighting of all markup and hiding of its syntax in Live Preview.
 
+The Live Preview implementation also demonstrates how to use the parser.
+
 ## What would need to be implemented
 
 - Sidebar view for all markup in the current file.
