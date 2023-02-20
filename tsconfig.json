@@ -4,16 +4,19 @@
     "inlineSourceMap": true,
     "inlineSources": true,
     "module": "ESNext",
-    "target": "es2018",
+    "target": "ESNext",
     "allowJs": true,
     "noImplicitAny": true,
     "moduleResolution": "node",
     "importHelpers": true,
     "importsNotUsedAsValues":"error",
     "strict": true,
+    "paths": {
+      "src": ["src/*"]
+    },
     "lib": [
       "dom",
-      "es2018"
+      "ESNext"
     ]
   },
   "include": [

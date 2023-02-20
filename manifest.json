@@ -1,10 +1,10 @@
 {
 	"id": "criticmarkup",
-	"name": "Criticmarkup",
-	"version": "0.0.0",
-	"minAppVersion": "0.12.19",
-	"description": "",
-	"author": "kometenstaub",
-	"authorUrl": "https://github.com/kometenstaub",
+	"name": "Commentator",
+	"version": "0.0.2",
+	"minAppVersion": "1.0.0",
+	"description": "Add review comments to your notes with CriticMarkup syntax",
+	"author": "kometenstaub and Fevol",
+	"authorUrl": "https://github.com/fevol",
 	"isDesktopOnly": false
 }

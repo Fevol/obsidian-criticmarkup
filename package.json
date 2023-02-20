@@ -1,64 +1,33 @@
 {
-	"name": "sample-plugin",
-	"version": "0.0.0",
-	"description": "<Sample_Plugin>",
-	"main": "src/main.ts",
+	"name": "obsidian-criticmarkup",
+	"version": "0.0.2",
+	"description": "A CriticMarkup plugin for Obsidian",
+	"main": "main.js",
 	"scripts": {
-		"dev": "cross-env BUILD=dev node esbuild.mjs",
-		"build": "cross-env BUILD=production node esbuild.mjs",
-		"release": "standard-version",
+		"dev": "node esbuild.config.mjs",
+		"build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
+		"build:dev": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs development",
 		"lint": "npx eslint src/",
-		"test": "jest",
 		"format": "npx prettier --write src/"
 	},
-	"standard-version": {
-		"t": "",
-		"types": [
-			{
-				"type": "perf",
-				"hidden": false,
-				"section": "Performance"
-			},
-			{
-				"type": "feat",
-				"hidden": false,
-				"section": "Features"
-			},
-			{
-				"type": "fix",
-				"hidden": false,
-				"section": "Bug Fixes"
-			}
-		],
-		"releaseCommitMessageFormat": "<Sample_Plugin>: {{currentTag}}"
-	},
 	"keywords": [],
-	"author": "kometenstaub",
+	"author": "kometenstaub and Fevol",
 	"license": "MIT",
 	"devDependencies": {
-		"@types/jest": "^27.0.3",
+		"@codemirror/language": "^0.20.0",
+		"@lezer/generator": "^0.16.0",
+		"@lezer/lr": "^0.16.1",
 		"@types/node": "^14.14.37",
 		"@typescript-eslint/eslint-plugin": "^5.19.0",
 		"@typescript-eslint/parser": "^5.19.0",
 		"builtin-modules": "^3.2.0",
-		"cross-env": "^7.0.3",
-		"esbuild": "^0.14.25",
+		"esbuild": "^0.16.17",
+		"esbuild-sass-plugin": "^2.5.0",
 		"eslint": "^8.10.0",
-		"jest": "^27.4.3",
 		"obsidian": "^0.13.30",
 		"prettier": "2.5.0",
 		"process": "^0.11.10",
-		"standard-version": "^9.3.1",
-		"ts-jest": "^27.0.7",
 		"tslib": "^2.2.0",
 		"typescript": "^4.5.2"
-	},
-	"dependencies": {
-		"@codemirror/language": "^0.20.0",
-		"@lezer/generator": "^0.16.0",
-		"@lezer/lr": "^0.16.1",
-		"css-minify": "^2.0.0",
-		"lang-criticmarkup": "github:kometenstaub/lang-criticmarkup",
-		"sass": "^1.53.0"
 	}
 }

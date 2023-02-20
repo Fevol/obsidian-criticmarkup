@@ -1,0 +1,3 @@
+[submodule "src/parser"]
+	path = src/parser
+	url = https://github.com/Fevol/criticmarkup-parser.git
