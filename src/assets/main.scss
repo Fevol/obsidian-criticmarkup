@@ -25,27 +25,50 @@ span.cm-highlight:has(.criticmarkup-editing) {
   background-color: var(--color-green);
 }
 
-.cm-line:has(.criticmarkup-addition) + .image-embed > img {
-  border: 4px solid var(--color-green) !important;
-  border-radius: 12px;
+//.cm-line:has(.criticmarkup-addition) + .image-embed > img {
+//  border: 4px solid var(--color-green) !important;
+//  border-radius: 12px;
+//}
+
+.criticmarkup-addition img {
+    border: 4px solid var(--color-green) !important;
+    border-radius: 12px;
 }
 
-.cm-line:has(.criticmarkup-deletion) + .image-embed > img {
-  border: 4px solid var(--color-red) !important;
-  border-radius: 12px;
+.criticmarkup-deletion img {
+    border: 4px solid var(--color-red) !important;
+    border-radius: 12px;
 }
 
-.cm-line:has(.criticmarkup-deletion) + .image-embed > img:before {
-  content: "x";
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  font-size: 18rem;
+.criticmarkup-deletion img:before {
+    content: "x";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    font-size: 18rem;
 }
+
+//.cm-line:has(.criticmarkup-deletion) + .image-embed > img {
+//  border: 4px solid var(--color-red) !important;
+//  border-radius: 12px;
+//}
+//
+//.cm-line:has(.criticmarkup-deletion) + .image-embed > img:before {
+//  content: "x";
+//  position: absolute;
+//  top: 50%;
+//  left: 50%;
+//  font-size: 18rem;
+//}
 
 .criticmarkup-brackets {
   display: none;
 }
+//
+//.cm-line:has(>.criticmarkup-inline) ~ .cm-line.cm-strikethrough {
+//  text-decoration: unset;
+//  color: var(--color-red);
+//}
 
 
 .criticmarkup-deletion {

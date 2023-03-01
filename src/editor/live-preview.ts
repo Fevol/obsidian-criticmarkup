@@ -58,6 +58,26 @@ class CriticMarkupViewPlugin implements PluginValue {
 					attributes: { 'data-contents': 'string' },
 				}).range(start, start + 3),
 			);
+
+			// if (start + 4 < end - 3 && view.state.doc.slice(start + 3, start + 4).toString().includes(' ')) {
+			// 	widgets.push(
+			// 		Decoration.replace({
+			// 			tag: 'span',
+			// 			class: 'remove-strikethrough',
+			// 			attributes: { 'data-contents': 'string' },
+			// 		}).range(end - 1, end),
+			// 	);
+			// }
+
+
+			widgets.push(
+				Decoration.mark({
+					attributes: { 'data-contents': 'string' },
+					class: 'criticmarkup-inline',
+				}).range(start - 1, end + 1),
+			);
+
+
 			// FIXME: Strikethrough renders despite text being placed (due to {~~ brackets never being hidden?)
 			widgets.push(
 				Decoration.replace({
