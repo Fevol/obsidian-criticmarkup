@@ -10,10 +10,10 @@ const criticMarkup_characters = {
 
 
 export function postProcess(el: HTMLElement, ctx: any) {
-	const tree = criticmarkupLanguage.parser.parse(el.outerHTML);
+	const tree = criticmarkupLanguage.parser.parse(el.innerHTML);
 
 	let changes = [];
-	let output = el.outerHTML;
+	let output = el.innerHTML;
 
 
 	const cursor = tree.cursor();
@@ -54,9 +54,9 @@ export function postProcess(el: HTMLElement, ctx: any) {
 
 		let new_element = '';
 		if (change.name === "Addition") {
-			new_element = `<ins>${new_content}</ins>`;
+			// new_element = `<ins>${new_content}</ins>`;
 		} else if (change.name === "Deletion") {
-			new_element = `<del>${new_content}</del>`;
+			// new_element = `<del>${new_content}</del>`;
 		} else if (change.name === "Substitution") {
 			let middle = <number>change.middle - change.start + 2;
 			if (change.is_rendered) {
@@ -67,19 +67,22 @@ export function postProcess(el: HTMLElement, ctx: any) {
 			const left_part = new_content.slice(0, middle - 5);
 			const right_part = new_content.substring(middle);
 
-			new_element = `<del>${left_part}</del><ins>${right_part}</ins>`;
+			new_element = `<span class='criticmarkup-inline criticmarkup-deletion'>${left_part}</span><span class='criticmarkup-inline criticmarkup-addition'>${right_part}</span>`;
 		} else if (change.name === "Highlight") {
 			if (change.is_rendered) {
 				new_content = new_content.slice(4, -5)
 			}
 
-			new_element = `<mark>${new_content}</mark>`;
+			// new_element = `<mark>${new_content}</mark>`;
 		} else if (change.name === "Comment") {
 			if (change.is_rendered) {
 				new_content = new_content.slice(6, -6)
 			}
-			new_element = `<span class='criticmarkup-comment'>${new_content}</span>`;
+			// new_element = `<span class='criticmarkup-comment'>${new_content}</span>`;
 		}
+
+		if (!new_element)
+			new_element = `<span class='criticmarkup-inline criticmarkup-${change.name.toLowerCase()}'>${new_content}</span>`;
 
 		output = output.slice(0, change.start) + new_element + output.slice(change.end);
 	}
