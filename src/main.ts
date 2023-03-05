@@ -71,5 +71,5 @@ export default class CriticMarkupPlugin extends Plugin {
 		this.app.workspace.updateOptions();
 	}
 
-	onunload() {}
+	// onunload() {}
 }
