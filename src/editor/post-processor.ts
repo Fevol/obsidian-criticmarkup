@@ -1,13 +1,6 @@
 import { criticmarkupLanguage } from './parser';
 
-const criticMarkup_characters = {
-	"Addition": "+",
-	"Deletion": "-",
-	"Substitution": "~",
-	"Highlight": "=",
-	"Comment": ">",
-}
-
+import { CM_Syntax } from '../constants';
 
 export function postProcess(el: HTMLElement, ctx: any) {
 	const tree = criticmarkupLanguage.parser.parse(el.innerHTML);
@@ -24,7 +17,7 @@ export function postProcess(el: HTMLElement, ctx: any) {
 
 		if (name === '⚠' || name === 'MSub') continue;
 
-		const is_rendered = output[start+1] !== criticMarkup_characters[name as keyof typeof criticMarkup_characters];
+		const is_rendered = output[start+1] !== CM_Syntax[name][0];
 
 		if (name === 'Substitution') {
 			cursor.firstChild();
