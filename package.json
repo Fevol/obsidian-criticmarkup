@@ -24,7 +24,7 @@
 		"esbuild": "^0.16.17",
 		"esbuild-sass-plugin": "^2.5.0",
 		"eslint": "^8.10.0",
-		"obsidian": "^0.13.30",
+		"obsidian": "latest",
 		"prettier": "2.5.0",
 		"process": "^0.11.10",
 		"tslib": "^2.2.0",

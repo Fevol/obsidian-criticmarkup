@@ -1,78 +1,13 @@
 import type { CommandI } from '../../types';
-import type { Editor, MarkdownView } from 'obsidian';
+import type { Editor, EditorChange, EditorTransaction, MarkdownView } from 'obsidian';
 
 import type { Tree } from '@lezer/common';
 
 import { criticmarkupLanguage } from './parser';
 import { addBracket, unwrapBracket, wrapBracket } from '../constants';
-import { ltEP, minEP, maxEP } from './util';
-
-
-function nodesInSelection(tree: Tree, start?: number, end?: number) {
-	const nodes: { from: number, middle?: number, to: number, type: string }[] = [];
-
-	tree.iterate({
-		from: start,
-		to: end,
-		enter: (node) => {
-			if (node.type.name === '⚠')
-				return false;
-			if (node.type.name === 'CriticMarkup' || node.type.name === 'MSub')
-				return true;
-			if (node.type.name === 'Substitution') {
-				if (node.node.nextSibling?.type.name !== 'MSub')
-					return false;
-				nodes.push({
-					from: node.from,
-					middle: node.node.nextSibling.from,
-					to: node.to,
-					type: node.type.name,
-				})
-			} else {
-				nodes.push({
-					from: node.from,
-					to: node.to,
-					type: node.type.name,
-				});
-			}
-		},
-	});
-	return nodes;
-}
-
-// function nodesInText(tree: Tree) {
-// 	const nodes: { from: number, middle?: number, to: number, type: string }[] = [];
-//
-// 	const cursor = tree.cursor();
-// 	while (cursor.next()) {
-// 		const start = cursor.from;
-// 		const end = cursor.to;
-// 		const name = cursor.name;
-//
-// 		// If error detected: return only the confirmed nodes (errored node will always contain all text after it, invalid)
-// 		if (name === '⚠')
-// 			return nodes.slice(0, -1);
-//
-// 		if (name === 'Substitution') {
-// 			cursor.firstChild();
-// 			if (cursor.name !== 'MSub') continue;
-//
-// 			nodes.push({
-// 				from: start,
-// 				middle: cursor.from,
-// 				to: end,
-// 				type: name,
-// 			});
-// 		} else {
-// 			nodes.push({
-// 				from: start,
-// 				to: end,
-// 				type: name,
-// 			});
-// 		}
-// 	}
-// 	return nodes;
-// }
+import { ltEP, minEP, maxEP, nodesInSelection, selectionToRange } from './util';
+import type { ChangeSpec } from '@codemirror/state';
+import { ChangeSet } from '@codemirror/state';
 
 
 function changeSelectionType(editor: Editor, view: MarkdownView, type: string) {
@@ -104,7 +39,7 @@ function changeSelectionType(editor: Editor, view: MarkdownView, type: string) {
 		// Error case: if only a bracket is selected, do nothing
 		if (selection_right - selection_left <= 3 &&
 			((selection_right <= nodes[0].from + 3 && selection_left >= nodes[0].from) ||
-			 (selection_left >= nodes[nodes.length - 1].to - 3 && selection_right <= nodes[nodes.length - 1].to))) {
+				(selection_left >= nodes[nodes.length - 1].to - 3 && selection_right <= nodes[nodes.length - 1].to))) {
 			return;
 		}
 
@@ -172,7 +107,7 @@ function changeSelectionType(editor: Editor, view: MarkdownView, type: string) {
 		// CASE 2.3: Selection only includes right bracket of other node
 		else if (outside_left_bracket && selected_left_bracket && nodes[0].from + 3 >= selection_right) {
 			console.log('CASE 2.3');
-			const node = nodes[0]
+			const node = nodes[0];
 
 			const outside_node_content = editor.getRange(selection_start, editor.offsetToPos(node.from));
 
@@ -189,7 +124,7 @@ function changeSelectionType(editor: Editor, view: MarkdownView, type: string) {
 		// CASE 2.4: Selection only includes left bracket of other node
 		else if (outside_right_bracket && selected_right_bracket && nodes[nodes.length - 1].to - 3 <= selection_left) {
 			console.log('CASE 2.4');
-			const node = nodes[nodes.length - 1]
+			const node = nodes[nodes.length - 1];
 
 			const outside_node_content = editor.getRange(editor.offsetToPos(node.to), selection_end);
 			if (node.type === type) {
@@ -253,47 +188,37 @@ function changeSelectionType(editor: Editor, view: MarkdownView, type: string) {
 }
 
 
-
-
-
-function acceptAllSuggestions(editor: Editor, view: MarkdownView) {
-	let text = editor.getValue();
-
+export function acceptAllSuggestions(text: string, from?: number, to?: number): ChangeSpec[] {
 	// @ts-ignore
 	const tree: Tree = criticmarkupLanguage.parser.parse(text, []);
-
-	const nodes = nodesInSelection(tree).reverse();
-
+	const nodes = nodesInSelection(tree, from, to);
+	const changes: ChangeSpec[] = [];
 	for (const node of nodes) {
 		if (node.type === 'Addition')
-			text = text.slice(0, node.from) + unwrapBracket(text.slice(node.from, node.to)) + text.slice(node.to);
+			changes.push({ from: node.from, to: node.to, insert: unwrapBracket(text.slice(node.from, node.to)) });
 		else if (node.type === 'Deletion')
-			text = text.slice(0, node.from) + text.slice(node.to);
+			changes.push({ from: node.from, to: node.to, insert: '' });
 		else if (node.type === 'Substitution')
-			text = text.slice(0, node.from) + unwrapBracket(text.slice(node.from, node.to)) + text.slice(node.to);
+			changes.push({ from: node.from, to: node.to, insert: unwrapBracket(text.slice(node.from, node.to)) });
 	}
-
-	editor.setValue(text);
+	return changes;
 }
 
-function rejectAllSuggestions(editor: Editor, view: MarkdownView) {
-	let text = editor.getValue();
 
+export function rejectAllSuggestions(text: string, from?: number, to?: number): ChangeSpec[] {
 	// @ts-ignore
 	const tree: Tree = criticmarkupLanguage.parser.parse(text, []);
-
-	const nodes = nodesInSelection(tree).reverse();
-
+	const nodes = nodesInSelection(tree, from, to).reverse();
+	const changes: ChangeSpec[] = [];
 	for (const node of nodes) {
 		if (node.type === 'Addition')
-			text = text.slice(0, node.from) + text.slice(node.to);
+			changes.push({ from: node.from, to: node.to, insert: '' });
 		else if (node.type === 'Deletion')
-			text = text.slice(0, node.from) + unwrapBracket(text.slice(node.from, node.to)) + text.slice(node.to);
+			changes.push({ from: node.from, to: node.to, insert: unwrapBracket(text.slice(node.from, node.to)) });
 		else if (node.type === 'Substitution')
-			text = text.slice(0, node.from) + text.slice(node.to);
+			changes.push({ from: node.from, to: node.to, insert: '' });
 	}
-
-	editor.setValue(text);
+	return changes;
 }
 
 
@@ -304,7 +229,7 @@ const suggestion_commands = ['Addition', 'Deletion', 'Substitution', 'Comment', 
 	editor_context: true,
 	callback: async (editor: Editor, view: MarkdownView) => {
 		changeSelectionType(editor, view, type);
-	}
+	},
 }));
 
 
@@ -312,18 +237,50 @@ export const commands: Array<CommandI> = [...suggestion_commands,
 	{
 		id: 'commentator-accept-all-suggestions',
 		name: 'Accept all suggestions',
-		icon: 'check',
+		icon: 'check-check',
 		editor_context: true,
 		callback: async (editor: Editor, view: MarkdownView) => {
-			acceptAllSuggestions(editor, view);
-		}
+			// @ts-ignore (editor.cm.dispatch exists)
+			editor.cm.dispatch(editor.cm.state.update({
+				changes: acceptAllSuggestions(editor.getValue()),
+			}));
+		},
 	}, {
 		id: 'commentator-reject-all-suggestions',
 		name: 'Reject all suggestions',
-		icon: 'x',
+		icon: 'cross',
 		editor_context: true,
 		callback: async (editor: Editor, view: MarkdownView) => {
-			rejectAllSuggestions(editor, view);
+			// @ts-ignore (editor.cm.dispatch exists)
+			editor.cm.dispatch(editor.cm.state.update({
+				changes: rejectAllSuggestions(editor.getValue()),
+			}));
+		},
+	},
+	{
+		id: 'commentator-accept-selected-suggestions',
+		name: 'Accept suggestions in selection',
+		icon: 'check',
+		editor_context: true,
+		callback: async (editor: Editor, view: MarkdownView) => {
+			const [from, to] = selectionToRange(editor);
+			// @ts-ignore (editor.cm.dispatch exists)
+			editor.cm.dispatch(editor.cm.state.update({
+				changes: acceptAllSuggestions(editor.getValue(), from, to),
+			}));
+		}
+	},
+	{
+		id: 'commentator-reject-selected-suggestions',
+		name: 'Reject suggestions in selection',
+		icon: 'cross',
+		editor_context: true,
+		callback: async (editor: Editor, view: MarkdownView) => {
+			const [from, to] = selectionToRange(editor);
+			// @ts-ignore (editor.cm.dispatch exists)
+			editor.cm.dispatch(editor.cm.state.update({
+				changes: rejectAllSuggestions(editor.getValue(), from, to),
+			}));
 		}
 	}
 ];

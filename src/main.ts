@@ -7,8 +7,7 @@ import {commands} from './editor/commands';
 export default class CriticMarkupPlugin extends Plugin {
 
 	async onload() {
-		const extension = inlinePlugin();
-		this.registerEditorExtension(extension);
+		this.registerEditorExtension([inlinePlugin()]);
 		this.registerMarkdownPostProcessor((el, ctx) => postProcess(el, ctx));
 
 

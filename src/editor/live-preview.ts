@@ -1,15 +1,22 @@
-import { Decoration, DecorationSet, EditorView, PluginValue, ViewPlugin, ViewUpdate } from '@codemirror/view';
-import type { EditorSelection, Range } from '@codemirror/state';
+import { Decoration, DecorationSet, EditorView, gutter, PluginValue, ViewPlugin, ViewUpdate } from '@codemirror/view';
+import type { EditorSelection, Extension, Range } from '@codemirror/state';
 import type { Tree } from '@lezer/common';
 
 import { criticmarkupLanguage } from './parser';
 import { TreeFragment } from '@lezer/common';
+
+import { RangeSet, RangeSetBuilder } from '@codemirror/state';
+import { CriticMarkupMarker } from './criticmarkup-gutter';
+import { nodesInSelection } from './util';
+import { Menu } from 'obsidian';
+import { acceptAllSuggestions, rejectAllSuggestions } from './commands';
 
 function selectionRangeOverlap(selection: EditorSelection, rangeFrom: number, rangeTo: number) {
 	return selection.ranges.some(range => range.from <= rangeTo && range.to >= rangeFrom);
 }
 
 class CriticMarkupViewPlugin implements PluginValue {
+	markers: RangeSet<CriticMarkupMarker>;
 	decorations: DecorationSet;
 	tree: Tree;
 	fragments: TreeFragment[] = [];
@@ -21,6 +28,38 @@ class CriticMarkupViewPlugin implements PluginValue {
 		this.fragments = TreeFragment.addTree(this.tree);
 
 		this.decorations = this.buildDecorations(view) ?? Decoration.none;
+
+		this.markers = this.buildMarkers(view);
+	}
+
+	buildMarkers(view: EditorView): RangeSet<CriticMarkupMarker> {
+		const builder = new RangeSetBuilder<CriticMarkupMarker>();
+
+		let nodes: any[] = nodesInSelection(this.tree);
+		nodes = nodes.map(node => {
+			node.line_start = view.state.doc.lineAt(node.from).number;
+			node.line_end = view.state.doc.lineAt(node.to).number;
+			return node;
+		})
+
+		let current_line = nodes[0]?.line_start;
+		for (const node of nodes) {
+			if (current_line > node.line_end) continue;
+			for (let i = node.line_start; i <= node.line_end; i++) {
+				const line = view.state.doc.line(i);
+				builder.add(line.from, line.to,
+					new CriticMarkupMarker(
+						line.from,
+						line.to,
+						node.type.toLowerCase(),
+						i === node.line_start,
+						i === node.line_end,
+					));
+			}
+			current_line = node.line_end + 1;
+		}
+
+		return builder.finish();
 	}
 
 	buildDecorations(view: EditorView): DecorationSet {
@@ -144,12 +183,54 @@ class CriticMarkupViewPlugin implements PluginValue {
 			this.fragments = TreeFragment.addTree(tree, this.fragments);
 
 			this.decorations = this.buildDecorations(update.view) ?? Decoration.none;
+
+			this.markers = this.buildMarkers(update.view);
 		}
 	}
 }
 
-export function inlinePlugin(): ViewPlugin<any> {
-	return ViewPlugin.fromClass(CriticMarkupViewPlugin,
+export function inlinePlugin(): Extension[] {
+	const view_plugin = ViewPlugin.fromClass(CriticMarkupViewPlugin,
 		{ decorations: (v) => v.decorations },
 	);
+
+	const gutter_extension = gutter({
+		class: 'cm-criticmarkup',
+		markers(view: EditorView) {
+			return view.plugin(view_plugin)?.markers ?? RangeSet.empty;
+		},
+		domEventHandlers: {
+			click: (view, line, event: Event) => {
+				const menu = new Menu();
+				menu.addItem(item => {
+					item.setTitle('Accept changes')
+						.setIcon('check')
+						.onClick(() => {
+
+							view.dispatch({
+								changes: acceptAllSuggestions(view.state.doc.toString(), line.from, line.to)
+							});
+						});
+
+				});
+				menu.addItem(item => {
+					item.setTitle('Reject changes')
+						.setIcon('cross')
+						.onClick(() => {
+							view.dispatch({
+								changes: rejectAllSuggestions(view.state.doc.toString(), line.from, line.to)
+							});
+						});
+
+				});
+
+				menu.showAtMouseEvent(<MouseEvent>event);
+
+				return true;
+			}
+		}
+	})
+
+
+	return [view_plugin, gutter_extension]
 }
