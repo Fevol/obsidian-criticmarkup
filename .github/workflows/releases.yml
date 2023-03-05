@@ -23,6 +23,10 @@ jobs:
       -   name: Build
           id: build
           run: |
+            cd editor/parser
+            npm i --force
+            npm run build --if-present
+            cd ../..
             npm i --force
             npm run build --if-present
             mkdir ${{ env.PLUGIN_NAME }}
