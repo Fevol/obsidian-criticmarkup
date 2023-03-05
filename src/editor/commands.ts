@@ -8,24 +8,71 @@ import { addBracket, unwrapBracket, wrapBracket } from '../constants';
 import { ltEP, minEP, maxEP } from './util';
 
 
-function nodesInSelection(start: number, end: number, tree: Tree) {
-	const nodes: { from: number, to: number, type: string }[] = [];
+function nodesInSelection(tree: Tree, start?: number, end?: number) {
+	const nodes: { from: number, middle?: number, to: number, type: string }[] = [];
 
 	tree.iterate({
 		from: start,
 		to: end,
 		enter: (node) => {
-			if (node.type.name !== 'CriticMarkup')
+			if (node.type.name === '⚠')
+				return false;
+			if (node.type.name === 'CriticMarkup' || node.type.name === 'MSub')
+				return true;
+			if (node.type.name === 'Substitution') {
+				if (node.node.nextSibling?.type.name !== 'MSub')
+					return false;
+				nodes.push({
+					from: node.from,
+					middle: node.node.nextSibling.from,
+					to: node.to,
+					type: node.type.name,
+				})
+			} else {
 				nodes.push({
 					from: node.from,
 					to: node.to,
 					type: node.type.name,
 				});
+			}
 		},
 	});
-
 	return nodes;
 }
+
+// function nodesInText(tree: Tree) {
+// 	const nodes: { from: number, middle?: number, to: number, type: string }[] = [];
+//
+// 	const cursor = tree.cursor();
+// 	while (cursor.next()) {
+// 		const start = cursor.from;
+// 		const end = cursor.to;
+// 		const name = cursor.name;
+//
+// 		// If error detected: return only the confirmed nodes (errored node will always contain all text after it, invalid)
+// 		if (name === '⚠')
+// 			return nodes.slice(0, -1);
+//
+// 		if (name === 'Substitution') {
+// 			cursor.firstChild();
+// 			if (cursor.name !== 'MSub') continue;
+//
+// 			nodes.push({
+// 				from: start,
+// 				middle: cursor.from,
+// 				to: end,
+// 				type: name,
+// 			});
+// 		} else {
+// 			nodes.push({
+// 				from: start,
+// 				to: end,
+// 				type: name,
+// 			});
+// 		}
+// 	}
+// 	return nodes;
+// }
 
 
 function changeSelectionType(editor: Editor, view: MarkdownView, type: string) {
@@ -41,7 +88,7 @@ function changeSelectionType(editor: Editor, view: MarkdownView, type: string) {
 	const selection_left = editor.posToOffset(selection_start);
 	const selection_right = editor.posToOffset(selection_end);
 
-	const nodes = nodesInSelection(selection_left, selection_right, tree);
+	const nodes = nodesInSelection(tree, selection_left, selection_right);
 
 
 	// CASE 1: Selection is not in a CriticMarkup node
@@ -206,7 +253,51 @@ function changeSelectionType(editor: Editor, view: MarkdownView, type: string) {
 }
 
 
-export const commands: Array<CommandI> = ['Addition', 'Deletion', 'Substitution', 'Comment', 'Highlight'].map(type => ({
+
+
+
+function acceptAllSuggestions(editor: Editor, view: MarkdownView) {
+	let text = editor.getValue();
+
+	// @ts-ignore
+	const tree: Tree = criticmarkupLanguage.parser.parse(text, []);
+
+	const nodes = nodesInSelection(tree).reverse();
+
+	for (const node of nodes) {
+		if (node.type === 'Addition')
+			text = text.slice(0, node.from) + unwrapBracket(text.slice(node.from, node.to)) + text.slice(node.to);
+		else if (node.type === 'Deletion')
+			text = text.slice(0, node.from) + text.slice(node.to);
+		else if (node.type === 'Substitution')
+			text = text.slice(0, node.from) + unwrapBracket(text.slice(node.from, node.to)) + text.slice(node.to);
+	}
+
+	editor.setValue(text);
+}
+
+function rejectAllSuggestions(editor: Editor, view: MarkdownView) {
+	let text = editor.getValue();
+
+	// @ts-ignore
+	const tree: Tree = criticmarkupLanguage.parser.parse(text, []);
+
+	const nodes = nodesInSelection(tree).reverse();
+
+	for (const node of nodes) {
+		if (node.type === 'Addition')
+			text = text.slice(0, node.from) + text.slice(node.to);
+		else if (node.type === 'Deletion')
+			text = text.slice(0, node.from) + unwrapBracket(text.slice(node.from, node.to)) + text.slice(node.to);
+		else if (node.type === 'Substitution')
+			text = text.slice(0, node.from) + text.slice(node.to);
+	}
+
+	editor.setValue(text);
+}
+
+
+const suggestion_commands = ['Addition', 'Deletion', 'Substitution', 'Comment', 'Highlight'].map(type => ({
 	id: `commentator-toggle-${type.toLowerCase()}`,
 	name: `Mark as ${type}`,
 	icon: type.toLowerCase(),
@@ -215,3 +306,24 @@ export const commands: Array<CommandI> = ['Addition', 'Deletion', 'Substitution'
 		changeSelectionType(editor, view, type);
 	}
 }));
+
+
+export const commands: Array<CommandI> = [...suggestion_commands,
+	{
+		id: 'commentator-accept-all-suggestions',
+		name: 'Accept all suggestions',
+		icon: 'check',
+		editor_context: true,
+		callback: async (editor: Editor, view: MarkdownView) => {
+			acceptAllSuggestions(editor, view);
+		}
+	}, {
+		id: 'commentator-reject-all-suggestions',
+		name: 'Reject all suggestions',
+		icon: 'x',
+		editor_context: true,
+		callback: async (editor: Editor, view: MarkdownView) => {
+			rejectAllSuggestions(editor, view);
+		}
+	}
+];
