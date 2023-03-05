@@ -23,7 +23,6 @@ jobs:
       -   name: Build
           id: build
           run: |
-            ls
             cd ./editor/parser
             npm i --force
             npm run build --if-present
