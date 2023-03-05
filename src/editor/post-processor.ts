@@ -2,7 +2,7 @@ import { criticmarkupLanguage } from './parser';
 
 import { CM_Syntax } from '../constants';
 
-export function postProcess(el: HTMLElement, ctx: any) {
+export function postProcess(el: HTMLElement, ctx: any, ) {
 	const tree = criticmarkupLanguage.parser.parse(el.innerHTML);
 
 	let changes = [];
