@@ -2,7 +2,7 @@ import { criticmarkupLanguage } from './parser';
 
 import { CM_Syntax } from '../constants';
 
-export function postProcess(el: HTMLElement, ctx: any, ) {
+export function postProcess(el: HTMLElement, ctx: any, settings: any) {
 	const tree = criticmarkupLanguage.parser.parse(el.innerHTML);
 
 	let changes = [];
@@ -47,9 +47,19 @@ export function postProcess(el: HTMLElement, ctx: any, ) {
 
 		let new_element = '';
 		if (change.name === "Addition") {
-			// new_element = `<ins>${new_content}</ins>`;
+			if (!settings.suggestion_status)
+				new_element = `<span class='criticmarkup-inline criticmarkup-addition'>${new_content}</span>`;
+			else if (settings.suggestion_status === 1)
+				new_element = `${new_content}`;
+			else
+				new_element = ``;
 		} else if (change.name === "Deletion") {
-			// new_element = `<del>${new_content}</del>`;
+			if (!settings.suggestion_status)
+				new_element = `<span class='criticmarkup-inline criticmarkup-deletion'>${new_content}</span>`;
+			else if (settings.suggestion_status === 1)
+				new_element = ``;
+			else
+				new_element = `${new_content}`;
 		} else if (change.name === "Substitution") {
 			let middle = <number>change.middle - change.start + 2;
 			if (change.is_rendered) {
@@ -57,25 +67,21 @@ export function postProcess(el: HTMLElement, ctx: any, ) {
 				middle -= 3;
 			}
 
-			const left_part = new_content.slice(0, middle - 5);
-			const right_part = new_content.substring(middle);
-
-			new_element = `<span class='criticmarkup-inline criticmarkup-deletion'>${left_part}</span><span class='criticmarkup-inline criticmarkup-addition'>${right_part}</span>`;
+			if (!settings.suggestion_status)
+				new_element = `<span class='criticmarkup-inline criticmarkup-deletion'>${new_content.slice(0, middle - 5)}</span><span class='criticmarkup-inline criticmarkup-addition'>${new_content.substring(middle)}</span>`;
+			else if (settings.suggestion_status === 1)
+				new_element = `${new_content.substring(middle)}`;
+			else
+				new_element = `${new_content.substring(0, middle - 5)}`;
 		} else if (change.name === "Highlight") {
-			if (change.is_rendered) {
+			if (change.is_rendered)
 				new_content = new_content.slice(4, -5)
-			}
-
-			// new_element = `<mark>${new_content}</mark>`;
+			new_element = `<mark>${new_content}</mark>`;
 		} else if (change.name === "Comment") {
-			if (change.is_rendered) {
+			if (change.is_rendered)
 				new_content = new_content.slice(6, -6)
-			}
-			// new_element = `<span class='criticmarkup-comment'>${new_content}</span>`;
+			new_element = `<span class='criticmarkup-comment'>${new_content}</span>`;
 		}
-
-		if (!new_element)
-			new_element = `<span class='criticmarkup-inline criticmarkup-${change.name.toLowerCase()}'>${new_content}</span>`;
 
 		output = output.slice(0, change.start) + new_element + output.slice(change.end);
 	}

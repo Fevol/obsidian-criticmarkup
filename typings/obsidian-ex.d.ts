@@ -84,6 +84,18 @@ interface SettingTabI extends SettingTab {
 	plugin?: Plugin;
 }
 
+interface ReadViewRenderer {
+	addBottomPadding: boolean;
+	lastRender: number;
+	lastScroll: number;
+	lastText: string;
+	previewEl: HTMLElement;
+	pusherEl: HTMLElement;
+	clear: () => void;
+	set: (text: string) => void;
+
+}
+
 declare module 'obsidian' {
 	interface App {
 		account: {
@@ -171,6 +183,10 @@ declare module 'obsidian' {
 
 	interface Editor {
 		cm: CodeMirror.Editor;
+	}
+
+	interface MarkdownPreviewView {
+		renderer: ReadViewRenderer;
 	}
 
 }

@@ -100,8 +100,8 @@ export function inlinePlugin(settings: any): Extension[] {
 					// Restore cursor position (warning: recursion error)
 					// cursor.prev();
 
-					if (this.settings.status && !(name === 'Comment' || name === 'Highlight')) {
-						if (this.settings.status === 1) {
+					if (this.settings.suggestion_status && !(name === 'Comment' || name === 'Highlight')) {
+						if (this.settings.suggestion_status === 1) {
 							if (name === 'Addition') {
 								this.removeBrackets(widgets, start, end);
 							} else if (name === 'Deletion') {

@@ -53,7 +53,6 @@ function changeSelectionType(editor: Editor, view: MarkdownView, type: string) {
 
 		// CASE 2.1: Fully selected CriticMarkup nodes
 		if (!(outside_left_bracket || outside_right_bracket) && selected_left_bracket && selected_right_bracket) {
-			console.log('CASE 2.1');
 			for (let i = 0; i < nodes.length; i++) {
 				in_selection += unwrapBracket(editor.getRange(editor.offsetToPos(nodes[i].from), editor.offsetToPos(nodes[i].to)));
 				all_same_type &&= nodes[i].type === type;
@@ -70,7 +69,6 @@ function changeSelectionType(editor: Editor, view: MarkdownView, type: string) {
 
 		// CASE 2.2: Partially selected CriticMarkup node
 		else if (nodes.length === 1 && selection_left >= nodes[0].from && selection_right <= nodes[0].to) {
-			console.log('CASE 2.2');
 			const node = nodes[0];
 
 			const node_start = editor.offsetToPos(node.from), node_end = editor.offsetToPos(node.to);
@@ -106,7 +104,6 @@ function changeSelectionType(editor: Editor, view: MarkdownView, type: string) {
 		}
 		// CASE 2.3: Selection only includes right bracket of other node
 		else if (outside_left_bracket && selected_left_bracket && nodes[0].from + 3 >= selection_right) {
-			console.log('CASE 2.3');
 			const node = nodes[0];
 
 			const outside_node_content = editor.getRange(selection_start, editor.offsetToPos(node.from));
@@ -123,7 +120,6 @@ function changeSelectionType(editor: Editor, view: MarkdownView, type: string) {
 
 		// CASE 2.4: Selection only includes left bracket of other node
 		else if (outside_right_bracket && selected_right_bracket && nodes[nodes.length - 1].to - 3 <= selection_left) {
-			console.log('CASE 2.4');
 			const node = nodes[nodes.length - 1];
 
 			const outside_node_content = editor.getRange(editor.offsetToPos(node.to), selection_end);
@@ -140,7 +136,6 @@ function changeSelectionType(editor: Editor, view: MarkdownView, type: string) {
 
 		// CASE 2.5: Selection is over multiple nodes
 		else {
-			console.log('CASE 2.5');
 			const unselected_left_outside = editor.getRange(editor.offsetToPos(selection_left), editor.offsetToPos(nodes[0].from));
 			const unselected_right_outside = editor.getRange(editor.offsetToPos(nodes[nodes.length - 1].to), editor.offsetToPos(selection_right));
 
