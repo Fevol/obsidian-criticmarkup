@@ -4,7 +4,6 @@ import { postProcess } from './editor/post-processor';
 
 import {commands} from './editor/commands';
 import { change_suggestions } from './editor/context-menu-commands';
-// import { file_view_modes } from './editor/file-menu-commands';
 import type { Extension } from '@codemirror/state';
 
 export default class CriticMarkupPlugin extends Plugin {

@@ -116,3 +116,7 @@ span.cm-highlight:has(.criticmarkup-editing) {
 .criticmarkup-hidden {
 	display: none;
 }
+
+.cm-gutters:has(>.criticmarkup-gutter:empty) {
+	padding-inline-end: 0;
+}

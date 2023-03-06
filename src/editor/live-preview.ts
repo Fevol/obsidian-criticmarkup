@@ -264,9 +264,14 @@ export function inlinePlugin(settings: any): Extension[] {
 					// @ts-ignore
 					this.fragments = TreeFragment.addTree(tree, this.fragments);
 
-					this.decorations = this.buildDecorations(update.view) ?? Decoration.none;
-
-					this.markers = this.buildMarkers(update.view);
+					// If tree has any CriticMarkup nodes, build decorations
+					if (this.tree.topNode.firstChild) {
+						this.decorations = this.buildDecorations(update.view);
+						this.markers = this.buildMarkers(update.view);
+					} else {
+						this.decorations = Decoration.none;
+						this.markers = RangeSet.empty;
+					}
 				}
 			}
 		},
@@ -276,7 +281,7 @@ export function inlinePlugin(settings: any): Extension[] {
 	);
 
 	const gutter_extension = gutter({
-		class: 'cm-criticmarkup',
+		class: 'criticmarkup-gutter',
 		markers(view: EditorView) {
 			return view.plugin(view_plugin)?.markers ?? RangeSet.empty;
 		},
@@ -287,7 +292,6 @@ export function inlinePlugin(settings: any): Extension[] {
 					item.setTitle('Accept changes')
 						.setIcon('check')
 						.onClick(() => {
-
 							view.dispatch({
 								changes: acceptAllSuggestions(view.state.doc.toString(), line.from, line.to),
 							});
@@ -307,7 +311,7 @@ export function inlinePlugin(settings: any): Extension[] {
 
 				menu.showAtMouseEvent(<MouseEvent>event);
 
-				return true;
+				return false;
 			},
 		},
 	});
