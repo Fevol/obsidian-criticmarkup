@@ -16,14 +16,17 @@ export default class CriticMarkupPlugin extends Plugin {
 		suggestion_status: 0,
 	}
 
-	button_mapping = new WeakMap<MarkdownView, HTMLElement>();
+	button_mapping = new WeakMap<MarkdownView, {
+		button: HTMLElement,
+		status: HTMLElement,
+	}>();
 
 
 	loadButtons() {
 		const status_mapping = [
-			{ icon: "message-square", label: "Show all suggestions" },
-			{ icon: "check", label: "Preview \"accept all\"" },
-			{ icon: "cross", label: "Preview \"reject all\"" },
+			{ icon: "message-square", tooltip: "Show all suggestions", label: "Showing suggestions"  },
+			{ icon: "check", tooltip: "Preview \"accept all\"", label: "Previewing \"accept all\"" },
+			{ icon: "cross", tooltip: "Preview \"reject all\"" , label: "Previewing \"reject all\"" },
 		];
 
 		for (const leaf of app.workspace.getLeavesOfType("markdown")) {
@@ -32,12 +35,25 @@ export default class CriticMarkupPlugin extends Plugin {
 
 			const buttonElement = view.addAction("message-square", "View all suggestions", () => {
 				this.settings.suggestion_status = (this.settings.suggestion_status + 1) % status_mapping.length;
-				const { icon, label } = status_mapping[this.settings.suggestion_status];
+				const { icon, tooltip, label } = status_mapping[this.settings.suggestion_status];
 				setIcon(buttonElement, icon);
-				buttonElement.setAttribute("aria-label", label);
+				buttonElement.setAttribute("aria-label", tooltip);
+				statusElement.innerText = label;
 				this.updateEditorExtension();
 			});
-			this.button_mapping.set(view, buttonElement);
+
+			const statusElement = buttonElement.createSpan({
+				text: status_mapping[this.settings.suggestion_status].label,
+				cls: "criticmarkup-suggestion-status"
+			});
+
+			// @ts-ignore (Parent element exists)
+			buttonElement.parentElement.insertBefore(statusElement, buttonElement);
+
+			this.button_mapping.set(view, {
+				button: buttonElement,
+				status: statusElement,
+			});
 		}
 	}
 
@@ -107,7 +123,11 @@ export default class CriticMarkupPlugin extends Plugin {
 		for (const leaf of app.workspace.getLeavesOfType("markdown")) {
 			const view = leaf.view as MarkdownView;
 			if (!this.button_mapping.has(view)) continue;
-			this.button_mapping.get(view)?.detach();
+			const elements = this.button_mapping.get(view);
+			if (elements) {
+				elements.button.detach();
+				elements.status.detach();
+			}
 			this.button_mapping.delete(view);
 		}
 	}
