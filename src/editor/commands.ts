@@ -7,7 +7,6 @@ import { criticmarkupLanguage } from './parser';
 import { addBracket, unwrapBracket, wrapBracket } from '../constants';
 import { ltEP, minEP, maxEP, nodesInSelection, selectionToRange } from './util';
 import type { ChangeSpec } from '@codemirror/state';
-import { ChangeSet } from '@codemirror/state';
 
 
 function changeSelectionType(editor: Editor, view: MarkdownView, type: string) {
@@ -25,6 +24,13 @@ function changeSelectionType(editor: Editor, view: MarkdownView, type: string) {
 
 	const nodes = nodesInSelection(tree, selection_left, selection_right);
 
+
+	// CASE 0: Selection is empty
+	if (selection_left === selection_right) {
+		editor.replaceSelection(wrapBracket('', type));
+		editor.setSelection(editor.offsetToPos(selection_left + 3), editor.offsetToPos(selection_left + 3));
+		return;
+	}
 
 	// CASE 1: Selection is not in a CriticMarkup node
 	if (!nodes.length) {
