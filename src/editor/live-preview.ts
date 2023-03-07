@@ -2,7 +2,6 @@ import {
 	Decoration,
 	DecorationSet,
 	EditorView,
-	gutter,
 	PluginValue,
 	ViewPlugin,
 	ViewUpdate,
@@ -13,11 +12,8 @@ import type { Tree } from '@lezer/common';
 import { criticmarkupLanguage } from './parser';
 import { TreeFragment } from '@lezer/common';
 
-import { RangeSet, RangeSetBuilder } from '@codemirror/state';
-import { CriticMarkupMarker } from './criticmarkup-gutter';
-import { nodesInSelection } from './util';
-import { Menu } from 'obsidian';
-import { acceptAllSuggestions, rejectAllSuggestions } from './commands';
+import { RangeSet } from '@codemirror/state';
+import { buildMarkers, CriticMarkupMarker, gutterExtension } from './criticmarkup-gutter';
 
 function selectionRangeOverlap(selection: EditorSelection, rangeFrom: number, rangeTo: number) {
 	return selection.ranges.some(range => range.from <= rangeTo && range.to >= rangeFrom);
@@ -36,44 +32,14 @@ export function inlinePlugin(settings: any): Extension[] {
 			constructor(view: EditorView) {
 				this.settings = settings;
 
-				// @ts-ignore
+				// @ts-ignore (Conflicting Tree definitions of node modules in src/editor/parser and ./)
 				this.tree = criticmarkupLanguage.parser.parse(view.state.doc.toString());
 				// @ts-ignore
 				this.fragments = TreeFragment.addTree(this.tree);
 
 				this.decorations = this.buildDecorations(view) ?? Decoration.none;
 
-				this.markers = this.buildMarkers(view);
-			}
-
-			buildMarkers(view: EditorView): RangeSet<CriticMarkupMarker> {
-				const builder = new RangeSetBuilder<CriticMarkupMarker>();
-
-				let nodes: any[] = nodesInSelection(this.tree);
-				nodes = nodes.map(node => {
-					node.line_start = view.state.doc.lineAt(node.from).number;
-					node.line_end = view.state.doc.lineAt(node.to).number;
-					return node;
-				});
-
-				let current_line = nodes[0]?.line_start;
-				for (const node of nodes) {
-					if (current_line > node.line_end) continue;
-					for (let i = node.line_start; i <= node.line_end; i++) {
-						const line = view.state.doc.line(i);
-						builder.add(line.from, line.to,
-							new CriticMarkupMarker(
-								line.from,
-								line.to,
-								node.type.toLowerCase(),
-								i === node.line_start,
-								i === node.line_end,
-							));
-					}
-					current_line = node.line_end + 1;
-				}
-
-				return builder.finish();
+				this.markers = buildMarkers(view, this);
 			}
 
 			removeBrackets(widgets: Range<Decoration>[], from: number, to: number) {
@@ -248,7 +214,7 @@ export function inlinePlugin(settings: any): Extension[] {
 					// If tree has any CriticMarkup nodes, build decorations
 					if (this.tree.topNode.firstChild) {
 						this.decorations = this.buildDecorations(update.view);
-						this.markers = this.buildMarkers(update.view);
+						this.markers = buildMarkers(update.view, this);
 					} else {
 						this.decorations = Decoration.none;
 						this.markers = RangeSet.empty;
@@ -261,42 +227,7 @@ export function inlinePlugin(settings: any): Extension[] {
 		},
 	);
 
-	const gutter_extension = gutter({
-		class: 'criticmarkup-gutter',
-		markers(view: EditorView) {
-			return view.plugin(view_plugin)?.markers ?? RangeSet.empty;
-		},
-		domEventHandlers: {
-			click: (view, line, event: Event) => {
-				const menu = new Menu();
-				menu.addItem(item => {
-					item.setTitle('Accept changes')
-						.setIcon('check')
-						.onClick(() => {
-							view.dispatch({
-								changes: acceptAllSuggestions(view.state.doc.toString(), line.from, line.to),
-							});
-						});
-
-				});
-				menu.addItem(item => {
-					item.setTitle('Reject changes')
-						.setIcon('cross')
-						.onClick(() => {
-							view.dispatch({
-								changes: rejectAllSuggestions(view.state.doc.toString(), line.from, line.to),
-							});
-						});
-
-				});
-
-				menu.showAtMouseEvent(<MouseEvent>event);
-
-				return false;
-			},
-		},
-	});
-
+	const gutter_extension = gutterExtension(view_plugin);
 
 	return [view_plugin, gutter_extension];
 }

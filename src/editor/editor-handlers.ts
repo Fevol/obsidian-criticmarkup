@@ -1,0 +1,29 @@
+import { ChangeSpec, EditorSelection, EditorState, Prec } from '@codemirror/state';
+import { EditorView } from '@codemirror/view';
+import { CM_Brackets } from '../constants';
+
+export const bracketMatcher = Prec.high(EditorView.inputHandler.of((view, from, to, text) => {
+	const before = view.state.doc.sliceString(from - 2, from) + text;
+
+	let bracket;
+	if ((bracket = CM_Brackets[before]) !== undefined) {
+		const changes: ChangeSpec[] = [{
+			from,
+			to: to + 1,
+			insert: text + bracket.join(''),
+		}];
+
+		view.dispatch({
+			changes,
+			selection: EditorSelection.cursor(to + 1),
+		});
+
+		return true;
+	}
+	return false;
+}))
+
+export const nodeCorrecter = EditorState.changeFilter.of(tr => {
+	console.log(tr.changes);
+	return false;
+});
