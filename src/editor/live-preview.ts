@@ -1,4 +1,12 @@
-import { Decoration, DecorationSet, EditorView, gutter, PluginValue, ViewPlugin, ViewUpdate } from '@codemirror/view';
+import {
+	Decoration,
+	DecorationSet,
+	EditorView,
+	gutter,
+	PluginValue,
+	ViewPlugin,
+	ViewUpdate,
+} from '@codemirror/view';
 import type { EditorSelection, Extension, Range } from '@codemirror/state';
 import type { Tree } from '@lezer/common';
 
@@ -170,50 +178,13 @@ export function inlinePlugin(settings: any): Extension[] {
 							continue;
 						}
 
-						// Hide brackets {++ and ++}
-						widgets.push(
-							Decoration.replace({
-								attributes: { 'data-contents': 'string' },
-							}).range(start, start + 3),
-						);
-
-						// if (start + 4 < end - 3 && view.state.doc.slice(start + 3, start + 4).toString().includes(' ')) {
-						// 	widgets.push(
-						// 		Decoration.replace({
-						// 			tag: 'span',
-						// 			class: 'remove-strikethrough',
-						// 			attributes: { 'data-contents': 'string' },
-						// 		}).range(end - 1, end),
-						// 	);
-						// }
-
-
-						widgets.push(
-							Decoration.mark({
-								attributes: { 'data-contents': 'string' },
-								class: 'criticmarkup-inline',
-							}).range(start - 1, end + 1),
-						);
-
-
 						// FIXME: Strikethrough renders despite text being placed (due to {~~ brackets never being hidden?)
-						widgets.push(
-							Decoration.replace({
-								attributes: { 'data-contents': 'string' },
-							}).range(end - 3, end),
-						);
+						this.removeBrackets(widgets, start, end);
 
 						if (name === 'Substitution') {
 							cursor.firstChild();
 							if (cursor.name !== 'MSub')
 								continue;
-
-							widgets.push(
-								Decoration.mark({
-									attributes: { 'data-contents': 'string' },
-									class: 'criticmarkup-inline criticmarkup-deletion',
-								}).range(start + 3, cursor.from),
-							);
 
 							// Hide arrow marker ~>
 							widgets.push(
@@ -222,13 +193,23 @@ export function inlinePlugin(settings: any): Extension[] {
 								}).range(cursor.from, cursor.to),
 							);
 
-							widgets.push(
-								Decoration.mark({
-									attributes: { 'data-contents': 'string' },
-									class: 'criticmarkup-inline criticmarkup-addition',
-								}).range(cursor.from + 3, end - 3),
-							);
+							if (start + 3 !== cursor.from) {
+								widgets.push(
+									Decoration.mark({
+										attributes: { 'data-contents': 'string' },
+										class: 'criticmarkup-inline criticmarkup-substitution criticmarkup-deletion',
+									}).range(start + 3, cursor.from),
+								);
+							}
 
+							if (cursor.to !== end - 3) {
+								widgets.push(
+									Decoration.mark({
+										attributes: { 'data-contents': 'string' },
+										class: 'criticmarkup-inline criticmarkup-substitution criticmarkup-addition',
+									}).range(cursor.from + 2, end - 3),
+								);
+							}
 						} else if (start + 3 !== end - 3) {
 							// Render CriticMarkup as *something* (inline/comment style)
 							widgets.push(
