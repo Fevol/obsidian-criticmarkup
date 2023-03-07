@@ -13,10 +13,6 @@ span.cm-highlight:has(.criticmarkup-editing) {
 
 }
 
-.criticmarkup-substitution {
-	background-color: pink;
-}
-
 .criticmarkup-addition {
 	color: var(--color-green);
 }
@@ -48,23 +44,6 @@ span.cm-highlight:has(.criticmarkup-editing) {
 	font-size: 18rem;
 }
 
-//.cm-line:has(.criticmarkup-deletion) + .image-embed > img {
-//  border: 4px solid var(--color-red) !important;
-//  border-radius: 12px;
-//}
-//
-//.cm-line:has(.criticmarkup-deletion) + .image-embed > img:before {
-//  content: "x";
-//  position: absolute;
-//  top: 50%;
-//  left: 50%;
-//  font-size: 18rem;
-//}
-
-.criticmarkup-brackets {
-	display: none;
-}
-
 //
 //.cm-line:has(>.criticmarkup-inline) ~ .cm-line.cm-strikethrough {
 //  text-decoration: unset;
@@ -73,9 +52,10 @@ span.cm-highlight:has(.criticmarkup-editing) {
 
 
 .criticmarkup-deletion {
-	text-decoration: line-through;
-	text-decoration-thickness: 2px;
-	text-decoration-color: var(--color-red);
+	text-decoration: var(--color-red) 2px line-through;
+}
+.criticmarkup-deletion::spelling-error {
+	text-decoration-color: var(--color-red) !important;
 }
 
 .criticmarkup-comment {
@@ -100,6 +80,10 @@ span.cm-highlight:has(.criticmarkup-editing) {
 	height: 100%;
 }
 
+.cm-strikethrough:has(.criticmarkup-substitution.criticmarkup-addition) {
+	text-decoration: unset;
+}
+
 .criticmarkup-gutter-top {
 	// TODO: Figure out a better way to do this
 	border-top: 1px solid var(--background-primary);
@@ -120,3 +104,22 @@ span.cm-highlight:has(.criticmarkup-editing) {
 .cm-gutters:has(>.criticmarkup-gutter:empty) {
 	padding-inline-end: 0;
 }
+
+// For comments:
+//    position: absolute;
+//    right: -20px;
+//    background: var(--background-secondary);
+//    padding: 16px;
+//    border-radius: 8px;
+//    border-bottom-left-radius: 0px;
+
+// Comment arrow:
+//    content: ' ';
+//    position: absolute;
+//    left: -7px;
+//    bottom: 0px;
+//    width: 0;
+//    height: 0;
+//    border-right: 9px solid var(--background-secondary);
+//    border-bottom: 10px solid transparent;
+//    border-top: 10px solid transparent;

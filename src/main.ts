@@ -5,6 +5,9 @@ import { postProcess } from './editor/post-processor';
 import {commands} from './editor/commands';
 import { change_suggestions } from './editor/context-menu-commands';
 import type { Extension } from '@codemirror/state';
+import { ChangeSpec, EditorSelection, Prec } from '@codemirror/state';
+import { EditorView } from '@codemirror/view';
+import { CM_Brackets } from './constants';
 
 export default class CriticMarkupPlugin extends Plugin {
 	private editorExtensions: Extension[] = [];
@@ -42,6 +45,27 @@ export default class CriticMarkupPlugin extends Plugin {
 		this.loadButtons();
 		this.registerEvent(app.workspace.on("layout-change", () => this.loadButtons()));
 		this.editorExtensions.push(inlinePlugin(this.settings));
+
+		this.editorExtensions.push(Prec.high(EditorView.inputHandler.of((view, from, to, text) => {
+			const before = view.state.doc.sliceString(from - 2, from) + text;
+
+			let bracket;
+			if ((bracket = CM_Brackets[before]) !== undefined) {
+				const changes: ChangeSpec[] = [{
+					from,
+					to: to + 1,
+					insert: text + bracket.join(''),
+				}];
+
+				view.dispatch({
+					changes,
+					selection: EditorSelection.cursor(to + 1),
+				});
+
+				return true;
+			}
+			return false;
+		})));
 		
 		this.registerEditorExtension(this.editorExtensions);
 		this.registerMarkdownPostProcessor((el, ctx) => postProcess(el, ctx, this.settings));

@@ -6,6 +6,14 @@ export const CM_Syntax: {[key: string]: [string, string]} = {
 	"Comment": [">", "<"]
 }
 
+export const CM_Brackets: {[key: string]: string[]} = {
+	"{++": ["++}"],
+	"{--": ["--}"],
+	"{~~": ["~>", "~~}"],
+	"{==": ["==}"],
+	"{>>": ["<<}"]
+}
+
 
 export function replaceBracket(content: string, type: string) {
 	return wrapBracket(unwrapBracket(content), type);
