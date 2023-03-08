@@ -7,6 +7,7 @@ import { criticmarkupLanguage } from './parser';
 import { addBracket, unwrapBracket, wrapBracket } from '../constants';
 import { ltEP, minEP, maxEP, nodesInSelection, selectionToRange } from './util';
 import type { ChangeSpec } from '@codemirror/state';
+import { EditorSelection } from '@codemirror/state';
 
 
 function changeSelectionType(editor: Editor, view: MarkdownView, type: string) {
@@ -28,7 +29,7 @@ function changeSelectionType(editor: Editor, view: MarkdownView, type: string) {
 	// CASE 0: Selection is empty
 	if (selection_left === selection_right) {
 		editor.replaceSelection(wrapBracket('', type));
-		editor.setSelection(editor.offsetToPos(selection_left + 3), editor.offsetToPos(selection_left + 3));
+		editor.setCursor(editor.offsetToPos(selection_left + 3));
 		return;
 	}
 
@@ -153,21 +154,18 @@ function changeSelectionType(editor: Editor, view: MarkdownView, type: string) {
 
 			for (const [i, node] of nodes.entries()) {
 				let node_content = unwrapBracket(editor.getRange(editor.offsetToPos(node.from), editor.offsetToPos(node.to)));
-
 				// Handles cases where selection is partially within node of other type
 				// {-- Text Sel --} ection -> {-- Text --} {++ Sel ection ++}
-				if (i === 0) {
-					if (type !== node.type && selection_left > node.from + 3) {
-						const node_split = selection_left - node.from - 3;
-						left_unselected_node = wrapBracket(node_content.slice(0, node_split), node.type);
-						node_content = node_content.slice(node_split);
-					}
-				} else if (i === nodes.length - 1) {
-					if (type !== node.type && selection_right < node.to - 3) {
-						const node_split = selection_right - node.from - 3;
-						right_unselected_node = wrapBracket(node_content.slice(node_split), node.type);
-						node_content = node_content.slice(0, node_split);
-					}
+				if (i === 0 && type !== node.type && selection_left > node.from + 3) {
+					const node_split = selection_left - node.from - 3;
+					left_unselected_node = wrapBracket(node_content.slice(0, node_split), node.type);
+					node_content = node_content.slice(node_split);
+				}
+
+				if (i === nodes.length - 1 && type !== node.type && selection_right < node.to - 3) {
+					const node_split = selection_right - node.from - 3;
+					right_unselected_node = wrapBracket(node_content.slice(node_split), node.type);
+					node_content = node_content.slice(0, node_split);
 				}
 				in_selection += node_content;
 

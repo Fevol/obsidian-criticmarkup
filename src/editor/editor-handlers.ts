@@ -19,7 +19,6 @@ export const bracketMatcher = Prec.high(EditorView.inputHandler.of((view, from, 
 			changes,
 			selection: EditorSelection.cursor(to + 1),
 		});
-
 		return true;
 	}
 	return false;

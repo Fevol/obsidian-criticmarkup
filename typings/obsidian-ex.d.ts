@@ -1,5 +1,6 @@
 // Thanks to AquaCat/pjkaufman for the suggestion to add typings
 import {Command, Vault, Plugin, SettingTab, MenuItem} from 'obsidian';
+import { EditorView } from '@codemirror/view';
 
 
 interface AppVaultConfig {
@@ -182,7 +183,7 @@ declare module 'obsidian' {
 	}
 
 	interface Editor {
-		cm: CodeMirror.Editor;
+		cm: EditorView;
 	}
 
 	interface MarkdownPreviewView {

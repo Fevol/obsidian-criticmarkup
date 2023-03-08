@@ -6,6 +6,14 @@ export const CM_Syntax: {[key: string]: [string, string]} = {
 	"Comment": [">", "<"]
 }
 
+export const  CM_All_Brackets: {[key: string]: string[]} = {
+	"Addition": ["{++", "++}"],
+	"Deletion":["{--", "--}"],
+	"Substitution": ["{~~", "~>", "~~}"],
+	"Highlight": ["{==", "==}"],
+	"Comment": ["{>>", "<<}"]
+}
+
 export const CM_Brackets: {[key: string]: string[]} = {
 	"{++": ["++}"],
 	"{--": ["--}"],
@@ -24,7 +32,7 @@ export function unwrapBracket(content: string) {
 }
 
 export function wrapBracket(content: string, type: string) {
-	return '{' + CM_Syntax[type][0].repeat(2) + content + CM_Syntax[type][1].repeat(2) + '}';
+	return CM_All_Brackets[type][0] + content + CM_All_Brackets[type].slice(1).join('');
 }
 
 export function addBracket(content: string, type: string, left: boolean) {
