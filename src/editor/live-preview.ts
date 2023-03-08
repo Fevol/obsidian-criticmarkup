@@ -182,6 +182,7 @@ export function inlinePlugin(settings: any): Extension[] {
 								Decoration.mark({
 									attributes: { 'data-contents': 'string' },
 									class: 'criticmarkup-inline criticmarkup-' + name.toLowerCase(),
+									spec: { style: 'text-decoration: line-through;' },
 								}).range(start + 3, end - 3),
 							);
 						}

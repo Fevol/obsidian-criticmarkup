@@ -1,5 +1,6 @@
-import type { EditorPosition, EditorSelection } from 'obsidian';
+import type { EditorPosition } from 'obsidian';
 import type { Tree } from '@lezer/common';
+import { EditorSelection } from '@codemirror/state';
 import type { Editor } from 'obsidian';
 
 
@@ -34,6 +35,25 @@ export function selectionToRange(editor: Editor): number[] {
 		editor.posToOffset(minEP(selection.anchor, selection.head)),
 		editor.posToOffset(maxEP(selection.anchor, selection.head)),
 	];
+}
+
+
+export function nodeAtCursor(tree: Tree, pos: number) {
+	const node = tree.resolve(pos, -1);
+	if (node.type.name === '⚠' || node.type.name === 'CriticMarkup')
+		return undefined
+	if (node.type.name === 'MSub')
+		return node.parent;
+	return node;
+}
+
+export function moveEditorCursor(selection: EditorSelection, change_start: number, offset: number) {
+	if (change_start >= selection.ranges[0].from)
+		return selection;
+	return EditorSelection.range(
+		selection.ranges[0].from + offset,
+		selection.ranges[0].to + offset,
+	)
 }
 
 

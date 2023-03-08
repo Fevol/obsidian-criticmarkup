@@ -5,7 +5,7 @@ import { postProcess } from './editor/post-processor';
 import {commands} from './editor/commands';
 import { change_suggestions } from './editor/context-menu-commands';
 import type { Extension } from '@codemirror/state';
-import { bracketMatcher, nodeCorrecter } from './editor/editor-extensions';
+import { bracketMatcher, nodeCorrecter } from './editor/editor-handlers';
 
 export default class CriticMarkupPlugin extends Plugin {
 	private editorExtensions: Extension[] = [];
@@ -60,7 +60,7 @@ export default class CriticMarkupPlugin extends Plugin {
 		this.registerEvent(app.workspace.on("layout-change", () => this.loadButtons()));
 		this.editorExtensions.push(inlinePlugin(this.settings));
 		this.editorExtensions.push(bracketMatcher);
-		// this.editorExtensions.push(nodeCorrecter);
+		this.editorExtensions.push(nodeCorrecter);
 		
 		this.registerEditorExtension(this.editorExtensions);
 		this.registerMarkdownPostProcessor((el, ctx) => postProcess(el, ctx, this.settings));
