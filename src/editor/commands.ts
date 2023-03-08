@@ -184,6 +184,27 @@ function changeSelectionType(editor: Editor, view: MarkdownView, type: string) {
 				start_range, end_range);
 		}
 	}
+
+	if (type === 'Substitution') {
+		const range = editor.getRange(editor.offsetToPos(selection_left + 3), editor.offsetToPos(selection_right + 3));
+		const has_endline = range.includes('\n');
+		const has_whitespace: boolean = range[0]?.match(/\s/) !== null;
+
+		// Okay so listen, this is... weird code. I know. But it totally makes sense, I swear.
+		// Basically, if the selection is on a single line, and is *not* preceded by a whitespace,
+		//   we must first move the cursor inside the `~~` brackets - since they automatically get rendered
+		//   and *then* we can move the cursor to the correct position. (5 is the length of `{~~` and `~>`)
+		if (!(has_whitespace || has_endline))
+			editor.cm.dispatch(editor.cm.state.update({
+				selection: EditorSelection.cursor(selection_right + 3),
+			}));
+
+		// FIXME: Cursor will not get placed in middle when selection also contains another node, since that node would
+		//    also need to have the cursor placed inside it, and I can't be arsed to also write an exception for that.
+		editor.cm.dispatch(editor.cm.state.update({
+			selection: EditorSelection.cursor(Math.min(selection_right + 5, editor.cm.state.doc.length)),
+		}));
+	}
 }
 
 
