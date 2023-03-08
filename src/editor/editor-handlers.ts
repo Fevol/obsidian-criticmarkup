@@ -40,18 +40,36 @@ export const nodeCorrecter = EditorState.transactionFilter.of(tr => {
 			// @ts-ignore (Tree is correct)
 			const end_node = nodeAtCursor(tree, current_selection.main.head);
 
-			if (start_node && start_node !== end_node && start_node?.type.name === 'Substitution') {
-				if (text[start_node.from + 3].match(/\s/)) {
-					const left_whitespace_end = text.slice(start_node.from + 3).search(/\S/);
+			if (start_node && start_node !== end_node &&
+				(start_node?.type.name === 'Substitution' || start_node?.type.name === 'Highlight')) {
+				let new_text = text.slice(start_node.from, start_node.to);
+				let changed = false;
+
+				let removed_characters = 0;
+				let left_whitespace_end = new_text.slice(3).search(/\S/);
+				if (left_whitespace_end >= 1) {
+					changed = true;
+					new_text = new_text.slice(0, 3) + new_text.slice(3 + left_whitespace_end);
+					removed_characters += left_whitespace_end;
+				} else
+					left_whitespace_end = 0;
+
+				const invalid_endlines = new_text.match(/\n\s*\n/g);
+				if (invalid_endlines) {
+					changed = true;
+					new_text = new_text.replace(/\n\s*\n/g, '\n');
+					removed_characters += invalid_endlines.reduce((acc, cur) => acc + cur.length, 0);
+				}
+
+				if (changed) {
 					const changes: ChangeSpec[] = [{
 						from: start_node.from,
 						to: start_node.to,
-						insert:  text.slice(start_node.from, start_node.from + 3) +
-							text.slice(start_node.from + 3 + left_whitespace_end, start_node.to),
+						insert: new_text,
 					}];
 					return {
 						changes,
-						selection: moveEditorCursor(current_selection, start_node.from + 3 + left_whitespace_end, -left_whitespace_end),
+						selection: moveEditorCursor(current_selection, start_node.from + 3 + left_whitespace_end, -removed_characters),
 					}
 				}
 			}
