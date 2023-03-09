@@ -1,7 +1,10 @@
-import { EditorView, gutter, GutterMarker, PluginValue, ViewPlugin } from '@codemirror/view';
-import { RangeSet, RangeSetBuilder } from '@codemirror/state';
 import { Menu } from 'obsidian';
+
+import { RangeSet, RangeSetBuilder } from '@codemirror/state';
+import { EditorView, gutter, GutterMarker, PluginValue, ViewPlugin } from '@codemirror/view';
+
 import { acceptAllSuggestions, rejectAllSuggestions } from './commands';
+
 import { nodesInSelection } from './editor-util';
 
 export class CriticMarkupMarker extends GutterMarker {

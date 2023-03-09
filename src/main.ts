@@ -1,23 +1,23 @@
-import {
-	Plugin,
-	Platform,
-	MarkdownView,
-	EventRef,
-	MarkdownPostProcessor,
-	MarkdownPreviewRenderer
-} from 'obsidian';
-import { inlinePlugin } from './editor/live-preview';
-import {postProcess, postProcessorUpdate} from './editor/post-processor';
+import { EventRef, MarkdownPostProcessor, MarkdownPreviewRenderer, MarkdownView, Platform, Plugin } from 'obsidian';
 
-import {commands} from './editor/commands';
-import { change_suggestions } from './editor/context-menu-commands';
 import type { Extension } from '@codemirror/state';
+
+import { commands } from './editor/commands';
+import { change_suggestions } from './editor/context-menu-commands';
+
 import { bracketMatcher, nodeCorrecter } from './editor/editor-handlers';
-import type {PluginSettings} from "./types";
-import {DEFAULT_SETTINGS} from "./constants";
-import {loadEditorButtons, removeEditorButtons} from "./editor/editor-preview-buttons";
-import {CommentatorSettings} from "./ui/settings";
+import { loadEditorButtons, removeEditorButtons } from './editor/editor-preview-buttons';
+
+import { inlinePlugin } from './editor/live-preview';
+import { postProcess, postProcessorUpdate } from './editor/post-processor';
+
+import { CommentatorSettings } from './ui/settings';
+
 import { objectDifference } from './util';
+
+import { DEFAULT_SETTINGS } from './constants';
+import type { PluginSettings } from './types';
+
 
 export default class CommentatorPlugin extends Plugin {
 	private editorExtensions: Extension[] = [];
@@ -49,7 +49,7 @@ export default class CommentatorPlugin extends Plugin {
 
 	async updateEditorExtension() {
 		if (Object.keys(this.changed_settings).some(key =>
-			["suggestion_status", "editor_styling", "live_preview", "editor_gutter", "tag_completion", "node_correcter"].includes(key))) {
+			['suggestion_status', 'editor_styling', 'live_preview', 'editor_gutter', 'tag_completion', 'node_correcter'].includes(key))) {
 			this.loadEditorExtensions();
 			this.app.workspace.updateOptions();
 		}
@@ -66,7 +66,7 @@ export default class CommentatorPlugin extends Plugin {
 
 		if (this.settings.editor_preview_button) {
 			loadEditorButtons(this);
-			this.loadButtonsEvent = app.workspace.on("layout-change", () => loadEditorButtons(this));
+			this.loadButtonsEvent = app.workspace.on('layout-change', () => loadEditorButtons(this));
 			this.registerEvent(this.loadButtonsEvent);
 		}
 
@@ -111,7 +111,7 @@ export default class CommentatorPlugin extends Plugin {
 		if (this.changed_settings.editor_preview_button !== undefined) {
 			if (this.changed_settings.editor_preview_button) {
 				loadEditorButtons(this);
-				this.loadButtonsEvent = app.workspace.on("layout-change", () => loadEditorButtons(this));
+				this.loadButtonsEvent = app.workspace.on('layout-change', () => loadEditorButtons(this));
 				this.registerEvent(this.loadButtonsEvent);
 			} else {
 				removeEditorButtons(this);

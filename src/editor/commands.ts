@@ -1,13 +1,15 @@
-import type { CommandI } from '../../types';
 import type { Editor, MarkdownView } from 'obsidian';
 
+import type { ChangeSpec } from '@codemirror/state';
+import { EditorSelection } from '@codemirror/state';
 import type { Tree } from '@lezer/common';
 
 import { criticmarkupLanguage } from './parser';
-import { ltEP, minEP, maxEP, nodesInSelection, selectionToRange } from './editor-util';
-import type { ChangeSpec } from '@codemirror/state';
-import { EditorSelection } from '@codemirror/state';
+
+import type { CommandI } from '../../types';
+
 import { addBracket, unwrapBracket, wrapBracket } from '../util';
+import { ltEP, minEP, maxEP, nodesInSelection, selectionToRange } from './editor-util';
 
 
 function changeSelectionType(editor: Editor, view: MarkdownView, type: string) {
@@ -288,7 +290,7 @@ export const commands: Array<CommandI> = [...suggestion_commands,
 			editor.cm.dispatch(editor.cm.state.update({
 				changes: acceptAllSuggestions(editor.getValue(), from, to),
 			}));
-		}
+		},
 	},
 	{
 		id: 'commentator-reject-selected-suggestions',
@@ -301,6 +303,6 @@ export const commands: Array<CommandI> = [...suggestion_commands,
 			editor.cm.dispatch(editor.cm.state.update({
 				changes: rejectAllSuggestions(editor.getValue(), from, to),
 			}));
-		}
-	}
+		},
+	},
 ];

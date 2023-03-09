@@ -1,8 +1,10 @@
-import { ChangeSpec, EditorSelection, EditorState, Prec } from '@codemirror/state';
 import { EditorView } from '@codemirror/view';
+import { ChangeSpec, EditorSelection, EditorState, Prec } from '@codemirror/state';
+
 import { criticmarkupLanguage } from './parser';
-import { moveEditorCursor, nodeAtCursor } from './editor-util';
+
 import { CM_Brackets } from '../util';
+import { moveEditorCursor, nodeAtCursor } from './editor-util';
 
 export const bracketMatcher = Prec.high(EditorView.inputHandler.of((view, from, to, text) => {
 	const before = view.state.doc.sliceString(from - 2, from) + text;
@@ -22,13 +24,13 @@ export const bracketMatcher = Prec.high(EditorView.inputHandler.of((view, from, 
 		return true;
 	}
 	return false;
-}))
+}));
 
 export const nodeCorrecter = EditorState.transactionFilter.of(tr => {
 	// From 'tr', get the spec from a decoration transaction
 	if (tr.isUserEvent('select')) {
 		const previous_selection = <EditorSelection>tr.startState.selection,
-			  current_selection = <EditorSelection>tr.selection;
+			current_selection = <EditorSelection>tr.selection;
 
 		if (current_selection.main.anchor === current_selection.main.head) {
 			const text = tr.startState.doc.toString();
@@ -69,7 +71,7 @@ export const nodeCorrecter = EditorState.transactionFilter.of(tr => {
 					return {
 						changes,
 						selection: moveEditorCursor(current_selection, start_node.from + 3 + left_whitespace_end, -removed_characters),
-					}
+					};
 				}
 			}
 		}

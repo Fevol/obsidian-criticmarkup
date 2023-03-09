@@ -1,6 +1,7 @@
+import type { MarkdownView } from 'obsidian';
+
 import { criticmarkupLanguage } from './parser';
 
-import type {MarkdownView} from "obsidian";
 import { CM_Syntax } from '../util';
 
 export function postProcess(el: HTMLElement, ctx: any, settings: any) {
@@ -21,7 +22,7 @@ export function postProcess(el: HTMLElement, ctx: any, settings: any) {
 			break;
 		} else if (name === 'MSub') continue;
 
-		const is_rendered = output[start+1] !== CM_Syntax[name][0];
+		const is_rendered = output[start + 1] !== CM_Syntax[name][0];
 
 		if (name === 'Substitution') {
 			cursor.firstChild();
@@ -50,24 +51,24 @@ export function postProcess(el: HTMLElement, ctx: any, settings: any) {
 		let new_content = output.substring(change.start, change.end).slice(3, -3);
 
 		let new_element = '';
-		if (change.name === "Addition") {
+		if (change.name === 'Addition') {
 			if (!settings.suggestion_status)
 				new_element = `<span class='criticmarkup-inline criticmarkup-addition'>${new_content}</span>`;
 			else if (settings.suggestion_status === 1)
 				new_element = `${new_content}`;
 			else
 				new_element = ``;
-		} else if (change.name === "Deletion") {
+		} else if (change.name === 'Deletion') {
 			if (!settings.suggestion_status)
 				new_element = `<span class='criticmarkup-inline criticmarkup-deletion'>${new_content}</span>`;
 			else if (settings.suggestion_status === 1)
 				new_element = ``;
 			else
 				new_element = `${new_content}`;
-		} else if (change.name === "Substitution") {
+		} else if (change.name === 'Substitution') {
 			let middle = <number>change.middle - change.start + 2;
 			if (change.is_rendered) {
-				new_content = new_content.slice(3, -4)
+				new_content = new_content.slice(3, -4);
 				middle -= 3;
 			}
 
@@ -77,13 +78,13 @@ export function postProcess(el: HTMLElement, ctx: any, settings: any) {
 				new_element = `${new_content.substring(middle)}`;
 			else
 				new_element = `${new_content.substring(0, middle - 5)}`;
-		} else if (change.name === "Highlight") {
+		} else if (change.name === 'Highlight') {
 			if (change.is_rendered)
-				new_content = new_content.slice(4, -5)
+				new_content = new_content.slice(4, -5);
 			new_element = `<mark>${new_content}</mark>`;
-		} else if (change.name === "Comment") {
+		} else if (change.name === 'Comment') {
 			if (change.is_rendered)
-				new_content = new_content.slice(6, -6)
+				new_content = new_content.slice(6, -6);
 			new_element = `<span class='criticmarkup-comment'>${new_content}</span>`;
 		}
 
@@ -94,7 +95,7 @@ export function postProcess(el: HTMLElement, ctx: any, settings: any) {
 
 export function postProcessorUpdate() {
 	// TODO: Check if this should only apply to the active editor instance
-	for (const leaf of app.workspace.getLeavesOfType("markdown")) {
+	for (const leaf of app.workspace.getLeavesOfType('markdown')) {
 		const view = leaf.view as MarkdownView;
 
 		const scroll_height = view.previewMode.renderer.previewEl.scrollTop;

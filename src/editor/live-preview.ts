@@ -1,19 +1,14 @@
-import {
-	Decoration,
-	DecorationSet,
-	EditorView,
-	PluginValue,
-	ViewPlugin,
-	ViewUpdate,
-} from '@codemirror/view';
-import type { Extension, Range } from '@codemirror/state';
 import type { Tree } from '@lezer/common';
-
-import { criticmarkupLanguage } from './parser';
 import { TreeFragment } from '@lezer/common';
 
 import { RangeSet } from '@codemirror/state';
+import type { Extension, Range } from '@codemirror/state';
+import { Decoration, DecorationSet, EditorView, PluginValue, ViewPlugin, ViewUpdate } from '@codemirror/view';
+
 import { buildMarkers, CriticMarkupMarker, gutterExtension } from './criticmarkup-gutter';
+
+import { criticmarkupLanguage } from './parser';
+
 import type { PluginSettings } from '../types';
 import { selectionRangeOverlap } from './editor-util';
 

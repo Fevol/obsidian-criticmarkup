@@ -1,44 +1,44 @@
 // Thanks to AquaCat/pjkaufman for the suggestion to add typings
-import {Command, Vault, Plugin, SettingTab, MenuItem} from 'obsidian';
+import { Command, Vault, Plugin, SettingTab, MenuItem } from 'obsidian';
 import { EditorView } from '@codemirror/view';
 
 
 interface AppVaultConfig {
-	accentColor: "" | string;
+	accentColor: '' | string;
 	alwaysUpdateLinks?: false | boolean;
-	attachmentFolderPath?: "/" | string;
+	attachmentFolderPath?: '/' | string;
 	autoConvertHtml?: true | boolean;
 	autoPairBrackets?: true | boolean;
 	autoPairMarkdown?: true | boolean;
 	baseFontSize?: 16 | number;
 	baseFontSizeAction?: true | boolean;
-	communityPluginSortOrder: "download" | "update" | "release" | "alphabetical";
-	communityThemeSortOrder: "download" | "update" | "release" | "alphabetical";
+	communityPluginSortOrder: 'download' | 'update' | 'release' | 'alphabetical';
+	communityThemeSortOrder: 'download' | 'update' | 'release' | 'alphabetical';
 	// Name/ID of community theme being used, "" is default theme
-	cssTheme?: "" | string;
-	defaultViewMode?: "source" | "preview";
+	cssTheme?: '' | string;
+	defaultViewMode?: 'source' | 'preview';
 	emacsyKeys?: true | boolean;
 	enabledCssSnippets?: string[];
-	fileSortOrder?: "alphabetical";
+	fileSortOrder?: 'alphabetical';
 	foldHeading?: true | boolean;
 	foldIndent?: true | boolean;
-	hotkeys?: {[key: string]: string};
-	interfaceFontFamily?: "" | string;
+	hotkeys?: { [key: string]: string };
+	interfaceFontFamily?: '' | string;
 	legacyEditor?: false | boolean;
 	livePreview?: true | boolean;
-	mobilePullAction?: "command-palette:open" | string;
+	mobilePullAction?: 'command-palette:open' | string;
 	mobileToolbarCommands?: string[];
-	monospaceFontFamily?: "" | string;
+	monospaceFontFamily?: '' | string;
 	nativeMenus?: null | boolean;
-	newFileFolderPath?: "/" | string;
-	newFileLocation?: "root" | "current";
+	newFileFolderPath?: '/' | string;
+	newFileLocation?: 'root' | 'current';
 	pdfExportSettings?: {
-		pageSize: "letter" | string;
+		pageSize: 'letter' | string;
 		landscape: false | boolean;
-		margin: "0" | string;
+		margin: '0' | string;
 		downscalePercent: 100 | number;
 	};
-	newLinkFormat?: "shortest" | "relative" | "absolute";
+	newLinkFormat?: 'shortest' | 'relative' | 'absolute';
 	promptDelete?: true | boolean;
 	readableLineLength?: true | boolean;
 	rightToLeft?: false | boolean;
@@ -54,11 +54,11 @@ interface AppVaultConfig {
 	spellcheckLanguages?: null | string[];
 	strictLineBreaks?: false | boolean;
 	tabSize?: 4 | number;
-	textFontFamily?: "" | string;
+	textFontFamily?: '' | string;
 	// "moonstone" is light theme, "obsidian" is dark theme
-	theme?: "moonstone" | "obsidian";
+	theme?: 'moonstone' | 'obsidian';
 	translucency?: false | boolean;
-	trashOption?: "system" | "local" | "none";
+	trashOption?: 'system' | 'local' | 'none';
 	useMarkdownLinks?: false | boolean;
 	useTab?: true | boolean;
 	userIgnoreFilters?: null | string[];
@@ -126,7 +126,7 @@ declare module 'obsidian' {
 		plugins: {
 			enabledPlugins: Set<string>;
 			manifests: Map<string, PluginManifest>;
-			plugins: {[key: string]: Plugin};
+			plugins: { [key: string]: Plugin };
 			updates: Map<string, string>;
 			uninstallPlugin(...args): void;
 		};
@@ -146,6 +146,7 @@ declare module 'obsidian' {
 		workspace: Workspace;
 
 		loadLocalStorage(key: string): any;
+
 		saveLocalStorage(key: string, value: any): void;
 	}
 
@@ -164,6 +165,7 @@ declare module 'obsidian' {
 
 	interface Vault {
 		on(name: 'config-changed', callback: () => void, ctx?: any): EventRef;
+
 		config: AppVaultConfig;
 	}
 
@@ -175,7 +177,7 @@ declare module 'obsidian' {
 	}
 
 	interface MenuItem {
-		callback:  () => void;
+		callback: () => void;
 		dom: HTMLElement;
 		setSubmenu: () => Menu;
 		onClick: (evt: MouseEvent) => void;

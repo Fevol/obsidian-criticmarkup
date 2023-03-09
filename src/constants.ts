@@ -11,5 +11,5 @@ export const DEFAULT_SETTINGS: PluginSettings = {
 	node_correcter: true,
 
 	post_processor: true,
-	live_preview: true
-}
+	live_preview: true,
+};

@@ -1,4 +1,5 @@
 import type { Editor, EditorPosition } from 'obsidian';
+
 import type { Tree } from '@lezer/common';
 import { EditorSelection } from '@codemirror/state';
 
@@ -33,9 +34,8 @@ export function moveEditorCursor(selection: EditorSelection, change_start: numbe
 	return EditorSelection.range(
 		selection.ranges[0].from + offset,
 		selection.ranges[0].to + offset,
-	)
+	);
 }
-
 
 
 export function selectionToRange(editor: Editor): number[] {
@@ -52,17 +52,14 @@ export function selectionRangeOverlap(selection: EditorSelection, rangeFrom: num
 }
 
 
-
-
 export function nodeAtCursor(tree: Tree, pos: number) {
 	const node = tree.resolve(pos, -1);
 	if (node.type.name === '⚠' || node.type.name === 'CriticMarkup')
-		return undefined
+		return undefined;
 	if (node.type.name === 'MSub')
 		return node.parent;
 	return node;
 }
-
 
 
 export function nodesInSelection(tree: Tree, start?: number, end?: number) {
@@ -84,7 +81,7 @@ export function nodesInSelection(tree: Tree, start?: number, end?: number) {
 					middle: node.node.nextSibling.from,
 					to: node.to,
 					type: node.type.name,
-				})
+				});
 			} else {
 				nodes.push({
 					from: node.from,

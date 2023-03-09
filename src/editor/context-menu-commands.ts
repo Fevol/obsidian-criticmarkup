@@ -1,6 +1,7 @@
 import type { EventRef } from 'obsidian';
-import { acceptAllSuggestions, rejectAllSuggestions } from './commands';
+
 import { selectionToRange } from './editor-util';
+import { acceptAllSuggestions, rejectAllSuggestions } from './commands';
 
 
 export const change_suggestions: EventRef =
