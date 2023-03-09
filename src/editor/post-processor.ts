@@ -15,7 +15,10 @@ export function postProcess(el: HTMLElement, ctx: any, settings: any) {
 		const end = cursor.to;
 		const name = cursor.name;
 
-		if (name === '⚠' || name === 'MSub') continue;
+		if (name === '⚠') {
+			changes.pop();
+			break;
+		} else if (name === 'MSub') continue;
 
 		const is_rendered = output[start+1] !== CM_Syntax[name][0];
 
