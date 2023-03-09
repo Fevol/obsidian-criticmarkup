@@ -16,8 +16,8 @@ import { bracketMatcher, nodeCorrecter } from './editor/editor-handlers';
 import type {PluginSettings} from "./types";
 import {DEFAULT_SETTINGS} from "./constants";
 import {loadEditorButtons, removeEditorButtons} from "./editor/editor-preview-buttons";
-import {objectDifference} from "./editor/util";
 import {CommentatorSettings} from "./ui/settings";
+import { objectDifference } from './util';
 
 export default class CommentatorPlugin extends Plugin {
 	private editorExtensions: Extension[] = [];

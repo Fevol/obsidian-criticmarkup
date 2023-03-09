@@ -2,7 +2,7 @@ import { EditorView, gutter, GutterMarker, PluginValue, ViewPlugin } from '@code
 import { RangeSet, RangeSetBuilder } from '@codemirror/state';
 import { Menu } from 'obsidian';
 import { acceptAllSuggestions, rejectAllSuggestions } from './commands';
-import { nodesInSelection } from './util';
+import { nodesInSelection } from './editor-util';
 
 export class CriticMarkupMarker extends GutterMarker {
 	constructor(readonly from: number, readonly to: number, readonly type: string, readonly top?: boolean, readonly bottom?: boolean) {

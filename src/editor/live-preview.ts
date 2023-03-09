@@ -15,7 +15,7 @@ import { TreeFragment } from '@lezer/common';
 import { RangeSet } from '@codemirror/state';
 import { buildMarkers, CriticMarkupMarker, gutterExtension } from './criticmarkup-gutter';
 import type { PluginSettings } from '../types';
-import { selectionRangeOverlap } from './util';
+import { selectionRangeOverlap } from './editor-util';
 
 export function inlinePlugin(settings: PluginSettings): Extension[] {
 	const view_plugin = ViewPlugin.fromClass(

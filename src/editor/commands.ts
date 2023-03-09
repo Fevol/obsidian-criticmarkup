@@ -1,13 +1,13 @@
 import type { CommandI } from '../../types';
-import type { Editor, EditorChange, EditorTransaction, MarkdownView } from 'obsidian';
+import type { Editor, MarkdownView } from 'obsidian';
 
 import type { Tree } from '@lezer/common';
 
 import { criticmarkupLanguage } from './parser';
-import { addBracket, unwrapBracket, wrapBracket } from '../constants';
-import { ltEP, minEP, maxEP, nodesInSelection, selectionToRange } from './util';
+import { ltEP, minEP, maxEP, nodesInSelection, selectionToRange } from './editor-util';
 import type { ChangeSpec } from '@codemirror/state';
 import { EditorSelection } from '@codemirror/state';
+import { addBracket, unwrapBracket, wrapBracket } from '../util';
 
 
 function changeSelectionType(editor: Editor, view: MarkdownView, type: string) {

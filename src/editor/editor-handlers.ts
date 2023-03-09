@@ -1,8 +1,8 @@
 import { ChangeSpec, EditorSelection, EditorState, Prec } from '@codemirror/state';
 import { EditorView } from '@codemirror/view';
-import { CM_Brackets } from '../constants';
 import { criticmarkupLanguage } from './parser';
-import { moveEditorCursor, nodeAtCursor } from './util';
+import { moveEditorCursor, nodeAtCursor } from './editor-util';
+import { CM_Brackets } from '../util';
 
 export const bracketMatcher = Prec.high(EditorView.inputHandler.of((view, from, to, text) => {
 	const before = view.state.doc.sliceString(from - 2, from) + text;

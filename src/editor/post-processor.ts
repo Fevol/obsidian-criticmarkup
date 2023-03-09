@@ -1,7 +1,7 @@
 import { criticmarkupLanguage } from './parser';
 
-import { CM_Syntax } from '../constants';
 import type {MarkdownView} from "obsidian";
+import { CM_Syntax } from '../util';
 
 export function postProcess(el: HTMLElement, ctx: any, settings: any) {
 	const tree = criticmarkupLanguage.parser.parse(el.innerHTML);
