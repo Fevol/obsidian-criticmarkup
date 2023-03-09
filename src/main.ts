@@ -36,6 +36,28 @@ export default class CommentatorPlugin extends Plugin {
 	}>();
 
 
+	loadEditorExtensions() {
+		this.editorExtensions.length = 0;
+		if (this.settings.live_preview || this.settings.editor_gutter)
+			this.editorExtensions.push(inlinePlugin(this.settings));
+
+		if (this.settings.tag_completion)
+			this.editorExtensions.push(bracketMatcher);
+		if (this.settings.node_correcter)
+			this.editorExtensions.push(nodeCorrecter);
+	}
+
+	async updateEditorExtension() {
+		if (Object.keys(this.changed_settings).some(key =>
+			["suggestion_status", "editor_styling", "live_preview", "editor_gutter", "tag_completion", "node_correcter"].includes(key))) {
+			this.loadEditorExtensions();
+			this.app.workspace.updateOptions();
+		}
+
+		if (this.settings.post_processor)
+			postProcessorUpdate();
+
+	}
 
 
 	async onload() {
@@ -69,30 +91,6 @@ export default class CommentatorPlugin extends Plugin {
 			this.addCommand(command);
 		}
 	}
-	
-	loadEditorExtensions() {
-		this.editorExtensions.length = 0;
-		this.editorExtensions.push(inlinePlugin(this.settings));
-
-		if (this.settings.tag_completion)
-			this.editorExtensions.push(bracketMatcher);
-		if (this.settings.node_correcter)
-			this.editorExtensions.push(nodeCorrecter);
-	}
-
-	async updateEditorExtension() {
-		if (Object.keys(this.changed_settings).some(key =>
-			["suggestion_status", "editor_styling", "live_preview", "editor_gutter", "tag_completion", "node_correcter"].includes(key))) {
-			this.loadEditorExtensions();
-			this.app.workspace.updateOptions();
-		}
-
-		if (this.settings.post_processor)
-			postProcessorUpdate();
-
-	}
-
-
 
 	async onunload() {
 		if (this.settings.editor_preview_button)

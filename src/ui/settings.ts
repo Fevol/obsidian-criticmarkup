@@ -15,6 +15,17 @@ export class CommentatorSettings extends PluginSettingTab {
         containerEl.empty();
 
         new Setting(containerEl)
+            .setName("Show style when editing")
+            .setDesc("Keep styling of CriticMarkup when editing the markup")
+            .addToggle(toggle => toggle.setValue(this.plugin.settings.editor_styling)
+                .onChange(async (value) => {
+                    this.plugin.settings.editor_styling = value;
+                    await this.plugin.saveSettings();
+                }
+            ));
+
+
+        new Setting(containerEl)
             .setName("Automatic tag completion")
             .setDesc("Automatically complete CriticMarkup tags")
             .addToggle(toggle => toggle.setValue(this.plugin.settings.tag_completion)

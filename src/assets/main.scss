@@ -133,9 +133,22 @@ span.cm-highlight:has(.criticmarkup-editing) {
 }
 
 .criticmarkup-addition img {
-	border: 4px solid var(--addition-color) !important;
+	border: 4px solid var(--addition-color);
 	border-radius: 12px;
 }
+
+//.HyperMD-codeblock:has(.criticmarkup-addition) {
+//	border-left: 2px solid var(--addition-color);
+//	border-right: 2px solid var(--addition-color);
+//
+//	&.HyperMD-codeblock-begin {
+//		border-top: 4px solid var(--addition-color);
+//	}
+//
+//	&.HyperMD-codeblock-end {
+//		border-bottom: 4px solid var(--addition-color);
+//	}
+//}
 
 .criticmarkup-deletion img {
 	border: 4px solid var(--deletion-color) !important;

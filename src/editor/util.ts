@@ -38,6 +38,11 @@ export function selectionToRange(editor: Editor): number[] {
 }
 
 
+export function selectionRangeOverlap(selection: EditorSelection, rangeFrom: number, rangeTo: number) {
+	return selection.ranges.some(range => range.from <= rangeTo && range.to >= rangeFrom);
+}
+
+
 export function nodeAtCursor(tree: Tree, pos: number) {
 	const node = tree.resolve(pos, -1);
 	if (node.type.name === '⚠' || node.type.name === 'CriticMarkup')

@@ -6,7 +6,7 @@ import {
 	ViewPlugin,
 	ViewUpdate,
 } from '@codemirror/view';
-import type { EditorSelection, Extension, Range } from '@codemirror/state';
+import type { Extension, Range } from '@codemirror/state';
 import type { Tree } from '@lezer/common';
 
 import { criticmarkupLanguage } from './parser';
@@ -14,12 +14,8 @@ import { TreeFragment } from '@lezer/common';
 
 import { RangeSet } from '@codemirror/state';
 import { buildMarkers, CriticMarkupMarker, gutterExtension } from './criticmarkup-gutter';
-import type {PluginSettings} from "../types";
-
-function selectionRangeOverlap(selection: EditorSelection, rangeFrom: number, rangeTo: number) {
-	return selection.ranges.some(range => range.from <= rangeTo && range.to >= rangeFrom);
-}
-
+import type { PluginSettings } from '../types';
+import { selectionRangeOverlap } from './util';
 
 export function inlinePlugin(settings: PluginSettings): Extension[] {
 	const view_plugin = ViewPlugin.fromClass(
@@ -38,9 +34,9 @@ export function inlinePlugin(settings: PluginSettings): Extension[] {
 				// @ts-ignore
 				this.fragments = TreeFragment.addTree(this.tree);
 
-				this.decorations = this.buildDecorations(view) ?? Decoration.none;
+				this.decorations = (this.settings.live_preview ? this.buildDecorations(view) : null) ?? Decoration.none;
 
-				this.markers = buildMarkers(view, this);
+				this.markers = (this.settings.editor_gutter ? buildMarkers(view, this) : RangeSet.empty);
 			}
 
 			removeBrackets(widgets: Range<Decoration>[], from: number, to: number) {
@@ -135,13 +131,45 @@ export function inlinePlugin(settings: PluginSettings): Extension[] {
 						}
 					} else {
 						if (selectionRangeOverlap(selection, start, end)) {
-							// Mark CriticMarkup as being edited, disables strikethrough/highlight styling
-							widgets.push(
-								Decoration.mark({
-									attributes: { 'data-contents': 'string' },
-									class: 'criticmarkup-editing',
-								}).range(start, end),
-							);
+							if (!this.settings.editor_styling) {
+								widgets.push(
+									Decoration.mark({
+										attributes: { 'data-contents': 'string' },
+										class: 'criticmarkup-editing',
+									}).range(start, end),
+								);
+								continue;
+							} else {
+								if (name === 'Substitution') {
+									cursor.firstChild();
+									if (cursor.name !== 'MSub')
+										continue;
+									if (start + 3 !== cursor.from) {
+										widgets.push(
+											Decoration.mark({
+												attributes: { 'data-contents': 'string' },
+												class: 'criticmarkup-editing criticmarkup-inline criticmarkup-substitution criticmarkup-deletion',
+											}).range(start + 3, cursor.from),
+										);
+									}
+
+									if (cursor.to !== end - 3) {
+										widgets.push(
+											Decoration.mark({
+												attributes: { 'data-contents': 'string' },
+												class: 'criticmarkup-editing criticmarkup-inline criticmarkup-substitution criticmarkup-addition',
+											}).range(cursor.from + 2, end - 3),
+										);
+									}
+								} else {
+									widgets.push(
+										Decoration.mark({
+											attributes: { 'data-contents': 'string' },
+											class: `criticmarkup-editing criticmarkup-inline criticmarkup-${name.toLowerCase()}`,
+										}).range(start, end),
+									);
+								}
+							}
 							continue;
 						}
 
