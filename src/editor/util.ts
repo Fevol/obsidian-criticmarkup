@@ -89,6 +89,15 @@ export function nodesInSelection(tree: Tree, start?: number, end?: number) {
 	return nodes;
 }
 
+export function objectDifference(new_obj: any, old_obj: any): Partial<typeof new_obj> {
+	const diff: Partial<typeof new_obj> = {};
+	for (const key in new_obj) {
+		if (new_obj[key] !== old_obj[key])
+			diff[key] = new_obj[key];
+	}
+	return diff;
+}
+
 
 // function nodesInText(tree: Tree) {
 // 	const nodes: { from: number, middle?: number, to: number, type: string }[] = [];

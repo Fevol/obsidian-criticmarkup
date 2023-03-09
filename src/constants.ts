@@ -1,3 +1,5 @@
+import type {PluginSettings} from "./types";
+
 export const CM_Syntax: {[key: string]: [string, string]} = {
 	"Addition": ["+", "+"],
 	"Deletion": ["-", "-"],
@@ -40,4 +42,17 @@ export function addBracket(content: string, type: string, left: boolean) {
 		return '{' + CM_Syntax[type][0].repeat(2) + content;
 	else
 		return content + CM_Syntax[type][1].repeat(2) + '}';
+}
+
+export const DEFAULT_SETTINGS: PluginSettings = {
+	suggestion_status: 0,
+	editor_preview_button: true,
+	editor_gutter: true,
+	editor_styling: false,
+
+	tag_completion: true,
+	node_correcter: true,
+
+	post_processor: true,
+	live_preview: true
 }

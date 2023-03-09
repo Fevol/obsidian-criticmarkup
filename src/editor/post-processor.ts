@@ -1,6 +1,7 @@
 import { criticmarkupLanguage } from './parser';
 
 import { CM_Syntax } from '../constants';
+import type {MarkdownView} from "obsidian";
 
 export function postProcess(el: HTMLElement, ctx: any, settings: any) {
 	const tree = criticmarkupLanguage.parser.parse(el.innerHTML);
@@ -89,4 +90,17 @@ export function postProcess(el: HTMLElement, ctx: any, settings: any) {
 		output = output.slice(0, change.start) + new_element + output.slice(change.end);
 	}
 	el.innerHTML = output;
+}
+
+export function postProcessorUpdate() {
+	// TODO: Check if this should only apply to the active editor instance
+	for (const leaf of app.workspace.getLeavesOfType("markdown")) {
+		const view = leaf.view as MarkdownView;
+
+		const scroll_height = view.previewMode.renderer.previewEl.scrollTop;
+		view.previewMode.renderer.clear();
+		view.previewMode.renderer.set(view.editor.cm.state.doc.toString());
+		// FIXME: Visual glitch, previewmode jumps to the top, looks jarring
+		setTimeout(() => view.previewMode.renderer.previewEl.scrollTop = scroll_height, 0);
+	}
 }

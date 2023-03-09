@@ -14,16 +14,17 @@ import { TreeFragment } from '@lezer/common';
 
 import { RangeSet } from '@codemirror/state';
 import { buildMarkers, CriticMarkupMarker, gutterExtension } from './criticmarkup-gutter';
+import type {PluginSettings} from "../types";
 
 function selectionRangeOverlap(selection: EditorSelection, rangeFrom: number, rangeTo: number) {
 	return selection.ranges.some(range => range.from <= rangeTo && range.to >= rangeFrom);
 }
 
 
-export function inlinePlugin(settings: any): Extension[] {
+export function inlinePlugin(settings: PluginSettings): Extension[] {
 	const view_plugin = ViewPlugin.fromClass(
 		class CriticMarkupViewPlugin implements PluginValue {
-			settings: any;
+			settings: PluginSettings;
 			markers: RangeSet<CriticMarkupMarker>;
 			decorations: DecorationSet;
 			tree: Tree;
@@ -214,8 +215,10 @@ export function inlinePlugin(settings: any): Extension[] {
 
 					// If tree has any CriticMarkup nodes, build decorations
 					if (this.tree.topNode.firstChild) {
-						this.decorations = this.buildDecorations(update.view);
-						this.markers = buildMarkers(update.view, this);
+						if (this.settings.live_preview)
+							this.decorations = this.buildDecorations(update.view);
+						if (this.settings.editor_gutter)
+							this.markers = buildMarkers(update.view, this);
 					} else {
 						this.decorations = Decoration.none;
 						this.markers = RangeSet.empty;
@@ -228,7 +231,9 @@ export function inlinePlugin(settings: any): Extension[] {
 		},
 	);
 
-	const gutter_extension = gutterExtension(view_plugin);
-
-	return [view_plugin, gutter_extension];
+	if (settings.editor_gutter) {
+		const gutter_extension = gutterExtension(view_plugin);
+		return [view_plugin, gutter_extension];
+	}
+	return [view_plugin];
 }

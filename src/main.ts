@@ -1,18 +1,34 @@
-import { Plugin, Platform, setIcon, MarkdownView } from 'obsidian';
+import {
+	Plugin,
+	Platform,
+	MarkdownView,
+	EventRef,
+	MarkdownPostProcessor,
+	MarkdownPreviewRenderer
+} from 'obsidian';
 import { inlinePlugin } from './editor/live-preview';
-import { postProcess } from './editor/post-processor';
+import {postProcess, postProcessorUpdate} from './editor/post-processor';
 
 import {commands} from './editor/commands';
 import { change_suggestions } from './editor/context-menu-commands';
 import type { Extension } from '@codemirror/state';
 import { bracketMatcher, nodeCorrecter } from './editor/editor-handlers';
+import type {PluginSettings} from "./types";
+import {DEFAULT_SETTINGS} from "./constants";
+import {loadEditorButtons, removeEditorButtons} from "./editor/editor-preview-buttons";
+import {objectDifference} from "./editor/util";
+import {CommentatorSettings} from "./ui/settings";
 
-export default class CriticMarkupPlugin extends Plugin {
+export default class CommentatorPlugin extends Plugin {
 	private editorExtensions: Extension[] = [];
 
-	settings: { suggestion_status: number; } = {
-		suggestion_status: 0,
-	}
+	settings: PluginSettings = DEFAULT_SETTINGS;
+	previous_settings: Partial<PluginSettings> = {};
+
+	changed_settings: Partial<PluginSettings> = {};
+
+	loadButtonsEvent!: EventRef;
+	postProcessor!: MarkdownPostProcessor;
 
 	button_mapping = new WeakMap<MarkdownView, {
 		button: HTMLElement,
@@ -20,50 +36,26 @@ export default class CriticMarkupPlugin extends Plugin {
 	}>();
 
 
-	loadButtons() {
-		const status_mapping = [
-			{ icon: "message-square", tooltip: "Show all suggestions", label: "Showing suggestions"  },
-			{ icon: "check", tooltip: "Preview \"accept all\"", label: "Previewing \"accept all\"" },
-			{ icon: "cross", tooltip: "Preview \"reject all\"" , label: "Previewing \"reject all\"" },
-		];
 
-		for (const leaf of app.workspace.getLeavesOfType("markdown")) {
-			const view = leaf.view as MarkdownView;
-			if (this.button_mapping.has(view)) continue;
-
-			const buttonElement = view.addAction("message-square", "View all suggestions", () => {
-				this.settings.suggestion_status = (this.settings.suggestion_status + 1) % status_mapping.length;
-				const { icon, tooltip, label } = status_mapping[this.settings.suggestion_status];
-				setIcon(buttonElement, icon);
-				buttonElement.setAttribute("aria-label", tooltip);
-				statusElement.innerText = label;
-				this.updateEditorExtension();
-			});
-
-			const statusElement = buttonElement.createSpan({
-				text: status_mapping[this.settings.suggestion_status].label,
-				cls: "criticmarkup-suggestion-status"
-			});
-
-			// @ts-ignore (Parent element exists)
-			buttonElement.parentElement.insertBefore(statusElement, buttonElement);
-
-			this.button_mapping.set(view, {
-				button: buttonElement,
-				status: statusElement,
-			});
-		}
-	}
 
 	async onload() {
-		this.loadButtons();
-		this.registerEvent(app.workspace.on("layout-change", () => this.loadButtons()));
-		this.editorExtensions.push(inlinePlugin(this.settings));
-		this.editorExtensions.push(bracketMatcher);
-		this.editorExtensions.push(nodeCorrecter);
-		
+		this.settings = Object.assign({}, this.settings, await this.loadData());
+		this.previous_settings = Object.assign({}, this.settings);
+
+		if (this.settings.editor_preview_button) {
+			loadEditorButtons(this);
+			this.loadButtonsEvent = app.workspace.on("layout-change", () => loadEditorButtons(this));
+			this.registerEvent(this.loadButtonsEvent);
+		}
+
+		this.addSettingTab(new CommentatorSettings(this.app, this));
+		this.loadEditorExtensions();
 		this.registerEditorExtension(this.editorExtensions);
-		this.registerMarkdownPostProcessor((el, ctx) => postProcess(el, ctx, this.settings));
+
+		if (this.settings.post_processor) {
+			this.postProcessor = this.registerMarkdownPostProcessor((el, ctx) => postProcess(el, ctx, this.settings));
+			postProcessorUpdate();
+		}
 
 		this.registerEvent(change_suggestions);
 		// this.registerEvent(file_view_modes);
@@ -78,36 +70,69 @@ export default class CriticMarkupPlugin extends Plugin {
 		}
 	}
 	
-	
-	async updateEditorExtension() {
+	loadEditorExtensions() {
 		this.editorExtensions.length = 0;
-
 		this.editorExtensions.push(inlinePlugin(this.settings));
 
-		// TODO: Check if this should only apply to the active editor instance
-		for (const leaf of app.workspace.getLeavesOfType("markdown")) {
-			const view = leaf.view as MarkdownView;
+		if (this.settings.tag_completion)
+			this.editorExtensions.push(bracketMatcher);
+		if (this.settings.node_correcter)
+			this.editorExtensions.push(nodeCorrecter);
+	}
 
-			const scroll_height = view.previewMode.renderer.previewEl.scrollTop;
-			view.previewMode.renderer.clear();
-			view.previewMode.renderer.set(view.editor.cm.state.doc.toString());
-			// FIXME: Visual glitch, previewmode jumps to the top, looks jarring
-			setTimeout(() => view.previewMode.renderer.previewEl.scrollTop = scroll_height, 0);
+	async updateEditorExtension() {
+		if (Object.keys(this.changed_settings).some(key =>
+			["suggestion_status", "editor_styling", "live_preview", "editor_gutter", "tag_completion", "node_correcter"].includes(key))) {
+			this.loadEditorExtensions();
+			this.app.workspace.updateOptions();
 		}
 
-		this.app.workspace.updateOptions();
+		if (this.settings.post_processor)
+			postProcessorUpdate();
+
 	}
+
+
 
 	async onunload() {
-		for (const leaf of app.workspace.getLeavesOfType("markdown")) {
-			const view = leaf.view as MarkdownView;
-			if (!this.button_mapping.has(view)) continue;
-			const elements = this.button_mapping.get(view);
-			if (elements) {
-				elements.button.detach();
-				elements.status.detach();
+		if (this.settings.editor_preview_button)
+			removeEditorButtons(this);
+		MarkdownPreviewRenderer.unregisterPostProcessor(this.postProcessor);
+	}
+
+	async loadSettings() {
+		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+	}
+
+	async saveSettings() {
+		await this.saveData(this.settings);
+
+		this.changed_settings = objectDifference(this.settings, this.previous_settings);
+		this.previous_settings = Object.assign({}, this.settings);
+
+		if (this.changed_settings.editor_preview_button !== undefined) {
+			if (this.changed_settings.editor_preview_button) {
+				loadEditorButtons(this);
+				this.loadButtonsEvent = app.workspace.on("layout-change", () => loadEditorButtons(this));
+				this.registerEvent(this.loadButtonsEvent);
+			} else {
+				removeEditorButtons(this);
+				app.workspace.offref(this.loadButtonsEvent);
+				this.settings.suggestion_status = 0;
 			}
-			this.button_mapping.delete(view);
 		}
+
+		if (this.changed_settings.post_processor !== undefined) {
+			if (this.changed_settings.post_processor)
+				this.postProcessor = this.registerMarkdownPostProcessor((el, ctx) => postProcess(el, ctx, this.settings));
+			else
+				MarkdownPreviewRenderer.unregisterPostProcessor(this.postProcessor);
+			postProcessorUpdate();
+		}
+
+
+		this.updateEditorExtension();
 	}
 }
+
+
