@@ -31,7 +31,15 @@ function changeSelectionType(editor: Editor, view: MarkdownView, type: string) {
 	// CASE 0: Selection is empty
 	if (selection_left === selection_right) {
 		editor.replaceSelection(wrapBracket('', type));
-		editor.setCursor(editor.offsetToPos(selection_left + 3));
+		if (type === 'Substitution')
+			editor.cm.dispatch(editor.cm.state.update({
+				selection: EditorSelection.cursor(selection_left + 1),
+			}));
+		editor.cm.dispatch(editor.cm.state.update({
+			selection: EditorSelection.cursor(selection_right + 3),
+		}));
+
+
 		return;
 	}
 
