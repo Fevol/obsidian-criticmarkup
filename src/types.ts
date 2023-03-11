@@ -12,3 +12,10 @@ export interface PluginSettings {
 	post_processor: boolean;
 	live_preview: boolean;
 }
+
+export interface CriticMarkupNode {
+	from: number,
+	middle?: number,
+	to: number,
+	type: string
+}

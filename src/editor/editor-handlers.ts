@@ -1,7 +1,7 @@
 import { EditorView } from '@codemirror/view';
 import { ChangeSpec, EditorSelection, EditorState, Prec } from '@codemirror/state';
 
-import { criticmarkupLanguage } from './parser';
+import { treeParser } from './tree-parser';
 
 import { CM_Brackets } from '../util';
 import { moveEditorCursor, nodeAtCursor } from './editor-util';
@@ -34,7 +34,8 @@ export const nodeCorrecter = EditorState.transactionFilter.of(tr => {
 
 		if (current_selection.main.anchor === current_selection.main.head) {
 			const text = tr.startState.doc.toString();
-			const tree = criticmarkupLanguage.parser.parse(text);
+			// @ts-ignore (Tree is correct)
+			const tree = tr.startState.field(treeParser).tree;
 
 			// @ts-ignore (Tree is correct)
 			const start_node = nodeAtCursor(tree, previous_selection.main.head);

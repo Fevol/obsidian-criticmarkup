@@ -1,11 +1,15 @@
 import { Menu } from 'obsidian';
 
+import type { Tree } from '@lezer/common';
 import { RangeSet, RangeSetBuilder } from '@codemirror/state';
-import { EditorView, gutter, GutterMarker, PluginValue, ViewPlugin } from '@codemirror/view';
+import { EditorView, gutter, GutterMarker } from '@codemirror/view';
+
+import { treeParser } from './tree-parser';
 
 import { acceptAllSuggestions, rejectAllSuggestions } from './commands';
 
 import { nodesInSelection } from './editor-util';
+
 
 export class CriticMarkupMarker extends GutterMarker {
 	constructor(readonly from: number, readonly to: number, readonly type: string, readonly top?: boolean, readonly bottom?: boolean) {
@@ -21,11 +25,11 @@ export class CriticMarkupMarker extends GutterMarker {
 	}
 }
 
-export function buildMarkers(view: EditorView, extension: PluginValue): RangeSet<CriticMarkupMarker> {
+function buildMarkers(view: EditorView, tree: Tree): RangeSet<CriticMarkupMarker> {
 	const builder = new RangeSetBuilder<CriticMarkupMarker>();
 
 	// @ts-ignore (Get tree from extension)
-	let nodes: any[] = nodesInSelection(extension.tree);
+	let nodes: any[] = nodesInSelection(tree);
 	nodes = nodes.map(node => {
 		node.line_start = view.state.doc.lineAt(node.from).number;
 		node.line_end = view.state.doc.lineAt(node.to).number;
@@ -53,11 +57,11 @@ export function buildMarkers(view: EditorView, extension: PluginValue): RangeSet
 }
 
 
-export const gutterExtension = (view_plugin: ViewPlugin<PluginValue>) => gutter({
+export const gutterExtension = () => gutter({
 	class: 'criticmarkup-gutter',
 	markers(view: EditorView) {
-		// @ts-ignore (Markers exist on viewplugin)
-		return view.plugin(view_plugin)?.markers ?? RangeSet.empty;
+		// @ts-ignore (Tree gotten from state field)
+		return buildMarkers(view, view.state.field(treeParser).tree) ?? RangeSet.empty;
 	},
 	domEventHandlers: {
 		click: (view, line, event: Event) => {
@@ -67,7 +71,7 @@ export const gutterExtension = (view_plugin: ViewPlugin<PluginValue>) => gutter(
 					.setIcon('check')
 					.onClick(() => {
 						view.dispatch({
-							changes: acceptAllSuggestions(view.state.doc.toString(), line.from, line.to),
+							changes: acceptAllSuggestions(view.state, line.from, line.to),
 						});
 					});
 
@@ -77,7 +81,7 @@ export const gutterExtension = (view_plugin: ViewPlugin<PluginValue>) => gutter(
 					.setIcon('cross')
 					.onClick(() => {
 						view.dispatch({
-							changes: rejectAllSuggestions(view.state.doc.toString(), line.from, line.to),
+							changes: rejectAllSuggestions(view.state, line.from, line.to),
 						});
 					});
 

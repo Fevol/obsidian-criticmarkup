@@ -1,10 +1,10 @@
 import type { Editor, MarkdownView } from 'obsidian';
 
-import type { ChangeSpec } from '@codemirror/state';
-import { EditorSelection } from '@codemirror/state';
-import type { Tree } from '@lezer/common';
+import { treeParser } from './tree-parser';
 
-import { criticmarkupLanguage } from './parser';
+import type { ChangeSpec } from '@codemirror/state';
+import { EditorSelection, EditorState } from '@codemirror/state';
+import type { Tree } from '@lezer/common';
 
 import type { CommandI } from '../../types';
 
@@ -14,7 +14,7 @@ import { ltEP, minEP, maxEP, nodesInSelection, selectionToRange } from './editor
 
 function changeSelectionType(editor: Editor, view: MarkdownView, type: string) {
 	// @ts-ignore
-	const tree: Tree = criticmarkupLanguage.parser.parse(editor.getValue(), []);
+	const tree: Tree = editor.cm.state.field(treeParser).tree;
 
 	const selection = editor.listSelections()[0];
 	if (!selection) return;
@@ -27,6 +27,7 @@ function changeSelectionType(editor: Editor, view: MarkdownView, type: string) {
 
 	const nodes = nodesInSelection(tree, selection_left, selection_right);
 
+	// TODO: Replace editor.replaceSelection with CM equivalents
 
 	// CASE 0: Selection is empty
 	if (selection_left === selection_right) {
@@ -218,9 +219,11 @@ function changeSelectionType(editor: Editor, view: MarkdownView, type: string) {
 }
 
 
-export function acceptAllSuggestions(text: string, from?: number, to?: number): ChangeSpec[] {
+export function acceptAllSuggestions(state: EditorState, from?: number, to?: number): ChangeSpec[] {
 	// @ts-ignore
-	const tree: Tree = criticmarkupLanguage.parser.parse(text, []);
+	const tree: Tree = state.field(treeParser).tree;
+	const text = state.doc.toString();
+
 	const nodes = nodesInSelection(tree, from, to);
 	const changes: ChangeSpec[] = [];
 	for (const node of nodes) {
@@ -235,9 +238,11 @@ export function acceptAllSuggestions(text: string, from?: number, to?: number): 
 }
 
 
-export function rejectAllSuggestions(text: string, from?: number, to?: number): ChangeSpec[] {
+export function rejectAllSuggestions(state: EditorState, from?: number, to?: number): ChangeSpec[] {
 	// @ts-ignore
-	const tree: Tree = criticmarkupLanguage.parser.parse(text, []);
+	const tree: Tree = state.field(treeParser).tree;
+	const text = state.doc.toString();
+
 	const nodes = nodesInSelection(tree, from, to).reverse();
 	const changes: ChangeSpec[] = [];
 	for (const node of nodes) {
@@ -270,9 +275,8 @@ export const commands: Array<CommandI> = [...suggestion_commands,
 		icon: 'check-check',
 		editor_context: true,
 		callback: async (editor: Editor, view: MarkdownView) => {
-			// @ts-ignore (editor.cm.dispatch exists)
 			editor.cm.dispatch(editor.cm.state.update({
-				changes: acceptAllSuggestions(editor.getValue()),
+				changes: acceptAllSuggestions(editor.cm.state),
 			}));
 		},
 	}, {
@@ -281,9 +285,8 @@ export const commands: Array<CommandI> = [...suggestion_commands,
 		icon: 'cross',
 		editor_context: true,
 		callback: async (editor: Editor, view: MarkdownView) => {
-			// @ts-ignore (editor.cm.dispatch exists)
 			editor.cm.dispatch(editor.cm.state.update({
-				changes: rejectAllSuggestions(editor.getValue()),
+				changes: rejectAllSuggestions(editor.cm.state),
 			}));
 		},
 	},
@@ -294,9 +297,8 @@ export const commands: Array<CommandI> = [...suggestion_commands,
 		editor_context: true,
 		callback: async (editor: Editor, view: MarkdownView) => {
 			const [from, to] = selectionToRange(editor);
-			// @ts-ignore (editor.cm.dispatch exists)
 			editor.cm.dispatch(editor.cm.state.update({
-				changes: acceptAllSuggestions(editor.getValue(), from, to),
+				changes: acceptAllSuggestions(editor.cm.state, from, to),
 			}));
 		},
 	},
@@ -307,9 +309,8 @@ export const commands: Array<CommandI> = [...suggestion_commands,
 		editor_context: true,
 		callback: async (editor: Editor, view: MarkdownView) => {
 			const [from, to] = selectionToRange(editor);
-			// @ts-ignore (editor.cm.dispatch exists)
 			editor.cm.dispatch(editor.cm.state.update({
-				changes: rejectAllSuggestions(editor.getValue(), from, to),
+				changes: rejectAllSuggestions(editor.cm.state, from, to),
 			}));
 		},
 	},

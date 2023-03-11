@@ -1,37 +1,23 @@
-import type { Tree } from '@lezer/common';
-import { TreeFragment } from '@lezer/common';
+import { treeParser } from './tree-parser';
 
-import { RangeSet } from '@codemirror/state';
+import type { Tree } from '@lezer/common';
 import type { Extension, Range } from '@codemirror/state';
 import { Decoration, DecorationSet, EditorView, PluginValue, ViewPlugin, ViewUpdate } from '@codemirror/view';
-
-import { buildMarkers, CriticMarkupMarker, gutterExtension } from './criticmarkup-gutter';
-
-import { criticmarkupLanguage } from './parser';
 
 import type { PluginSettings } from '../types';
 import { selectionRangeOverlap } from './editor-util';
 
-export function inlinePlugin(settings: PluginSettings): Extension[] {
-	const view_plugin = ViewPlugin.fromClass(
+export function livePreview (settings: PluginSettings): Extension {
+	return ViewPlugin.fromClass(
 		class CriticMarkupViewPlugin implements PluginValue {
 			settings: PluginSettings;
-			markers: RangeSet<CriticMarkupMarker>;
 			decorations: DecorationSet;
-			tree: Tree;
-			fragments: TreeFragment[] = [];
 
 			constructor(view: EditorView) {
-				this.settings = settings;
-
-				// @ts-ignore (Conflicting Tree definitions of node modules in src/editor/parser and ./)
-				this.tree = criticmarkupLanguage.parser.parse(view.state.doc.toString());
 				// @ts-ignore
-				this.fragments = TreeFragment.addTree(this.tree);
-
-				this.decorations = (this.settings.live_preview ? this.buildDecorations(view) : null) ?? Decoration.none;
-
-				this.markers = (this.settings.editor_gutter ? buildMarkers(view, this) : RangeSet.empty);
+				const tree = view.state.field(treeParser).tree;
+				this.settings = settings;
+				this.decorations = (this.settings.live_preview ? this.buildDecorations(tree, view) : null) ?? Decoration.none;
 			}
 
 			removeBrackets(widgets: Range<Decoration>[], from: number, to: number) {
@@ -48,11 +34,11 @@ export function inlinePlugin(settings: PluginSettings): Extension[] {
 				);
 			}
 
-			buildDecorations(view: EditorView): DecorationSet {
+			buildDecorations(tree: Tree, view: EditorView): DecorationSet {
 				const widgets: Range<Decoration>[] = [];
 				const selection = view.state.selection;
 
-				const cursor = this.tree.cursor();
+				const cursor = tree.cursor();
 				while (cursor.next()) {
 					const start = cursor.from;
 					const end = cursor.to;
@@ -218,45 +204,23 @@ export function inlinePlugin(settings: PluginSettings): Extension[] {
 				return Decoration.set(widgets, true);
 			}
 
-			update(update: ViewUpdate) {
+			async update(update: ViewUpdate) {
+				// @ts-ignore (Returns Tree object)
+				const tree = update.state.field(treeParser).tree;
+
 				// @ts-ignore
-				const tree = criticmarkupLanguage.parser.parse(update.state.doc.toString(), this.fragments);
 				if (tree.length < update.view.viewport.to || update.view.composing)
 					this.decorations = this.decorations.map(update.changes);
 					// TODO: Figure out how to implement the 'hasEffect' helper function, or determine if it is even necessary
-				// @ts-ignore
-				else if (tree != this.tree ||
-					update.viewportChanged || update.selectionSet /*||
-			hasEffect(update.transactions, rerenderEffect) ||
-			hasEffect(update.transactions, addMarks) || hasEffect(update.transactions, filterMarks)*/) {
+				/* hasEffect(update.transactions, rerenderEffect) || hasEffect(update.transactions, addMarks) ||
+				   hasEffect(update.transactions, filterMarks)*/
 
-					// @ts-ignore
-					this.tree = tree;
-
-					// @ts-ignore
-					this.fragments = TreeFragment.addTree(tree, this.fragments);
-
-					// If tree has any CriticMarkup nodes, build decorations
-					if (this.tree.topNode.firstChild) {
-						if (this.settings.live_preview)
-							this.decorations = this.buildDecorations(update.view);
-						if (this.settings.editor_gutter)
-							this.markers = buildMarkers(update.view, this);
-					} else {
-						this.decorations = Decoration.none;
-						this.markers = RangeSet.empty;
-					}
-				}
+				else if (update.viewportChanged || update.selectionSet)
+					this.decorations = tree.topNode.firstChild ? this.buildDecorations(tree, update.view) : Decoration.none;
 			}
 		},
 		{
 			decorations: (v) => v.decorations,
 		},
 	);
-
-	if (settings.editor_gutter) {
-		const gutter_extension = gutterExtension(view_plugin);
-		return [view_plugin, gutter_extension];
-	}
-	return [view_plugin];
 }

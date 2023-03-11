@@ -5,11 +5,16 @@ import type { Extension } from '@codemirror/state';
 import { commands } from './editor/commands';
 import { change_suggestions } from './editor/context-menu-commands';
 
-import { bracketMatcher, nodeCorrecter } from './editor/editor-handlers';
-import { loadEditorButtons, removeEditorButtons } from './editor/editor-preview-buttons';
+import { treeParser } from './editor/tree-parser';
 
-import { inlinePlugin } from './editor/live-preview';
+import { livePreview } from './editor/live-preview';
 import { postProcess, postProcessorUpdate } from './editor/post-processor';
+import { nodeCorrecter } from './editor/editor-handlers';
+import { loadEditorButtons, removeEditorButtons } from './editor/editor-preview-buttons';
+import { bracketMatcher } from './editor/editor-handlers';
+// import { suggestionMode } from './editor/suggestion-mode';
+import { gutterExtension } from './editor/criticmarkup-gutter';
+
 
 import { CommentatorSettings } from './ui/settings';
 
@@ -35,11 +40,19 @@ export default class CommentatorPlugin extends Plugin {
 		status: HTMLElement,
 	}>();
 
-
 	loadEditorExtensions() {
 		this.editorExtensions.length = 0;
-		if (this.settings.live_preview || this.settings.editor_gutter)
-			this.editorExtensions.push(inlinePlugin(this.settings));
+
+		this.editorExtensions.push(treeParser);
+
+		if (this.settings.live_preview)
+			this.editorExtensions.push(livePreview(this.settings));
+
+		if (this.settings.editor_gutter)
+			this.editorExtensions.push(gutterExtension());
+
+		// if (this.settings.suggest_mode)
+		// 	this.editorExtensions.push(suggestionMode);
 
 		if (this.settings.tag_completion)
 			this.editorExtensions.push(bracketMatcher);
@@ -49,7 +62,7 @@ export default class CommentatorPlugin extends Plugin {
 
 	async updateEditorExtension() {
 		if (Object.keys(this.changed_settings).some(key =>
-			['suggestion_status', 'editor_styling', 'live_preview', 'editor_gutter', 'tag_completion', 'node_correcter'].includes(key))) {
+			['suggestion_status', 'editor_styling', 'live_preview', 'editor_gutter', 'tag_completion', 'node_correcter', 'suggest_mode'].includes(key))) {
 			this.loadEditorExtensions();
 			this.app.workspace.updateOptions();
 		}

@@ -2,6 +2,7 @@ import type { Editor, EditorPosition } from 'obsidian';
 
 import type { Tree } from '@lezer/common';
 import { EditorSelection } from '@codemirror/state';
+import type { CriticMarkupNode } from '../types';
 
 
 export function eqEP(a: EditorPosition, b: EditorPosition): boolean {
@@ -63,7 +64,7 @@ export function nodeAtCursor(tree: Tree, pos: number) {
 
 
 export function nodesInSelection(tree: Tree, start?: number, end?: number) {
-	const nodes: { from: number, middle?: number, to: number, type: string }[] = [];
+	const nodes: CriticMarkupNode[] = [];
 
 	tree.iterate({
 		from: start,
@@ -93,3 +94,24 @@ export function nodesInSelection(tree: Tree, start?: number, end?: number) {
 	});
 	return nodes;
 }
+
+export function nodeAtCursorLocation(nodes: CriticMarkupNode[], pos: number) {
+	return nodes.find(node => node.from <= pos && node.to >= pos);
+}
+
+export function adjacentNode(nodes: CriticMarkupNode[], pos: number, left: boolean) {
+	if (left)
+		return nodes.reverse().find(node => node.to <= pos);
+	return nodes.find(node => node.from >= pos);
+}
+
+export function siblingNode(nodes: CriticMarkupNode[], node: CriticMarkupNode, left: boolean) {
+	const index = nodes.indexOf(node);
+	if (index === -1)
+		return undefined;
+	if (left)
+		return nodes[index - 1];
+	return nodes[index + 1];
+}
+
+
