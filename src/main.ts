@@ -88,7 +88,7 @@ export default class CommentatorPlugin extends Plugin {
 		this.registerEditorExtension(this.editorExtensions);
 
 		if (this.settings.post_processor) {
-			this.postProcessor = this.registerMarkdownPostProcessor((el, ctx) => postProcess(el, ctx, this.settings));
+			this.postProcessor = this.registerMarkdownPostProcessor((el, ctx) => postProcess(el, ctx, this.settings), -99999);
 			postProcessorUpdate();
 		}
 
@@ -135,10 +135,9 @@ export default class CommentatorPlugin extends Plugin {
 
 		if (this.changed_settings.post_processor !== undefined) {
 			if (this.changed_settings.post_processor)
-				this.postProcessor = this.registerMarkdownPostProcessor((el, ctx) => postProcess(el, ctx, this.settings));
+				this.postProcessor = this.registerMarkdownPostProcessor((el, ctx) => postProcess(el, ctx, this.settings), -99999);
 			else
 				MarkdownPreviewRenderer.unregisterPostProcessor(this.postProcessor);
-			postProcessorUpdate();
 		}
 
 
