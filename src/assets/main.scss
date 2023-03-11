@@ -1,9 +1,17 @@
-body {
+.theme-light {
 	--addition-color: var(--color-green);
 	--deletion-color: var(--color-red);
 	--comment-color: #bacff4;
 	--comment-border-color: #679af4;
-	--highlight-color: #fee9ae;
+	--highlight-color: var(--text-highlight-bg);
+}
+
+.theme-dark {
+	--addition-color: var(--color-green);
+	--deletion-color: var(--color-red);
+	--comment-color: #445f8f;
+	--comment-border-color: #8c95a5;
+	--highlight-color: var(--text-highlight-bg);
 }
 
 
@@ -16,7 +24,11 @@ body {
 
 .criticmarkup-inline { }
 
+.criticmarkup-accepted {}
 
+.criticmarkup-rejected {
+	display: none;
+}
 
 
 // ================================================
@@ -40,13 +52,6 @@ body {
 	background-color: var(--highlight-color);
 }
 
-.criticmarkup-hidden {
-	display: none;
-}
-
-
-
-
 
 // ================================================
 //            Editor UIX Elements Styling
@@ -65,8 +70,17 @@ body {
 // 	           Editor Gutter Styling
 // ================================================
 
-.cm-gutters:has(>.criticmarkup-gutter:empty) {
+.cm-gutters.cm-gutters:has(>.criticmarkup-gutter:not(.criticmarkup-gutter-show-empty):empty) {
 	padding-inline-end: 0;
+}
+
+.cm-gutters.cm-gutters:has(>.criticmarkup-gutter) {
+	// How far away the gutter should be removed from the text
+	padding-inline-end: 1em;
+}
+
+.cm-gutters:has(>.criticmarkup-gutter-show-empty) {
+	min-width: 18px;
 }
 
 .criticmarkup-gutter-addition {
@@ -103,6 +117,10 @@ body {
 
 
 span.cm-strikethrough:has(.criticmarkup-editing) {
+	text-decoration: unset;
+}
+
+span.cm-strikethrough:has(.criticmarkup-accepted) {
 	text-decoration: unset;
 }
 

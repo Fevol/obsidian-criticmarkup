@@ -53,16 +53,26 @@ export function livePreview (settings: PluginSettings): Extension {
 					// cursor.prev();
 
 					if (this.settings.suggestion_status && !(name === 'Comment' || name === 'Highlight')) {
+						// TODO: Add node type to class list for further customization
+						// MODE: Accept all suggestions
 						if (this.settings.suggestion_status === 1) {
+							this.removeBrackets(widgets, start, end);
 							if (name === 'Addition') {
-								this.removeBrackets(widgets, start, end);
+								if (start + 3 !== end - 3)
+									widgets.push(
+										Decoration.mark({
+											class: 'criticmarkup-accepted',
+											attributes: { 'data-contents': 'string' },
+										}).range(start + 3, end - 3),
+									);
 							} else if (name === 'Deletion') {
-								widgets.push(
-									Decoration.mark({
-										class: 'criticmarkup-hidden',
-										attributes: { 'data-contents': 'string' },
-									}).range(start, end),
-								);
+								if (start + 3 !== end - 3)
+									widgets.push(
+										Decoration.mark({
+											class: 'criticmarkup-rejected',
+											attributes: { 'data-contents': 'string' },
+										}).range(start + 3, end - 3),
+									);
 							} else {
 								cursor.firstChild();
 								if (cursor.name !== 'MSub')
@@ -70,27 +80,40 @@ export function livePreview (settings: PluginSettings): Extension {
 
 								widgets.push(
 									Decoration.mark({
-										class: 'criticmarkup-hidden',
+										class: 'criticmarkup-rejected',
 										attributes: { 'data-contents': 'string' },
-									}).range(start, cursor.to),
+									}).range(start + 3, cursor.to),
 								);
 
-								widgets.push(
-									Decoration.replace({
-										attributes: { 'data-contents': 'string' },
-									}).range(end - 3, end),
-								);
+								if (cursor.to !== end - 3)
+									widgets.push(
+										Decoration.mark({
+											class: 'criticmarkup-accepted',
+											attributes: { 'data-contents': 'string' },
+										}).range(cursor.to, end - 3),
+									);
 							}
-						} else {
+						}
+
+						// MODE: Reject all suggestions
+						else {
+							this.removeBrackets(widgets, start, end);
 							if (name === 'Addition') {
-								widgets.push(
-									Decoration.mark({
-										attributes: { 'data-contents': 'string' },
-										class: 'criticmarkup-hidden',
-									}).range(start, end),
-								);
+								if (start + 3 !== end - 3)
+									widgets.push(
+										Decoration.mark({
+											class: 'criticmarkup-rejected',
+											attributes: { 'data-contents': 'string' },
+										}).range(start + 3, end - 3),
+									);
 							} else if (name === 'Deletion') {
-								this.removeBrackets(widgets, start, end);
+								if (start + 3 !== end - 3)
+									widgets.push(
+										Decoration.mark({
+											attributes: { 'data-contents': 'string' },
+											class: 'criticmarkup-accepted',
+										}).range(start + 3, end - 3),
+									);
 							} else {
 								cursor.firstChild();
 								if (cursor.name !== 'MSub')
@@ -99,15 +122,17 @@ export function livePreview (settings: PluginSettings): Extension {
 								widgets.push(
 									Decoration.mark({
 										attributes: { 'data-contents': 'string' },
-										class: 'criticmarkup-hidden',
+										class: 'criticmarkup-rejected',
 									}).range(cursor.from, end),
 								);
 
-								widgets.push(
-									Decoration.replace({
-										attributes: { 'data-contents': 'string' },
-									}).range(start, start + 3),
-								);
+								if (start + 3 !== cursor.from)
+									widgets.push(
+										Decoration.mark({
+											attributes: { 'data-contents': 'string' },
+											class: 'criticmarkup-accepted',
+										}).range(start + 3, cursor.from),
+									);
 							}
 						}
 					} else {

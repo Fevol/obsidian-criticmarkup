@@ -5,7 +5,9 @@ export const DEFAULT_SETTINGS: PluginSettings = {
 	suggestion_status: 0,
 	editor_preview_button: true,
 	editor_gutter: true,
+
 	editor_styling: false,
+	hide_empty_gutter: false,
 
 	tag_completion: true,
 	node_correcter: true,

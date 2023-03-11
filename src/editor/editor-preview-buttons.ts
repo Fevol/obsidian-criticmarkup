@@ -13,7 +13,9 @@ export function loadEditorButtons(plugin: CommentatorPlugin) {
 		const view = leaf.view as MarkdownView;
 		if (plugin.button_mapping.has(view)) continue;
 
-		const buttonElement = view.addAction('message-square', 'View all suggestions', () => {
+		const { icon, tooltip, label } = status_mapping[plugin.settings.suggestion_status];
+
+		const buttonElement = view.addAction(icon, tooltip, () => {
 			plugin.settings.suggestion_status = (plugin.settings.suggestion_status + 1) % status_mapping.length;
 			const { icon, tooltip, label } = status_mapping[plugin.settings.suggestion_status];
 			setIcon(buttonElement, icon);
@@ -23,7 +25,7 @@ export function loadEditorButtons(plugin: CommentatorPlugin) {
 		});
 
 		const statusElement = buttonElement.createSpan({
-			text: status_mapping[plugin.settings.suggestion_status].label,
+			text: label,
 			cls: 'criticmarkup-suggestion-status',
 		});
 

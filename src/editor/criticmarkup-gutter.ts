@@ -8,6 +8,7 @@ import { treeParser } from './tree-parser';
 
 import { acceptAllSuggestions, rejectAllSuggestions } from './commands';
 
+import type { PluginSettings } from '../types';
 import { nodesInSelection } from './editor-util';
 
 
@@ -57,8 +58,8 @@ function buildMarkers(view: EditorView, tree: Tree): RangeSet<CriticMarkupMarker
 }
 
 
-export const gutterExtension = () => gutter({
-	class: 'criticmarkup-gutter',
+export const gutterExtension = (settings: PluginSettings) => gutter({
+	class: 'criticmarkup-gutter' + (!settings.hide_empty_gutter ? ' criticmarkup-gutter-show-empty' : ''),
 	markers(view: EditorView) {
 		// @ts-ignore (Tree gotten from state field)
 		return buildMarkers(view, view.state.field(treeParser).tree) ?? RangeSet.empty;

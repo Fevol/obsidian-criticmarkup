@@ -49,7 +49,7 @@ export default class CommentatorPlugin extends Plugin {
 			this.editorExtensions.push(livePreview(this.settings));
 
 		if (this.settings.editor_gutter)
-			this.editorExtensions.push(gutterExtension());
+			this.editorExtensions.push(gutterExtension(this.settings));
 
 		// if (this.settings.suggest_mode)
 		// 	this.editorExtensions.push(suggestionMode);
@@ -62,7 +62,7 @@ export default class CommentatorPlugin extends Plugin {
 
 	async updateEditorExtension() {
 		if (Object.keys(this.changed_settings).some(key =>
-			['suggestion_status', 'editor_styling', 'live_preview', 'editor_gutter', 'tag_completion', 'node_correcter', 'suggest_mode'].includes(key))) {
+			['suggestion_status', 'editor_styling', 'live_preview', 'editor_gutter', 'tag_completion', 'node_correcter', 'suggest_mode', 'hide_empty_gutter'].includes(key))) {
 			this.loadEditorExtensions();
 			this.app.workspace.updateOptions();
 		}

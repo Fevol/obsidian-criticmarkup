@@ -35,6 +35,16 @@ export class CommentatorSettings extends PluginSettingTab {
 
 
         new Setting(containerEl)
+            .setName("Hide Gutter when empty")
+            .setDesc("Completely hide the gutter when there are no suggestions")
+            .addToggle(toggle => toggle.setValue(this.plugin.settings.hide_empty_gutter)
+                .onChange(async (value) => {
+                    this.plugin.settings.hide_empty_gutter = value;
+                    await this.plugin.saveSettings();
+                }
+            ));
+
+        new Setting(containerEl)
             .setName("Automatic tag completion")
             .setDesc("Automatically complete CriticMarkup tags")
             .addToggle(toggle => toggle.setValue(this.plugin.settings.tag_completion)
@@ -76,7 +86,7 @@ export class CommentatorSettings extends PluginSettingTab {
 
         new Setting(containerEl)
             .setName("Reading view renderer")
-            .setDesc("Toggle rendering of CriticMarkup tags in view mode.")
+            .setDesc("Toggle rendering of CriticMarkup tags in reading view mode.")
             .addToggle(toggle => toggle.setValue(this.plugin.settings.post_processor)
                 .onChange(async (value) => {
                         this.plugin.settings.post_processor = value;
