@@ -15,6 +15,15 @@ export class CommentatorSettings extends PluginSettingTab {
         containerEl.empty();
 
         new Setting(containerEl)
+            .setName("Enable Suggestion Mode")
+            .addToggle(toggle => toggle.setValue(this.plugin.settings.suggest_mode)
+                .onChange(async (value) => {
+                    this.plugin.settings.suggest_mode = value;
+                    await this.plugin.saveSettings();
+                }
+            ));
+
+        new Setting(containerEl)
             .setName("Show style when editing")
             .setDesc("Keep styling of CriticMarkup when editing the markup")
             .addToggle(toggle => toggle.setValue(this.plugin.settings.editor_styling)

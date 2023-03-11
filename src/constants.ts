@@ -10,6 +10,8 @@ export const DEFAULT_SETTINGS: PluginSettings = {
 	tag_completion: true,
 	node_correcter: true,
 
+	suggest_mode: false,
+
 	post_processor: true,
 	live_preview: true,
 };

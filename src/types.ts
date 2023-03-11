@@ -8,6 +8,7 @@ export interface PluginSettings {
 	tag_completion: boolean;
 	node_correcter: boolean;
 
+	suggest_mode: boolean;
 
 	post_processor: boolean;
 	live_preview: boolean;
