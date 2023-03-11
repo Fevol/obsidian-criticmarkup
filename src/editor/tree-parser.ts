@@ -17,7 +17,7 @@ export const treeParser = StateField.define({
 
 	// @ts-ignore (Fragments are readonly)
 	update(value, tr) {
-		if (tr.changes.length === 0) return value;
+		if (!tr.docChanged) return value;
 
 		const changed_ranges: ChangedRange[] = [];
 		tr.changes.iterChangedRanges((from, to, fromB, toB) =>
@@ -31,11 +31,9 @@ export const treeParser = StateField.define({
 		// @ts-ignore
 		fragments = TreeFragment.addTree(tree, fragments);
 
-
 		return {
 			tree: tree,
 			fragments: fragments,
 		}
 	},
-
 });
