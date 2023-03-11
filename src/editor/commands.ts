@@ -8,7 +8,7 @@ import type { Tree } from '@lezer/common';
 
 import type { CommandI } from '../../types';
 
-import { addBracket, unwrapBracket, wrapBracket } from '../util';
+import { addBracket, unwrapBracket, unwrapBracket2, wrapBracket } from '../util';
 import { ltEP, minEP, maxEP, nodesInSelection, selectionToRange } from './editor-util';
 
 
@@ -232,7 +232,7 @@ export function acceptAllSuggestions(state: EditorState, from?: number, to?: num
 		else if (node.type === 'Deletion')
 			changes.push({ from: node.from, to: node.to, insert: '' });
 		else if (node.type === 'Substitution')
-			changes.push({ from: node.from, to: node.to, insert: unwrapBracket(text.slice(node.from, node.to)) });
+			changes.push({ from: node.from, to: node.to, insert: unwrapBracket2(text.slice(node.from, node.to), node.type)[1] });
 	}
 	return changes;
 }
@@ -251,7 +251,7 @@ export function rejectAllSuggestions(state: EditorState, from?: number, to?: num
 		else if (node.type === 'Deletion')
 			changes.push({ from: node.from, to: node.to, insert: unwrapBracket(text.slice(node.from, node.to)) });
 		else if (node.type === 'Substitution')
-			changes.push({ from: node.from, to: node.to, insert: '' });
+			changes.push({ from: node.from, to: node.to, insert: unwrapBracket2(text.slice(node.from, node.to), node.type)[0] });
 	}
 	return changes;
 }

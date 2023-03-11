@@ -37,6 +37,12 @@ export function unwrapBracket(content: string) {
 	return content.slice(3, -3);
 }
 
+export function unwrapBracket2(content: string, type: string) {
+	if (type === 'Substitution')
+		return content.slice(3, -3).split('~>');
+	return content.slice(3, -3);
+}
+
 export function wrapBracket(content: string, type: string) {
 	return CM_All_Brackets[type][0] + content + CM_All_Brackets[type].slice(1).join('');
 }

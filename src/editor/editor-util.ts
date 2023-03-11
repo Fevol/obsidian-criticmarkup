@@ -75,11 +75,11 @@ export function nodesInSelection(tree: Tree, start?: number, end?: number) {
 			if (node.type.name === 'CriticMarkup' || node.type.name === 'MSub')
 				return;
 			if (node.type.name === 'Substitution') {
-				if (node.node.nextSibling?.type.name !== 'MSub')
+				if (node.node.firstChild?.type.name !== 'MSub')
 					return;
 				nodes.push({
 					from: node.from,
-					middle: node.node.nextSibling.from,
+					middle: node.node.firstChild.from,
 					to: node.to,
 					type: node.type.name,
 				});
