@@ -9,11 +9,15 @@ import { treeParser } from './editor/tree-parser';
 
 import { livePreview } from './editor/live-preview';
 import { postProcess, postProcessorUpdate } from './editor/post-processor';
-import { nodeCorrecter } from './editor/editor-handlers';
-import { loadEditorButtons, removeEditorButtons } from './editor/editor-preview-buttons';
-import { bracketMatcher } from './editor/editor-handlers';
-// import { suggestionMode } from './editor/suggestion-mode';
+
+import { keybindExtensions } from './editor/keybind-extensions';
+import { suggestionMode } from './editor/suggestion-mode';
+import { nodeCorrecter, bracketMatcher } from './editor/editor-handlers';
+
 import { gutterExtension } from './editor/criticmarkup-gutter';
+
+import { loadPreviewButtons, removePreviewButtons } from './editor/editor-preview-buttons';
+import { loadSuggestButtons, removeSuggestButtons, updateSuggestButtons } from './editor/editor-suggestion-buttons';
 
 
 import { CommentatorSettings } from './ui/settings';
@@ -32,17 +36,15 @@ export default class CommentatorPlugin extends Plugin {
 
 	changed_settings: Partial<PluginSettings> = {};
 
-	loadButtonsEvent!: EventRef;
-	postProcessor!: MarkdownPostProcessor;
+	loadPreviewButtonsEvent!: EventRef;
+	loadSuggestButtonsEvent!: EventRef;
 
-	button_mapping = new WeakMap<MarkdownView, {
-		button: HTMLElement,
-		status: HTMLElement,
-	}>();
+	postProcessor!: MarkdownPostProcessor;
 
 	loadEditorExtensions() {
 		this.editorExtensions.length = 0;
 
+		this.editorExtensions.push(keybindExtensions);
 		this.editorExtensions.push(treeParser);
 
 		if (this.settings.live_preview)
@@ -51,8 +53,8 @@ export default class CommentatorPlugin extends Plugin {
 		if (this.settings.editor_gutter)
 			this.editorExtensions.push(gutterExtension(this.settings));
 
-		// if (this.settings.suggest_mode)
-		// 	this.editorExtensions.push(suggestionMode);
+		if (this.settings.suggest_mode)
+			this.editorExtensions.push(suggestionMode);
 
 		if (this.settings.tag_completion)
 			this.editorExtensions.push(bracketMatcher);
@@ -78,10 +80,17 @@ export default class CommentatorPlugin extends Plugin {
 		this.previous_settings = Object.assign({}, this.settings);
 
 		if (this.settings.editor_preview_button) {
-			loadEditorButtons(this);
-			this.loadButtonsEvent = app.workspace.on('layout-change', () => loadEditorButtons(this));
-			this.registerEvent(this.loadButtonsEvent);
+			loadPreviewButtons(this);
+			this.loadPreviewButtonsEvent = app.workspace.on('layout-change', () => loadPreviewButtons(this));
+			this.registerEvent(this.loadPreviewButtonsEvent);
 		}
+
+		if (this.settings.editor_suggest_button) {
+			loadSuggestButtons(this);
+			this.loadSuggestButtonsEvent = app.workspace.on('layout-change', () => loadSuggestButtons(this));
+			this.registerEvent(this.loadSuggestButtonsEvent);
+		}
+
 
 		this.addSettingTab(new CommentatorSettings(this.app, this));
 		this.loadEditorExtensions();
@@ -95,6 +104,17 @@ export default class CommentatorPlugin extends Plugin {
 		this.registerEvent(change_suggestions);
 		// this.registerEvent(file_view_modes);
 
+		commands.push({
+			id: 'commentator-suggest-mode',
+			name: 'Toggle suggestion mode',
+			icon: 'comment',
+			plugin_context: true,
+			callback: async () => {
+				this.settings.suggest_mode = !this.settings.suggest_mode;
+				await this.saveSettings();
+			}
+		})
+
 		for (const command of commands) {
 			if (Platform.isMobile || command.editor_context) {
 				command.editorCallback = command.callback;
@@ -107,7 +127,10 @@ export default class CommentatorPlugin extends Plugin {
 
 	async onunload() {
 		if (this.settings.editor_preview_button)
-			removeEditorButtons(this);
+			removePreviewButtons();
+		if (this.settings.editor_suggest_button)
+			removeSuggestButtons();
+
 		MarkdownPreviewRenderer.unregisterPostProcessor(this.postProcessor);
 	}
 
@@ -121,15 +144,30 @@ export default class CommentatorPlugin extends Plugin {
 		this.changed_settings = objectDifference(this.settings, this.previous_settings);
 		this.previous_settings = Object.assign({}, this.settings);
 
+		if (this.changed_settings.suggest_mode !== undefined) {
+			updateSuggestButtons(this);
+		}
+
 		if (this.changed_settings.editor_preview_button !== undefined) {
 			if (this.changed_settings.editor_preview_button) {
-				loadEditorButtons(this);
-				this.loadButtonsEvent = app.workspace.on('layout-change', () => loadEditorButtons(this));
-				this.registerEvent(this.loadButtonsEvent);
+				loadPreviewButtons(this);
+				this.loadPreviewButtonsEvent = app.workspace.on('layout-change', () => loadPreviewButtons(this));
+				this.registerEvent(this.loadPreviewButtonsEvent);
 			} else {
-				removeEditorButtons(this);
-				app.workspace.offref(this.loadButtonsEvent);
+				removePreviewButtons();
+				app.workspace.offref(this.loadPreviewButtonsEvent);
 				this.settings.suggestion_status = 0;
+			}
+		}
+
+		if (this.changed_settings.editor_suggest_button !== undefined) {
+			if (this.changed_settings.editor_suggest_button) {
+				loadSuggestButtons(this);
+				this.loadSuggestButtonsEvent = app.workspace.on('layout-change', () => loadSuggestButtons(this));
+				this.registerEvent(this.loadSuggestButtonsEvent);
+			} else {
+				removeSuggestButtons();
+				app.workspace.offref(this.loadSuggestButtonsEvent);
 			}
 		}
 

@@ -313,5 +313,5 @@ export const commands: Array<CommandI> = [...suggestion_commands,
 				changes: rejectAllSuggestions(editor.cm.state, from, to),
 			}));
 		},
-	},
+	}
 ];

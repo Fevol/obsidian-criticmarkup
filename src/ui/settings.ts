@@ -15,6 +15,11 @@ export class CommentatorSettings extends PluginSettingTab {
         containerEl.empty();
 
         new Setting(containerEl)
+            .setHeading()
+            .setName("Suggestion Mode Settings")
+
+
+        new Setting(containerEl)
             .setName("Enable Suggestion Mode")
             .addToggle(toggle => toggle.setValue(this.plugin.settings.suggest_mode)
                 .onChange(async (value) => {
@@ -22,6 +27,73 @@ export class CommentatorSettings extends PluginSettingTab {
                     await this.plugin.saveSettings();
                 }
             ));
+
+
+        new Setting(containerEl)
+            .setName("Editor suggestion mode button")
+            .setDesc("Add button to editor toolbar to toggle suggestion mode")
+            .addToggle(toggle => toggle.setValue(this.plugin.settings.editor_suggest_button)
+                .onChange(async (value) => {
+                    this.plugin.settings.editor_suggest_button = value;
+                    await this.plugin.saveSettings();
+                }
+            ));
+
+
+
+
+
+        new Setting(containerEl)
+            .setHeading()
+            .setName("Editor Settings")
+
+
+        new Setting(containerEl)
+            .setName("Editor gutter")
+            .setDesc("Show suggestion status in editor gutter")
+            .addToggle(toggle => toggle.setValue(this.plugin.settings.editor_gutter)
+                .onChange(async (value) => {
+                        this.plugin.settings.editor_gutter = value;
+                        await this.plugin.saveSettings();
+                    }
+                ));
+
+        new Setting(containerEl)
+            .setName("Automatic tag completion")
+            .setDesc("Automatically complete CriticMarkup tags")
+            .addToggle(toggle => toggle.setValue(this.plugin.settings.tag_completion)
+                .onChange(async (value) => {
+                        this.plugin.settings.tag_completion = value;
+                        await this.plugin.saveSettings();
+                    }
+                ));
+
+        new Setting(containerEl)
+            .setName("Automatic tag correction")
+            .setDesc("Automatically correct invalid CriticMarkup tags")
+            .addToggle(toggle => toggle.setValue(this.plugin.settings.node_correcter)
+                .onChange(async (value) => {
+                        this.plugin.settings.node_correcter = value;
+                        await this.plugin.saveSettings();
+                    }
+                ));
+
+        new Setting(containerEl)
+            .setName("Editor preview button")
+            .setDesc("Add suggestion preview button to editor toolbar")
+            .addToggle(toggle => toggle.setValue(this.plugin.settings.editor_preview_button)
+                .onChange(async (value) => {
+                        this.plugin.settings.editor_preview_button = value;
+                        await this.plugin.saveSettings();
+                    }
+                ));
+
+
+
+
+        new Setting(containerEl)
+            .setHeading()
+            .setName("Style Settings")
 
         new Setting(containerEl)
             .setName("Show style when editing")
@@ -44,45 +116,12 @@ export class CommentatorSettings extends PluginSettingTab {
                 }
             ));
 
-        new Setting(containerEl)
-            .setName("Automatic tag completion")
-            .setDesc("Automatically complete CriticMarkup tags")
-            .addToggle(toggle => toggle.setValue(this.plugin.settings.tag_completion)
-                .onChange(async (value) => {
-                    this.plugin.settings.tag_completion = value;
-                    await this.plugin.saveSettings();
-                }
-            ));
+
+
 
         new Setting(containerEl)
-            .setName("Automatic tag correction")
-            .setDesc("Automatically correct invalid CriticMarkup tags")
-            .addToggle(toggle => toggle.setValue(this.plugin.settings.node_correcter)
-                .onChange(async (value) => {
-                    this.plugin.settings.node_correcter = value;
-                    await this.plugin.saveSettings();
-                }
-            ));
-
-        new Setting(containerEl)
-            .setName("Editor preview button")
-            .setDesc("Add suggestion preview button to editor toolbar")
-            .addToggle(toggle => toggle.setValue(this.plugin.settings.editor_preview_button)
-                .onChange(async (value) => {
-                    this.plugin.settings.editor_preview_button = value;
-                    await this.plugin.saveSettings();
-                }
-            ));
-
-        new Setting(containerEl)
-            .setName("Editor gutter")
-            .setDesc("Show suggestion status in editor gutter")
-            .addToggle(toggle => toggle.setValue(this.plugin.settings.editor_gutter)
-                .onChange(async (value) => {
-                    this.plugin.settings.editor_gutter = value;
-                    await this.plugin.saveSettings();
-                }
-            ));
+            .setHeading()
+            .setName("Advanced Settings")
 
         new Setting(containerEl)
             .setName("Reading view renderer")

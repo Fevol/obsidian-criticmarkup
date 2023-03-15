@@ -23,6 +23,11 @@ export interface CommandI {
 	editor_context?: boolean
 
 	/**
+	 * Whether the command changes plugin data
+	 */
+	plugin_context?: boolean
+
+	/**
 	 * Callback function for the command
 	 * @param args - Set of arguments passed to the command
 	 */

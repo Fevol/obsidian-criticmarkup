@@ -96,12 +96,12 @@ export function nodesInSelection(tree: Tree, start?: number, end?: number) {
 }
 
 export function nodeAtCursorLocation(nodes: CriticMarkupNode[], pos: number) {
-	return nodes.find(node => node.from <= pos && node.to >= pos);
+	return nodes.find(node => node.from < pos && node.to > pos);
 }
 
 export function adjacentNode(nodes: CriticMarkupNode[], pos: number, left: boolean) {
 	if (left)
-		return nodes.reverse().find(node => node.to <= pos);
+		return nodes.slice().reverse().find(node => node.to <= pos);
 	return nodes.find(node => node.from >= pos);
 }
 

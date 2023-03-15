@@ -13,6 +13,7 @@ export const DEFAULT_SETTINGS: PluginSettings = {
 	node_correcter: true,
 
 	suggest_mode: false,
+	editor_suggest_button: true,
 
 	post_processor: true,
 	live_preview: true,

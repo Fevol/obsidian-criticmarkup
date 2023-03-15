@@ -11,6 +11,7 @@ export interface PluginSettings {
 	node_correcter: boolean;
 
 	suggest_mode: boolean;
+	editor_suggest_button: boolean;
 
 	post_processor: boolean;
 	live_preview: boolean;

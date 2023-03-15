@@ -7,25 +7,21 @@ const button_mapping = new WeakMap<MarkdownView, {
 	status: HTMLElement,
 }>();
 
-export function loadPreviewButtons(plugin: CommentatorPlugin) {
-	const status_mapping = [
-		{ icon: 'message-square', tooltip: 'Show all suggestions', label: 'Showing suggestions' },
-		{ icon: 'check', tooltip: 'Preview "accept all"', label: 'Previewing "accept all"' },
-		{ icon: 'cross', tooltip: 'Preview "reject all"', label: 'Previewing "reject all"' },
-	];
+const status_mapping = [
+	{ icon: 'pencil', tooltip: 'Directly edit document',  label: 'Editing' },
+	{ icon: 'edit', tooltip: 'Mark edits as suggestions', label: 'Suggesting',  },
+];
 
+export function loadSuggestButtons(plugin: CommentatorPlugin) {
 	for (const leaf of app.workspace.getLeavesOfType('markdown')) {
 		const view = leaf.view as MarkdownView;
 		if (button_mapping.has(view)) continue;
 
-		const { icon, tooltip, label } = status_mapping[plugin.settings.suggestion_status];
+		const { icon, tooltip, label } = status_mapping[+plugin.settings.suggest_mode];
 
 		const buttonElement = view.addAction(icon, tooltip, () => {
-			plugin.settings.suggestion_status = (plugin.settings.suggestion_status + 1) % status_mapping.length;
-			const { icon, tooltip, label } = status_mapping[plugin.settings.suggestion_status];
-			setIcon(buttonElement, icon);
-			buttonElement.setAttribute('aria-label', tooltip);
-			statusElement.innerText = label;
+			plugin.settings.suggest_mode = !plugin.settings.suggest_mode;
+			updateSuggestButtons(plugin);
 			plugin.saveSettings();
 		});
 
@@ -44,7 +40,21 @@ export function loadPreviewButtons(plugin: CommentatorPlugin) {
 	}
 }
 
-export async function removePreviewButtons() {
+export async function updateSuggestButtons(plugin: CommentatorPlugin) {
+	for (const leaf of app.workspace.getLeavesOfType('markdown')) {
+		const view = leaf.view as MarkdownView;
+		if (!button_mapping.has(view)) continue;
+		const elements = button_mapping.get(view);
+		if (elements) {
+			const { icon, tooltip, label } = status_mapping[+plugin.settings.suggest_mode];
+			setIcon(elements.button, icon);
+			elements.button.setAttribute('aria-label', tooltip);
+			elements.status.innerText = label;
+		}
+	}
+}
+
+export async function removeSuggestButtons() {
 	for (const leaf of app.workspace.getLeavesOfType('markdown')) {
 		const view = leaf.view as MarkdownView;
 		if (!button_mapping.has(view)) continue;
