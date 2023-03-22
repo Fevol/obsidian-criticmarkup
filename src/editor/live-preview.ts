@@ -6,6 +6,7 @@ import { Decoration, DecorationSet, EditorView, PluginValue, ViewPlugin, ViewUpd
 
 import type { PluginSettings } from '../types';
 import { selectionRangeOverlap } from './editor-util';
+import { editorLivePreviewField } from 'obsidian';
 
 export function livePreview (settings: PluginSettings): Extension {
 	return ViewPlugin.fromClass(
@@ -37,6 +38,7 @@ export function livePreview (settings: PluginSettings): Extension {
 			buildDecorations(tree: Tree, view: EditorView): DecorationSet {
 				const widgets: Range<Decoration>[] = [];
 				const selection = view.state.selection;
+				const is_livepreview = view.state.field(editorLivePreviewField);
 
 				const cursor = tree.cursor();
 				while (cursor.next()) {
@@ -56,7 +58,8 @@ export function livePreview (settings: PluginSettings): Extension {
 						// TODO: Add node type to class list for further customization
 						// MODE: Accept all suggestions
 						if (this.settings.suggestion_status === 1) {
-							this.removeBrackets(widgets, start, end);
+							if (is_livepreview)
+								this.removeBrackets(widgets, start, end);
 							if (name === 'Addition') {
 								if (start + 3 !== end - 3)
 									widgets.push(
@@ -97,7 +100,8 @@ export function livePreview (settings: PluginSettings): Extension {
 
 						// MODE: Reject all suggestions
 						else {
-							this.removeBrackets(widgets, start, end);
+							if (is_livepreview)
+								this.removeBrackets(widgets, start, end);
 							if (name === 'Addition') {
 								if (start + 3 !== end - 3)
 									widgets.push(
@@ -137,7 +141,7 @@ export function livePreview (settings: PluginSettings): Extension {
 						}
 					} else {
 						if (selectionRangeOverlap(selection, start, end)) {
-							if (!this.settings.editor_styling) {
+							if (!this.settings.editor_styling && !this.settings.suggest_mode) {
 								widgets.push(
 									Decoration.mark({
 										attributes: { 'data-contents': 'string' },
@@ -146,6 +150,9 @@ export function livePreview (settings: PluginSettings): Extension {
 								);
 								continue;
 							} else {
+								if (this.settings.suggest_mode && is_livepreview)
+									this.removeBrackets(widgets, start, end);
+
 								if (name === 'Substitution') {
 									cursor.firstChild();
 									if (cursor.name !== 'MSub')
@@ -180,7 +187,8 @@ export function livePreview (settings: PluginSettings): Extension {
 						}
 
 						// FIXME: Strikethrough renders despite text being placed (due to {~~ brackets never being hidden?)
-						this.removeBrackets(widgets, start, end);
+						if (is_livepreview)
+							this.removeBrackets(widgets, start, end);
 
 						if (name === 'Substitution') {
 							cursor.firstChild();

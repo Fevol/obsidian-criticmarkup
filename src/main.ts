@@ -20,6 +20,8 @@ import { loadPreviewButtons, removePreviewButtons } from './editor/editor-previe
 import { loadSuggestButtons, removeSuggestButtons, updateSuggestButtons } from './editor/editor-suggestion-buttons';
 
 
+import {around} from 'monkey-around';
+
 import { CommentatorSettings } from './ui/settings';
 
 import { objectDifference } from './util';
@@ -38,6 +40,8 @@ export default class CommentatorPlugin extends Plugin {
 
 	loadPreviewButtonsEvent!: EventRef;
 	loadSuggestButtonsEvent!: EventRef;
+
+	remove_monkeys: any[] = [];
 
 	postProcessor!: MarkdownPostProcessor;
 
@@ -112,8 +116,8 @@ export default class CommentatorPlugin extends Plugin {
 			callback: async () => {
 				this.settings.suggest_mode = !this.settings.suggest_mode;
 				await this.saveSettings();
-			}
-		})
+			},
+		});
 
 		for (const command of commands) {
 			if (Platform.isMobile || command.editor_context) {
@@ -123,6 +127,21 @@ export default class CommentatorPlugin extends Plugin {
 
 			this.addCommand(command);
 		}
+
+		this.app.workspace.onLayoutReady(() => {
+			// FIXME: Probably an unnecessary hack, but toggle-source mode does not have an event to hook into,
+			//   so in order to also update the live preview of this plugin, we need to monkey around the toggle-source command.
+			this.remove_monkeys.push(around(app.commands.editorCommands['editor:toggle-source'], {
+				checkCallback: (oldMethod) => {
+					return (...args: any) => {
+						const result = oldMethod && oldMethod.apply(app.commands.editorCommands['editor:toggle-source'], args);
+						if (result && !args[0])
+							this.loadEditorExtensions();
+						return result;
+					}
+				},
+			}));
+		});
 	}
 
 	async onunload() {
@@ -132,6 +151,10 @@ export default class CommentatorPlugin extends Plugin {
 			removeSuggestButtons();
 
 		MarkdownPreviewRenderer.unregisterPostProcessor(this.postProcessor);
+
+		for (const monkey of this.remove_monkeys) {
+			monkey();
+		}
 	}
 
 	async loadSettings() {
