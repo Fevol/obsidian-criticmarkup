@@ -53,3 +53,16 @@ export function addBracket(content: string, type: string, left: boolean) {
 	else
 		return content + CM_Syntax[type][1].repeat(2) + '}';
 }
+
+
+export function indexOfRegex(string: string, regex: RegExp, fromIndex?: number){
+	const str = fromIndex ? string.substring(fromIndex) : string;
+	const match = str.match(regex);
+	return match ? str.indexOf(match[0]) + (fromIndex ?? 0) : -1;
+}
+
+export function lastIndexOfRegex (string: string, regex: RegExp, fromIndex?: number){
+	const str = fromIndex ? string.substring(0, fromIndex) : string;
+	const match = str.match(regex);
+	return match ? str.lastIndexOf(match[match.length-1]) : -1;
+}

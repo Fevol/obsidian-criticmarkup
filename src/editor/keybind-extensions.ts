@@ -1,6 +1,13 @@
 import { Command, EditorView, keymap } from '@codemirror/view';
 
-import { countColumn, EditorSelection, EditorState, findClusterBreak } from '@codemirror/state';
+import {
+	CharCategory,
+	countColumn,
+	EditorSelection,
+	EditorState,
+	findClusterBreak,
+	StateCommand,
+} from '@codemirror/state';
 import { Transaction } from '@codemirror/state';
 import { getIndentUnit } from '@codemirror/language';
 
@@ -27,10 +34,11 @@ function skipAtomic(target: CommandTarget, pos: number, forward: boolean) {
 	return pos;
 }
 
-function deleteBy(target: CommandTarget, by: (start: number) => number, forward?: boolean) {
+function deleteBy(target: CommandTarget, by: (start: number) => number, forward?: boolean, group?: boolean) {
 	if (target.state.readOnly) return false;
+	// eslint-disable-next-line prefer-const
 	let event = 'delete.selection', { state } = target;
-	let changes = state.changeByRange(range => {
+	const changes = state.changeByRange(range => {
 		let { from, to } = range;
 		if (from == to) {
 			let towards = by(from);
@@ -51,12 +59,16 @@ function deleteBy(target: CommandTarget, by: (start: number) => number, forward?
 	});
 	if (changes.changes.empty) return false;
 
+	const annotations = [];
+	if (forward !== undefined && event === 'delete.selection')
+		annotations.push(Transaction.userEvent.of((forward ? 'delete.selection.forward' : 'delete.selection.backward')));
+	if (group)
+		annotations.push(Transaction.userEvent.of('delete.group'));
+
 	target.dispatch(state.update(changes, {
 		scrollIntoView: true,
 		userEvent: event,
-		annotations: (forward !== undefined && event === 'delete.selection')
-			? Transaction.userEvent.of((forward ? 'delete.selection.forward' : 'delete.selection.backward'))
-			: undefined,
+		annotations: annotations,
 		effects: event == 'delete.selection' ? EditorView.announce.of(state.phrase('Selection deleted')) : undefined,
 	}));
 	return true;
@@ -79,14 +91,41 @@ const deleteByChar = (target: CommandTarget, forward: boolean) => deleteBy(targe
 	return targetPos;
 }, forward);
 
+
+const deleteByGroup = (target: CommandTarget, forward: boolean) => deleteBy(target, start => {
+	// eslint-disable-next-line prefer-const
+	let pos = start, {state} = target, line = state.doc.lineAt(pos)
+	const categorize = state.charCategorizer(pos)
+	for (let cat: CharCategory | null = null;;) {
+		if (pos == (forward ? line.to : line.from)) {
+			if (pos == start && line.number != (forward ? state.doc.lines : 1))
+				pos += forward ? 1 : -1
+			break
+		}
+		const next = findClusterBreak(line.text, pos - line.from, forward) + line.from
+		const nextChar = line.text.slice(Math.min(pos, next) - line.from, Math.max(pos, next) - line.from)
+		const nextCat = categorize(nextChar)
+		if (cat != null && nextCat != cat) break
+		if (nextChar != " " || pos != start) cat = nextCat
+		pos = next
+	}
+	return pos
+}, forward, true)
+
+const deleteGroupBackward: StateCommand = target => deleteByGroup(target, false)
+/// Delete the selection or forward until the end of the next group.
+const deleteGroupForward: StateCommand = target => deleteByGroup(target, true)
+
 /// Delete the selection, or, for cursor selections, the character
 /// before the cursor.
-export const deleteCharBackward: Command = view => deleteByChar(view, false);
+const deleteCharBackward: Command = view => deleteByChar(view, false);
 /// Delete the selection or the character after the cursor.
-export const deleteCharForward: Command = view => deleteByChar(view, true);
+const deleteCharForward: Command = view => deleteByChar(view, true);
 
 
 export const keybindExtensions = keymap.of(([
 	{ key: 'Backspace', run: deleteCharBackward, shift: deleteCharBackward },
 	{ key: 'Delete', run: deleteCharForward },
+	{ key: 'Mod-Backspace', mac: 'Alt-Backspace', run: deleteGroupBackward },
+	{ key: 'Mod-Delete', mac: 'Alt-Delete', run: deleteGroupForward },
 ]));

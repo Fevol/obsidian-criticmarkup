@@ -99,10 +99,16 @@ export function nodeAtCursorLocation(nodes: CriticMarkupNode[], pos: number) {
 	return nodes.find(node => node.from < pos && node.to > pos);
 }
 
-export function adjacentNode(nodes: CriticMarkupNode[], pos: number, left: boolean) {
+export function adjacentCursorNode(nodes: CriticMarkupNode[], pos: number, left: boolean) {
 	if (left)
 		return nodes.slice().reverse().find(node => node.to <= pos);
 	return nodes.find(node => node.from >= pos);
+}
+
+export function adjacentNode(nodes: CriticMarkupNode[], pos: CriticMarkupNode, left: boolean) {
+	if (left)
+		return nodes.slice().reverse().find(node => node.to <= pos.from);
+	return nodes.find(node => node.from >= pos.to);
 }
 
 export function siblingNode(nodes: CriticMarkupNode[], node: CriticMarkupNode, left: boolean) {
