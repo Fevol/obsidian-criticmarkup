@@ -99,6 +99,17 @@ export function nodeAtCursorLocation(nodes: CriticMarkupNode[], pos: number) {
 	return nodes.find(node => node.from < pos && node.to > pos);
 }
 
+export function nodesInRange(nodes: CriticMarkupNode[], start: number, end: number, partially = true) {
+	if (partially)
+		return nodes.filter(node =>
+			(node.from < start && node.to > start) ||
+			(node.from < end && node.to > end) ||
+			(node.from >= start && node.to <= end)
+		);
+	return nodes.filter(node => node.from >= start && node.to <= end);
+}
+
+
 export function adjacentCursorNode(nodes: CriticMarkupNode[], pos: number, left: boolean) {
 	if (left)
 		return nodes.slice().reverse().find(node => node.to <= pos);

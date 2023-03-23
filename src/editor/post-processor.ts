@@ -98,6 +98,10 @@ export function postProcessorUpdate() {
 	for (const leaf of app.workspace.getLeavesOfType('markdown')) {
 		const view = leaf.view as MarkdownView;
 
+		// Note: this has more UI-flashyness compared to below method, but is probably better
+		//@ts-ignore
+		// leaf.rebuildView();
+
 		const scroll_height = view.previewMode.renderer.previewEl.scrollTop;
 		view.previewMode.renderer.clear();
 		view.previewMode.renderer.set(view.editor.cm.state.doc.toString());
