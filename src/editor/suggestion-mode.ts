@@ -75,13 +75,13 @@ export const suggestionMode = EditorState.transactionFilter.of(tr => {
 		const selections: SelectionRange[] = [];
 
 		if (operation_type === OperationType.INSERTION) {
-			let offset = -1;
+			let offset = 0;
 
 			for (const range of changed_ranges) {
 				const insert_operation = text_insert(range, nodes, offset);
 				changes.push(...insert_operation.changes);
 				selections.push(insert_operation.selection);
-				offset += insert_operation.offset;
+				offset = insert_operation.offset;
 			}
 
 			return tr.startState.update({
@@ -102,7 +102,7 @@ export const suggestionMode = EditorState.transactionFilter.of(tr => {
 				const delete_operation = text_delete(range, nodes, offset, tr.startState.doc, backwards_delete, group_delete, delete_selection);
 				changes.push(...delete_operation.changes);
 				selections.push(delete_operation.selection);
-				offset += delete_operation.offset;
+				offset = delete_operation.offset;
 			}
 
 			return tr.startState.update({

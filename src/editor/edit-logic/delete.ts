@@ -1,51 +1,40 @@
-import type { CriticMarkupNode, CriticMarkupRange, EditorChange, OperationReturn } from '../../types';
-import { adjacentCursorNode, nodeAtCursorLocation, nodesInRange } from '../editor-util';
-import { removeBrackets } from '../../util';
+import type { CriticMarkupNode, CriticMarkupNodes, CriticMarkupRange, EditorChange, OperationReturn } from '../../types';
 import { EditorSelection, SelectionRange } from '@codemirror/state';
 import type { Text } from '@codemirror/state';
 
-export function text_delete(range: CriticMarkupRange, nodes: CriticMarkupNode[], offset: number, doc: Text,
+export function text_delete(range: CriticMarkupRange, nodes: CriticMarkupNodes, offset: number, doc: Text,
 							backwards_delete: boolean, group_delete: boolean, selection_delete: boolean): OperationReturn {
 
-	const nodes_in_range = nodesInRange(nodes, range.from, range.to);
+	const nodes_in_range = nodes.filter_range(range.from, range.to, true)
 
 	const changes: EditorChange[] = [];
 
 	// Default to 0 in case something goes tremendously wrong
 	let selection: SelectionRange = EditorSelection.cursor(0);
 
-
-	// CASE 1: Deleting a selection
 	if (selection_delete) {
-		// TODO: Check whether addition nodes and substitution nodes should also be deleted like this
-		// FIXME: Partially selected brackets will be fully removed too
-
-		let content = removeBrackets(range.deleted!, nodes_in_range, range.from);
-		if (nodes_in_range[0]?.from >= range.from)
-			content = `{--` + content;
-		if (nodes_in_range[nodes_in_range.length - 1]?.to <= range.to)
-			content += `--}`;
-
-		changes.push({
-			from: range.from,
-			to: range.to,
-			insert: content,
-		});
-		selection = EditorSelection.cursor(backwards_delete ? range.from + offset : range.to + offset - 6 * (nodes_in_range.length - 1));
-		offset -= 6 * (nodes_in_range.length - 1);
-	}
-
-	// CASE 2: Deleting via cursor
-	else {
-		const node = nodeAtCursorLocation(nodes_in_range, backwards_delete ? range.from : range.to);
-
+		const unwrap_operation = nodes_in_range.unwrap_in_range(range.deleted!, range.from, range.to, 'Deletion', doc);
+		let changed_content = unwrap_operation.output;
+		if (!unwrap_operation.left_bracket)
+			changed_content = `{--${changed_content}`;
+		if (!unwrap_operation.right_bracket)
+			changed_content += `--}`;
+		if (unwrap_operation.prefix)
+			changed_content = unwrap_operation.prefix + changed_content;
+		if (unwrap_operation.suffix)
+			changed_content += unwrap_operation.suffix;
+		changes.push({from: unwrap_operation.start, to: unwrap_operation.to, insert: changed_content});
+		selection = EditorSelection.cursor(backwards_delete ? unwrap_operation.start : unwrap_operation.to);
+		offset += changed_content.length - range.deleted!.length;
+	} else {
+		const node = nodes.at_cursor(backwards_delete ? range.from : range.to)
 		if (!node) {
 			const is_start = !range.from;
 			const is_end = range.to === doc.length - 1;
 			let deleted_text = doc.sliceString(range.from + (is_start ? 0 : -1), range.to + (is_end ? 0 : 1));
 
-			const left_adjacent_node = adjacentCursorNode(nodes, range.from, true);
-			const right_adjacent_node = adjacentCursorNode(nodes, range.to, false);
+			const left_adjacent_node = nodes.adjacent_to_cursor(range.from, true);
+			const right_adjacent_node = nodes.adjacent_to_cursor(range.to, false);
 
 			// TODO: Only matches a single space left/right
 
@@ -120,7 +109,7 @@ export function text_delete(range: CriticMarkupRange, nodes: CriticMarkupNode[],
 		} else if (node && node.type === 'Deletion') {
 			const in_brackets = range.from <= node.from + 3 || range.to >= node.to - 3;
 
-			let cursor_location = 0;
+			let cursor_location;
 			if (backwards_delete) {
 				if (range.to === node.to) {
 					if (group_delete)
@@ -162,11 +151,15 @@ export function text_delete(range: CriticMarkupRange, nodes: CriticMarkupNode[],
 		}
 	}
 
+
+
+
+
 	return { changes, selection, offset };
 }
 
 
-function groupDelete(doc: Text, node: CriticMarkupNode | undefined, nodes: CriticMarkupNode[],
+function groupDelete(doc: Text, node: CriticMarkupNode | undefined, nodes: CriticMarkupNodes,
 					 from: number, to: number, backwards: boolean): [number, number] {
 	if (node) {
 		if (to >= node.to - 3 && backwards) {

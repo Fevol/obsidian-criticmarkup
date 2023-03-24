@@ -1,4 +1,5 @@
 import type { CriticMarkupNode } from './types';
+import { nodeEnclosesRange } from './editor/editor-util';
 
 export function objectDifference(new_obj: any, old_obj: any): Partial<typeof new_obj> {
 	const diff: Partial<typeof new_obj> = {};
@@ -57,19 +58,6 @@ export function addBracket(content: string, type: string, left: boolean) {
 }
 
 
-export function removeBrackets(str: string, nodes: CriticMarkupNode[], start: number) {
-	let output = str.slice(0, nodes[0].from - start);
-	for (const [idx, node] of nodes.entries()) {
-		if (node.from - start < 0) continue;
-		if (node.to - start >= str.length) break;
-		// TODO: For unwrap: Substitution contents should be selected; e.g., if delete: select [2]?
-		output += unwrapBracket(str.slice(node.from - start, node.to - start));
-		if (idx !== nodes.length - 1)
-			output += str.slice(node.to - start, nodes[idx + 1].from - start);
-	}
-	output += str.slice(nodes[nodes.length - 1].to - start);
-	return output;
-}
 
 export function indexOfRegex(string: string, regex: RegExp, fromIndex?: number){
 	const str = fromIndex ? string.substring(fromIndex) : string;

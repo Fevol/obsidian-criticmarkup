@@ -1,20 +1,18 @@
-import type { CriticMarkupNode, CriticMarkupRange, EditorChange, OperationReturn } from '../../types';
-import { adjacentCursorNode, nodeAtCursorLocation } from '../editor-util';
+import type { CriticMarkupNodes, CriticMarkupRange, EditorChange, OperationReturn } from '../../types';
 import { EditorSelection, SelectionRange } from '@codemirror/state';
 
-export function text_insert(range: CriticMarkupRange, nodes: CriticMarkupNode[], offset: number): OperationReturn {
-	const node = nodeAtCursorLocation(nodes, range.to);
+export function text_insert(range: CriticMarkupRange, nodes: CriticMarkupNodes, offset: number): OperationReturn {
+	const node = nodes.at_cursor(range.to);
 	offset += range.offset.added;
-
 	const changes: EditorChange[] = [];
 	let selection: SelectionRange;
 
 	if (!node) {
-		const left_adjacent_node = adjacentCursorNode(nodes, range.from, true);
-		const right_adjacent_node = adjacentCursorNode(nodes, range.to, false);
+		const left_adjacent_node = nodes.adjacent_to_cursor(range.from, true);
+		const right_adjacent_node = nodes.adjacent_to_cursor(range.to, false);
 
 		let replacement_start: number;
-		let node_offset = range.offset.added;
+		let node_offset = 0;
 		if (left_adjacent_node && left_adjacent_node.to === range.from) {
 			replacement_start = left_adjacent_node.to - 3;
 		} else if (right_adjacent_node && right_adjacent_node.from === range.to) {
@@ -22,7 +20,7 @@ export function text_insert(range: CriticMarkupRange, nodes: CriticMarkupNode[],
 		} else {
 			replacement_start = range.to;
 			range.inserted = `{++${range.inserted}++}`;
-			node_offset += 6;
+			offset += 6;
 			node_offset -= 3;
 		}
 
@@ -48,7 +46,7 @@ export function text_insert(range: CriticMarkupRange, nodes: CriticMarkupNode[],
 			to: range.to,
 			insert: range.inserted,
 		});
-		selection = EditorSelection.cursor(range.to + range.offset.added + offset);
+		selection = EditorSelection.cursor(range.to + offset);
 	}
 
 	return { changes, selection, offset }

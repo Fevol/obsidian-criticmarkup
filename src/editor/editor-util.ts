@@ -2,7 +2,7 @@ import type { Editor, EditorPosition } from 'obsidian';
 
 import type { Tree } from '@lezer/common';
 import { EditorSelection, Transaction } from '@codemirror/state';
-import type { CriticMarkupNode } from '../types';
+import { CriticMarkupNode, CriticMarkupNodes } from '../types';
 
 
 export function eqEP(a: EditorPosition, b: EditorPosition): boolean {
@@ -77,22 +77,13 @@ export function nodesInSelection(tree: Tree, start?: number, end?: number) {
 			if (node.type.name === 'Substitution') {
 				if (node.node.firstChild?.type.name !== 'MSub')
 					return;
-				nodes.push({
-					from: node.from,
-					middle: node.node.firstChild.from,
-					to: node.to,
-					type: node.type.name,
-				});
+				nodes.push(new CriticMarkupNode(node.from, node.to, node.type.name, node.node.firstChild.from));
 			} else {
-				nodes.push({
-					from: node.from,
-					to: node.to,
-					type: node.type.name,
-				});
+				nodes.push(new CriticMarkupNode(node.from, node.to, node.type.name));
 			}
 		},
 	});
-	return nodes;
+	return new CriticMarkupNodes(nodes);
 }
 
 export function nodeAtCursorLocation(nodes: CriticMarkupNode[], pos: number) {
@@ -129,6 +120,14 @@ export function siblingNode(nodes: CriticMarkupNode[], node: CriticMarkupNode, l
 	if (left)
 		return nodes[index - 1];
 	return nodes[index + 1];
+}
+
+export function nodeEnclosesRange(node: CriticMarkupNode, start: number, end: number) {
+	return node.from <= start && node.to >= end;
+}
+
+export function rangeEnclosesNode(node: CriticMarkupNode, start: number, end: number) {
+	return start <= node.from && end >= node.to;
 }
 
 

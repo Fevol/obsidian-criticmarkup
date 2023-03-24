@@ -10,6 +10,7 @@ import { acceptAllSuggestions, rejectAllSuggestions } from './commands';
 
 import type { PluginSettings } from '../types';
 import { nodesInSelection } from './editor-util';
+import type { CriticMarkupNodes } from '../types';
 
 
 export class CriticMarkupMarker extends GutterMarker {
@@ -30,15 +31,16 @@ function buildMarkers(view: EditorView, tree: Tree): RangeSet<CriticMarkupMarker
 	const builder = new RangeSetBuilder<CriticMarkupMarker>();
 
 	// @ts-ignore (Get tree from extension)
-	let nodes: any[] = nodesInSelection(tree);
-	nodes = nodes.map(node => {
-		node.line_start = view.state.doc.lineAt(node.from).number;
-		node.line_end = view.state.doc.lineAt(node.to).number;
-		return node;
+	const nodes: CriticMarkupNodes = nodesInSelection(tree);
+	const markers = nodes.nodes.map((node: { from: number; to: number;}) => {
+		const newnode: any = Object.assign({}, node);
+		newnode.line_start = view.state.doc.lineAt(node.from).number;
+		newnode.line_end = view.state.doc.lineAt(node.to).number;
+		return newnode;
 	});
 
-	let current_line = nodes[0]?.line_start;
-	for (const node of nodes) {
+	let current_line = markers[0]?.line_start;
+	for (const node of markers) {
 		if (current_line > node.line_end) continue;
 		for (let i = node.line_start; i <= node.line_end; i++) {
 			const line = view.state.doc.line(i);
