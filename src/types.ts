@@ -1,3 +1,5 @@
+import type { SelectionRange } from '@codemirror/state';
+
 export interface PluginSettings {
 	suggestion_status: number;
 
@@ -22,4 +24,27 @@ export interface CriticMarkupNode {
 	middle?: number,
 	to: number,
 	type: string
+}
+
+export interface CriticMarkupRange {
+	from: number;
+	to: number;
+	offset: {
+		removed: number,
+		added: number,
+	};
+	inserted: string;
+	deleted: string | undefined;
+}
+
+export interface EditorChange {
+	from: number;
+	to: number;
+	insert: string;
+}
+
+export interface OperationReturn {
+	changes: EditorChange[];
+	selection: SelectionRange;
+	offset: number;
 }

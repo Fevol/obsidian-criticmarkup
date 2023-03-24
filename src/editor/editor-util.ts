@@ -1,7 +1,7 @@
 import type { Editor, EditorPosition } from 'obsidian';
 
 import type { Tree } from '@lezer/common';
-import { EditorSelection } from '@codemirror/state';
+import { EditorSelection, Transaction } from '@codemirror/state';
 import type { CriticMarkupNode } from '../types';
 
 
@@ -132,3 +132,7 @@ export function siblingNode(nodes: CriticMarkupNode[], node: CriticMarkupNode, l
 }
 
 
+export function getUserEvents(tr: Transaction) {
+	//@ts-ignore (Transaction has annotations)
+	return tr.annotations.map(x => x.value).filter(x => typeof x === 'string');
+}
