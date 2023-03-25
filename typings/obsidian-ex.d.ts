@@ -94,6 +94,7 @@ interface ReadViewRenderer {
 	pusherEl: HTMLElement;
 	clear: () => void;
 	set: (text: string) => void;
+	text: string;
 
 }
 

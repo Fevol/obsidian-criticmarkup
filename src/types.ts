@@ -95,7 +95,6 @@ export class CriticMarkupNodes {
 		if (this.nodes.length === 0)
 			return {output: str, start, to, prefix: '', suffix: '', offset: 0};
 
-
 		let extended_range = false;
 		let new_start = start;
 		let new_to = to;
@@ -115,9 +114,7 @@ export class CriticMarkupNodes {
 		let prefix = '';
 		let suffix = '';
 		let output = '';
-		let offset = 0;
-
-		offset = -6 * this.nodes.length;
+		let offset = -6 * this.nodes.length;
 
 		for (const [idx, node] of this.nodes.entries()) {
 			if (extended_range && (!idx || idx === this.nodes.length - 1)) {
@@ -132,8 +129,6 @@ export class CriticMarkupNodes {
 					suffix = CM_All_Brackets[node.type].at(0) + text.slice(to - node.from);
 					offset += 3;
 				} else {
-					// if (idx === this.nodes.length - 1 && new_to !== to && node.type !== type)
-					// 	offset += 3;
 					output += node.unwrap(str, new_start);
 				}
 			} else {
@@ -143,9 +138,6 @@ export class CriticMarkupNodes {
 			if (idx !== this.nodes.length - 1)
 				output += str.slice(node.to - new_start, this.nodes[idx + 1].from - new_start);
 		}
-
-		// if (extended_range && !suffix && this.nodes.at(-1)!.type !== type)
-		// 	console.log("RIGHT NODE IS EMPTY")
 
 		if (!prefix)
 			output = str.slice(0, this.nodes[0].from - new_start) + output;
