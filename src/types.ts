@@ -93,76 +93,73 @@ export class CriticMarkupNodes {
 
 	unwrap_in_range(str: string, start = 0, to = start + str.length, type: string, doc: Text) {
 		if (this.nodes.length === 0)
-			return {output: str, start, to, left_bracket: false, right_bracket: false};
+			return {output: str, start, to, prefix: '', suffix: '', offset: 0};
 
-		let output = '';
-		if (start <= this.nodes[0].from)
-			output += str.slice(0, this.nodes[0].from - start);
 
-		let extended_selection = false;
-		if (this.nodes[0].from <= start && this.nodes[0].from + 3 >= start) {
-			start = this.nodes[0].from;
-			extended_selection = true;
-		}
-
-		if (this.nodes.at(-1)!.to - 3 <= to && this.nodes.at(-1)!.to >= to) {
-			to = this.nodes[this.nodes.length - 1].to;
-			extended_selection = true;
-		}
-
-		if (extended_selection)
-			str = doc.sliceString(start, to);
-
+		let extended_range = false;
 		let new_start = start;
 		let new_to = to;
-		let prefix = '';
-		let suffix = '';
-		let left_bracket = false;
-		let right_bracket = false;
 
-		for (const [idx, node] of this.nodes.entries()) {
-			if (!idx || idx === this.nodes.length - 1) {
-				let partial = false;
-				let content = node.text(str, start);
-				if (node.from < to && node.to > to) {
-					if (node.from + 3 < to) {
-						partial = true;
-						content = content.slice(3)
-						if (node.type !== type)
-							 suffix = CM_All_Brackets[node.type].at(0)!;
-						else
-							right_bracket = true;
-					} else {
-						new_start = node.from;
-					}
-				}
-
-				if (node.from < start && node.to < to) {
-					if (node.to - 3 > start) {
-						partial = true;
-						content = content.slice(0, -3);
-						if (node.type !== type)
-							prefix = CM_All_Brackets[node.type].at(-1)!;
-						else
-							left_bracket = true;
-					} else {
-						new_to = node.to;
-					}
-				}
-
-				output += partial ? content : node.unwrap(str, start);
-			} else {
-				output += node.unwrap(str, start);
-			}
-
-			if (idx < this.nodes.length - 1)
-				output += str.slice(node.to - start, this.nodes[idx + 1].from - start);
+		if (this.nodes[0].from < start) {
+			new_start = this.nodes[0].from;
+			extended_range = true;
+		}
+		if (this.nodes.at(-1)!.to > to) {
+			new_to = this.nodes[this.nodes.length - 1].to;
+			extended_range = true;
 		}
 
-		if (this.nodes[this.nodes.length - 1].to <= to)
-			output += str.slice(this.nodes[this.nodes.length - 1].to - start);
+		if (extended_range)
+			str = doc.sliceString(new_start, new_to);
 
-		return { output, start: new_start, to: new_to, left_bracket, right_bracket, prefix, suffix };
+		let prefix = '';
+		let suffix = '';
+		let output = '';
+		let offset = 0;
+
+		offset = -6 * this.nodes.length;
+
+		for (const [idx, node] of this.nodes.entries()) {
+			if (extended_range && (!idx || idx === this.nodes.length - 1)) {
+				if (node.type !== type && new_start !== start && start - node.from > 3) {
+					const text =  node.text(str, new_start);
+					prefix = text.slice(0, start - node.from) + CM_All_Brackets[node.type].at(-1);
+					output += text.slice(start - node.from, -3);
+					offset += 6;
+				} else if (node.type !== type && new_to !== to && node.to - to > 3) {
+					const text =  node.text(str, new_start);
+					output += text.slice(3, to - node.from);
+					suffix = CM_All_Brackets[node.type].at(0) + text.slice(to - node.from);
+					offset += 3;
+				} else {
+					// if (idx === this.nodes.length - 1 && new_to !== to && node.type !== type)
+					// 	offset += 3;
+					output += node.unwrap(str, new_start);
+				}
+			} else {
+				output += node.unwrap(str, new_start);
+			}
+
+			if (idx !== this.nodes.length - 1)
+				output += str.slice(node.to - new_start, this.nodes[idx + 1].from - new_start);
+		}
+
+		// if (extended_range && !suffix && this.nodes.at(-1)!.type !== type)
+		// 	console.log("RIGHT NODE IS EMPTY")
+
+		if (!prefix)
+			output = str.slice(0, this.nodes[0].from - new_start) + output;
+		if (!suffix)
+			output += str.slice(this.nodes.at(-1)!.to - new_start);
+
+		return {
+			output,
+			prefix,
+			suffix,
+			start: new_start,
+			to: new_to,
+			offset,
+		}
 	}
 }
 

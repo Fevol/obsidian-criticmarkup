@@ -1,6 +1,7 @@
 import type { CriticMarkupNode, CriticMarkupNodes, CriticMarkupRange, EditorChange, OperationReturn } from '../../types';
 import { EditorSelection, SelectionRange } from '@codemirror/state';
 import type { Text } from '@codemirror/state';
+import { wrapBracket } from '../../util';
 
 export function text_delete(range: CriticMarkupRange, nodes: CriticMarkupNodes, offset: number, doc: Text,
 							backwards_delete: boolean, group_delete: boolean, selection_delete: boolean): OperationReturn {
@@ -14,18 +15,33 @@ export function text_delete(range: CriticMarkupRange, nodes: CriticMarkupNodes, 
 
 	if (selection_delete) {
 		const unwrap_operation = nodes_in_range.unwrap_in_range(range.deleted!, range.from, range.to, 'Deletion', doc);
-		let changed_content = unwrap_operation.output;
-		if (!unwrap_operation.left_bracket)
-			changed_content = `{--${changed_content}`;
-		if (!unwrap_operation.right_bracket)
-			changed_content += `--}`;
-		if (unwrap_operation.prefix)
-			changed_content = unwrap_operation.prefix + changed_content;
-		if (unwrap_operation.suffix)
-			changed_content += unwrap_operation.suffix;
-		changes.push({from: unwrap_operation.start, to: unwrap_operation.to, insert: changed_content});
-		selection = EditorSelection.cursor(backwards_delete ? unwrap_operation.start : unwrap_operation.to);
-		offset += changed_content.length - range.deleted!.length;
+
+		changes.push({
+			from: unwrap_operation.start,
+			to: unwrap_operation.to,
+			insert: unwrap_operation.prefix + wrapBracket(unwrap_operation.output, 'Deletion') + unwrap_operation.suffix,
+		});
+
+		let cursor = offset;
+		if (backwards_delete) {
+			if (unwrap_operation.prefix) {
+				cursor += unwrap_operation.start + unwrap_operation.prefix.length;
+			}
+			else {
+				if (range.from - unwrap_operation.start <= 3)
+					cursor += unwrap_operation.start;
+				else
+					cursor += range.from;
+			}
+		} else {
+			cursor += ((!unwrap_operation.suffix && unwrap_operation.to - range.to <= 3) ? unwrap_operation.to : range.to)
+					+ unwrap_operation.offset + 6;
+
+		}
+
+		selection = EditorSelection.cursor(cursor);
+		offset += unwrap_operation.output.length - range.deleted!.length + 6;
+
 	} else {
 		const node = nodes.at_cursor(backwards_delete ? range.from : range.to)
 		if (!node) {
