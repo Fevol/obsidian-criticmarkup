@@ -1,11 +1,11 @@
-import { treeParser } from './tree-parser';
+import { treeParser } from '../tree-parser';
 
 import type { Tree } from '@lezer/common';
 import type { Extension, Range } from '@codemirror/state';
 import { Decoration, DecorationSet, EditorView, PluginValue, ViewPlugin, ViewUpdate } from '@codemirror/view';
 
-import type { PluginSettings } from '../types';
-import { selectionRangeOverlap } from './editor-util';
+import type { PluginSettings } from '../../types';
+import { selectionRangeOverlap } from '../editor-util';
 import { editorLivePreviewField } from 'obsidian';
 
 export function livePreview (settings: PluginSettings): Extension {

@@ -1,6 +1,6 @@
 import { MarkdownView, setIcon } from 'obsidian';
 
-import type CommentatorPlugin from '../main';
+import type CommentatorPlugin from '../../main';
 
 const button_mapping = new WeakMap<MarkdownView, {
 	button: HTMLElement,

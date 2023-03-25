@@ -1,8 +1,8 @@
 import type { MarkdownView } from 'obsidian';
 
-import { criticmarkupLanguage } from './parser';
+import { criticmarkupLanguage } from '../parser';
 
-import { CM_Syntax } from '../util';
+import { CM_Syntax } from '../../util';
 
 export function postProcess(el: HTMLElement, ctx: any, settings: any) {
 	const tree = criticmarkupLanguage.parser.parse(el.innerHTML);
@@ -103,9 +103,9 @@ export function postProcessorUpdate() {
 		// leaf.rebuildView();
 
 		const scroll_height = view.previewMode.renderer.previewEl.scrollTop;
+		const text = view.previewMode.renderer.text;
 		view.previewMode.renderer.clear();
-		view.previewMode.renderer.set(view.editor.cm.state.doc.toString());
-		// FIXME: Visual glitch, previewmode jumps to the top, looks jarring
+		view.previewMode.renderer.set(text);
 		setTimeout(() => view.previewMode.renderer.previewEl.scrollTop = scroll_height, 0);
 	}
 }

@@ -7,17 +7,17 @@ import { change_suggestions } from './editor/context-menu-commands';
 
 import { treeParser } from './editor/tree-parser';
 
-import { livePreview } from './editor/live-preview';
-import { postProcess, postProcessorUpdate } from './editor/post-processor';
+import { livePreview } from './editor/renderers/live-preview';
+import { postProcess, postProcessorUpdate } from './editor/renderers/post-processor';
 
 import { keybindExtensions } from './editor/keybind-extensions';
 import { suggestionMode } from './editor/suggestion-mode';
 import { nodeCorrecter, bracketMatcher } from './editor/editor-handlers';
 
-import { gutterExtension } from './editor/criticmarkup-gutter';
+import { gutterExtension } from './editor/renderers/criticmarkup-gutter';
 
-import { loadPreviewButtons, removePreviewButtons } from './editor/editor-preview-buttons';
-import { loadSuggestButtons, removeSuggestButtons, updateSuggestButtons } from './editor/editor-suggestion-buttons';
+import { loadPreviewButtons, removePreviewButtons } from './editor/renderers/editor-preview-buttons';
+import { loadSuggestButtons, removeSuggestButtons, updateSuggestButtons } from './editor/renderers/editor-suggestion-buttons';
 
 
 import {around} from 'monkey-around';

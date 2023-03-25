@@ -1,6 +1,6 @@
 import { MarkdownView, setIcon } from 'obsidian';
 
-import type CommentatorPlugin from '../main';
+import type CommentatorPlugin from '../../main';
 
 const button_mapping = new WeakMap<MarkdownView, {
 	button: HTMLElement,
@@ -8,7 +8,7 @@ const button_mapping = new WeakMap<MarkdownView, {
 }>();
 
 const status_mapping = [
-	{ icon: 'pencil', tooltip: 'Directly edit document',  label: 'Editing' },
+	{ icon: 'file-edit', tooltip: 'Directly edit document',  label: 'Editing' },
 	{ icon: 'edit', tooltip: 'Mark edits as suggestions', label: 'Suggesting',  },
 ];
 

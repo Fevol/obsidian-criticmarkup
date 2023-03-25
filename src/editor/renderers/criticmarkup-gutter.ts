@@ -4,13 +4,13 @@ import type { Tree } from '@lezer/common';
 import { RangeSet, RangeSetBuilder } from '@codemirror/state';
 import { EditorView, gutter, GutterMarker } from '@codemirror/view';
 
-import { treeParser } from './tree-parser';
+import { treeParser } from '../tree-parser';
 
-import { acceptAllSuggestions, rejectAllSuggestions } from './commands';
+import { acceptAllSuggestions, rejectAllSuggestions } from '../commands';
 
-import type { PluginSettings } from '../types';
-import { nodesInSelection } from './editor-util';
-import type { CriticMarkupNodes } from '../types';
+import type { PluginSettings } from '../../types';
+import { nodesInSelection } from '../editor-util';
+import type { CriticMarkupNodes } from '../../types';
 
 
 export class CriticMarkupMarker extends GutterMarker {
