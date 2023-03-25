@@ -53,18 +53,18 @@ export function postProcess(el: HTMLElement, ctx: any, settings: any) {
 		let new_element = '';
 		if (change.name === 'Addition') {
 			if (!settings.suggestion_status)
-				new_element = `<span class='criticmarkup-inline criticmarkup-addition'>${new_content}</span>`;
+				new_element = `<span class='criticmarkup-preview criticmarkup-inline criticmarkup-addition'>${new_content}</span>`;
 			else if (settings.suggestion_status === 1)
-				new_element = `${new_content}`;
+				new_element = `<span class='criticmarkup-preview'>${new_content}</span>`;
 			else
-				new_element = ``;
+				new_element = `<span class='criticmarkup-preview'/>`;
 		} else if (change.name === 'Deletion') {
 			if (!settings.suggestion_status)
-				new_element = `<span class='criticmarkup-inline criticmarkup-deletion'>${new_content}</span>`;
+				new_element = `<span class='criticmarkup-preview criticmarkup-inline criticmarkup-deletion'>${new_content}</span>`;
 			else if (settings.suggestion_status === 1)
-				new_element = ``;
+				new_element = `<span class='criticmarkup-preview'/>`;
 			else
-				new_element = `${new_content}`;
+				new_element = `<span class='criticmarkup-preview'>${new_content}</span>`;
 		} else if (change.name === 'Substitution') {
 			let middle = <number>change.middle - change.start + 2;
 			if (change.is_rendered) {
@@ -73,11 +73,11 @@ export function postProcess(el: HTMLElement, ctx: any, settings: any) {
 			}
 
 			if (!settings.suggestion_status)
-				new_element = `<span class='criticmarkup-inline criticmarkup-deletion'>${new_content.slice(0, middle - 5)}</span><span class='criticmarkup-inline criticmarkup-addition'>${new_content.substring(middle)}</span>`;
+				new_element = `<span class='criticmarkup-preview criticmarkup-inline criticmarkup-deletion'>${new_content.slice(0, middle - 5)}</span><span class='criticmarkup-inline criticmarkup-addition'>${new_content.substring(middle)}</span>`;
 			else if (settings.suggestion_status === 1)
-				new_element = `${new_content.substring(middle)}`;
+				new_element = `<span class='criticmarkup-preview'>${new_content.substring(middle)}</span>`;
 			else
-				new_element = `${new_content.substring(0, middle - 5)}`;
+				new_element = `<span class='criticmarkup-preview'>${new_content.substring(0, middle - 5)}</span>`;
 		} else if (change.name === 'Highlight') {
 			if (change.is_rendered)
 				new_content = new_content.slice(4, -5);
@@ -94,18 +94,13 @@ export function postProcess(el: HTMLElement, ctx: any, settings: any) {
 }
 
 export function postProcessorUpdate() {
-	// TODO: Check if this should only apply to the active editor instance
-	for (const leaf of app.workspace.getLeavesOfType('markdown')) {
-		const view = leaf.view as MarkdownView;
-
-		// Note: this has more UI-flashyness compared to below method, but is probably better
-		//@ts-ignore
-		// leaf.rebuildView();
-
-		const scroll_height = view.previewMode.renderer.previewEl.scrollTop;
-		const text = view.previewMode.renderer.text;
-		view.previewMode.renderer.clear();
-		view.previewMode.renderer.set(text);
-		setTimeout(() => view.previewMode.renderer.previewEl.scrollTop = scroll_height, 0);
+	// Credits to depose/dp0z/@Profile8647 for finding this code
+	for (const leaf of app.workspace.getLeavesOfType("markdown")) {
+		const view = <MarkdownView>leaf.view;
+		for (const section of view.previewMode.renderer.sections.filter(s => s.el.querySelector('span.criticmarkup-preview'))) {
+			section.rendered = false;
+			section.html = '';
+		}
+		view.previewMode.renderer.queueRender();
 	}
 }

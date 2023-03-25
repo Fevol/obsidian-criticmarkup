@@ -85,6 +85,12 @@ interface SettingTabI extends SettingTab {
 	plugin?: Plugin;
 }
 
+interface RendererSection {
+	el: HTMLElement;
+	html: string;
+	rendered: boolean;
+}
+
 interface ReadViewRenderer {
 	addBottomPadding: boolean;
 	lastRender: number;
@@ -93,8 +99,15 @@ interface ReadViewRenderer {
 	previewEl: HTMLElement;
 	pusherEl: HTMLElement;
 	clear: () => void;
+	queueRender: () => void;
+	parseSync: () => void;
+	parseAsync: () => void;
 	set: (text: string) => void;
 	text: string;
+	sections: RendererSection[];
+	asyncSections: any[];
+	recycledSections: any[];
+	rendered: any[];
 
 }
 
