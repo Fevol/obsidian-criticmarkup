@@ -9,7 +9,6 @@
     "noImplicitAny": true,
     "moduleResolution": "node",
     "importHelpers": true,
-    "importsNotUsedAsValues":"error",
     "strict": true,
     "paths": {
       "src": ["src/*"]

@@ -16,7 +16,7 @@ const dev_watch = (process.argv[2] === 'development-watch');
 
 const dir = prod ? "./" : process.env.OUTDIR || "./";
 
-esbuild.build({
+const context = await esbuild.context({
     banner: {
         js: banner,
     },
@@ -48,7 +48,6 @@ esbuild.build({
         '@codemirror/view',
         ...builtins],
     format: 'cjs',
-    watch: dev_watch,
     target: 'esnext',
     logLevel: "info",
     sourcemap: (prod || dev) ? false : 'inline',
@@ -59,4 +58,11 @@ esbuild.build({
     plugins: [
         sassPlugin(),
     ]
-}).catch(() => process.exit(1));
+});
+
+if (prod || dev) {
+    await context.rebuild();
+    process.exit(0);
+} else {
+    await context.watch();
+}
