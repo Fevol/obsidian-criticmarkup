@@ -10,7 +10,7 @@ import { acceptAllSuggestions, rejectAllSuggestions } from '../commands';
 
 import type { PluginSettings } from '../../types';
 import { nodesInSelection } from '../editor-util';
-import type { CriticMarkupNodes } from '../../types';
+import { CriticMarkupNodes } from '../criticmarkup-nodes';
 
 
 export class CriticMarkupMarker extends GutterMarker {

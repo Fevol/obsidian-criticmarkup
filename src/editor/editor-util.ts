@@ -2,7 +2,8 @@ import type { Editor, EditorPosition } from 'obsidian';
 
 import type { Tree } from '@lezer/common';
 import { EditorSelection, Transaction } from '@codemirror/state';
-import { CriticMarkupNode, CriticMarkupNodes } from '../types';
+import { CriticMarkupNode, CriticMarkupNodes } from './criticmarkup-nodes';
+import { constructNode } from './criticmarkup-nodes';
 
 
 export function eqEP(a: EditorPosition, b: EditorPosition): boolean {
@@ -77,9 +78,9 @@ export function nodesInSelection(tree: Tree, start?: number, end?: number) {
 			if (node.type.name === 'Substitution') {
 				if (node.node.firstChild?.type.name !== 'MSub')
 					return;
-				nodes.push(new CriticMarkupNode(node.from, node.to, node.type.name, node.node.firstChild.from));
+				nodes.push(constructNode(node.from, node.to, node.type.name, node.node.firstChild?.from)!);
 			} else {
-				nodes.push(new CriticMarkupNode(node.from, node.to, node.type.name));
+				nodes.push(constructNode(node.from, node.to, node.type.name, node.node.firstChild?.from)!);
 			}
 		},
 	});

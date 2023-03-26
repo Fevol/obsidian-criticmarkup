@@ -1,6 +1,3 @@
-import type { CriticMarkupNode } from './types';
-import { nodeEnclosesRange } from './editor/editor-util';
-
 export function objectDifference(new_obj: any, old_obj: any): Partial<typeof new_obj> {
 	const diff: Partial<typeof new_obj> = {};
 	for (const key in new_obj) {
