@@ -99,7 +99,7 @@ export const suggestionMode = EditorState.transactionFilter.of(tr => {
 
 			let offset = 0;
 			for (const range of changed_ranges) {
-				const delete_operation = text_delete(range, nodes, offset, tr.startState.doc, backwards_delete, group_delete, delete_selection);
+				const delete_operation = text_delete(range, nodes, offset, tr.startState.doc, backwards_delete, group_delete, delete_selection, tr.startState);
 				changes.push(...delete_operation.changes);
 				selections.push(delete_operation.selection);
 				offset = delete_operation.offset;

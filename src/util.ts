@@ -76,3 +76,6 @@ export function spliceString(str: string, remove: [number, number][]) {
 			str = str.slice(0, start) + str.slice(start + length);
 	return str;
 }
+
+
+export const hSpace = /\S\n\v\f\r\u2028\u2029/;

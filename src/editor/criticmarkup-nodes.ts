@@ -41,6 +41,10 @@ export abstract class CriticMarkupNode {
 	reject(str: string, offset = 0) {
 		return this.text(str, offset);
 	}
+
+	touches(cursor: number) {
+		return this.from === cursor || this.to === cursor;
+	}
 }
 
 export class AdditionNode extends CriticMarkupNode {
@@ -135,7 +139,7 @@ export class CriticMarkupNodes {
 	}
 
 	at_cursor(cursor: number) {
-		return this.nodes.find(node => node.from <= cursor && node.to >= cursor);
+		return this.nodes.find(node => node.from < cursor && node.to > cursor);
 	}
 
 	adjacent_to_cursor(cursor: number, left: boolean) {
@@ -158,7 +162,6 @@ export class CriticMarkupNodes {
 	}
 
 	unwrap_in_range(str: string, start = 0, to = start + str.length, type: string, doc: Text) {
-		console.log(this.nodes);
 		if (this.nodes.length === 0)
 			return { output: str, start, to, prefix: '', suffix: '', offset: 0 };
 

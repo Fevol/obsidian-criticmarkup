@@ -1,7 +1,7 @@
 import type { Editor, EditorPosition } from 'obsidian';
 
 import type { Tree } from '@lezer/common';
-import { EditorSelection, Transaction } from '@codemirror/state';
+import { CharCategory, EditorSelection, EditorState, findClusterBreak, Transaction } from '@codemirror/state';
 import { CriticMarkupNode, CriticMarkupNodes } from './criticmarkup-nodes';
 import { constructNode } from './criticmarkup-nodes';
 
@@ -87,49 +87,28 @@ export function nodesInSelection(tree: Tree, start?: number, end?: number) {
 	return new CriticMarkupNodes(nodes);
 }
 
-export function nodeAtCursorLocation(nodes: CriticMarkupNode[], pos: number) {
-	return nodes.find(node => node.from < pos && node.to > pos);
-}
-
-export function nodesInRange(nodes: CriticMarkupNode[], start: number, end: number, partially = true) {
-	if (partially)
-		return nodes.filter(node =>
-			(node.from < start && node.to > start) ||
-			(node.from < end && node.to > end) ||
-			(node.from >= start && node.to <= end)
-		);
-	return nodes.filter(node => node.from >= start && node.to <= end);
-}
 
 
-export function adjacentCursorNode(nodes: CriticMarkupNode[], pos: number, left: boolean) {
-	if (left)
-		return nodes.slice().reverse().find(node => node.to <= pos);
-	return nodes.find(node => node.from >= pos);
+export function deleteGroup(start: number, forward: boolean, state: EditorState) {
+	let pos = start;
+	const line = state.doc.lineAt(pos);
+	const categorize = state.charCategorizer(pos)
+	for (let cat: CharCategory | null = null;;) {
+		if (pos == (forward ? line.to : line.from)) {
+			if (pos == start && line.number != (forward ? state.doc.lines : 1))
+				pos += forward ? 1 : -1
+			break
+		}
+		const next = findClusterBreak(line.text, pos - line.from, forward) + line.from
+		const nextChar = line.text.slice(Math.min(pos, next) - line.from, Math.max(pos, next) - line.from)
+		const nextCat = categorize(nextChar)
+		if (cat != null && nextCat != cat) break
+		if (nextChar != " " || pos != start) cat = nextCat
+		pos = next
+	}
+	return pos
 }
 
-export function adjacentNode(nodes: CriticMarkupNode[], pos: CriticMarkupNode, left: boolean) {
-	if (left)
-		return nodes.slice().reverse().find(node => node.to <= pos.from);
-	return nodes.find(node => node.from >= pos.to);
-}
-
-export function siblingNode(nodes: CriticMarkupNode[], node: CriticMarkupNode, left: boolean) {
-	const index = nodes.indexOf(node);
-	if (index === -1)
-		return undefined;
-	if (left)
-		return nodes[index - 1];
-	return nodes[index + 1];
-}
-
-export function nodeEnclosesRange(node: CriticMarkupNode, start: number, end: number) {
-	return node.from <= start && node.to >= end;
-}
-
-export function rangeEnclosesNode(node: CriticMarkupNode, start: number, end: number) {
-	return start <= node.from && end >= node.to;
-}
 
 
 export function getUserEvents(tr: Transaction) {
