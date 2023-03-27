@@ -10,8 +10,8 @@ import { treeParser } from './editor/tree-parser';
 import { livePreview } from './editor/renderers/live-preview';
 import { postProcess, postProcessorUpdate } from './editor/renderers/post-processor';
 
-import { keybindExtensions } from './editor/keybind-extensions';
-import { suggestionMode } from './editor/suggestion-mode';
+import { keybindExtensions } from './editor/suggestion-mode/keybind-extensions';
+import { suggestionMode } from './editor/suggestion-mode/suggestion-mode';
 import { nodeCorrecter, bracketMatcher } from './editor/editor-handlers';
 
 import { gutterExtension } from './editor/renderers/criticmarkup-gutter';

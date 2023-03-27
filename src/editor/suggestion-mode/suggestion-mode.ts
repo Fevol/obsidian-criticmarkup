@@ -1,9 +1,9 @@
 import { EditorSelection, EditorState, SelectionRange } from '@codemirror/state';
-import { getUserEvents, nodesInSelection } from './editor-util';
-import { treeParser } from './tree-parser';
-import type { CriticMarkupRange } from '../types';
-import { text_insert } from './edit-logic/insert';
-import { text_delete } from './edit-logic/delete';
+import { getUserEvents, nodesInSelection } from '../editor-util';
+import { treeParser } from '../tree-parser';
+import type { CriticMarkupRange } from '../../types';
+import { text_insert } from '../edit-logic/insert';
+import { text_delete } from '../edit-logic/delete';
 
 enum OperationType {
 	INSERTION,
