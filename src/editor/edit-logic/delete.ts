@@ -79,15 +79,26 @@ export function text_delete(range: CriticMarkupRange, nodes: CriticMarkupNodes, 
 		let node = nodes.at_cursor(cursor);
 
 		if (node) {
-			if (backwards_delete && node.from + 3 >= range.from) {
-				range.to = node.from;
-				range.from = group_delete ? deleteGroup(range.to - 1, !backwards_delete, state): range.to - 1;
-				node = undefined;
-			}
-			else if (!backwards_delete && node.to - 3 <= range.to) {
-				range.from = node.to;
-				range.to = group_delete ? deleteGroup(range.from + 1, !backwards_delete, state): range.from + 1
-				node = undefined;
+			if (backwards_delete) {
+				if (node.from + 3 >= range.from) {
+					range.to = node.from;
+					range.from = group_delete ? deleteGroup(range.to - 1, !backwards_delete, state) : range.to - 1;
+					node = undefined;
+				} else if (node.type === "Addition" && node.to - 3 <= range.to) {
+					range.from = node.to - 1;
+					range.to = range.from + 1;
+					node = undefined;
+				}
+			} else if (!backwards_delete) {
+				if (node.to - 3 <= range.to) {
+					range.from = node.to;
+					range.to = group_delete ? deleteGroup(range.from + 1, !backwards_delete, state) : range.from + 1;
+					node = undefined;
+				} else if (node.type === "Addition" && node.from + 3 >= range.from) {
+					range.to = node.from + 1;
+					range.from = range.to - 1;
+					node = undefined;
+				}
 			}
 			if (!node) {
 				cursor = backwards_delete ? range.to : range.from;
