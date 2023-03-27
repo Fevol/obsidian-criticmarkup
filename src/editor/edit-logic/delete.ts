@@ -75,8 +75,25 @@ export function text_delete(range: CriticMarkupRange, nodes: CriticMarkupNodes, 
 			offset += unwrap_operation.offset + 6;
 		}
 	} else {
-		const cursor = backwards_delete ? range.to : range.from;
-		const node = nodes.at_cursor(cursor);
+		let cursor = backwards_delete ? range.to : range.from;
+		let node = nodes.at_cursor(cursor);
+
+		if (node) {
+			if (backwards_delete && node.from + 3 >= range.from) {
+				range.to = node.from;
+				range.from = group_delete ? deleteGroup(range.to - 1, !backwards_delete, state): range.to - 1;
+				node = undefined;
+			}
+			else if (!backwards_delete && node.to - 3 <= range.to) {
+				range.from = node.to;
+				range.to = group_delete ? deleteGroup(range.from + 1, !backwards_delete, state): range.from + 1
+				node = undefined;
+			}
+			if (!node) {
+				cursor = backwards_delete ? range.to : range.from;
+				range.deleted = doc.sliceString(range.from, range.to);
+			}
+		}
 
 		if (!node) {
 			const left_adjacent_node = nodes.adjacent_to_cursor(cursor, true);
