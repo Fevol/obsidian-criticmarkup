@@ -22,10 +22,13 @@ export interface PluginSettings {
 
 
 
-
 export interface CriticMarkupRange {
 	from: number;
 	to: number;
+}
+
+
+export interface CriticMarkupOperation extends CriticMarkupRange {
 	offset: {
 		removed: number,
 		added: number,

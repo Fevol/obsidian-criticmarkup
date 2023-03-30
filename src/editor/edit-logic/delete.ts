@@ -1,11 +1,12 @@
-import type { CriticMarkupRange, EditorChange, OperationReturn } from '../../types';
+import type { EditorChange, OperationReturn } from '../../types';
 import type { Text } from '@codemirror/state';
 import { EditorSelection, EditorState, SelectionRange } from '@codemirror/state';
 import { wrapBracket } from '../../util';
 import { CriticMarkupNodes } from '../criticmarkup-nodes';
 import { deleteGroup } from '../editor-util';
+import { CriticMarkupOperation } from '../../types';
 
-export function text_delete(range: CriticMarkupRange, nodes: CriticMarkupNodes, offset: number, doc: Text,
+export function text_delete(range: CriticMarkupOperation, nodes: CriticMarkupNodes, offset: number, doc: Text,
 							backwards_delete: boolean, group_delete: boolean, selection_delete: boolean, state: EditorState): OperationReturn {
 
 	const nodes_in_range = nodes.filter_range(range.from, range.to, true);

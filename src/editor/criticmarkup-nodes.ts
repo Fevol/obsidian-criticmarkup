@@ -148,6 +148,12 @@ export class CriticMarkupNodes {
 		return this.nodes.find(node => node.from >= cursor);
 	}
 
+	adjacent_to_node(node: CriticMarkupNode, left: boolean, directly_adjacent = false) {
+		if (left)
+			return this.nodes.slice().reverse().find(n => directly_adjacent ? n.to === node.from : n.to <= node.from);
+		return this.nodes.find(n => directly_adjacent ? n.from === node.to : n.from >= node.to);
+	}
+
 	filter_range(start: number, end: number, partial = true) {
 		if (partial)
 			return new CriticMarkupNodes(this.nodes.filter(node => node.partially_in_range(start, end)));

@@ -1,4 +1,4 @@
-import { EventRef, MarkdownPostProcessor, MarkdownPreviewRenderer, MarkdownView, Platform, Plugin } from 'obsidian';
+import { EventRef, MarkdownPostProcessor, MarkdownPreviewRenderer, Platform, Plugin } from 'obsidian';
 
 import type { Extension } from '@codemirror/state';
 
@@ -10,7 +10,7 @@ import { treeParser } from './editor/tree-parser';
 import { livePreview } from './editor/renderers/live-preview';
 import { postProcess, postProcessorUpdate } from './editor/renderers/post-processor';
 
-import { keybindExtensions } from './editor/suggestion-mode/keybind-extensions';
+import { keybindExtensions } from './editor/suggestion-mode/keybinds';
 import { suggestionMode } from './editor/suggestion-mode/suggestion-mode';
 import { nodeCorrecter, bracketMatcher } from './editor/editor-handlers';
 

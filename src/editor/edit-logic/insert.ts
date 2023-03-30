@@ -1,8 +1,8 @@
-import type { CriticMarkupRange, EditorChange, OperationReturn } from '../../types';
+import type { CriticMarkupOperation, EditorChange, OperationReturn } from '../../types';
 import { EditorSelection, SelectionRange } from '@codemirror/state';
 import { CriticMarkupNodes } from '../criticmarkup-nodes';
 
-export function text_insert(range: CriticMarkupRange, nodes: CriticMarkupNodes, offset: number): OperationReturn {
+export function text_insert(range: CriticMarkupOperation, nodes: CriticMarkupNodes, offset: number): OperationReturn {
 	const node = nodes.at_cursor(range.to);
 	offset += range.offset.added;
 	const changes: EditorChange[] = [];

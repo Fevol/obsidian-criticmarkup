@@ -1,9 +1,11 @@
 import { EditorSelection, EditorState, SelectionRange } from '@codemirror/state';
 import { getUserEvents, nodesInSelection } from '../editor-util';
 import { treeParser } from '../tree-parser';
-import type { CriticMarkupRange } from '../../types';
 import { text_insert } from '../edit-logic/insert';
 import { text_delete } from '../edit-logic/delete';
+import { cursor_move } from '../edit-logic/cursor';
+import { CriticMarkupOperation } from '../../types';
+import { editorLivePreviewField } from 'obsidian';
 
 enum OperationType {
 	INSERTION,
@@ -20,10 +22,8 @@ enum EventType {
 }
 
 
-
 export const suggestionMode = EditorState.transactionFilter.of(tr => {
 	if (tr.docChanged) {
-
 		let operation_type: OperationType;
 		let event_type: EventType = EventType.NONE;
 
@@ -36,10 +36,10 @@ export const suggestionMode = EditorState.transactionFilter.of(tr => {
 
 		if (!event_type) return tr;
 
-		const changed_ranges: CriticMarkupRange[] = [];
+		const changed_ranges: CriticMarkupOperation[] = [];
 
 		tr.changes.iterChanges((fromA, toA, fromB, toB, inserted) => {
-			let text = ''
+			let text = '';
 			// @ts-ignore
 			if (inserted.text.length === 1 && inserted.text[0] === '')
 				text += '';
@@ -88,10 +88,7 @@ export const suggestionMode = EditorState.transactionFilter.of(tr => {
 				changes,
 				selection: EditorSelection.create(selections),
 			});
-		}
-
-
-		else if (operation_type === OperationType.DELETION) {
+		} else if (operation_type === OperationType.DELETION) {
 			const userEvents = getUserEvents(tr);
 			const backwards_delete = userEvents.includes('delete.backward') || userEvents.includes('delete.selection.backward');
 			const group_delete = userEvents.includes('delete.group');
@@ -111,11 +108,30 @@ export const suggestionMode = EditorState.transactionFilter.of(tr => {
 			});
 		}
 
-	// 	} else if (tr.isUserEvent('paste')) {
-	//
-	// 	}
-	// } else if (tr.isUserEvent('select')) {
-	//
+		// 	} else if (tr.isUserEvent('paste')) {
+		//
+		// 	}
+	}
+
+
+	else if (tr.isUserEvent('select') /*&& tr.startState.field(editorLivePreviewField)*/) {
+		// @ts-ignore
+		const nodes = nodesInSelection(tr.startState.field(treeParser).tree);
+
+		const userEvents = getUserEvents(tr);
+		const backwards_select = userEvents.includes('select.backward');
+		const group_select = userEvents.includes('select.group');
+		const is_selection = userEvents.includes('select.extend');
+		const selections: SelectionRange[] = [];
+
+		for (const range of tr.selection!.ranges) {
+			const cursor_operation = cursor_move(range, nodes, tr.startState.doc, tr.startState, backwards_select, group_select, is_selection);
+			selections.push(cursor_operation.selection);
+		}
+
+		return tr.startState.update({
+			selection: EditorSelection.create(selections),
+		});
 	}
 
 	return tr;

@@ -1,28 +1,15 @@
-import { Command, EditorView, keymap } from '@codemirror/view';
+// For the reason why I'm re-implementing these keybinds, see index.ts
 
+import { Command, EditorView } from '@codemirror/view';
 import {
 	CharCategory,
 	countColumn,
-	EditorSelection,
-	EditorState,
+	EditorSelection, EditorState,
 	findClusterBreak,
 	StateCommand,
+	Transaction,
 } from '@codemirror/state';
-import { Transaction } from '@codemirror/state';
 import { getIndentUnit } from '@codemirror/language';
-
-// Why this file exists, and why I am redefining the regular 'delete' keybind:
-//   When deleting a selection, the 'delete.selection' event is added to the transaction.
-//   However, the plugin *needs* to know which direction something was deleted in, so it can
-//     determine whether it should place the cursor at the start or end of the deleted text.
-//   Thus, the only way to implement this, is to add a custom event to the transaction
-//     called 'delete.selection.forward' or 'delete.selection.backward', depending on the direction.
-
-// NOTE: If this ever causes inconsistent behaviour, it might be due to either
-//   1. Other plugin overwriting the key: 'Backspace' keybind
-//   2. Obsidian changing the keybinds in some way
-//   3. CodeMirror update breaking this
-
 
 type CommandTarget = { state: EditorState, dispatch: (tr: Transaction) => void }
 
@@ -36,8 +23,8 @@ function skipAtomic(target: CommandTarget, pos: number, forward: boolean) {
 
 function deleteBy(target: CommandTarget, by: (start: number) => number, forward?: boolean, group?: boolean) {
 	if (target.state.readOnly) return false;
-	// eslint-disable-next-line prefer-const
-	let event = 'delete.selection', { state } = target;
+	let event = 'delete.selection';
+	const { state } = target;
 	const changes = state.changeByRange(range => {
 		let { from, to } = range;
 		if (from == to) {
@@ -75,12 +62,13 @@ function deleteBy(target: CommandTarget, by: (start: number) => number, forward?
 }
 
 const deleteByChar = (target: CommandTarget, forward: boolean) => deleteBy(target, pos => {
-	let { state } = target, line = state.doc.lineAt(pos), before, targetPos: number;
+	const { state } = target, line = state.doc.lineAt(pos);
+	let before, targetPos: number;
 	if (!forward && pos > line.from && pos < line.from + 200 &&
 		!/[^ \t]/.test(before = line.text.slice(0, pos - line.from))) {
 		if (before[before.length - 1] == '\t') return pos - 1;
 		// @ts-ignore
-		let col = countColumn(before, state.tabSize), drop = col % getIndentUnit(state) || getIndentUnit(state);
+		const col = countColumn(before, state.tabSize), drop = col % getIndentUnit(state) || getIndentUnit(state);
 		for (let i = 0; i < drop && before[before.length - 1 - i] == " "; i++) pos--;
 		targetPos = pos;
 	} else {
@@ -112,20 +100,12 @@ const deleteByGroup = (target: CommandTarget, forward: boolean) => deleteBy(targ
 	return pos
 }, forward, true)
 
-const deleteGroupBackward: StateCommand = target => deleteByGroup(target, false)
+export const deleteGroupBackward: StateCommand = target => deleteByGroup(target, false)
 /// Delete the selection or forward until the end of the next group.
-const deleteGroupForward: StateCommand = target => deleteByGroup(target, true)
+export const deleteGroupForward: StateCommand = target => deleteByGroup(target, true)
 
 /// Delete the selection, or, for cursor selections, the character
 /// before the cursor.
-const deleteCharBackward: Command = view => deleteByChar(view, false);
+export const deleteCharBackward: Command = view => deleteByChar(view, false);
 /// Delete the selection or the character after the cursor.
-const deleteCharForward: Command = view => deleteByChar(view, true);
-
-
-export const keybindExtensions = keymap.of(([
-	{ key: 'Backspace', run: deleteCharBackward, shift: deleteCharBackward },
-	{ key: 'Delete', run: deleteCharForward },
-	{ key: 'Mod-Backspace', mac: 'Alt-Backspace', run: deleteGroupBackward },
-	{ key: 'Mod-Delete', mac: 'Alt-Delete', run: deleteGroupForward },
-]));
+export const deleteCharForward: Command = view => deleteByChar(view, true);
