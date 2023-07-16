@@ -25,6 +25,8 @@ export interface PluginSettings {
 export interface CriticMarkupRange {
 	from: number;
 	to: number;
+	head?: number;
+	anchor?: number;
 }
 
 

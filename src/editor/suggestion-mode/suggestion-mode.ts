@@ -1,11 +1,10 @@
 import { EditorSelection, EditorState, SelectionRange } from '@codemirror/state';
-import { getUserEvents, nodesInSelection } from '../editor-util';
+import { cursorMoved, getUserEvents, nodesInSelection } from '../editor-util';
 import { treeParser } from '../tree-parser';
 import { text_insert } from '../edit-logic/insert';
 import { text_delete } from '../edit-logic/delete';
 import { cursor_move } from '../edit-logic/cursor';
 import { CriticMarkupOperation } from '../../types';
-import { editorLivePreviewField } from 'obsidian';
 
 enum OperationType {
 	INSERTION,
@@ -22,7 +21,94 @@ enum EventType {
 }
 
 
+
+let last_char_position = -1;
+
+const vim_action_resolver = {
+	'moveByCharacters': {
+		'group': false,
+	}
+}
+
+// }
+// { keys: 'h', motion: 'moveByCharacters',
+// { keys: 'l', motion: 'moveByCharacters',
+// { keys: 'j', motion: 'moveByLines',
+// { keys: 'k', motion: 'moveByLines',
+// { keys: 'H', motion: 'moveToTopLine',
+// { keys: 'M', motion: 'moveToMiddleLine',
+// { keys: 'L', motion: 'moveToBottomLine',
+// { keys: 'gj', motion: 'moveByDisplayLines',
+// { keys: 'gk', motion: 'moveByDisplayLines',
+// { keys: 'w', motion: 'moveByWords',
+// { keys: 'W', motion: 'moveByWords',
+// { keys: 'e', motion: 'moveByWords',
+// { keys: 'E', motion: 'moveByWords',
+// { keys: 'b', motion: 'moveByWords',
+// { keys: 'B', motion: 'moveByWords',
+// { keys: 'ge', motion: 'moveByWords',
+// { keys: 'gE', motion: 'moveByWords',
+// { keys: '{', motion: 'moveByParagraph',
+// { keys: '}', motion: 'moveByParagraph',
+// { keys: '(', motion: 'moveBySentence',
+// { keys: ')', motion: 'moveBySentence',
+// { keys: '<C-f>', motion: 'moveByPage',
+// { keys: '<C-b>', motion: 'moveByPage',
+// { keys: '<C-d>', motion: 'moveByScroll',
+// { keys: '<C-u>', motion: 'moveByScroll',
+// { keys: 'gg', motion: 'moveToLineOrEdgeOfDocument',
+// { keys: 'G', motion: 'moveToLineOrEdgeOfDocument',
+// {keys: "g$", type: "motion", motion: "moveToEndOfDisplayLine"},
+// {keys: "g^", type: "motion", motion: "moveToStartOfDisplayLine"},
+// {keys: "g0", type: "motion", motion: "moveToStartOfDisplayLine"},
+// { keys: '0', motion: 'moveToStartOfLine' },
+// { keys: '^', motion: 'moveToFirstNonWhiteSpaceCharacter' },
+// { keys: '+', motion: 'moveByLines',
+// { keys: '-', motion: 'moveByLines',
+// { keys: '_', motion: 'moveByLines',
+// { keys: '$', motion: 'moveToEol',
+// { keys: '%', motion: 'moveToMatchedSymbol',
+// { keys: 'f<character>', motion: 'moveToCharacter',
+// { keys: 'F<character>', motion: 'moveToCharacter',
+// { keys: 't<character>', motion: 'moveTillCharacter',
+// { keys: 'T<character>', motion: 'moveTillCharacter',
+// { keys: ';', motion: 'repeatLastCharacterSearch',
+// { keys: ',', motion: 'repeatLastCharacterSearch',
+// { keys: '\'<character>', motion: 'goToMark',
+// { keys: '`<character>', motion: 'goToMark',
+// { keys: ']`', motion: 'jumpToMark',
+// { keys: '[`', motion: 'jumpToMark',
+// { keys: ']\'', motion: 'jumpToMark',
+// { keys: '[\'', motion: 'jumpToMark',
+// { keys: ']<character>', motion: 'moveToSymbol',
+// { keys: '[<character>', motion: 'moveToSymbol',
+// { keys: '|', motion: 'moveToColumn'},
+// { keys: 'o', motion: 'moveToOtherHighlightedEnd', context:'visual'},
+// { keys: 'O', motion: 'moveToOtherHighlightedEnd',
+//
+//
+// 	'moveToLineOrEdgeOfDocument':
+// }
+
+
+function isUserEvent(event: string, events: string[]): boolean {
+	return events.some(e => e.startsWith(event));
+}
+
 export const suggestionMode = EditorState.transactionFilter.of(tr => {
+	const userEvents = getUserEvents(tr);
+	const vim_mode = app.workspace.activeEditor?.editor?.cm.cm !== undefined;
+
+	// Resolves used vim cursor movements since they do not receive user event annotations
+	if (!tr.docChanged && tr.selection && vim_mode) {
+		if (cursorMoved(tr))
+			userEvents.push(tr.startState.selection.ranges[0].from < tr.selection!.ranges[0].from ? 'select.forward' : 'select.backward');
+		if ( vim_action_resolver[app.workspace.activeEditor?.editor?.cm.cm?.state.vim.lastMotion?.name as keyof typeof vim_action_resolver]?.group)
+			userEvents.push('select.group');
+	}
+
+
+	// Handle edit operations
 	if (tr.docChanged) {
 		let operation_type: OperationType;
 		let event_type: EventType = EventType.NONE;
@@ -113,24 +199,31 @@ export const suggestionMode = EditorState.transactionFilter.of(tr => {
 		// 	}
 	}
 
+	// Handle cursor movements
+	else if (isUserEvent('select', userEvents) && cursorMoved(tr) /*&& tr.startState.field(editorLivePreviewField)*/) {
+		// Pointer/Mouse selection does not need any further processing
+		if (userEvents.includes('select.pointer'))
+			return tr;
 
-	else if (tr.isUserEvent('select') /*&& tr.startState.field(editorLivePreviewField)*/) {
+
+		// FIXME: nodes in selection is currently not cached
 		// @ts-ignore
 		const nodes = nodesInSelection(tr.startState.field(treeParser).tree);
 
-		const userEvents = getUserEvents(tr);
 		const backwards_select = userEvents.includes('select.backward');
 		const group_select = userEvents.includes('select.group');
 		const is_selection = userEvents.includes('select.extend');
 		const selections: SelectionRange[] = [];
-
-		for (const range of tr.selection!.ranges) {
-			const cursor_operation = cursor_move(range, nodes, tr.startState.doc, tr.startState, backwards_select, group_select, is_selection);
+		for (const [idx, range] of tr.selection!.ranges.entries()) {
+			const cursor_operation = cursor_move(range,  tr.startState.selection!.ranges[idx], nodes,
+				tr.startState.doc, tr.startState, backwards_select, group_select, is_selection, vim_mode);
 			selections.push(cursor_operation.selection);
 		}
 
 		return tr.startState.update({
 			selection: EditorSelection.create(selections),
+			// TODO: Check if filter should only apply in vim mode?
+			filter: false,
 		});
 	}
 

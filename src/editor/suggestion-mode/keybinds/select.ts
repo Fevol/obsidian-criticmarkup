@@ -38,13 +38,13 @@ function cursorByChar(view: EditorView, forward: boolean) {
 	return moveSel(view, range => range.empty ? view.moveByChar(range, forward) : rangeEnd(range, forward), forward)
 }
 
-function extendSel(view: EditorView, how: (range: SelectionRange) => SelectionRange, forward?: boolean): boolean {
+function extendSel(view: EditorView, how: (range: SelectionRange) => SelectionRange, forward?: boolean, group?: boolean): boolean {
 	const selection = updateSel(view.state.selection, range => {
 		const head = how(range)
 		return EditorSelection.range(range.anchor, head.head, head.goalColumn, head.bidiLevel || undefined)
 	})
 	if (selection.eq(view.state.selection)) return false
-	view.dispatch(setSel(view.state, selection, forward, false, true))
+	view.dispatch(setSel(view.state, selection, forward, group, true))
 	return true
 }
 
@@ -57,7 +57,7 @@ function cursorByGroup(view: EditorView, forward: boolean) {
 }
 
 function selectByGroup(view: EditorView, forward: boolean) {
-	return extendSel(view, range => view.moveByGroup(range, forward), forward)
+	return extendSel(view, range => view.moveByGroup(range, forward), forward, true)
 }
 
 function ltrAtCursor(view: EditorView) {

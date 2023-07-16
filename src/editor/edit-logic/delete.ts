@@ -3,7 +3,7 @@ import type { Text } from '@codemirror/state';
 import { EditorSelection, EditorState, SelectionRange } from '@codemirror/state';
 import { wrapBracket } from '../../util';
 import { CriticMarkupNodes } from '../criticmarkup-nodes';
-import { deleteGroup } from '../editor-util';
+import { findBlockingChar } from '../editor-util';
 import { CriticMarkupOperation } from '../../types';
 
 export function text_delete(range: CriticMarkupOperation, nodes: CriticMarkupNodes, offset: number, doc: Text,
@@ -18,7 +18,7 @@ export function text_delete(range: CriticMarkupOperation, nodes: CriticMarkupNod
 	let selection: SelectionRange = EditorSelection.cursor(0);
 
 	if (selection_delete) {
-		if (nodes_in_range.nodes.length === 1 && nodes_in_range.get(0).encloses(range.from, range.to)) {
+		if (nodes_in_range.nodes.length === 1 && nodes_in_range.get(0).encloses_range(range.from, range.to)) {
 			const node = nodes_in_range.get(0);
 			const include_left_bracket = range.from <= node.from + 3;
 			const include_right_bracket = range.to >= node.to - 3;
@@ -83,7 +83,7 @@ export function text_delete(range: CriticMarkupOperation, nodes: CriticMarkupNod
 			if (backwards_delete) {
 				if (node.from + 3 >= range.from) {
 					range.to = node.from;
-					range.from = group_delete ? deleteGroup(range.to - 1, !backwards_delete, state) : range.to - 1;
+					range.from = group_delete ? findBlockingChar(range.to - 1, !backwards_delete, state)[0] : range.to - 1;
 					node = undefined;
 				} else if (node.type === "Addition" && node.to - 3 <= range.to) {
 					range.from = node.to - 1;
@@ -93,7 +93,7 @@ export function text_delete(range: CriticMarkupOperation, nodes: CriticMarkupNod
 			} else if (!backwards_delete) {
 				if (node.to - 3 <= range.to) {
 					range.from = node.to;
-					range.to = group_delete ? deleteGroup(range.from + 1, !backwards_delete, state) : range.from + 1;
+					range.to = group_delete ? findBlockingChar(range.from + 1, !backwards_delete, state)[0] : range.from + 1;
 					node = undefined;
 				} else if (node.type === "Addition" && node.from + 3 >= range.from) {
 					range.to = node.from + 1;
@@ -135,7 +135,7 @@ export function text_delete(range: CriticMarkupOperation, nodes: CriticMarkupNod
 			let remove = 0;
 
 			if (backwards_delete && left_adjacent_node && left_adjacent_node.to > range.from) {
-				remove = group_delete ? deleteGroup(left_adjacent_node.to - 3, false, state) : left_adjacent_node.to - 4;
+				remove = group_delete ? findBlockingChar(left_adjacent_node.to - 3, false, state)[0] : left_adjacent_node.to - 4;
 				cursor_location = remove;
 				const outside_content = doc.sliceString(left_adjacent_node.to, range.to);
 				if (left_adjacent_node.type === 'Addition') {
@@ -159,7 +159,7 @@ export function text_delete(range: CriticMarkupOperation, nodes: CriticMarkupNod
 					deletion_to = range.to;
 				}
 			} else if (!backwards_delete && right_adjacent_node && right_adjacent_node.from < range.to) {
-				remove = group_delete ? deleteGroup(right_adjacent_node.from + 3, true, state) : right_adjacent_node.from + 4;
+				remove = group_delete ? findBlockingChar(right_adjacent_node.from + 3, true, state)[0] : right_adjacent_node.from + 4;
 				const outside_content = doc.sliceString(range.from, right_adjacent_node.from);
 				if (right_adjacent_node.type === 'Addition') {
 					affected_node = right_adjacent_node;
@@ -191,7 +191,7 @@ export function text_delete(range: CriticMarkupOperation, nodes: CriticMarkupNod
 					if (!group_delete) {
 						cursor_location = cursor_location + (backwards_delete ? -3 : 3);
 					} else {
-						cursor_location = deleteGroup(backwards_delete ? adjacent_deletion_node.to - 3 : adjacent_deletion_node.from + 3, !backwards_delete, state);
+						cursor_location = findBlockingChar(backwards_delete ? adjacent_deletion_node.to - 3 : adjacent_deletion_node.from + 3, !backwards_delete, state)[0];
 						if (group_delete) {
 							cursor_location += 4;
 							if (left_deletion_node && cursor_location <= adjacent_deletion_node.from) {
@@ -242,7 +242,7 @@ export function text_delete(range: CriticMarkupOperation, nodes: CriticMarkupNod
 		} else if (node && node.type === 'Deletion') {
 			let cursor_location;
 			if (backwards_delete && node.from && range.from <= node.from + 2 + (group_delete ? 1 : 0)) {
-				const remove = group_delete ? deleteGroup(node.from, false, state) : node.from - 1;
+				const remove = group_delete ? findBlockingChar(node.from, false, state)[0] : node.from - 1;
 				changes.push({
 					from: remove,
 					to: node.from,
@@ -255,7 +255,7 @@ export function text_delete(range: CriticMarkupOperation, nodes: CriticMarkupNod
 				});
 				cursor_location = remove;
 			} else if (!backwards_delete && node.to && range.to >= node.to - 2 - (group_delete ? 1 : 0)) {
-				const remove = group_delete ? deleteGroup(node.to, true, state) : node.to + 1;
+				const remove = group_delete ? findBlockingChar(node.to, true, state)[0] : node.to + 1;
 				changes.push({
 					from: node.to,
 					to: remove,

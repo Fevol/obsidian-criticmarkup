@@ -14,6 +14,10 @@ export abstract class CriticMarkupNode {
 		this.type = type;
 	}
 
+	empty() {
+		return this.from + 3 === this.to - 3;
+	}
+
 	text(str: string, offset = 0) {
 		return str.slice(Math.max(this.from - offset, 0), Math.min(this.to - offset, str.length));
 	}
@@ -30,7 +34,11 @@ export abstract class CriticMarkupNode {
 		return this.from < end && start < this.to;
 	}
 
-	encloses(start: number, end: number) {
+	encloses(cursor: number) {
+		return this.from <= cursor && this.to >= cursor;
+	}
+
+	encloses_range(start: number, end: number) {
 		return this.from <= start && this.to >= end;
 	}
 
@@ -44,6 +52,39 @@ export abstract class CriticMarkupNode {
 
 	touches(cursor: number) {
 		return this.from === cursor || this.to === cursor;
+	}
+
+	// TODO: Remove additional condition params if they're not used
+	cursor_inside(cursor: number) {
+		return this.from + 3 < cursor && this.to - 3 > cursor;
+	}
+
+	cursor_infront(cursor: number, left: boolean) {
+		return left ? cursor <= this.from + 3 : cursor >= this.to - 3;
+	}
+
+	cursor_behind(cursor: number, left: boolean) {
+		return left ? cursor >= this.from + 3 : cursor <= this.to - 3;
+	}
+
+	touches_left_bracket(cursor: number, block_cursor = false, loose = false) {
+		// if (block_cursor)
+		// 	return  cursor < this.from + 3;
+		if (loose)
+			return cursor >= this.from && cursor <= this.from + 3;
+		return cursor >= this.from && cursor < this.from + 3;
+	}
+
+	touches_right_bracket(cursor: number, block_cursor = false, loose = false) {
+		if (loose)
+			return cursor >= this.to - 3 && cursor <= this.to;
+		if (block_cursor)
+			return cursor >= this.to - 3  && cursor < this.to;
+		return cursor > this.to - 3  && cursor <= this.to;
+	}
+
+	touches_bracket(cursor: number, left: boolean, block_cursor = false, loose = false) {
+		return left ? this.touches_left_bracket(cursor, block_cursor, loose) : this.touches_right_bracket(cursor, block_cursor, loose);
 	}
 }
 
@@ -124,7 +165,8 @@ export function constructNode(from: number, to: number, type: string, middle?: n
 
 
 
-
+// TODO: Convert this into a B+ tree for efficient node retrieval?
+// TODO: This tree should be incrementally maintained as document updates occur, rather than being constructed whenever I require all nodes
 export class CriticMarkupNodes {
 	nodes: CriticMarkupNode[];
 
@@ -138,20 +180,72 @@ export class CriticMarkupNodes {
 		return this.nodes[index];
 	}
 
-	at_cursor(cursor: number) {
+	at_cursor(cursor: number, block_cursor = false, loose = false) {
+		if (loose)
+			return this.nodes.find(node => node.from <= cursor && node.to >= cursor);
+		if (block_cursor)
+			return this.nodes.find(node => node.from <= cursor && node.to > cursor);
 		return this.nodes.find(node => node.from < cursor && node.to > cursor);
 	}
 
-	adjacent_to_cursor(cursor: number, left: boolean) {
+	between_cursor(cursor_start: number, cursor_end: number, left: boolean, loose = false) {
+		const nodes = [];
+		if (!left) {
+			const first_node = this.nodes.findIndex(node => node.from >= cursor_start);
+			for (let i = first_node; i < this.nodes.length; i++) {
+				const node = this.nodes[i];
+				if (loose ? node.from > cursor_end : node.from >= cursor_end)
+					break;
+				nodes.push(node);
+			}
+		} else {
+			const last_node = this.nodes.reverse().slice().findIndex(node => node.to <= cursor_start);
+			for (let i = last_node; i >= 0; i--) {
+				const node = this.nodes[i];
+				if (loose ? node.to < cursor_end : node.to <= cursor_end)
+					break;
+				nodes.push(node);
+			}
+		}
+		return nodes;
+	}
+
+	range_passes_node(from: number, to: number, left: boolean) {
+		if (left)
+			return this.nodes.slice().reverse().find(node => (from >= node.to && node.to >= to) || (from > node.from && node.from >= to));
+		else
+			return this.nodes.find(node => (from <= node.from && node.from <= to) || (from < node.to && node.to <= to));
+	}
+
+
+	near_cursor(cursor: number, left: boolean) {
 		if (left)
 			return this.nodes.slice().reverse().find(node => node.to <= cursor);
-		return this.nodes.find(node => node.from >= cursor);
+		else
+			return this.nodes.find(node => cursor <= node.from);
+	}
+
+	adjacent_to_cursor(cursor: number, left: boolean, loose = false) {
+		if (left)
+			return this.nodes.slice().reverse().find(node => (loose ? node.from : node.to) <= cursor);
+		return this.nodes.find(node => cursor <= (loose ? node.to : node.from));
 	}
 
 	adjacent_to_node(node: CriticMarkupNode, left: boolean, directly_adjacent = false) {
-		if (left)
-			return this.nodes.slice().reverse().find(n => directly_adjacent ? n.to === node.from : n.to <= node.from);
-		return this.nodes.find(n => directly_adjacent ? n.from === node.to : n.from >= node.to);
+		const node_idx = this.nodes.findIndex(n => n === node);
+		if (node_idx === -1)
+			return null;
+		const adjacent = left ? this.nodes[node_idx - 1] : this.nodes[node_idx + 1];
+		if (!adjacent)
+			return null;
+
+		if (directly_adjacent) {
+			if (adjacent && left ? adjacent.to === node.from : node.to === adjacent.from)
+				return adjacent;
+		} else {
+			return adjacent;
+		}
+		return null;
 	}
 
 	filter_range(start: number, end: number, partial = true) {

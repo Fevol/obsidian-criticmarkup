@@ -111,6 +111,46 @@ interface ReadViewRenderer {
 
 }
 
+interface CursorLocation {
+	ch: number,
+	line: number
+}
+
+interface EditorViewI extends EditorView {
+	cm?: {
+		state: {
+			vim: {
+				inputState: {
+					changeQueue: null,
+					keyBuffer: [],
+					motion: null,
+					motionArgs: null,
+					motionRepeat: [],
+					operator: null,
+					operatorArgs: null,
+					prefixRepeat: [],
+					registerName: null,
+				},
+				insertMode: false,
+				insertModeRepeat: undefined,
+				lastEditActionCommand: undefined,
+				lastEditInputState: undefined,
+				lastHPos: number,
+				lastHSPos: number,
+				lastMotion: {
+					name?: string,
+				},
+				lastPastedText: null,
+				lastSelection: null,
+			},
+			vimPlugin: {
+				lastKeydown: string,
+			}
+		}
+	}
+}
+
+
 declare module 'obsidian' {
 	interface App {
 		account: {
@@ -181,6 +221,8 @@ declare module 'obsidian' {
 		on(name: 'config-changed', callback: () => void, ctx?: any): EventRef;
 
 		config: AppVaultConfig;
+		getConfig: (key: string) => any;
+		setConfig: (key: string, value: any) => void;
 	}
 
 	interface Menu {
@@ -199,7 +241,7 @@ declare module 'obsidian' {
 	}
 
 	interface Editor {
-		cm: EditorView;
+		cm: EditorViewI;
 	}
 
 	interface MarkdownPreviewView {

@@ -28,6 +28,8 @@ import { objectDifference } from './util';
 
 import { DEFAULT_SETTINGS } from './constants';
 import type { PluginSettings } from './types';
+import { EditorView } from '@codemirror/view';
+import { Prec } from '@codemirror/state';
 
 
 export default class CommentatorPlugin extends Plugin {
@@ -83,6 +85,34 @@ export default class CommentatorPlugin extends Plugin {
 		this.settings = Object.assign({}, this.settings, await this.loadData());
 		this.previous_settings = Object.assign({}, this.settings);
 
+		// around(app.vault, {
+		// 	setConfig(oldMethod: any) {
+		// 		return function(...args: any) {
+		// 			console.log(args);
+		// 			// @ts-ignore
+		// 			return oldMethod && oldMethod.apply(this, args);
+		// 		}
+		// 	}
+		// })
+		//
+		//
+		// if (app.vault.getConfig('vimMode')) {
+		// 	// @ts-ignore
+		// 	CodeMirrorAdapter.Vim = around(CodeMirrorAdapter.Vim, {
+		// 		handleKey(oldMethod: any) {
+		// 			return function(...args: any) {
+		// 				// Args: [Vim-state, 'key-input', 'user']
+		// 				const key_input = args[1];
+		// 				const insert_mode = args[0].state.vim.insertMode;
+		// 				console.log(insert_mode, key_input, args[0]);
+		// 				// @ts-ignore
+		// 				return oldMethod && oldMethod.apply(this, args);
+		// 			}
+		// 		}
+		// 	});
+		// }
+
+
 		if (this.settings.editor_preview_button) {
 			loadPreviewButtons(this);
 			this.loadPreviewButtonsEvent = app.workspace.on('layout-change', () => loadPreviewButtons(this));
@@ -117,6 +147,15 @@ export default class CommentatorPlugin extends Plugin {
 				this.settings.suggest_mode = !this.settings.suggest_mode;
 				await this.saveSettings();
 			},
+		});
+
+		commands.push({
+			id: 'commentator-toggle-vim',
+			name: '(DEBUG) Toggle Vim mode',
+			icon: 'comment',
+			callback: async () => {
+				this.app.vault.setConfig('vimMode', !this.app.vault.getConfig('vimMode'));
+			}
 		});
 
 		for (const command of commands) {
