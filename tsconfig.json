@@ -11,11 +11,15 @@
     "importHelpers": true,
     "strict": true,
     "paths": {
-      "src": ["src/*"]
+      "src": ["src/*", "tests/*"]
     },
     "lib": [
       "dom",
       "ESNext"
+    ],
+    "types": [
+      "jest",
+      "node"
     ]
   },
   "include": [
