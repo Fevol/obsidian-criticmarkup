@@ -69,17 +69,10 @@ export abstract class CriticMarkupNode {
 
 	touches_left_bracket(cursor: number, outside_loose = false, inside_loose = false) {
 		return cursor + (outside_loose ? 0 : 1) >= this.from && cursor + (inside_loose ? 0 : 1) <= this.from + 3;
-		// if (outside_loose)
-		// 	return cursor + (block_cursor ? 1 : 0) >= this.from && cursor <= this.from + 3;
-		// return cursor > this.from && cursor < this.from + 3;
 	}
 
 	touches_right_bracket(cursor: number, outside_loose = false, inside_loose = false) {
 		return cursor - (inside_loose ? 0 : 1) >= this.to - 3 && cursor - (outside_loose ? 0 : 1) <= this.to;
-		// return cursor + (block_cursor ? 1 : 0) - (inside_loose ? 0 : 1) >= this.to - 3 && cursor + (outside_loose ? 0 : 1) <= this.to;
-		// if (outside_loose)
-		// 	return cursor + (block_cursor ? 1 : 0)>= this.to - 3 && cursor <= this.to;
-		// return cursor > this.to - 3  && cursor < this.to;
 	}
 
 	touches_bracket(cursor: number, left: boolean, outside_loose = false, inside_loose = false) {
@@ -238,10 +231,6 @@ export class CriticMarkupNodes {
 		if (strict)
 			return nodes.find(node => left ? ((loose ? node.from : node.to) < cursor) : (cursor < (loose ? node.to : node.from)) );
 		return nodes.find(node => left ? ((loose ? node.from : node.to) <= cursor) : (cursor <= (loose ? node.to : node.from)) );
-
-		// if (left)
-		// 	return this.nodes.slice().reverse().find(node => (loose ? node.from : node.to) <= cursor);
-		// return this.nodes.find(node => cursor <= (loose ? node.to : node.from));
 	}
 
 	adjacent_to_node(node: CriticMarkupNode, left: boolean, directly_adjacent = false) {

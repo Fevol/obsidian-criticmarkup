@@ -106,30 +106,7 @@ function character_mapper(nodes: CriticMarkupNodes, positions: number[], left: b
 	return mapping;
 }
 
-// function movement_mapper(nodes: CriticMarkupNodes, positions: number[]) {
-// 	const mapping = [];
-// 	let previous_pos = 0;
-// 	for (const position of positions) {
-// 		const node = nodes.at_cursor(position, true, true);
-// 		if (node) {
-// 			if (node.touches_left_bracket(position, true, false)) {
-// 				mapping.push(previous_pos);
-// 			} else if (node.touches_right_bracket(position, true, true)) {
-// 				mapping.push(previous_pos);
-// 			} else {
-// 				previous_pos = position;
-// 				mapping.push(previous_pos);
-// 			}
-// 		} else {
-// 			previous_pos = position;
-// 			mapping.push(previous_pos);
-// 		}
-// 	}
-// 	return mapping;
-// }
 
-
-// describe('Regular cursor movement', () => {
 for (let test_case of test_cases) {
 	if (test_case.startsWith('{++') || test_case.endsWith('++}'))
 		test_case = ' ' + test_case + ' ';
