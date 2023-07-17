@@ -85,32 +85,6 @@ export default class CommentatorPlugin extends Plugin {
 		this.settings = Object.assign({}, this.settings, await this.loadData());
 		this.previous_settings = Object.assign({}, this.settings);
 
-		// around(app.vault, {
-		// 	setConfig(oldMethod: any) {
-		// 		return function(...args: any) {
-		// 			console.log(args);
-		// 			// @ts-ignore
-		// 			return oldMethod && oldMethod.apply(this, args);
-		// 		}
-		// 	}
-		// })
-		//
-		//
-		// if (app.vault.getConfig('vimMode')) {
-		// 	// @ts-ignore
-		// 	CodeMirrorAdapter.Vim = around(CodeMirrorAdapter.Vim, {
-		// 		handleKey(oldMethod: any) {
-		// 			return function(...args: any) {
-		// 				// Args: [Vim-state, 'key-input', 'user']
-		// 				const key_input = args[1];
-		// 				const insert_mode = args[0].state.vim.insertMode;
-		// 				console.log(insert_mode, key_input, args[0]);
-		// 				// @ts-ignore
-		// 				return oldMethod && oldMethod.apply(this, args);
-		// 			}
-		// 		}
-		// 	});
-		// }
 
 
 		if (this.settings.editor_preview_button) {

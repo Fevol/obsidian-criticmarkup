@@ -30,7 +30,6 @@ export class CriticMarkupMarker extends GutterMarker {
 function buildMarkers(view: EditorView, tree: Tree): RangeSet<CriticMarkupMarker> {
 	const builder = new RangeSetBuilder<CriticMarkupMarker>();
 
-	// @ts-ignore (Get tree from extension)
 	const nodes: CriticMarkupNodes = nodesInSelection(tree);
 	const markers = nodes.nodes.map((node: { from: number; to: number;}) => {
 		const newnode: any = Object.assign({}, node);
@@ -63,10 +62,10 @@ function buildMarkers(view: EditorView, tree: Tree): RangeSet<CriticMarkupMarker
 export const gutterExtension = (settings: PluginSettings) => gutter({
 	class: 'criticmarkup-gutter' + (!settings.hide_empty_gutter ? ' criticmarkup-gutter-show-empty' : ''),
 	markers(view: EditorView) {
-		// @ts-ignore (Tree gotten from state field)
 		return buildMarkers(view, view.state.field(treeParser).tree) ?? RangeSet.empty;
 	},
 	domEventHandlers: {
+		// FIXME: Not clickable on first go (results in users not knowing this feature exists)
 		click: (view, line, event: Event) => {
 			const menu = new Menu();
 			menu.addItem(item => {

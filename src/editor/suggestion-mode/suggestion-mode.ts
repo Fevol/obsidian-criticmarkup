@@ -126,11 +126,11 @@ export const suggestionMode = EditorState.transactionFilter.of(tr => {
 
 		tr.changes.iterChanges((fromA, toA, fromB, toB, inserted) => {
 			let text = '';
-			// @ts-ignore
+			// @ts-ignore (Inserted always exists when iterating changes)
 			if (inserted.text.length === 1 && inserted.text[0] === '')
 				text += '';
 			else {
-				// @ts-ignore (text exists on Text)
+				// @ts-ignore (text exists on Text in inserted)
 				const change_text = inserted.text.join('');
 				text += change_text.length ? change_text : '\n';
 			}
@@ -155,7 +155,6 @@ export const suggestionMode = EditorState.transactionFilter.of(tr => {
 		} else
 			operation_type = OperationType.INSERTION;
 
-		// @ts-ignore
 		const nodes = nodesInSelection(tr.startState.field(treeParser).tree);
 		const changes = [];
 		const selections: SelectionRange[] = [];
@@ -207,7 +206,6 @@ export const suggestionMode = EditorState.transactionFilter.of(tr => {
 
 
 		// FIXME: nodes in selection is currently not cached
-		// @ts-ignore
 		const nodes = nodesInSelection(tr.startState.field(treeParser).tree);
 
 		const backwards_select = userEvents.includes('select.backward');

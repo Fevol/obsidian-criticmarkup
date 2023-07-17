@@ -12,7 +12,6 @@ export const change_suggestions: EventRef =
 				.setSection('criticmarkup')
 				.onClick(() => {
 					const [from, to] = selectionToRange(editor);
-					// @ts-ignore (editor.cm.dispatch exists)
 					editor.cm.dispatch(editor.cm.state.update({
 						changes: acceptAllSuggestions(editor.cm.state, from, to),
 					}));
@@ -25,7 +24,6 @@ export const change_suggestions: EventRef =
 				.setSection('criticmarkup')
 				.onClick(() => {
 					const [from, to] = selectionToRange(editor);
-					// @ts-ignore (editor.cm.dispatch exists)
 					editor.cm.dispatch(editor.cm.state.update({
 						changes: rejectAllSuggestions(editor.cm.state, from, to),
 					}));

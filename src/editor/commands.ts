@@ -13,7 +13,6 @@ import { ltEP, minEP, maxEP, nodesInSelection, selectionToRange } from './editor
 
 
 function changeSelectionType(editor: Editor, view: MarkdownView, type: string) {
-	// @ts-ignore
 	const tree: Tree = editor.cm.state.field(treeParser).tree;
 
 	const selection = editor.listSelections()[0];
@@ -220,7 +219,6 @@ function changeSelectionType(editor: Editor, view: MarkdownView, type: string) {
 
 
 export function acceptAllSuggestions(state: EditorState, from?: number, to?: number): ChangeSpec[] {
-	// @ts-ignore
 	const tree: Tree = state.field(treeParser).tree;
 	const text = state.doc.toString();
 
@@ -239,7 +237,6 @@ export function acceptAllSuggestions(state: EditorState, from?: number, to?: num
 
 
 export function rejectAllSuggestions(state: EditorState, from?: number, to?: number): ChangeSpec[] {
-	// @ts-ignore
 	const tree: Tree = state.field(treeParser).tree;
 	const text = state.doc.toString();
 

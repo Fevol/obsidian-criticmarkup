@@ -26,7 +26,7 @@ const test_cases = [
 	'ab{++cd++}{++++}{--......--}ef',
 ];
 
-// @ts-ignore
+// @ts-ignore (Doesn't like me assigning partial app to App)
 global.app = <Partial<App>>{
 	workspace: {
 		activeEditor: null,
@@ -118,7 +118,6 @@ for (let test_case of test_cases) {
 			}),
 		});
 
-		// @ts-ignore
 		const tree = view.state.field(treeParser).tree;
 		const nodes = nodesInSelection(tree);
 

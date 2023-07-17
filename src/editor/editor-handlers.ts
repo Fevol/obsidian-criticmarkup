@@ -34,12 +34,9 @@ export const nodeCorrecter = EditorState.transactionFilter.of(tr => {
 
 		if (current_selection.main.anchor === current_selection.main.head) {
 			const text = tr.startState.doc.toString();
-			// @ts-ignore (Tree is correct)
 			const tree = tr.startState.field(treeParser).tree;
 
-			// @ts-ignore (Tree is correct)
 			const start_node = nodeAtCursor(tree, previous_selection.main.head);
-			// @ts-ignore (Tree is correct)
 			const end_node = nodeAtCursor(tree, current_selection.main.head);
 
 			if (start_node && start_node !== end_node &&

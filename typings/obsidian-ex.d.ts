@@ -1,6 +1,7 @@
 // Thanks to AquaCat/pjkaufman for the suggestion to add typings
-import { Command, Vault, Plugin, SettingTab, MenuItem } from 'obsidian';
+import { Command, Plugin, SettingTab } from 'obsidian';
 import { EditorView } from '@codemirror/view';
+import { EditorState } from '@codemirror/state';
 
 
 interface AppVaultConfig {
@@ -116,38 +117,45 @@ interface CursorLocation {
 	line: number
 }
 
-interface EditorViewI extends EditorView {
-	cm?: {
-		state: {
-			vim: {
-				inputState: {
-					changeQueue: null,
-					keyBuffer: [],
-					motion: null,
-					motionArgs: null,
-					motionRepeat: [],
-					operator: null,
-					operatorArgs: null,
-					prefixRepeat: [],
-					registerName: null,
-				},
-				insertMode: false,
-				insertModeRepeat: undefined,
-				lastEditActionCommand: undefined,
-				lastEditInputState: undefined,
-				lastHPos: number,
-				lastHSPos: number,
-				lastMotion: {
-					name?: string,
-				},
-				lastPastedText: null,
-				lastSelection: null,
-			},
-			vimPlugin: {
-				lastKeydown: string,
-			}
-		}
+
+
+interface CMState extends EditorState {
+	vim: {
+		inputState: {
+			changeQueue: null,
+			keyBuffer: [],
+			motion: null,
+			motionArgs: null,
+			motionRepeat: [],
+			operator: null,
+			operatorArgs: null,
+			prefixRepeat: [],
+			registerName: null,
+		},
+		insertMode: false,
+		insertModeRepeat: undefined,
+		lastEditActionCommand: undefined,
+		lastEditInputState: undefined,
+		lastHPos: number,
+		lastHSPos: number,
+		lastMotion: {
+			name?: string,
+		},
+		lastPastedText: null,
+		lastSelection: null,
+	},
+	vimPlugin: {
+		lastKeydown: string,
 	}
+}
+
+interface CMView extends EditorView {
+	state: CMState;
+}
+
+
+interface EditorViewI extends EditorView {
+	cm?: CMView;
 }
 
 

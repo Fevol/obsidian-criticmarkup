@@ -67,7 +67,6 @@ const deleteByChar = (target: CommandTarget, forward: boolean) => deleteBy(targe
 	if (!forward && pos > line.from && pos < line.from + 200 &&
 		!/[^ \t]/.test(before = line.text.slice(0, pos - line.from))) {
 		if (before[before.length - 1] == '\t') return pos - 1;
-		// @ts-ignore
 		const col = countColumn(before, state.tabSize), drop = col % getIndentUnit(state) || getIndentUnit(state);
 		for (let i = 0; i < drop && before[before.length - 1 - i] == " "; i++) pos--;
 		targetPos = pos;

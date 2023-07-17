@@ -15,7 +15,6 @@ export function livePreview (settings: PluginSettings): Extension {
 			decorations: DecorationSet;
 
 			constructor(view: EditorView) {
-				// @ts-ignore
 				const tree = view.state.field(treeParser).tree;
 				this.settings = settings;
 				this.decorations = (this.settings.live_preview ? this.buildDecorations(tree, view) : null) ?? Decoration.none;
@@ -238,10 +237,8 @@ export function livePreview (settings: PluginSettings): Extension {
 			}
 
 			async update(update: ViewUpdate) {
-				// @ts-ignore (Returns Tree object)
 				const tree = update.state.field(treeParser).tree;
 
-				// @ts-ignore
 				if (tree.length < update.view.viewport.to || update.view.composing)
 					this.decorations = this.decorations.map(update.changes);
 					// TODO: Figure out how to implement the 'hasEffect' helper function, or determine if it is even necessary
