@@ -15,7 +15,7 @@
 	"author": "kometenstaub and Fevol",
 	"license": "MIT",
 	"devDependencies": {
-		"@codemirror/language": "^6.8.0",
+		"@codemirror/language": "git://github.com/lishid/cm-language.git#main",
 		"@lezer/generator": "^1.3.0",
 		"@lezer/lr": "^1.3.9",
 		"@types/jest": "^29.5.3",
