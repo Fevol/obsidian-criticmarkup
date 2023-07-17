@@ -45,7 +45,10 @@ export function livePreview (settings: PluginSettings): Extension {
 					const end = cursor.to;
 					const name = cursor.name;
 
-					if (name === '⚠' || name === 'MSub') continue;
+
+					// FIXME: Parser should in general not detect half-completed nodes ({++), end-start < 6 at least prevents errors due to length
+					//			Note: when you have a bracket like {++{++, it will still be parsed regularly
+					if (name === '⚠' || name === 'MSub' || end - start < 6) continue;
 
 					// Get next cursor node without moving the cursor itself
 					// TODO: Potential use for user warning if CriticMarkup is not closed

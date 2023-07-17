@@ -70,6 +70,7 @@ export function nodesInSelection(tree: Tree, start?: number, end?: number) {
 		from: start,
 		to: end,
 		enter: (node) => {
+			// FIXME: Add check here whether [node.to - 3, node.to] is in fact a bracket, prevent half-open nodes from actually being considered as nodes
 			if (node.type.name === '⚠')
 				return false;
 			if (node.type.name === 'CriticMarkup' || node.type.name === 'MSub')
