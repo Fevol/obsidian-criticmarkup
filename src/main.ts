@@ -26,7 +26,7 @@ import { CommentatorSettings } from './ui/settings';
 
 import { objectDifference } from './util';
 
-import { DEFAULT_SETTINGS } from './constants';
+import { DEFAULT_SETTINGS, REQUIRES_FULL_RELOAD } from './constants';
 import type { PluginSettings } from './types';
 import { EditorView } from '@codemirror/view';
 import { Prec } from '@codemirror/state';
@@ -48,6 +48,8 @@ export default class CommentatorPlugin extends Plugin {
 	postProcessor!: MarkdownPostProcessor;
 
 	loadEditorExtensions() {
+		console.log("RELOADED EXT")
+
 		this.editorExtensions.length = 0;
 
 		this.editorExtensions.push(keybindExtensions);
@@ -60,7 +62,7 @@ export default class CommentatorPlugin extends Plugin {
 			this.editorExtensions.push(gutterExtension(this.settings));
 
 		if (this.settings.suggest_mode)
-			this.editorExtensions.push(suggestionMode);
+			this.editorExtensions.push(suggestionMode(this.settings));
 
 		if (this.settings.tag_completion)
 			this.editorExtensions.push(bracketMatcher);
@@ -69,8 +71,7 @@ export default class CommentatorPlugin extends Plugin {
 	}
 
 	async updateEditorExtension() {
-		if (Object.keys(this.changed_settings).some(key =>
-			['suggestion_status', 'editor_styling', 'live_preview', 'editor_gutter', 'tag_completion', 'node_correcter', 'suggest_mode', 'hide_empty_gutter'].includes(key))) {
+		if (Object.keys(this.changed_settings).some(key => REQUIRES_FULL_RELOAD.has(key))) {
 			this.loadEditorExtensions();
 			this.app.workspace.updateOptions();
 		}
@@ -192,7 +193,7 @@ export default class CommentatorPlugin extends Plugin {
 			} else {
 				removePreviewButtons();
 				app.workspace.offref(this.loadPreviewButtonsEvent);
-				this.settings.suggestion_status = 0;
+				this.settings.preview_mode = 0;
 			}
 		}
 

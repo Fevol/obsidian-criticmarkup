@@ -2,7 +2,7 @@ import type { PluginSettings } from './types';
 
 
 export const DEFAULT_SETTINGS: PluginSettings = {
-	suggestion_status: 0,
+	preview_mode: 0,
 	editor_preview_button: true,
 	editor_gutter: true,
 
@@ -17,4 +17,18 @@ export const DEFAULT_SETTINGS: PluginSettings = {
 
 	post_processor: true,
 	live_preview: true,
+	alternative_cursor_movement: false,
 };
+
+
+export const REQUIRES_FULL_RELOAD: Set<string> = new Set([
+	"preview_mode",
+	"live_preview",
+	"editor_gutter",
+
+	"hide_empty_gutter",
+
+	"tag_completion",
+	"node_correcter",
+	"suggest_mode",
+]);

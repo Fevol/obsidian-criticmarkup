@@ -56,10 +56,10 @@ export function livePreview (settings: PluginSettings): Extension {
 					// Restore cursor position (warning: recursion error)
 					// cursor.prev();
 
-					if (this.settings.suggestion_status && !(name === 'Comment' || name === 'Highlight')) {
+					if (this.settings.preview_mode && !(name === 'Comment' || name === 'Highlight')) {
 						// TODO: Add node type to class list for further customization
 						// MODE: Accept all suggestions
-						if (this.settings.suggestion_status === 1) {
+						if (this.settings.preview_mode === 1) {
 							if (is_livepreview)
 								this.removeBrackets(widgets, start, end);
 							if (name === 'Addition') {

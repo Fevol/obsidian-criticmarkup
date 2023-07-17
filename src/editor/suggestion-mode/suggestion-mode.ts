@@ -1,10 +1,10 @@
-import { EditorSelection, EditorState, SelectionRange } from '@codemirror/state';
+import { EditorSelection, EditorState, Extension, SelectionRange } from '@codemirror/state';
 import { cursorMoved, getUserEvents, nodesInSelection } from '../editor-util';
 import { treeParser } from '../tree-parser';
 import { text_insert } from '../edit-logic/insert';
 import { text_delete } from '../edit-logic/delete';
 import { cursor_move } from '../edit-logic/cursor';
-import { CriticMarkupOperation } from '../../types';
+import { CriticMarkupOperation, PluginSettings } from '../../types';
 
 enum OperationType {
 	INSERTION,
@@ -19,10 +19,6 @@ enum EventType {
 	DELETION,
 	PASTE,
 }
-
-
-
-let last_char_position = -1;
 
 const vim_action_resolver = {
 	'moveByCharacters': {
@@ -95,7 +91,8 @@ function isUserEvent(event: string, events: string[]): boolean {
 	return events.some(e => e.startsWith(event));
 }
 
-export const suggestionMode = EditorState.transactionFilter.of(tr => {
+// FIXME: Ask somebody whether this is the cleanest/most efficient way to access settings inside of the extension
+export const suggestionMode = (settings: PluginSettings): Extension => EditorState.transactionFilter.of(tr => {
 	const userEvents = getUserEvents(tr);
 	const vim_mode = app.workspace.activeEditor?.editor?.cm.cm !== undefined;
 
@@ -199,7 +196,7 @@ export const suggestionMode = EditorState.transactionFilter.of(tr => {
 	}
 
 	// Handle cursor movements
-	else if (isUserEvent('select', userEvents) && cursorMoved(tr) /*&& tr.startState.field(editorLivePreviewField)*/) {
+	else if (isUserEvent('select', userEvents) && cursorMoved(tr) && settings.alternative_cursor_movement /*&& tr.startState.field(editorLivePreviewField)*/) {
 		// Pointer/Mouse selection does not need any further processing
 		if (userEvents.includes('select.pointer'))
 			return tr;

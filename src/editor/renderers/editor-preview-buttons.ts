@@ -18,11 +18,11 @@ export function loadPreviewButtons(plugin: CommentatorPlugin) {
 		const view = leaf.view as MarkdownView;
 		if (button_mapping.has(view)) continue;
 
-		const { icon, tooltip, label } = status_mapping[plugin.settings.suggestion_status];
+		const { icon, tooltip, label } = status_mapping[plugin.settings.preview_mode];
 
 		const buttonElement = view.addAction(icon, tooltip, () => {
-			plugin.settings.suggestion_status = (plugin.settings.suggestion_status + 1) % status_mapping.length;
-			const { icon, tooltip, label } = status_mapping[plugin.settings.suggestion_status];
+			plugin.settings.preview_mode = (plugin.settings.preview_mode + 1) % status_mapping.length;
+			const { icon, tooltip, label } = status_mapping[plugin.settings.preview_mode];
 			setIcon(buttonElement, icon);
 			buttonElement.setAttribute('aria-label', tooltip);
 			statusElement.innerText = label;

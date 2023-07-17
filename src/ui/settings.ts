@@ -125,7 +125,7 @@ export class CommentatorSettings extends PluginSettingTab {
 
         new Setting(containerEl)
             .setName("Reading view renderer")
-            .setDesc("Toggle rendering of CriticMarkup tags in reading view mode.")
+            .setDesc("Toggle rendering of CriticMarkup tags in reading view mode")
             .addToggle(toggle => toggle.setValue(this.plugin.settings.post_processor)
                 .onChange(async (value) => {
                         this.plugin.settings.post_processor = value;
@@ -135,10 +135,20 @@ export class CommentatorSettings extends PluginSettingTab {
 
         new Setting(containerEl)
             .setName("Live preview renderer")
-            .setDesc("Toggle rendering of CriticMarkup tags in live preview.")
+            .setDesc("Toggle rendering of CriticMarkup tags in live preview")
             .addToggle(toggle => toggle.setValue(this.plugin.settings.live_preview)
                 .onChange(async (value) => {
                         this.plugin.settings.live_preview = value;
+                        await this.plugin.saveSettings();
+                }
+            ));
+
+        new Setting(containerEl)
+            .setName("Alternative cursor movement")
+            .setDesc("Toggle corrected cursor movement of cursor when CriticMarkup tags are present")
+            .addToggle(toggle => toggle.setValue(this.plugin.settings.alternative_cursor_movement)
+                .onChange(async (value) => {
+                        this.plugin.settings.alternative_cursor_movement = value;
                         await this.plugin.saveSettings();
                 }
             ));

@@ -52,16 +52,16 @@ export function postProcess(el: HTMLElement, ctx: any, settings: any) {
 
 		let new_element = '';
 		if (change.name === 'Addition') {
-			if (!settings.suggestion_status)
+			if (!settings.preview_mode)
 				new_element = `<span class='criticmarkup-preview criticmarkup-inline criticmarkup-addition'>${new_content}</span>`;
-			else if (settings.suggestion_status === 1)
+			else if (settings.preview_mode === 1)
 				new_element = `<span class='criticmarkup-preview'>${new_content}</span>`;
 			else
 				new_element = `<span class='criticmarkup-preview'/>`;
 		} else if (change.name === 'Deletion') {
-			if (!settings.suggestion_status)
+			if (!settings.preview_mode)
 				new_element = `<span class='criticmarkup-preview criticmarkup-inline criticmarkup-deletion'>${new_content}</span>`;
-			else if (settings.suggestion_status === 1)
+			else if (settings.preview_mode === 1)
 				new_element = `<span class='criticmarkup-preview'/>`;
 			else
 				new_element = `<span class='criticmarkup-preview'>${new_content}</span>`;
@@ -72,9 +72,9 @@ export function postProcess(el: HTMLElement, ctx: any, settings: any) {
 				middle -= 3;
 			}
 
-			if (!settings.suggestion_status)
+			if (!settings.preview_mode)
 				new_element = `<span class='criticmarkup-preview criticmarkup-inline criticmarkup-deletion'>${new_content.slice(0, middle - 5)}</span><span class='criticmarkup-inline criticmarkup-addition'>${new_content.substring(middle)}</span>`;
-			else if (settings.suggestion_status === 1)
+			else if (settings.preview_mode === 1)
 				new_element = `<span class='criticmarkup-preview'>${new_content.substring(middle)}</span>`;
 			else
 				new_element = `<span class='criticmarkup-preview'>${new_content.substring(0, middle - 5)}</span>`;
