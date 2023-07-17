@@ -10,18 +10,14 @@ import { findBlockingChar, getCharCategory } from '../editor-util';
 
 // FIXME: sometimes, when multiple cursors are used, position of cursor is on the wrong side of a bracket
 //		Hypothesis: probably due to middle-mouse multiple selection creation having anchor be selected instead of head?
-// FIXME: regular cursor movement is broken
-// FIXME: adjacent node check
 
 function encountered_character(head: number, nodes: CriticMarkupNodes, backwards_select: boolean, state: EditorState, cat_before: null | CharCategory = null): number {
 	let cat_during = null;
-	// FIXME: cat_during is probably always wrong (2, because of brackets) [PROBABLY FIXED]
 	const original_head = head;
 	[head, cat_during] = findBlockingChar(head, !backwards_select, state, cat_before === 1 || cat_before === null, cat_before);
 
-	const node = nodes.adjacent_to_cursor(original_head, backwards_select);
-	// FIXME: can be simplified to single statement: head <= ...
-	if (!node || (!node.encloses(head) && !nodes.at_cursor(head, false, true)))
+	let node = nodes.adjacent_to_cursor(original_head, backwards_select);
+	if (!node || !(backwards_select ? head <= node.to : head >= node.from))
 		return head;
 
 	const offset = !backwards_select ? 1 : -1;
@@ -32,13 +28,17 @@ function encountered_character(head: number, nodes: CriticMarkupNodes, backwards
 		return (!backwards_select ? node.to : node.from) - 3 * offset;
 
 	const node_front = !backwards_select ? node.from : node.to;
+	let new_node_front = node_front;
 
+	while (node?.empty()) {
+		new_node_front = !backwards_select ? node.from : node.to;
+		node = nodes.adjacent_to_node(node, backwards_select, true)!;
+	}
 
-	// if (head === node_front)
-	cat_during = getCharCategory(node_front - offset, state, backwards_select);
-	const resulting_head = encountered_node(node_front + 3 * offset, node, nodes, backwards_select, state, cat_during);
+	cat_during = getCharCategory(new_node_front - offset, state, backwards_select);
+	const resulting_head = encountered_node(new_node_front + 3 * offset, node, nodes, backwards_select, state, cat_during);
 	// FIXME: Check if necessary
-	if (resulting_head === node_front + 3 * offset)
+	if (resulting_head === new_node_front + 3 * offset)
 		return node_front;
 	return resulting_head;
 
@@ -52,12 +52,12 @@ function encountered_node(head: number, node: CriticMarkupNode, nodes: CriticMar
 	let cat_during = null;
 
 	// If head is not PAST the back bracket
-	if (!node.cursor_infront(head, backwards_select)) {
+	if (!node.empty() && !node.cursor_infront(head, backwards_select)) {
 		const cat_inside = node.empty() ? null : getCharCategory(node_front + 3 * offset, state, backwards_select);
 		// CASE 1: Cursor cannot enter node
 		if (cat_inside !== null && cat_before !== null && cat_before !== 1 && cat_inside !== cat_before)
 			return head;
-		if (head === node_front)
+		if (head >= node_front - 2)
 			head = node_front + 3 * offset;
 
 
@@ -72,13 +72,19 @@ function encountered_node(head: number, node: CriticMarkupNode, nodes: CriticMar
 
 	}
 
-	const adjacent_node = nodes.adjacent_to_node(node, backwards_select, true);
+	let adjacent_node = nodes.adjacent_to_node(node, backwards_select, true);
+	let new_node_back = node_back;
+	while (adjacent_node?.empty()) {
+		new_node_back = !backwards_select ? adjacent_node.to : adjacent_node.from;
+		adjacent_node = nodes.adjacent_to_node(adjacent_node, backwards_select, true)!;
+	}
+
+
 	if (!adjacent_node) {
-		// FIXME: Only add offset in FWD?
-		const cat_after = getCharCategory(node_back, state, backwards_select);
+		const cat_after = getCharCategory(new_node_back, state, backwards_select);
 		if ((cat_during !== null && cat_during !== 1) && cat_during !== cat_after)
 			return node_back - 3 * offset;
-		return encountered_character(node_back, nodes, backwards_select, state, cat_during);
+		return encountered_character(new_node_back, nodes, backwards_select, state, cat_during);
 	} else {
 		const adjacent_node_front = !backwards_select ? adjacent_node.from : adjacent_node.to;
 		const resulting_head = encountered_node(adjacent_node_front  + 3 * offset, adjacent_node, nodes, backwards_select, state, cat_during);
@@ -92,11 +98,14 @@ function encountered_node(head: number, node: CriticMarkupNode, nodes: CriticMar
 export function cursor_move(range: CriticMarkupRange, original_range: CriticMarkupRange, nodes: CriticMarkupNodes, doc: Text, state: EditorState,
 							backwards_select: boolean, group_select: boolean, is_selection: boolean, block_cursor = false) {
 	let head = range.head!, anchor = range.anchor!;
-
-	const node = nodes.adjacent_to_cursor(original_range.head!, backwards_select, true);
+	let node = nodes.adjacent_to_cursor(original_range.head!, backwards_select, true, !group_select);
 
 	// Logic should ONLY execute when cursor passes a node in some way
 	// FIXME: logic should execute ONLY when cursor passes a BRACKET
+	// FIXME: Up/down movement acts inconsistently (vertical position can obviously not be maintained)
+	// FIXME: Block (non-group) cursor up/down movement always shows bracket characters
+	// FIXME: Block (group) cursor sideways always shows bracket characters
+	// FIXME: Block cursor mode skips characters INSIDE node and shows inconsistent behaviour (did not happen in previous version)
 	if (node && (!backwards_select ? head >= node.from : head <= node.to)) {
 		if (group_select) {
 			if (node.encloses(original_range.head!)) {
@@ -104,33 +113,29 @@ export function cursor_move(range: CriticMarkupRange, original_range: CriticMark
 			} else {
 				head = encountered_character(original_range.head!, nodes, backwards_select, state);
 			}
+
 		} else {
-			if (backwards_select) {
-				if (node.touches_right_bracket(head, block_cursor)) {
-					head = Math.max(node.to - 4, node.from + 3);
-				} else if (node.touches_left_bracket(head, block_cursor)) {
-					const adjacent_node = nodes.adjacent_to_node(node, true, true);
-					if (adjacent_node)
-						head = Math.max(adjacent_node.to - 4, adjacent_node.from + 3);
-					else
-						head = Math.max(node.from - 1, 0);
-				}
-			} else {
-				if (node.touches_left_bracket(head, block_cursor)) {
-					head = Math.min(node.from + 4, node.to - 3);
+			const regular_cursor = head + (!backwards_select ? -1 : 1) + (!backwards_select && block_cursor ? 1 : 0);
 
-					if (block_cursor)
-						head -= 1;
-				} else if (node.touches_right_bracket(head, block_cursor)) {
-					const adjacent_node = nodes.adjacent_to_node(node, false, true);
-					if (adjacent_node)
-						head = Math.min(adjacent_node.from + 4, adjacent_node.to - 3);
-					else
-						head = Math.min(node.to + 1, doc.length);
+			if (node.touches_brackets(regular_cursor, true, true)) {
+				let last_node = node;
 
-					if (block_cursor)
-						head -= 1;
+				// If at the end of a node, immediately move to the next node
+				if (node.touches_bracket(regular_cursor, backwards_select, true, true))
+					node = nodes.adjacent_to_node(node, backwards_select, true)!;
+
+				while (node?.empty()) {
+					last_node = node;
+					node = nodes.adjacent_to_node(node, backwards_select, true)!;
 				}
+
+				if (node)
+					head = !backwards_select ? node.from + 4 : node.to - 4;
+				else
+					head = !backwards_select ? Math.min(last_node.to + 1, doc.length) : Math.max(0, last_node.from - 1);
+
+				if (block_cursor && !backwards_select)
+					head -= 1;
 			}
 		}
 	}
@@ -139,7 +144,4 @@ export function cursor_move(range: CriticMarkupRange, original_range: CriticMark
 		anchor = head;
 
 	return {selection: EditorSelection.range(anchor, head)};
-
-
-
 }
