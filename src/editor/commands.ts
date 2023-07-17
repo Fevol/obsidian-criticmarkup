@@ -7,12 +7,13 @@ import { EditorSelection, EditorState } from '@codemirror/state';
 import type { Tree } from '@lezer/common';
 
 import type { CommandI } from '../../types';
+import { NodeType } from '../types';
 
-import { addBracket, unwrapBracket, unwrapBracket2, wrapBracket } from '../util';
-import { ltEP, minEP, maxEP, nodesInSelection, selectionToRange } from './editor-util';
+import { addBracket, CM_NodeTypes, unwrapBracket, unwrapBracket2, wrapBracket } from '../util';
+import { ltEP, maxEP, minEP, nodesInSelection, selectionToRange } from './editor-util';
 
 
-function changeSelectionType(editor: Editor, view: MarkdownView, type: string) {
+function changeSelectionType(editor: Editor, view: MarkdownView, type: NodeType) {
 	const tree: Tree = editor.cm.state.field(treeParser).tree;
 
 	const selection = editor.listSelections()[0];
@@ -31,7 +32,7 @@ function changeSelectionType(editor: Editor, view: MarkdownView, type: string) {
 	// CASE 0: Selection is empty
 	if (selection_left === selection_right) {
 		editor.replaceSelection(wrapBracket('', type));
-		if (type === 'Substitution')
+		if (type === NodeType.SUBSTITUTION)
 			editor.cm.dispatch(editor.cm.state.update({
 				selection: EditorSelection.cursor(selection_left + 1),
 			}));
@@ -195,7 +196,7 @@ function changeSelectionType(editor: Editor, view: MarkdownView, type: string) {
 		}
 	}
 
-	if (type === 'Substitution') {
+	if (type === NodeType.SUBSTITUTION) {
 		const range = editor.getRange(editor.offsetToPos(selection_left + 3), editor.offsetToPos(selection_right + 3));
 		const has_endline = range.includes('\n');
 		const has_whitespace: boolean = range[0]?.match(/\s/) !== null;
@@ -225,11 +226,11 @@ export function acceptAllSuggestions(state: EditorState, from?: number, to?: num
 	const nodes = nodesInSelection(tree, from, to);
 	const changes: ChangeSpec[] = [];
 	for (const node of nodes.nodes) {
-		if (node.type === 'Addition')
+		if (node.type === NodeType.ADDITION)
 			changes.push({ from: node.from, to: node.to, insert: unwrapBracket(text.slice(node.from, node.to)) });
-		else if (node.type === 'Deletion')
+		else if (node.type === NodeType.DELETION)
 			changes.push({ from: node.from, to: node.to, insert: '' });
-		else if (node.type === 'Substitution')
+		else if (node.type === NodeType.SUBSTITUTION)
 			changes.push({ from: node.from, to: node.to, insert: unwrapBracket2(text.slice(node.from, node.to), node.type)[1] });
 	}
 	return changes;
@@ -243,21 +244,21 @@ export function rejectAllSuggestions(state: EditorState, from?: number, to?: num
 	const nodes = nodesInSelection(tree, from, to).nodes.reverse();
 	const changes: ChangeSpec[] = [];
 	for (const node of nodes) {
-		if (node.type === 'Addition')
+		if (node.type === NodeType.ADDITION)
 			changes.push({ from: node.from, to: node.to, insert: '' });
-		else if (node.type === 'Deletion')
+		else if (node.type === NodeType.DELETION)
 			changes.push({ from: node.from, to: node.to, insert: unwrapBracket(text.slice(node.from, node.to)) });
-		else if (node.type === 'Substitution')
+		else if (node.type === NodeType.SUBSTITUTION)
 			changes.push({ from: node.from, to: node.to, insert: unwrapBracket2(text.slice(node.from, node.to), node.type)[0] });
 	}
 	return changes;
 }
 
 
-const suggestion_commands = ['Addition', 'Deletion', 'Substitution', 'Comment', 'Highlight'].map(type => ({
-	id: `commentator-toggle-${type.toLowerCase()}`,
-	name: `Mark as ${type}`,
-	icon: type.toLowerCase(),
+const suggestion_commands = Object.entries(CM_NodeTypes).map(([text, type]) => ({
+	id: `commentator-toggle-${text.toLowerCase()}`,
+	name: `Mark as ${text}`,
+	icon: text.toLowerCase(),
 	editor_context: true,
 	callback: async (editor: Editor, view: MarkdownView) => {
 		changeSelectionType(editor, view, type);

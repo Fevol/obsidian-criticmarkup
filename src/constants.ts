@@ -17,7 +17,7 @@ export const DEFAULT_SETTINGS: PluginSettings = {
 
 	post_processor: true,
 	live_preview: true,
-	alternative_cursor_movement: false,
+	alternative_cursor_movement: true,
 };
 
 

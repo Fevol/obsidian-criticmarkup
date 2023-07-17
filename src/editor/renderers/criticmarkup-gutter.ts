@@ -47,7 +47,7 @@ function buildMarkers(view: EditorView, tree: Tree): RangeSet<CriticMarkupMarker
 				new CriticMarkupMarker(
 					line.from,
 					line.to,
-					node.type.toLowerCase(),
+					node.repr.toLowerCase(),
 					i === node.line_start,
 					i === node.line_end,
 				));

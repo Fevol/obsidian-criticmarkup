@@ -48,8 +48,6 @@ export default class CommentatorPlugin extends Plugin {
 	postProcessor!: MarkdownPostProcessor;
 
 	loadEditorExtensions() {
-		console.log("RELOADED EXT")
-
 		this.editorExtensions.length = 0;
 
 		this.editorExtensions.push(keybindExtensions);

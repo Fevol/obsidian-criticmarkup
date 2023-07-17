@@ -1,6 +1,8 @@
 import type { CriticMarkupOperation, EditorChange, OperationReturn } from '../../types';
 import { EditorSelection, SelectionRange } from '@codemirror/state';
 import { CriticMarkupNodes } from '../criticmarkup-nodes';
+import { NodeType } from '../../types';
+
 
 export function text_insert(range: CriticMarkupOperation, nodes: CriticMarkupNodes, offset: number): OperationReturn {
 	const node = nodes.at_cursor(range.to);
@@ -14,9 +16,9 @@ export function text_insert(range: CriticMarkupOperation, nodes: CriticMarkupNod
 
 		let replacement_start: number;
 		let node_offset = 0;
-		if (left_adjacent_node && left_adjacent_node.type === 'Addition' && left_adjacent_node.to === range.from) {
+		if (left_adjacent_node && left_adjacent_node.type === NodeType.ADDITION && left_adjacent_node.to === range.from) {
 			replacement_start = left_adjacent_node.to - 3;
-		} else if (right_adjacent_node && right_adjacent_node.type === 'Addition' && right_adjacent_node.from === range.to) {
+		} else if (right_adjacent_node && right_adjacent_node.type === NodeType.ADDITION && right_adjacent_node.from === range.to) {
 			replacement_start = right_adjacent_node.from + 3;
 		} else {
 			replacement_start = range.to;
@@ -33,7 +35,7 @@ export function text_insert(range: CriticMarkupOperation, nodes: CriticMarkupNod
 		selection = EditorSelection.cursor(replacement_start + node_offset + offset);
 
 	} else {
-		if (node.type !== 'Addition' && (range.to === node.from || range.from === node.to)) {
+		if (node.type !== NodeType.ADDITION && (range.to === node.from || range.from === node.to)) {
 			range.inserted = `{++${range.inserted}++}`;
 
 			const insert_start = range.to === node.from ? node.from : node.to;

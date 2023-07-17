@@ -1,6 +1,17 @@
 import type { SelectionRange } from '@codemirror/state';
 
 
+export type StringNodeType = 'Addition' | 'Deletion' | 'Substitution' | 'Highlight' | 'Comment';
+
+export enum NodeType {
+	ADDITION,
+	DELETION,
+	SUBSTITUTION,
+	HIGHLIGHT,
+	COMMENT,
+}
+
+
 export interface PluginSettings {
 	/**
 	 * Determines how nodes should be visualised in LP/S mode

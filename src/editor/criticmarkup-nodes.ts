@@ -1,17 +1,18 @@
 import { Text } from '@codemirror/state';
 import { CM_All_Brackets } from '../util';
-
-export type NodeType = 'Addition' | 'Deletion' | 'Substitution' | 'Highlight' | 'Comment';
+import { StringNodeType, NodeType } from '../types';
 
 export abstract class CriticMarkupNode {
 	from: number;
 	to: number;
 	type: NodeType;
+	repr: StringNodeType;
 
-	constructor(from: number, to: number, type: NodeType) {
+	constructor(from: number, to: number, type: NodeType, repr: StringNodeType) {
 		this.from = from;
 		this.to = to;
 		this.type = type;
+		this.repr = repr;
 	}
 
 	empty() {
@@ -77,7 +78,7 @@ export abstract class CriticMarkupNode {
 
 	touches_bracket(cursor: number, left: boolean, outside_loose = false, inside_loose = false) {
 		return left ? this.touches_left_bracket(cursor, outside_loose, inside_loose) :
-					  this.touches_right_bracket(cursor, outside_loose, inside_loose);
+			this.touches_right_bracket(cursor, outside_loose, inside_loose);
 	}
 
 	touches_brackets(cursor: number, outside_loose = false, inside_loose = false) {
@@ -89,7 +90,7 @@ export abstract class CriticMarkupNode {
 
 export class AdditionNode extends CriticMarkupNode {
 	constructor(from: number, to: number) {
-		super(from, to, 'Addition');
+		super(from, to, NodeType.ADDITION, 'Addition');
 	}
 
 	accept(str: string, offset = 0) {
@@ -103,7 +104,7 @@ export class AdditionNode extends CriticMarkupNode {
 
 export class DeletionNode extends CriticMarkupNode {
 	constructor(from: number, to: number) {
-		super(from, to, 'Deletion');
+		super(from, to, NodeType.DELETION, 'Deletion');
 	}
 
 	accept(str: string, offset = 0) {
@@ -119,7 +120,7 @@ export class SubstitutionNode extends CriticMarkupNode {
 	middle: number;
 
 	constructor(from: number, middle: number, to: number) {
-		super(from, to, 'Substitution');
+		super(from, to, NodeType.SUBSTITUTION, 'Substitution');
 		this.middle = middle;
 	}
 
@@ -134,16 +135,15 @@ export class SubstitutionNode extends CriticMarkupNode {
 
 export class HighlightNode extends CriticMarkupNode {
 	constructor(from: number, to: number) {
-		super(from, to, 'Highlight');
+		super(from, to, NodeType.HIGHLIGHT, 'Highlight');
 	}
 }
 
 export class CommentNode extends CriticMarkupNode {
 	constructor(from: number, to: number) {
-		super(from, to, 'Comment');
+		super(from, to, NodeType.COMMENT, 'Comment');
 	}
 }
-
 
 
 export function constructNode(from: number, to: number, type: string, middle?: number) {
@@ -160,8 +160,6 @@ export function constructNode(from: number, to: number, type: string, middle?: n
 			return new CommentNode(from, to);
 	}
 }
-
-
 
 
 // TODO: Convert this into a B+ tree for efficient node retrieval?
@@ -227,10 +225,10 @@ export class CriticMarkupNodes {
 	}
 
 	adjacent_to_cursor(cursor: number, left: boolean, loose = false, strict = false) {
-		const nodes = (left ? this.nodes.slice().reverse() : this.nodes)
+		const nodes = (left ? this.nodes.slice().reverse() : this.nodes);
 		if (strict)
-			return nodes.find(node => left ? ((loose ? node.from : node.to) < cursor) : (cursor < (loose ? node.to : node.from)) );
-		return nodes.find(node => left ? ((loose ? node.from : node.to) <= cursor) : (cursor <= (loose ? node.to : node.from)) );
+			return nodes.find(node => left ? ((loose ? node.from : node.to) < cursor) : (cursor < (loose ? node.to : node.from)));
+		return nodes.find(node => left ? ((loose ? node.from : node.to) <= cursor) : (cursor <= (loose ? node.to : node.from)));
 	}
 
 	adjacent_to_node(node: CriticMarkupNode, left: boolean, directly_adjacent = false) {
@@ -250,10 +248,15 @@ export class CriticMarkupNodes {
 		return null;
 	}
 
-	filter_range(start: number, end: number, partial = true) {
+	nodes_in_range(start: number, end: number, partial = true) {
 		if (partial)
-			return new CriticMarkupNodes(this.nodes.filter(node => node.partially_in_range(start, end)));
-		return new CriticMarkupNodes(this.nodes.filter(node => node.in_range(start, end)));
+			return this.nodes.filter(node => node.partially_in_range(start, end));
+		return this.nodes.filter(node => node.in_range(start, end));
+	}
+
+
+	filter_range(start: number, end: number, partial = true) {
+		return new CriticMarkupNodes(this.nodes_in_range(start, end, partial));
 	}
 
 	get_sibling(node: CriticMarkupNode, left: boolean) {
@@ -263,7 +266,7 @@ export class CriticMarkupNodes {
 		return this.nodes[index + 1];
 	}
 
-	unwrap_in_range(str: string, start = 0, to = start + str.length, type: string, doc: Text) {
+	unwrap_in_range(str: string, start = 0, to = start + str.length, type: NodeType, doc: Text) {
 		if (this.nodes.length === 0)
 			return { output: str, start, to, prefix: '', suffix: '', offset: 0 };
 

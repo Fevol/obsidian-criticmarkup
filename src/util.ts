@@ -1,3 +1,9 @@
+import { NodeType } from './types';
+
+type EnumDictionary<T extends string | symbol | number, U> = {
+	[K in T]: U;
+};
+
 export function objectDifference(new_obj: any, old_obj: any): Partial<typeof new_obj> {
 	const diff: Partial<typeof new_obj> = {};
 	for (const key in new_obj) {
@@ -7,19 +13,29 @@ export function objectDifference(new_obj: any, old_obj: any): Partial<typeof new
 	return diff;
 }
 
-export const CM_Syntax: { [key: string]: [string, string] } = {
-	'Addition': ['+', '+'],
-	'Deletion': ['-', '-'],
-	'Substitution': ['~', '~'],
-	'Highlight': ['=', '='],
-	'Comment': ['>', '<'],
+export const CM_NodeTypes: EnumDictionary<string, NodeType> = {
+	'Addition': NodeType.ADDITION,
+	'Deletion': NodeType.DELETION,
+	'Substitution': NodeType.SUBSTITUTION,
+	'Highlight': NodeType.HIGHLIGHT,
+	'Comment': NodeType.COMMENT,
+}
+
+
+
+export const CM_Syntax: EnumDictionary<NodeType, [string, string]> = {
+	[NodeType.ADDITION]: ['+', '+'],
+	[NodeType.DELETION]: ['-', '-'],
+	[NodeType.SUBSTITUTION]: ['~', '~'],
+	[NodeType.HIGHLIGHT]: ['=', '='],
+	[NodeType.COMMENT]: ['>', '<'],
 };
-export const CM_All_Brackets: { [key: string]: string[] } = {
-	'Addition': ['{++', '++}'],
-	'Deletion': ['{--', '--}'],
-	'Substitution': ['{~~', '~>', '~~}'],
-	'Highlight': ['{==', '==}'],
-	'Comment': ['{>>', '<<}'],
+export const CM_All_Brackets: EnumDictionary<NodeType, string[]> = {
+	[NodeType.ADDITION]: ['{++', '++}'],
+	[NodeType.DELETION]: ['{--', '--}'],
+	[NodeType.SUBSTITUTION]: ['{~~', '~>', '~~}'],
+	[NodeType.HIGHLIGHT]: ['{==', '==}'],
+	[NodeType.COMMENT]:  ['{>>', '<<}'],
 };
 export const CM_Brackets: { [key: string]: string[] } = {
 	'{++': ['++}'],
@@ -29,7 +45,7 @@ export const CM_Brackets: { [key: string]: string[] } = {
 	'{>>': ['<<}'],
 };
 
-export function replaceBracket(content: string, type: string) {
+export function replaceBracket(content: string, type: NodeType) {
 	return wrapBracket(unwrapBracket(content), type);
 }
 
@@ -37,17 +53,17 @@ export function unwrapBracket(content: string) {
 	return content.slice(3, -3);
 }
 
-export function unwrapBracket2(content: string, type: string) {
-	if (type === 'Substitution')
+export function unwrapBracket2(content: string, type: NodeType) {
+	if (type === NodeType.SUBSTITUTION)
 		return content.slice(3, -3).split('~>');
 	return content.slice(3, -3);
 }
 
-export function wrapBracket(content: string, type: string) {
+export function wrapBracket(content: string, type: NodeType) {
 	return CM_All_Brackets[type][0] + content + CM_All_Brackets[type].slice(1).join('');
 }
 
-export function addBracket(content: string, type: string, left: boolean) {
+export function addBracket(content: string, type: NodeType, left: boolean) {
 	if (left)
 		return '{' + CM_Syntax[type][0].repeat(2) + content;
 	else

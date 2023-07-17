@@ -2,7 +2,7 @@ import type { MarkdownView } from 'obsidian';
 
 import { criticmarkupLanguage } from '../parser';
 
-import { CM_Syntax } from '../../util';
+import { CM_NodeTypes, CM_Syntax } from '../../util';
 
 export function postProcess(el: HTMLElement, ctx: any, settings: any) {
 	const tree = criticmarkupLanguage.parser.parse(el.innerHTML);
@@ -22,7 +22,7 @@ export function postProcess(el: HTMLElement, ctx: any, settings: any) {
 			break;
 		} else if (name === 'MSub') continue;
 
-		const is_rendered = output[start + 1] !== CM_Syntax[name][0];
+		const is_rendered = output[start + 1] !== CM_Syntax[CM_NodeTypes[name]][0];
 
 		if (name === 'Substitution') {
 			cursor.firstChild();
