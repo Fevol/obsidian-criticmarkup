@@ -29,13 +29,23 @@ function encountered_character(head: number, nodes: CriticMarkupNodes, backwards
 
 	const node_front = !backwards_select ? node.from : node.to;
 	let new_node_front = node_front;
+	let new_node_back = !backwards_select ? node.to : node.from;
 
 	while (node?.empty()) {
 		new_node_front = !backwards_select ? node.from : node.to;
+		new_node_back = !backwards_select ? node.to : node.from;
 		node = nodes.adjacent_to_node(node, backwards_select, true)!;
 	}
 
 	cat_during = getCharCategory(new_node_front - offset, state, backwards_select);
+
+	if (!node) {
+		const cat_after = getCharCategory(new_node_back + (backwards_select ? offset : 0), state, backwards_select);
+		if ((cat_during !== null && cat_during !== 1) && cat_during !== cat_after)
+			return new_node_back;
+		return encountered_character(new_node_back, nodes, backwards_select, state, cat_during);
+	}
+
 	const resulting_head = encountered_node(new_node_front + 3 * offset, node, nodes, backwards_select, state, cat_during);
 	// FIXME: Check if necessary
 	if (resulting_head === new_node_front + 3 * offset)
@@ -57,7 +67,7 @@ function encountered_node(head: number, node: CriticMarkupNode, nodes: CriticMar
 		// CASE 1: Cursor cannot enter node
 		if (cat_inside !== null && cat_before !== null && cat_before !== 1 && cat_inside !== cat_before)
 			return head;
-		if (head >= node_front - 2)
+		if (node.touches_bracket(head, !backwards_select))
 			head = node_front + 3 * offset;
 
 
