@@ -29,7 +29,9 @@ import { Prec } from '@codemirror/state';
 //   2. Obsidian changing the keybinds in some way
 //   3. CodeMirror update breaking this
 
-export const keybindExtensions = Prec.highest(keymap.of(([
+
+// This here is saved as const for use in tests
+export const overridden_keymap = [
 	{key: "ArrowLeft", run: cursorCharLeft, shift: selectCharLeft, preventDefault: true},
 	{key: "Mod-ArrowLeft", mac: "Alt-ArrowLeft", run: cursorGroupLeft, shift: selectGroupLeft, preventDefault: true},
 	{mac: "Cmd-ArrowLeft", run: cursorLineBoundaryLeft, shift: selectLineBoundaryLeft, preventDefault: true},
@@ -51,4 +53,9 @@ export const keybindExtensions = Prec.highest(keymap.of(([
 	{ key: 'Delete', run: deleteCharForward, preventDefault: true },
 	{ key: 'Mod-Backspace', mac: 'Alt-Backspace', run: deleteGroupBackward, preventDefault: true },
 	{ key: 'Mod-Delete', mac: 'Alt-Delete', run: deleteGroupForward, preventDefault: true },
-])));
+]
+
+export const keybindExtensions = Prec.highest(keymap.of((overridden_keymap)));
+
+
+

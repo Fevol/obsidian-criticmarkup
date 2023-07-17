@@ -9,9 +9,13 @@ module.exports = {
 		"^.+\\.(js|jsx)$": "esbuild-jest"
 	},
 
+
 	moduleDirectories: ["node_modules", "src", "tests"],
 	moduleFileExtensions: ['js', 'ts'],
 	// moduleNameMapper: {
-	// 	"obsidian": "__mocks__/obsidian.ts",
+	// 	"obsidian": "tests/__mocks__/obsidian_mock.ts",
 	// },
+
+	setupFilesAfterEnv: ["jest-expect-message"],
+	noStackTrace: true,
 };

@@ -11,7 +11,10 @@
     "importHelpers": true,
     "strict": true,
     "paths": {
-      "src": ["src/*", "tests/*"]
+      "src": [
+        "src/*",
+        "tests/*"
+      ]
     },
     "lib": [
       "dom",
@@ -22,6 +25,9 @@
       "node"
     ]
   },
+  "files": [
+    "node_modules/jest-expect-message/types/index.d.ts"
+  ],
   "include": [
     "**/**.ts"
   ]
