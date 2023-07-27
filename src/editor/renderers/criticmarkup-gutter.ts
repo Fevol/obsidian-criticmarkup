@@ -11,19 +11,28 @@ import { acceptAllSuggestions, rejectAllSuggestions } from '../commands';
 import type { PluginSettings } from '../../types';
 import { nodesInSelection } from '../editor-util';
 import { CriticMarkupNodes } from '../criticmarkup-nodes';
+import { NodeType } from '../../types';
 
 
 export class CriticMarkupMarker extends GutterMarker {
-	constructor(readonly from: number, readonly to: number, readonly type: string, readonly top?: boolean, readonly bottom?: boolean) {
+	constructor(readonly type: Set<NodeType>, readonly top?: boolean, readonly bottom?: boolean) {
 		super();
 	}
 
 	toDOM() {
-		return createDiv({
-			cls: `criticmarkup-gutter-${this.type}`
-				+ (this.top ? ' criticmarkup-gutter-top' : '')
-				+ (this.bottom ? ' criticmarkup-gutter-bottom' : ''),
-		});
+		let class_list = '';
+		if (this.type.has(NodeType.ADDITION))
+			class_list += 'criticmarkup-gutter-addition ';
+		if (this.type.has(NodeType.DELETION))
+			class_list += 'criticmarkup-gutter-deletion ';
+		if (this.type.has(NodeType.SUBSTITUTION))
+			class_list += 'criticmarkup-gutter-substitution ';
+		if (this.top)
+			class_list += 'criticmarkup-gutter-top ';
+		if (this.bottom)
+			class_list += 'criticmarkup-gutter-bottom ';
+
+		return createDiv({ cls: class_list });
 	}
 }
 
@@ -31,28 +40,40 @@ function buildMarkers(view: EditorView, tree: Tree): RangeSet<CriticMarkupMarker
 	const builder = new RangeSetBuilder<CriticMarkupMarker>();
 
 	const nodes: CriticMarkupNodes = nodesInSelection(tree);
-	const markers = nodes.nodes.map((node: { from: number; to: number;}) => {
-		const newnode: any = Object.assign({}, node);
-		newnode.line_start = view.state.doc.lineAt(node.from).number;
-		newnode.line_end = view.state.doc.lineAt(node.to).number;
-		return newnode;
+
+	const markers = nodes.nodes.map((node) => {
+		return {
+			type: node.type,
+			line_start: view.state.doc.lineAt(node.from).number,
+			line_end: view.state.doc.lineAt(node.to).number,
+		}
 	});
 
-	let current_line = markers[0]?.line_start;
+	const line_numbers = [...Array(view.state.doc.lines + 1).keys()];
+	line_numbers.shift();
+	const line_markers: Record<number, {isStart: boolean, isEnd: boolean, types: Set<NodeType>}> = {};
+	line_numbers.forEach((line_number: number) => {
+		line_markers[line_number] = { isStart: false, isEnd: false, types: new Set([]), }
+	});
+
 	for (const node of markers) {
-		if (current_line > node.line_end) continue;
+		if (!line_markers[node.line_start].types.size)
+			line_markers[node.line_start].isStart = true;
 		for (let i = node.line_start; i <= node.line_end; i++) {
-			const line = view.state.doc.line(i);
-			builder.add(line.from, line.to,
-				new CriticMarkupMarker(
-					line.from,
-					line.to,
-					node.repr.toLowerCase(),
-					i === node.line_start,
-					i === node.line_end,
-				));
+			line_markers[i].isEnd = false;
+			line_markers[i].types.add(node.type);
 		}
-		current_line = node.line_end + 1;
+		line_markers[node.line_end].isEnd = true;
+	}
+
+	for (const line_number of line_numbers) {
+		const marker = line_markers[line_number];
+		const line = view.state.doc.line(line_number);
+		builder.add(line.from, line.to, new CriticMarkupMarker(
+			marker.types,
+			marker.isStart,
+			marker.isEnd,
+		));
 	}
 
 	return builder.finish();

@@ -1,6 +1,7 @@
 .theme-light {
 	--addition-color: var(--color-green);
 	--deletion-color: var(--color-red);
+	--substitution-color: var(--color-orange);
 	--comment-color: #bacff4;
 	--comment-border-color: #679af4;
 	--highlight-color: var(--text-highlight-bg);
@@ -9,6 +10,7 @@
 .theme-dark {
 	--addition-color: var(--color-green);
 	--deletion-color: var(--color-red);
+	--substitution-color: var(--color-orange);
 	--comment-color: #445f8f;
 	--comment-border-color: #8c95a5;
 	--highlight-color: var(--text-highlight-bg);
@@ -94,6 +96,25 @@
 	width: 6px;
 	height: 100%;
 }
+
+.criticmarkup-gutter-addition.criticmarkup-gutter-deletion {
+	//background: var(--substitution-color);
+	//background: repeating-linear-gradient(45deg, var(--addition-color), var(--addition-color) 10px, var(--deletion-color) 10px, var(--deletion-color) 20px);
+	background: repeating-linear-gradient(45deg, var(--addition-color), var(--addition-color) 10px, var(--deletion-color) 10px, var(--deletion-color) 18px);
+}
+
+.criticmarkup-gutter-substitution {
+	//background: var(--substitution-color);
+	//background: linear-gradient(to right, var(--addition-color), var(--addition-color) 50%, var(--deletion-color) 50%, var(--deletion-color));
+	//background: repeating-linear-gradient(45deg, var(--addition-color), var(--addition-color) 50%, var(--deletion-color) 50%, var(--deletion-color) 100%);
+	background: repeating-linear-gradient(45deg, var(--addition-color), var(--addition-color) 10px, var(--deletion-color) 10px, var(--deletion-color) 18px);
+
+
+	width: 6px;
+	height: 100%;
+}
+
+
 
 .criticmarkup-gutter-top {
 	// TODO: Figure out a better way to do this
