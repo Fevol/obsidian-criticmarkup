@@ -100,6 +100,7 @@ export const suggestionMode = (settings: PluginSettings): Extension => EditorSta
 
 // TODO: Functionality: Double click mouse should also floodfill (problem: no specific userevent attached)
 // TODO: Functionality: Pasting images does not result in transaction (problem: prec does not work; how is this handled?)
+// TODO: Logic: Inserting/Replacing in Deletion - Result in Substitution or added text in Deletion?
 function applySuggestion(tr: Transaction, settings: PluginSettings): Transaction {
 	const userEvents = getUserEvents(tr);
 	const vim_mode = app.workspace.activeEditor?.editor?.cm.cm !== undefined;
