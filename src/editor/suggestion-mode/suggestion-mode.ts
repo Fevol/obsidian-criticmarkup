@@ -200,8 +200,7 @@ function applySuggestion(tr: Transaction, settings: PluginSettings): Transaction
 		} else if (operation_type === OperationType.REPLACEMENT) {
 			let offset = 0;
 			for (const range of changed_ranges) {
-
-				const replace_operation = text_replace(range, nodes, offset);
+				const replace_operation = text_replace(range, nodes, offset, tr.startState.doc);
 				changes.push(...replace_operation.changes);
 				selections.push(replace_operation.selection);
 				offset = replace_operation.offset;

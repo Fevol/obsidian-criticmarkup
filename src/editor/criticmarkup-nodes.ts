@@ -256,7 +256,7 @@ export class SubstitutionNode extends CriticMarkupNode {
 		} else {
 			if (this.touches_left_bracket(cursor, true, false))
 				cursor = this.from + 3;
-			if (this.touches_separator(cursor, false, true))
+			if (this.touches_separator(cursor, true, true))
 				cursor = this.middle + 2;
 			if (this.touches_right_bracket(cursor, false, true))
 				cursor = this.to;

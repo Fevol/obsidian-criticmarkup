@@ -1,5 +1,5 @@
-import { Text, EditorSelection, EditorState } from '@codemirror/state';
-import { EditorChange, OperationReturn, CriticMarkupOperation, NodeType } from '../../types';
+import { EditorSelection, EditorState, Text } from '@codemirror/state';
+import { CriticMarkupOperation, EditorChange, NodeType, OperationReturn } from '../../types';
 
 import { CriticMarkupNodes, SubstitutionNode } from '../criticmarkup-nodes';
 import { cursor_move } from '.';
@@ -10,9 +10,9 @@ import { findBlockingChar } from '../editor-util';
 
 export function text_delete(range: CriticMarkupOperation, nodes: CriticMarkupNodes, offset: number, doc: Text,
 							backwards_delete: boolean, group_delete: boolean, selection_delete: boolean, state: EditorState): OperationReturn {
-	// FIXME: Efficiency: Reduce if statement complexity (redundant if checks, deep nesting)
+	// FIXME: Efficiency: Reduce if statement complexity (redundant if checks, deep nesting) <-> readability
 	// TODO: Readability: Better commenting
-	// FIXME: Efficiency: nodes.XXX operations are pretty expensive, B+tree or smarter usage
+	// FIXME: Efficiency: nodes.XXX operations might be pretty expensive, B+tree or smarter usage
 
 	const changes: EditorChange[] = [];
 
@@ -95,9 +95,16 @@ export function text_delete(range: CriticMarkupOperation, nodes: CriticMarkupNod
 
 			if (right_node) {
 				if (deletion_end === right_node.from) {
-					if (right_node.type === NodeType.DELETION || right_node.type === NodeType.SUBSTITUTION)
+					if (right_node.type === NodeType.DELETION)
 						deletion_end = right_node.from + 3;
-					else right_node = undefined;
+					else if (right_node.type === NodeType.SUBSTITUTION) {
+						if (left_node?.type === NodeType.DELETION) {
+							anchor_deletion_start = deletion_start;
+							deletion_start = left_node.from;
+							left_node = undefined;
+						}
+						deletion_end = right_node.from + 3;
+					} else right_node = undefined;
 				}
 			}
 		}
