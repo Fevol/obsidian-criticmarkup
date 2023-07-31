@@ -1,6 +1,8 @@
+import { CharCategory, EditorSelection, EditorState } from '@codemirror/state';
 import { CriticMarkupRange } from '../../types';
+
 import { CriticMarkupNode, CriticMarkupNodes, SubstitutionNode } from '../criticmarkup-nodes';
-import { CharCategory, EditorSelection, EditorState, Text } from '@codemirror/state';
+
 import { findBlockingChar, getCharCategory } from '../editor-util';
 
 // To the poor soul who comes across this code, I hope you have more luck wrapping your head around cursor logic than I had

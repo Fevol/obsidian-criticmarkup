@@ -1,11 +1,11 @@
 import { EditorSelection, EditorState, Extension, SelectionRange, Transaction } from '@codemirror/state';
-import { cursorMoved, getUserEvents, nodesInSelection } from '../editor-util';
-import { treeParser } from '../tree-parser';
-import { text_insert } from '../edit-logic/insert';
-import { text_delete } from '../edit-logic/delete';
-import { cursor_move } from '../edit-logic/cursor';
 import { CriticMarkupOperation, PluginSettings } from '../../types';
-import { text_replace } from '../edit-logic/replace';
+
+import { treeParser } from '../tree-parser';
+
+import { cursorMoved, getUserEvents, nodesInSelection } from '../editor-util';
+import { text_insert, text_delete, text_replace, cursor_move } from '../edit-logic';
+
 
 enum OperationType {
 	INSERTION,

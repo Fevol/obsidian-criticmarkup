@@ -1,6 +1,5 @@
 import { Text } from '@codemirror/state';
 import { StringNodeType, NodeType } from '../types';
-import { CM_All_Brackets } from '../util';
 
 export abstract class CriticMarkupNode {
 	from: number;

@@ -3,15 +3,14 @@ import { Menu } from 'obsidian';
 import type { Tree } from '@lezer/common';
 import { RangeSet, RangeSetBuilder } from '@codemirror/state';
 import { EditorView, gutter, GutterMarker } from '@codemirror/view';
+import { NodeType, PluginSettings } from '../../types';
 
 import { treeParser } from '../tree-parser';
 
 import { acceptAllSuggestions, rejectAllSuggestions } from '../commands';
 
-import type { PluginSettings } from '../../types';
 import { nodesInSelection } from '../editor-util';
 import { CriticMarkupNodes } from '../criticmarkup-nodes';
-import { NodeType } from '../../types';
 
 
 // TODO: Rerender gutter on Ctrl+Scroll

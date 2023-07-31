@@ -1,6 +1,6 @@
-import type { CriticMarkupOperation, EditorChange, OperationReturn } from '../../types';
-import { NodeType } from '../../types';
 import { EditorSelection, SelectionRange } from '@codemirror/state';
+import { NodeType, CriticMarkupOperation, EditorChange, OperationReturn } from '../../types';
+
 import { CriticMarkupNode, CriticMarkupNodes, SubstitutionNode } from '../criticmarkup-nodes';
 
 

@@ -28,8 +28,7 @@ import { objectDifference } from './util';
 
 import { DEFAULT_SETTINGS, REQUIRES_FULL_RELOAD } from './constants';
 import type { PluginSettings } from './types';
-import { EditorView } from '@codemirror/view';
-import { Prec } from '@codemirror/state';
+
 
 
 export default class CommentatorPlugin extends Plugin {

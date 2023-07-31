@@ -1,11 +1,11 @@
-import type { EditorChange, OperationReturn } from '../../types';
-import { CriticMarkupOperation, NodeType } from '../../types';
-import type { Text } from '@codemirror/state';
-import { EditorSelection, EditorState } from '@codemirror/state';
+import { Text, EditorSelection, EditorState } from '@codemirror/state';
+import { EditorChange, OperationReturn, CriticMarkupOperation, NodeType } from '../../types';
+
 import { CriticMarkupNodes, SubstitutionNode } from '../criticmarkup-nodes';
-import { cursor_move } from './cursor';
-import { findBlockingChar } from '../editor-util';
+import { cursor_move } from '.';
+
 import { CM_All_Brackets } from '../../util';
+import { findBlockingChar } from '../editor-util';
 
 
 export function text_delete(range: CriticMarkupOperation, nodes: CriticMarkupNodes, offset: number, doc: Text,
