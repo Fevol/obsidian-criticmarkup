@@ -3,7 +3,7 @@ import type { ChangedRange, Tree } from '@lezer/common';
 import { TreeFragment } from '@lezer/common';
 import { criticmarkupLanguage } from './parser';
 
-export const treeParser: StateField<{tree: Tree, fragments: TreeFragment}> = StateField.define({
+export const treeParser: StateField<{tree: Tree, fragments: readonly TreeFragment[]}> = StateField.define({
 	create(state) {
 		const tree = criticmarkupLanguage.parser.parse(state.doc.toString());
 		const fragments = TreeFragment.addTree(tree);
