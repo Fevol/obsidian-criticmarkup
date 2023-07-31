@@ -45,6 +45,10 @@ export interface PluginSettings {
 	 * Automatically correct invalid criticmarkup tags
 	 */
 	node_correcter: boolean;
+	/**
+	 * Remove CM syntax when copying text to clipboard
+	 */
+	clipboard_remove_syntax: boolean;
 
 	/**
 	 * Enable editor suggestion mode

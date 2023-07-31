@@ -1,11 +1,13 @@
 import { EventRef, MarkdownPostProcessor, MarkdownPreviewRenderer, Platform, Plugin } from 'obsidian';
 
+import { EditorView } from '@codemirror/view';
 import type { Extension } from '@codemirror/state';
 
 import { commands } from './editor/commands';
 import { change_suggestions } from './editor/context-menu-commands';
 
 import { treeParser } from './editor/tree-parser';
+import { nodesInSelection } from './editor/editor-util';
 
 import { livePreview } from './editor/renderers/live-preview';
 import { postProcess, postProcessorUpdate } from './editor/renderers/post-processor';
@@ -28,6 +30,7 @@ import { objectDifference } from './util';
 
 import { DEFAULT_SETTINGS, REQUIRES_FULL_RELOAD } from './constants';
 import type { PluginSettings } from './types';
+import { Tree } from '@lezer/common';
 
 
 
@@ -68,6 +71,21 @@ export default class CommentatorPlugin extends Plugin {
 			this.editorExtensions.push(bracketMatcher);
 		if (this.settings.node_correcter)
 			this.editorExtensions.push(nodeCorrecter);
+
+		this.editorExtensions.push(EditorView.domEventHandlers({
+			copy: (event, view) => {
+				if (event.clipboardData && this.settings.clipboard_remove_syntax) {
+					const selection = view.state.selection.main;
+					const tree: Tree = view.state.field(treeParser).tree;
+					const nodes = nodesInSelection(tree, selection.from, selection.to);
+
+					const removed_syntax = nodes.unwrap_in_range(view.state.doc, selection.from, selection.to).output;
+					event.clipboardData.setData('text/plain', removed_syntax);
+					event.preventDefault();
+				}
+			}
+		}));
+
 	}
 
 	async updateEditorExtension() {

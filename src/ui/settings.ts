@@ -88,6 +88,15 @@ export class CommentatorSettings extends PluginSettingTab {
                     }
                 ));
 
+        new Setting(containerEl)
+            .setName("Remove syntax on copy")
+            .setDesc("CriticMarkup syntax will be removed when copying text to clipboard")
+            .addToggle(toggle => toggle.setValue(this.plugin.settings.clipboard_remove_syntax)
+                .onChange(async (value) => {
+                        this.plugin.settings.clipboard_remove_syntax = value;
+                        await this.plugin.saveSettings();
+                }
+            ));
 
 
 

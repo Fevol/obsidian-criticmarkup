@@ -11,6 +11,7 @@ export const DEFAULT_SETTINGS: PluginSettings = {
 
 	tag_completion: true,
 	node_correcter: true,
+	clipboard_remove_syntax: true,
 
 	suggest_mode: false,
 	editor_suggest_button: true,
