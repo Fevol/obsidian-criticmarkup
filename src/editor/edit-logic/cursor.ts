@@ -44,7 +44,7 @@ function encountered_character(head: number, nodes: CriticMarkupNodes, backwards
 	cat_during = getCharCategory(new_node_front - offset, state, backwards_select);
 
 	if (!node) {
-		const cat_after = getCharCategory(new_node_back + (backwards_select ? offset : 0), state, backwards_select);
+		const cat_after = getCharCategory(new_node_back, state, backwards_select);
 		if ((cat_during !== null && cat_during !== 1) && cat_during !== cat_after)
 			return new_node_back;
 		return encountered_character(new_node_back, nodes, backwards_select, state, cat_during);
@@ -79,11 +79,10 @@ function encountered_node(head: number, node: CriticMarkupNode, nodes: CriticMar
 		if (node.touches_separator(head))
 			head = (<SubstitutionNode>node).middle + (!backwards_select ? 2 : 0);
 
-		// FIXME: Somewhere it still breaks :(   (x{~~~>y~~}zI --> x{~~I~>y~~}z), tests think it does work?!
 		// Head is now guaranteed to be either in the beginning of, or inside the node
 		[head, cat_during] = findBlockingChar(head, !backwards_select, state, cat_before === 1 || cat_before === null, cat_before);
 		if (node.part_is_empty(backwards_select))
-			cat_during = node.part_is_empty(!backwards_select) ? cat_before : getCharCategory((<SubstitutionNode>node).middle + (!backwards_select ? 2 : -1), state, backwards_select);
+			cat_during = cat_before;
 		else
 			cat_during = getCharCategory(node_back - 4 * offset, state, backwards_select);
 
@@ -92,8 +91,8 @@ function encountered_node(head: number, node: CriticMarkupNode, nodes: CriticMar
 			if (node.part_is_empty(backwards_select)) {
 				head = node_back + 3 * offset;
 			} else {
-				const cat_after_bracket = getCharCategory((<SubstitutionNode>node).middle, state, backwards_select);
 				const separator_front = (<SubstitutionNode>node).middle + (!backwards_select ? 2 : 0);
+				const cat_after_bracket = getCharCategory(separator_front, state, backwards_select);
 				if (!((cat_during !== null && cat_during !== 1) && cat_during !== cat_after_bracket))
 					head = findBlockingChar(separator_front, !backwards_select, state, cat_before === 1 || cat_before === null, cat_before)[0];
 			}
