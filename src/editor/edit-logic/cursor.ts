@@ -1,5 +1,5 @@
 import { CriticMarkupRange } from '../../types';
-import { CriticMarkupNode, CriticMarkupNodes } from '../criticmarkup-nodes';
+import { CriticMarkupNode, CriticMarkupNodes, SubstitutionNode } from '../criticmarkup-nodes';
 import { CharCategory, EditorSelection, EditorState, Text } from '@codemirror/state';
 import { findBlockingChar, getCharCategory } from '../editor-util';
 
@@ -10,6 +10,8 @@ import { findBlockingChar, getCharCategory } from '../editor-util';
 
 // FIXME: sometimes, when multiple cursors are used, position of cursor is on the wrong side of a bracket
 //		Hypothesis: probably due to middle-mouse multiple selection creation having anchor be selected instead of head?
+// FIXME: BWD cursor move in empty substitution does not work (stops before)
+
 
 function encountered_character(head: number, nodes: CriticMarkupNodes, backwards_select: boolean, state: EditorState, cat_before: null | CharCategory = null): number {
 	let cat_during = null;
@@ -63,20 +65,42 @@ function encountered_node(head: number, node: CriticMarkupNode, nodes: CriticMar
 
 	// If head is not PAST the back bracket
 	if (!node.empty() && !node.cursor_infront(head, backwards_select)) {
-		const cat_inside = node.empty() ? null : getCharCategory(node_front + 3 * offset, state, backwards_select);
+		const cat_inside = (node.empty() || node.part_is_empty(!backwards_select)) ? null : getCharCategory(node_front + 3 * offset, state, backwards_select);
 		// CASE 1: Cursor cannot enter node
 		if (cat_inside !== null && cat_before !== null && cat_before !== 1 && cat_inside !== cat_before)
 			return head;
+
 		if (node.touches_bracket(head, !backwards_select))
 			head = node_front + 3 * offset;
 
+		// If inside separator, move out
+		if (node.touches_separator(head))
+			head = (<SubstitutionNode>node).middle + (!backwards_select ? 2 : 0);
 
+		// FIXME: Somewhere it still breaks :(   (x{~~~>y~~}zI --> x{~~I~>y~~}z), tests think it does work?!
 		// Head is now guaranteed to be either in the beginning of, or inside the node
 		[head, cat_during] = findBlockingChar(head, !backwards_select, state, cat_before === 1 || cat_before === null, cat_before);
+		if (node.part_is_empty(backwards_select))
+			cat_during = node.part_is_empty(!backwards_select) ? cat_before : getCharCategory((<SubstitutionNode>node).middle + (!backwards_select ? 2 : -1), state, backwards_select);
+		else
+			cat_during = getCharCategory(node_back - 4 * offset, state, backwards_select);
+
+
+		if (node.touches_separator(head, true, true)) {
+			if (node.part_is_empty(backwards_select)) {
+				head = node_back + 3 * offset;
+			} else {
+				const cat_after_bracket = getCharCategory((<SubstitutionNode>node).middle, state, backwards_select);
+				const separator_front = (<SubstitutionNode>node).middle + (!backwards_select ? 2 : 0);
+				if (!((cat_during !== null && cat_during !== 1) && cat_during !== cat_after_bracket))
+					head = findBlockingChar(separator_front, !backwards_select, state, cat_before === 1 || cat_before === null, cat_before)[0];
+			}
+		}
+
 
 		// FIXME: is the last character before brackets always representative of the category?
-		cat_during = getCharCategory(node_back - 4 * offset, state, backwards_select);
 
+		// Does not touch right bracket
 		if (!node.cursor_infront(head, backwards_select))
 			return head;
 
@@ -105,7 +129,7 @@ function encountered_node(head: number, node: CriticMarkupNode, nodes: CriticMar
 }
 
 
-export function cursor_move(range: CriticMarkupRange, original_range: CriticMarkupRange, nodes: CriticMarkupNodes, doc: Text, state: EditorState,
+export function cursor_move(range: CriticMarkupRange, original_range: CriticMarkupRange, nodes: CriticMarkupNodes, state: EditorState,
 							backwards_select: boolean, group_select: boolean, is_selection: boolean, block_cursor = false) {
 	let head = range.head!, anchor = range.anchor!;
 	let node = nodes.adjacent_to_cursor(original_range.head!, backwards_select, true, !group_select);
@@ -125,7 +149,14 @@ export function cursor_move(range: CriticMarkupRange, original_range: CriticMark
 			}
 
 		} else {
-			const regular_cursor = head + (!backwards_select ? -1 : 1) + (!backwards_select && block_cursor ? 1 : 0);
+			let regular_cursor = head + (!backwards_select ? -1 : 1) + (!backwards_select && block_cursor ? 1 : 0);
+			if (node.touches_bracket(regular_cursor, !backwards_select, true, true))
+				regular_cursor = backwards_select ? node.to - 3 : node.from + 3;
+
+			if (node.touches_separator(regular_cursor, true, true)) {
+				regular_cursor = (<SubstitutionNode>node).middle + (!backwards_select ? 2 : 0)
+				head = regular_cursor + (!backwards_select ? 1 : -1);
+			}
 
 			if (node.touches_brackets(regular_cursor, true, true)) {
 				let last_node = node;
@@ -142,7 +173,7 @@ export function cursor_move(range: CriticMarkupRange, original_range: CriticMark
 				if (node)
 					head = !backwards_select ? node.from + 4 : node.to - 4;
 				else
-					head = !backwards_select ? Math.min(last_node.to + 1, doc.length) : Math.max(0, last_node.from - 1);
+					head = !backwards_select ? Math.min(last_node.to + 1, state.doc.length) : Math.max(0, last_node.from - 1);
 
 				if (block_cursor && !backwards_select)
 					head -= 1;

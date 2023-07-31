@@ -273,6 +273,7 @@ export const commands: Array<CommandI> = [...suggestion_commands,
 		icon: 'check-check',
 		editor_context: true,
 		callback: async (editor: Editor, view: MarkdownView) => {
+			// TODO: Add warning is #nodes > 100 ('Are you sure you want to accept all suggestions?')
 			editor.cm.dispatch(editor.cm.state.update({
 				changes: acceptAllSuggestions(editor.cm.state),
 			}));

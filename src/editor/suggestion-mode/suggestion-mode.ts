@@ -1,10 +1,11 @@
-import { EditorSelection, EditorState, Extension, SelectionRange } from '@codemirror/state';
+import { EditorSelection, EditorState, Extension, SelectionRange, Transaction } from '@codemirror/state';
 import { cursorMoved, getUserEvents, nodesInSelection } from '../editor-util';
 import { treeParser } from '../tree-parser';
 import { text_insert } from '../edit-logic/insert';
 import { text_delete } from '../edit-logic/delete';
 import { cursor_move } from '../edit-logic/cursor';
 import { CriticMarkupOperation, PluginSettings } from '../../types';
+import { text_replace } from '../edit-logic/replace';
 
 enum OperationType {
 	INSERTION,
@@ -91,8 +92,13 @@ function isUserEvent(event: string, events: string[]): boolean {
 	return events.some(e => e.startsWith(event));
 }
 
+
+
 // FIXME: Ask somebody whether this is the cleanest/most efficient way to access settings inside of the extension
-export const suggestionMode = (settings: PluginSettings): Extension => EditorState.transactionFilter.of(tr => {
+export const suggestionMode = (settings: PluginSettings): Extension => EditorState.transactionFilter.of(tr => applySuggestion(tr, settings));
+
+
+function applySuggestion(tr: Transaction, settings: PluginSettings): Transaction {
 	const userEvents = getUserEvents(tr);
 	const vim_mode = app.workspace.activeEditor?.editor?.cm.cm !== undefined;
 
@@ -152,9 +158,12 @@ export const suggestionMode = (settings: PluginSettings): Extension => EditorSta
 		} else
 			operation_type = OperationType.INSERTION;
 
+		// TODO: Optimize(!): Can take >1ms to gather (in stress-test environment with >1000 nodes)
 		const nodes = nodesInSelection(tr.startState.field(treeParser).tree);
 		const changes = [];
 		const selections: SelectionRange[] = [];
+
+		// TODO: Copy to clipboard: remove all markup?
 
 		if (operation_type === OperationType.INSERTION) {
 			let offset = 0;
@@ -188,11 +197,22 @@ export const suggestionMode = (settings: PluginSettings): Extension => EditorSta
 				changes,
 				selection: EditorSelection.create(selections),
 			});
-		}
+		} else if (operation_type === OperationType.REPLACEMENT) {
+			let offset = 0;
+			for (const range of changed_ranges) {
 
-		// 	} else if (tr.isUserEvent('paste')) {
-		//
-		// 	}
+				const replace_operation = text_replace(range, nodes, offset);
+				changes.push(...replace_operation.changes);
+				selections.push(replace_operation.selection);
+				offset = replace_operation.offset;
+			}
+
+			return tr.startState.update({
+				changes,
+				selection: EditorSelection.create(selections),
+			});
+
+		}
 	}
 
 	// Handle cursor movements
@@ -210,8 +230,8 @@ export const suggestionMode = (settings: PluginSettings): Extension => EditorSta
 		const is_selection = userEvents.includes('select.extend');
 		const selections: SelectionRange[] = [];
 		for (const [idx, range] of tr.selection!.ranges.entries()) {
-			const cursor_operation = cursor_move(range,  tr.startState.selection!.ranges[idx], nodes,
-				tr.startState.doc, tr.startState, backwards_select, group_select, is_selection, vim_mode);
+			const cursor_operation = cursor_move(range,  tr.startState.selection!.ranges[idx],
+				nodes, tr.startState, backwards_select, group_select, is_selection, vim_mode);
 			selections.push(cursor_operation.selection);
 		}
 
@@ -223,4 +243,4 @@ export const suggestionMode = (settings: PluginSettings): Extension => EditorSta
 	}
 
 	return tr;
-});
+}

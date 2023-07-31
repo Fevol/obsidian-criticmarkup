@@ -90,12 +90,13 @@ export function livePreview (settings: PluginSettings): Extension {
 									}).range(start + 3, cursor.to),
 								);
 
+
 								if (cursor.to !== end - 3)
 									widgets.push(
 										Decoration.mark({
 											class: 'criticmarkup-accepted',
 											attributes: { 'data-contents': 'string' },
-										}).range(cursor.to, end - 3),
+										}).range(cursor.to + 2, end - 3),
 									);
 							}
 						}
@@ -168,6 +169,14 @@ export function livePreview (settings: PluginSettings): Extension {
 										);
 									}
 
+									if (this.settings.suggest_mode && is_livepreview) {
+										widgets.push(
+											Decoration.replace({
+												attributes: { 'data-contents': 'string' },
+											}).range(cursor.to - 2, cursor.to),
+										);
+									}
+
 									if (cursor.to !== end - 3) {
 										widgets.push(
 											Decoration.mark({
@@ -197,12 +206,13 @@ export function livePreview (settings: PluginSettings): Extension {
 							if (cursor.name !== 'MSub')
 								continue;
 
-							// Hide arrow marker ~>
-							widgets.push(
-								Decoration.replace({
-									attributes: { 'data-contents': 'string' },
-								}).range(cursor.from, cursor.to),
-							);
+							if (is_livepreview) {
+								widgets.push(
+									Decoration.replace({
+										attributes: { 'data-contents': 'string' },
+									}).range(cursor.from, cursor.to),
+								);
+							}
 
 							if (start + 3 !== cursor.from) {
 								widgets.push(

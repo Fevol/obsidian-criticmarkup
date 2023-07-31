@@ -1,68 +1,60 @@
 import type { CriticMarkupOperation, EditorChange, OperationReturn } from '../../types';
-import { EditorSelection, SelectionRange } from '@codemirror/state';
-import { CriticMarkupNodes } from '../criticmarkup-nodes';
 import { NodeType } from '../../types';
+import { EditorSelection, SelectionRange } from '@codemirror/state';
+import { CriticMarkupNode, CriticMarkupNodes, SubstitutionNode } from '../criticmarkup-nodes';
+
+
+function insert_new_node(insertion_start: number, offset: number, node_offset: number, range: CriticMarkupOperation, nodes: CriticMarkupNodes, node: CriticMarkupNode, left: boolean) {
+	// Check for existence of adjacent node to which text may be added
+	const adjacent_node = nodes.adjacent_to_node(node, left, true);
+	if (adjacent_node && (adjacent_node.type === NodeType.ADDITION || (left && adjacent_node.type === NodeType.SUBSTITUTION))) {
+		insertion_start = left ? adjacent_node.to - 3 : adjacent_node.from + 3;
+	} else {
+		insertion_start = left ? node.from : node.to;
+		range.inserted = `{++${range.inserted}++}`;
+		offset += 6;
+		node_offset -= 3;
+	}
+	return { insertion_start, offset, node_offset };
+}
 
 
 export function text_insert(range: CriticMarkupOperation, nodes: CriticMarkupNodes, offset: number): OperationReturn {
 	const node = nodes.at_cursor(range.to);
 	offset += range.offset.added;
 	const changes: EditorChange[] = [];
-	let selection: SelectionRange;
 
+	let node_offset = 0;
+	let insertion_start = range.from;
 	if (!node) {
-		const left_adjacent_node = nodes.adjacent_to_cursor(range.from, true);
-		const right_adjacent_node = nodes.adjacent_to_cursor(range.to, false);
-
-		let replacement_start: number;
-		let node_offset = 0;
-		if (left_adjacent_node && left_adjacent_node.type === NodeType.ADDITION && left_adjacent_node.to === range.from) {
-			replacement_start = left_adjacent_node.to - 3;
-		} else if (right_adjacent_node && right_adjacent_node.type === NodeType.ADDITION && right_adjacent_node.from === range.to) {
-			replacement_start = right_adjacent_node.from + 3;
-		} else {
-			replacement_start = range.to;
-			range.inserted = `{++${range.inserted}++}`;
-			offset += 6;
-			node_offset -= 3;
-		}
-
-		changes.push({
-			from: replacement_start,
-			to: replacement_start,
-			insert: range.inserted,
-		});
-		selection = EditorSelection.cursor(replacement_start + node_offset + offset);
-
+		range.inserted = `{++${range.inserted}++}`;
+		offset += 6;
+		node_offset -= 3;
 	} else {
-		if (node.type !== NodeType.ADDITION && (range.to === node.from || range.from === node.to)) {
-			range.inserted = `{++${range.inserted}++}`;
-
-			const insert_start = range.to === node.from ? node.from : node.to;
-			offset += 6;
-			changes.push({
-				from: insert_start,
-				to: insert_start,
-				insert: range.inserted,
-			});
-			selection = EditorSelection.cursor(insert_start + offset - 3);
-		} else {
-			if (range.from < node.from + 3) {
-				range.from = node.from + 3;
-				range.to = range.from;
-			} else if (range.to > node.to - 3) {
-				range.to = node.to - 3;
-				range.from = range.to;
+		if (node.type === NodeType.SUBSTITUTION) {
+			if (node.touches_left_bracket(range.to, true, true)) {
+				({ insertion_start, offset, node_offset } = insert_new_node(insertion_start, offset, node_offset, range, nodes, node, true));
+			} else if (node.touches_separator(range.to, false, true)) {
+				insertion_start = (<SubstitutionNode>node).middle;
+			} else if (node.touches_right_bracket(range.to)) {
+				insertion_start = node.to - 3;
 			}
-
-			changes.push({
-				from: range.from,
-				to: range.to,
-				insert: range.inserted,
-			});
-			selection = EditorSelection.cursor(range.to + offset);
+		} else if (node.type === NodeType.ADDITION) {
+			if (node.touches_left_bracket(range.from)) {
+				insertion_start = node.from + 3;
+			} else if (node.touches_right_bracket(range.to)) {
+				insertion_start = node.to - 3;
+			}
+		} else {
+			if (node.touches_left_bracket(range.from)) {
+				({ insertion_start, offset, node_offset } = insert_new_node(insertion_start, offset, node_offset, range, nodes, node, true));
+			} else if (node.touches_right_bracket(range.to)) {
+				({ insertion_start, offset, node_offset } = insert_new_node(insertion_start, offset, node_offset, range, nodes, node, false));
+			}
 		}
 	}
+	changes.push({ from: insertion_start, to: insertion_start, insert: range.inserted });
+	const selection: SelectionRange = EditorSelection.cursor(insertion_start + node_offset + offset);
 
-	return { changes, selection, offset }
+	return { changes, selection, offset };
 }

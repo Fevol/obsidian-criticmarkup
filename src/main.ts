@@ -56,9 +56,12 @@ export default class CommentatorPlugin extends Plugin {
 		if (this.settings.live_preview)
 			this.editorExtensions.push(livePreview(this.settings));
 
+
+		// Performance: ~3ms in stress-test
 		if (this.settings.editor_gutter)
 			this.editorExtensions.push(gutterExtension(this.settings));
 
+		// Performance: ~1ms in stress-test
 		if (this.settings.suggest_mode)
 			this.editorExtensions.push(suggestionMode(this.settings));
 

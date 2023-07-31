@@ -5,7 +5,7 @@ import { suggestionMode } from '../src/editor/suggestion-mode/suggestion-mode';
 import { treeParser } from '../src/editor/tree-parser';
 
 import { findBlockingChar, nodesInSelection } from '../src/editor/editor-util';
-import { CriticMarkupNodes } from '../src/editor/criticmarkup-nodes';
+import { CriticMarkupNodes, SubstitutionNode } from '../src/editor/criticmarkup-nodes';
 import { overridden_keymap } from '../src/editor/suggestion-mode/keybinds';
 import { App } from 'obsidian';
 import { DEFAULT_SETTINGS } from '../src/constants';
@@ -25,6 +25,9 @@ const test_cases = [
 	'ab{++cd++}{--     --}ef',
 	'ac{++cd++}{--......--}ef',
 	'ab{++cd++}{++++}{--......--}ef',
+	'x{~~y~>z~~}u',
+	'x{~~y~>z~~}{~~v~>w~~}ll',
+	'x{~~~>~~}u',
 ];
 
 // @ts-ignore (Doesn't like me assigning partial app to App)
@@ -50,14 +53,20 @@ function visualize_cursor_movement(text: string, from: number, to: number) {
 // If entry is a number, it represents being the i-th character of the original text
 function visualize_mapping(text: string, mapping: number[]) {
 	const subscript_numbers = ['₀', '₁', '₂', '₃', '₄', '₅', '₆', '₇', '₈', '₉'];
+	const superscript_numbers = ['⁰', '¹', '²', '³', '⁴', '⁵', '⁶', '⁷', '⁸', '⁹'];
 	const subscript_cross = 'ₓ';
+	const superscript_cross = 'ˣ';
 
 	let result = '';
 	for (let i = 0; i < text.length; i++) {
 		result += mapping[i] === -1 ? subscript_cross : subscript_numbers[mapping[i]];
 		result += text[i];
 	}
-	result += mapping[mapping.length - 1] === -1 ? subscript_cross : subscript_numbers[mapping[mapping.length - 1]];
+
+	for (let i = text.length; i <= mapping.length - 1; i++) {
+		result += mapping[i] === -1 ? superscript_cross : superscript_numbers[mapping[i]];
+	}
+
 	return result;
 }
 
@@ -69,7 +78,7 @@ function character_mapper(nodes: CriticMarkupNodes, positions: number[], left: b
 	const mapping = [];
 	let original_cursor_location = -1;
 	for (const position of positions) {
-		const node = nodes.at_cursor(position, false, false);
+		const node = nodes.at_cursor(position);
 
 		if (node) {
 			if (position === node.to && nodes.adjacent_to_node(node, !left, true)?.from) {
@@ -89,6 +98,16 @@ function character_mapper(nodes: CriticMarkupNodes, positions: number[], left: b
 					original_cursor_location += 1;
 					mapping.push(original_cursor_location);
 				} else if (!left && position === node.to - 3) {
+					original_cursor_location += 1;
+					mapping.push(original_cursor_location);
+				} else {
+					mapping.push(-1);
+				}
+			} else if (node.touches_separator(position, true, !left)) {
+				if (!left && position === (<SubstitutionNode>node).middle) {
+					original_cursor_location += 1;
+					mapping.push(original_cursor_location);
+				} else if (left && position === (<SubstitutionNode>node).middle + 2) {
 					original_cursor_location += 1;
 					mapping.push(original_cursor_location);
 				} else {
@@ -151,7 +170,7 @@ for (let test_case of test_cases) {
 				} else {
 					mapping = [...position_numbers];
 				}
-				// console.log(visualize_mapping(test_case, mapping));
+				console.log(visualize_mapping(test_case, mapping) + (left ? ' (⟵)' : ' (⟶)'));
 
 				for (const cursor of position_numbers) {
 					test(visualize_cursor_movement(test_case, cursor, findBlockingChar(cursor, !left, view.state)[0]), () => {
@@ -176,10 +195,6 @@ for (let test_case of test_cases) {
 
 						const new_cursor = mapping[view.state.selection.main.head];
 						const new_actual_cursor = actual_view.state.selection.main.head;
-
-
-						// expect(cursor_in_accepted, "Expected '" + visualize_cursor_movement(test_case, cursor_location, cursor_in_accepted) + "'   got    '"
-						// 						+ visualize_cursor_movement(test_case, cursor_location, new_cursor_location) + "' ").toBe(new_actual_cursor);
 
 						expect(new_cursor).toBe(new_actual_cursor);
 					});

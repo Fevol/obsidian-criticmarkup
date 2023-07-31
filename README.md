@@ -9,7 +9,7 @@ these features will be implemented. If features prove to be completely infeasibl
 The plugin *is* available for beta testing, but please keep in mind that you should not use this plugin in
 your main vault. There is a non-zero risk of text being removed when using e.g. the suggestion mode.
 
-Please report any errors or bug you encounter, especially when these result in less of data or cause
+Please report any errors or bug you encounter, especially when these result in loss of data or cause
 crashes/malfuctions in Obsidian. In the [Obsidian Discord](https://discord.com/invite/obsidianmd), there is a thread
 under `Extensions > Plugin Advanced > Commentator`, you can report bugs there, or in the [Github issues page](https://github.com/Fevol/obsidian-criticmarkup/issues).
 
@@ -57,6 +57,7 @@ under `Extensions > Plugin Advanced > Commentator`, you can report bugs there, o
 - [X] Smooth cursor movement through markup
   - [ ] Support different options for cursor movement (always stop when markup encountered, ...)
   - [ ] Full Vim Support 
+- [ ] Toggle sequential CM state updating for improved multi-cursor support when inserting/deleting
 
 ### Comment Mode
 - [ ] Add comments to selection

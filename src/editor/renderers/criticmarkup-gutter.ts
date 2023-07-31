@@ -14,6 +14,8 @@ import { CriticMarkupNodes } from '../criticmarkup-nodes';
 import { NodeType } from '../../types';
 
 
+// TODO: Rerender gutter on Ctrl+Scroll
+
 export class CriticMarkupMarker extends GutterMarker {
 	constructor(readonly type: Set<NodeType>, readonly top?: boolean, readonly bottom?: boolean) {
 		super();
