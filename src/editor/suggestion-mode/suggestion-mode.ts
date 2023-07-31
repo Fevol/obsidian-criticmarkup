@@ -98,6 +98,8 @@ function isUserEvent(event: string, events: string[]): boolean {
 export const suggestionMode = (settings: PluginSettings): Extension => EditorState.transactionFilter.of(tr => applySuggestion(tr, settings));
 
 
+// TODO: Functionality: Double click mouse should also floodfill (problem: no specific userevent attached)
+// TODO: Functionality: Pasting images does not result in transaction (problem: prec does not work; how is this handled?)
 function applySuggestion(tr: Transaction, settings: PluginSettings): Transaction {
 	const userEvents = getUserEvents(tr);
 	const vim_mode = app.workspace.activeEditor?.editor?.cm.cm !== undefined;
