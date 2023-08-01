@@ -5,19 +5,14 @@ import { CM_All_Brackets } from '../../util';
 
 export function text_replace(range: CriticMarkupOperation, nodes: CriticMarkupNodes, offset: number, doc: Text): OperationReturn {
 	const changes: EditorChange[] = [];
-
 	let cursor_offset = 0;
 	let deletion_start = range.from;
 	let deletion_end = range.to;
-	let deletion_cursor: number;
-	let anchor_deletion_start = null;
 	let anchor_deletion_end = null;
-
 
 	const encountered_nodes = nodes.filter_range(deletion_start, deletion_end, true);
 	let left_node = encountered_nodes.at_cursor(deletion_start),
 		right_node = encountered_nodes.at_cursor(deletion_end, false, true);
-
 
 	if (left_node) {
 		if (deletion_start !== left_node.to)
@@ -32,21 +27,14 @@ export function text_replace(range: CriticMarkupOperation, nodes: CriticMarkupNo
 
 		if (left_node) {
 			if (left_node.type === NodeType.DELETION) {
-				anchor_deletion_start = deletion_start;
 				deletion_start = left_node.from;
 				left_node = undefined;
 			} else if (left_node.type === NodeType.SUBSTITUTION && deletion_start >= (left_node as SubstitutionNode).middle) {
-				anchor_deletion_start = deletion_start + 3;
 				deletion_start = left_node.from;
 				left_node = undefined;
-			}/* else if (deletion_start === left_node.to) {
-				if (left_node.type === NodeType.DELETION)
-					deletion_start = left_node.to - 3;
-				else left_node = undefined;
-			}*/
+			}
 		}
 	}
-
 
 	if (right_node) {
 		if (deletion_end !== right_node.from)
@@ -115,21 +103,15 @@ export function text_replace(range: CriticMarkupOperation, nodes: CriticMarkupNo
 		}
 	}
 
-
-
-
-
 	changes.push({ from: deletion_start, to: deletion_end, insert: final_string });
 
 	const removed_chars = (deletion_end - deletion_start) - deleted_text.length;
 	const added_chars = final_string.length - (deleted_text.length + inserted_text.length);
 
-	offset += added_chars - removed_chars;
-	deletion_cursor = deletion_end;
+	offset += added_chars - removed_chars + range.inserted.length;
+	cursor_offset -= 3;
 
-
-	const selection = EditorSelection.cursor(deletion_cursor + cursor_offset + offset);
+	const selection = EditorSelection.cursor(deletion_end + cursor_offset + offset);
 
 	return { changes, selection, offset }
-
 }
