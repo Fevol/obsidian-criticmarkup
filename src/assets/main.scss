@@ -4,6 +4,7 @@
 	--substitution-color: var(--color-orange);
 	--comment-color: #bacff4;
 	--comment-border-color: #679af4;
+	--comment-inverse-color: #445f8f;
 	--highlight-color: var(--text-highlight-bg);
 }
 
@@ -13,6 +14,7 @@
 	--substitution-color: var(--color-orange);
 	--comment-color: #445f8f;
 	--comment-border-color: #8c95a5;
+	--comment-inverse-color: #bacff4;
 	--highlight-color: var(--text-highlight-bg);
 }
 
@@ -47,8 +49,39 @@
 .criticmarkup-comment {
 	background-color: var(--comment-color);
 	border-bottom: 2px solid var(--comment-border-color);
-
 }
+
+.criticmarkup-comment-icon {
+	padding: 0 0 var(--size-4-2) 0;
+}
+
+.criticmarkup-comment-icon svg {
+	color: var(--comment-border-color);
+	stroke-width: 4px;
+}
+
+.criticmarkup-comment-tooltip {
+	max-height: var(--popover-height);
+	max-width: var(--popover-width);
+	overflow-y: scroll;
+
+	position: absolute;
+	z-index: 10000;
+	border: 4px solid var(--comment-border-color);
+
+	// Fancy notes:
+	filter: drop-shadow(4px 4px 0px var(--comment-inverse-color));
+
+	//border: 1px solid var(--background-modifier-border);
+	background-color: var(--background-primary-alt);
+	padding: var(--size-4-2);
+	border-radius: var(--radius-l);
+}
+
+.criticmarkup-comment-tooltip p {
+	display: inline;
+}
+
 
 .criticmarkup-highlight {
 	background-color: var(--highlight-color);

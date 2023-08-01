@@ -38,6 +38,11 @@ export interface PluginSettings {
 	 */
 	hide_empty_gutter: boolean;
 	/**
+	 * How comments should be rendered
+	 */
+	comment_style: 'inline' | 'icon' | 'block';
+
+	/**
 	 * Complete criticmarkup tags when they're being entered in
 	 */
 	tag_completion: boolean;

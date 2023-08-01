@@ -1,5 +1,5 @@
 // Thanks to AquaCat/pjkaufman for the suggestion to add typings
-import { Command, Plugin, SettingTab } from 'obsidian';
+import { Command, MarkdownPreviewEvents, MarkdownRenderer, MarkdownSubView, Plugin, SettingTab } from 'obsidian';
 import { EditorView } from '@codemirror/view';
 import { EditorState } from '@codemirror/state';
 

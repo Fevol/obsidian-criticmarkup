@@ -99,10 +99,23 @@ export class CommentatorSettings extends PluginSettingTab {
             ));
 
 
-
         new Setting(containerEl)
             .setHeading()
-            .setName("Style Settings")
+            .setName("Rendering Settings")
+
+        new Setting(containerEl)
+            .setName("Comment style")
+            .setDesc("How comments should be rendered")
+            .addDropdown(dropdown => dropdown
+                .addOption("inline", "Inline")
+                .addOption("icon", "Inline Icon")
+                .addOption("block", "Block")
+            .setValue(this.plugin.settings.comment_style)
+            .onChange(async (value) => {
+                this.plugin.settings.comment_style = <any>value;
+                await this.plugin.saveSettings();
+            }
+        ));
 
         new Setting(containerEl)
             .setName("Show style when editing")

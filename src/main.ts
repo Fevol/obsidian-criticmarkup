@@ -9,7 +9,7 @@ import { change_suggestions } from './editor/context-menu-commands';
 import { treeParser } from './editor/tree-parser';
 import { nodesInSelection } from './editor/editor-util';
 
-import { livePreview } from './editor/renderers/live-preview';
+import { inlineCommentRenderer, livePreview } from './editor/renderers/live-preview';
 import { postProcess, postProcessorUpdate } from './editor/renderers/post-processor';
 
 import { keybindExtensions } from './editor/suggestion-mode/keybinds';
@@ -54,6 +54,7 @@ export default class CommentatorPlugin extends Plugin {
 
 		this.editorExtensions.push(keybindExtensions);
 		this.editorExtensions.push(treeParser);
+		this.editorExtensions.push(inlineCommentRenderer);
 
 		if (this.settings.live_preview)
 			this.editorExtensions.push(livePreview(this.settings));
@@ -103,8 +104,6 @@ export default class CommentatorPlugin extends Plugin {
 	async onload() {
 		this.settings = Object.assign({}, this.settings, await this.loadData());
 		this.previous_settings = Object.assign({}, this.settings);
-
-
 
 		if (this.settings.editor_preview_button) {
 			loadPreviewButtons(this);

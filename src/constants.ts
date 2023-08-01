@@ -8,6 +8,7 @@ export const DEFAULT_SETTINGS: PluginSettings = {
 
 	editor_styling: false,
 	hide_empty_gutter: false,
+	comment_style: 'inline',
 
 	tag_completion: true,
 	node_correcter: true,
@@ -28,6 +29,7 @@ export const REQUIRES_FULL_RELOAD: Set<string> = new Set([
 	"editor_gutter",
 
 	"hide_empty_gutter",
+	"comment_style",
 
 	"tag_completion",
 	"node_correcter",
