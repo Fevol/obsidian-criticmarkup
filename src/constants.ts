@@ -19,6 +19,7 @@ export const DEFAULT_SETTINGS: PluginSettings = {
 
 	post_processor: true,
 	live_preview: true,
+	alternative_live_preview: false,
 	alternative_cursor_movement: true,
 };
 
@@ -26,6 +27,7 @@ export const DEFAULT_SETTINGS: PluginSettings = {
 export const REQUIRES_FULL_RELOAD: Set<string> = new Set([
 	"preview_mode",
 	"live_preview",
+	"alternative_live_preview",
 	"editor_gutter",
 
 	"hide_empty_gutter",

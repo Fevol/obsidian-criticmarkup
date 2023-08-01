@@ -9,7 +9,7 @@ import { change_suggestions } from './editor/context-menu-commands';
 import { treeParser } from './editor/tree-parser';
 import { nodesInSelection } from './editor/editor-util';
 
-import { inlineCommentRenderer, livePreview } from './editor/renderers/live-preview';
+import { inlineCommentRenderer, livePreview, livePreviewRenderer } from './editor/renderers/live-preview';
 import { postProcess, postProcessorUpdate } from './editor/renderers/post-processor';
 
 import { keybindExtensions } from './editor/suggestion-mode/keybinds';
@@ -56,9 +56,12 @@ export default class CommentatorPlugin extends Plugin {
 		this.editorExtensions.push(treeParser);
 		this.editorExtensions.push(inlineCommentRenderer);
 
-		if (this.settings.live_preview)
-			this.editorExtensions.push(livePreview(this.settings));
-
+		if (this.settings.live_preview) {
+			if (this.settings.alternative_live_preview)
+				this.editorExtensions.push(livePreviewRenderer(this.settings));
+			else
+				this.editorExtensions.push(livePreview(this.settings));
+		}
 
 		// Performance: ~3ms in stress-test
 		if (this.settings.editor_gutter)
@@ -84,7 +87,7 @@ export default class CommentatorPlugin extends Plugin {
 					event.clipboardData.setData('text/plain', removed_syntax);
 					event.preventDefault();
 				}
-			}
+			},
 		}));
 
 	}
@@ -147,7 +150,7 @@ export default class CommentatorPlugin extends Plugin {
 			icon: 'comment',
 			callback: async () => {
 				this.app.vault.setConfig('vimMode', !this.app.vault.getConfig('vimMode'));
-			}
+			},
 		});
 
 		for (const command of commands) {
@@ -169,7 +172,7 @@ export default class CommentatorPlugin extends Plugin {
 						if (result && !args[0])
 							this.loadEditorExtensions();
 						return result;
-					}
+					};
 				},
 			}));
 		});

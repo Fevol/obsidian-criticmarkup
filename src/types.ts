@@ -72,6 +72,9 @@ export interface PluginSettings {
 	 * Enable live preview rendering
 	 */
 	live_preview: boolean;
+	/** Enable alternative live preview renderer */
+	alternative_live_preview: boolean;
+
 	/**
 	 * Enable corrected cursor movement near/within nodes
 	 */
