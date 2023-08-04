@@ -49,7 +49,6 @@ export function postProcess(el: HTMLElement, ctx: any, settings: any) {
 
 	for (const change of changes) {
 		let new_content = output.substring(change.start, change.end).slice(3, -3);
-
 		let new_element = '';
 		if (change.name === 'Addition') {
 			if (!settings.preview_mode)
@@ -102,5 +101,12 @@ export function postProcessorUpdate() {
 			section.html = '';
 		}
 		view.previewMode.renderer.queueRender();
+	}
+}
+
+export function postProcessorRerender() {
+	for (const leaf of app.workspace.getLeavesOfType("markdown")) {
+		// @ts-ignore
+		(<MarkdownView>leaf).view.previewMode.rerender(true)
 	}
 }

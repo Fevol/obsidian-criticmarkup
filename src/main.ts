@@ -10,7 +10,7 @@ import { treeParser } from './editor/tree-parser';
 import { nodesInSelection } from './editor/editor-util';
 
 import { inlineCommentRenderer, livePreview, livePreviewRenderer } from './editor/renderers/live-preview';
-import { postProcess, postProcessorUpdate } from './editor/renderers/post-processor';
+import { postProcess, postProcessorRerender, postProcessorUpdate } from './editor/renderers/post-processor';
 
 import { keybindExtensions } from './editor/suggestion-mode/keybinds';
 import { suggestionMode } from './editor/suggestion-mode/suggestion-mode';
@@ -238,8 +238,8 @@ export default class CommentatorPlugin extends Plugin {
 				this.postProcessor = this.registerMarkdownPostProcessor((el, ctx) => postProcess(el, ctx, this.settings), -99999);
 			else
 				MarkdownPreviewRenderer.unregisterPostProcessor(this.postProcessor);
+			postProcessorRerender();
 		}
-
 
 		this.updateEditorExtension();
 	}
