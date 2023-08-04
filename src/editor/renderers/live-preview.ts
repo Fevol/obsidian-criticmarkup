@@ -13,14 +13,21 @@ import {
 	WidgetType,
 } from '@codemirror/view';
 
-import { Component, editorLivePreviewField, MarkdownRenderer, setIcon } from 'obsidian';
+import {
+	Component,
+	editorLivePreviewField,
+	MarkdownRenderer,
+	setIcon,
+} from 'obsidian';
 
 import type { PluginSettings } from '../../types';
 import { NodeType } from '../../types';
 import { nodesInSelection, selectionRangeOverlap } from '../editor-util';
 import { CriticMarkupNode, SubstitutionNode } from '../criticmarkup-nodes';
+import { commentGutterWidgets } from './comment-gutter';
 
-export const inlineCommentRenderer = StateField.define<DecorationSet>({
+
+export const inlineCommentRenderer = (settings: PluginSettings) => StateField.define<DecorationSet>({
 	create(state): DecorationSet {
 		return Decoration.none;
 	},
@@ -50,7 +57,7 @@ export const inlineCommentRenderer = StateField.define<DecorationSet>({
 						node.from,
 						node.to,
 						Decoration.replace({
-							widget: new CommentIconWidget(tr.state.sliceDoc(node.from + 3, node.to - 3)),
+							widget: new CommentIconWidget(node, tr.state.sliceDoc(node.from + 3, node.to - 3), settings.comment_style === "block"),
 						})
 					);
 				}
@@ -71,13 +78,17 @@ class CommentIconWidget extends WidgetType {
 	tooltip: HTMLElement | null = null;
 	icon: HTMLElement | null = null;
 
+	node: CriticMarkupNode;
+
 	component: Component;
 	focused = false;
+	is_block = false;
 
-
-	constructor(contents: string) {
+	constructor(node: CriticMarkupNode, contents: string, is_block = false) {
 		super();
+		this.node = node;
 		this.contents = contents;
+		this.is_block = is_block;
 		this.component = new Component();
 	}
 
@@ -110,16 +121,29 @@ class CommentIconWidget extends WidgetType {
 		this.icon.classList.add('criticmarkup-comment-icon');
 		setIcon(this.icon, 'message-square');
 
-		this.icon.onmouseenter = () => { this.renderTooltip(); }
-		this.icon.onclick = () => {
-			this.renderTooltip();
-			this.focused = true;
-		}
+		if (this.is_block) {
+			this.icon.onclick = (e) => {
+				const gutterElements = view.state.field(commentGutterWidgets);
+				gutterElements.between(this.node.from, this.node.to, (from, to, widget) => {
+					widget.focus();
+				});
+			};
+		} else {
+			if (this.contents.length) {
+				this.icon.onmouseenter = () => {
+					this.renderTooltip();
+				}
+				this.icon.onclick = () => {
+					this.renderTooltip();
+					this.focused = true;
+				}
 
-		this.icon.onmouseleave = () => {
-			this.unrenderTooltip();
-			// TODO: Find a better way to check if the tooltip is still focused (requires a document.click listener -> expensive?); .onblur does not work
-			this.focused = false;
+				this.icon.onmouseleave = () => {
+					this.unrenderTooltip();
+					// TODO: Find a better way to check if the tooltip is still focused (requires a document.click listener -> expensive?); .onblur does not work
+					this.focused = false;
+				}
+			}
 		}
 
 		// this.icon.onblur = () => {
@@ -198,8 +222,6 @@ function markContents(decorations: Range<Decoration>[], node: CriticMarkupNode, 
 	}
 }
 
-
-
 export const livePreviewRenderer = (settings: PluginSettings) => StateField.define<DecorationSet>({
 	create(state): DecorationSet {
 		return Decoration.none;
@@ -218,7 +240,7 @@ export const livePreviewRenderer = (settings: PluginSettings) => StateField.defi
 
 		for (const node of nodes.nodes) {
 			if (!settings.preview_mode) {
-				if (tr.selection?.ranges?.some(range => node.partially_in_range(range.from, range.to))) {
+				if (!settings.suggest_mode && tr.selection?.ranges?.some(range => node.partially_in_range(range.from, range.to))) {
 					markContents(decorations, node, 'criticmarkup-editing');
 				} else if (node.type === NodeType.SUBSTITUTION) {
 					removeBracket(decorations, node, true);

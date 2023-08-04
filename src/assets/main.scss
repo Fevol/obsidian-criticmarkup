@@ -55,9 +55,18 @@
 	padding: 0 0 var(--size-4-2) 0;
 }
 
+.criticmarkup-comment-icon:hover {
+	cursor: pointer;
+}
+
 .criticmarkup-comment-icon svg {
 	color: var(--comment-border-color);
 	stroke-width: 4px;
+	transition: stroke-width 150ms ease-in-out;
+}
+
+.criticmarkup-comment-icon:hover svg {
+	stroke-width: 5px;
 }
 
 .criticmarkup-comment-tooltip {
@@ -78,10 +87,10 @@
 	border-radius: var(--radius-l);
 }
 
-.criticmarkup-comment-tooltip p {
-	display: inline;
+.criticmarkup-comment-tooltip * {
+	margin-block-start: 0.25em;
+	margin-block-end: 0.25em;
 }
-
 
 .criticmarkup-highlight {
 	background-color: var(--highlight-color);
@@ -163,6 +172,42 @@
 }
 
 
+
+.criticmarkup-comment-gutter {
+	width: 300px;
+	margin-top: 50px;
+}
+
+.criticmarkup-gutter-comment {
+	color: var(--text-muted);
+	border: 2px solid var(--background-modifier-border);
+	border-radius: var(--radius-l);
+	padding: var(--size-4-2);
+	transition: border-color 200ms ease-in-out;
+	background-color: var(--background-secondary-alt);
+
+	// Position comments relative to their optical center
+	//transform: translateY(-25%);
+
+	max-height: 150px;
+	overflow-y: scroll;
+}
+
+
+//.criticmarkup-comment-gutter .cm-gutterElement {
+//	margin-bottom: 10px;
+//}
+
+.criticmarkup-gutter-comment * {
+	margin-block-start: 0.25em;
+	margin-block-end: 0.25em;
+}
+
+
+.criticmarkup-gutter-comment:focus {
+	border: 2px solid var(--comment-border-color);
+	background-color: var(--background-primary);
+}
 
 
 // ================================================

@@ -17,6 +17,7 @@ import { suggestionMode } from './editor/suggestion-mode/suggestion-mode';
 import { nodeCorrecter, bracketMatcher } from './editor/editor-handlers';
 
 import { gutterExtension } from './editor/renderers/criticmarkup-gutter';
+import { commentGutterExtension } from './editor/renderers/comment-gutter';
 
 import { loadPreviewButtons, removePreviewButtons } from './editor/renderers/editor-preview-buttons';
 import { loadSuggestButtons, removeSuggestButtons, updateSuggestButtons } from './editor/renderers/editor-suggestion-buttons';
@@ -54,7 +55,11 @@ export default class CommentatorPlugin extends Plugin {
 
 		this.editorExtensions.push(keybindExtensions);
 		this.editorExtensions.push(treeParser);
-		this.editorExtensions.push(inlineCommentRenderer);
+
+		if (this.settings.comment_style === "icon" || this.settings.comment_style === "block")
+			this.editorExtensions.push(inlineCommentRenderer(this.settings));
+		if (this.settings.comment_style === "block")
+			this.editorExtensions.push(commentGutterExtension/*(this.settings)*/);
 
 		if (this.settings.live_preview) {
 			if (this.settings.alternative_live_preview)
