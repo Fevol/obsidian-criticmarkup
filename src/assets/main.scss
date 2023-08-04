@@ -19,7 +19,6 @@
 }
 
 
-
 // ================================================
 //           CriticMarkup Editor Styles
 // ================================================
@@ -108,8 +107,6 @@
 }
 
 
-
-
 // ================================================
 // 	           Editor Gutter Styling
 // ================================================
@@ -157,7 +154,6 @@
 }
 
 
-
 .criticmarkup-gutter-top {
 	// TODO: Figure out a better way to do this
 	border-top: 1px solid var(--background-primary);
@@ -172,6 +168,14 @@
 }
 
 
+.cm-gutters.cm-gutters.cm-gutters.cm-gutters:has(.is-minimal.criticmarkup-comment-gutter) {
+	position: sticky !important;
+}
+
+.cm-gutters.cm-gutters.cm-gutters.cm-gutters:has(.is-minimal.criticmarkup-gutter) {
+	position: sticky !important;
+	left: 20px;
+}
 
 .criticmarkup-comment-gutter {
 	width: 300px;
@@ -238,9 +242,6 @@ span.cm-highlight:has(.criticmarkup-editing) {
 //}
 
 
-
-
-
 // ================================================
 //           Markdown-specific Styling
 // ================================================
@@ -271,12 +272,6 @@ span.cm-highlight:has(.criticmarkup-editing) {
 	border: 4px solid var(--deletion-color) !important;
 	border-radius: 12px;
 }
-
-
-
-
-
-
 
 
 // For comments:

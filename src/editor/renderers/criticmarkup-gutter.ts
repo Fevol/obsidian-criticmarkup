@@ -82,7 +82,7 @@ function buildMarkers(view: EditorView, tree: Tree): RangeSet<CriticMarkupMarker
 
 
 export const gutterExtension = (settings: PluginSettings) => gutter({
-	class: 'criticmarkup-gutter' + (!settings.hide_empty_gutter ? ' criticmarkup-gutter-show-empty' : ''),
+	class: 'criticmarkup-gutter' + (!settings.hide_empty_gutter ? ' criticmarkup-gutter-show-empty' : '') + (app.vault.getConfig('cssTheme') === "Minimal" ? ' is-minimal' : ''),
 	markers(view: EditorView) {
 		return buildMarkers(view, view.state.field(treeParser).tree) ?? RangeSet.empty;
 	},

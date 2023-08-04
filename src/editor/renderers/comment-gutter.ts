@@ -102,7 +102,7 @@ export const commentGutterWidgets = StateField.define<RangeSet<CriticMarkupMarke
 export const commentGutterExtension = /*(settings: PluginSettings) =>*/ [
 	commentGutterWidgets,
 	right_gutter({
-		class: 'criticmarkup-comment-gutter',
+		class: 'criticmarkup-comment-gutter' + (app.vault.getConfig('cssTheme') === "Minimal" ? ' is-minimal' : ''),
 		markers: v => v.state.field(commentGutterWidgets),
 	}),
 ];
