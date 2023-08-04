@@ -57,8 +57,8 @@ export const inlineCommentRenderer = (settings: PluginSettings) => StateField.de
 						node.from,
 						node.to,
 						Decoration.replace({
-							widget: new CommentIconWidget(node, tr.state.sliceDoc(node.from + 3, node.to - 3), settings.comment_style === "block"),
-						})
+							widget: new CommentIconWidget(node, tr.state.sliceDoc(node.from + 3, node.to - 3), settings.comment_style === 'block'),
+						}),
 					);
 				}
 			}
@@ -69,7 +69,7 @@ export const inlineCommentRenderer = (settings: PluginSettings) => StateField.de
 
 	provide(field: StateField<DecorationSet>): Extension {
 		return EditorView.decorations.from(field);
-	}
+	},
 });
 
 
@@ -96,7 +96,7 @@ class CommentIconWidget extends WidgetType {
 		if (!this.tooltip) {
 			this.tooltip = document.createElement('div');
 			this.tooltip.classList.add('criticmarkup-comment-tooltip');
-			MarkdownRenderer.renderMarkdown(this.contents, this.tooltip, '', this.component)
+			MarkdownRenderer.renderMarkdown(this.contents, this.tooltip, '', this.component);
 			this.component.load();
 			this.icon!.appendChild(this.tooltip);
 
@@ -132,17 +132,17 @@ class CommentIconWidget extends WidgetType {
 			if (this.contents.length) {
 				this.icon.onmouseenter = () => {
 					this.renderTooltip();
-				}
+				};
 				this.icon.onclick = () => {
 					this.renderTooltip();
 					this.focused = true;
-				}
+				};
 
 				this.icon.onmouseleave = () => {
 					this.unrenderTooltip();
 					// TODO: Find a better way to check if the tooltip is still focused (requires a document.click listener -> expensive?); .onblur does not work
 					this.focused = false;
-				}
+				};
 			}
 		}
 
@@ -155,37 +155,40 @@ class CommentIconWidget extends WidgetType {
 	}
 }
 
-function removeBrackets(decorations: Range<Decoration>[], node: CriticMarkupNode) {
-decorations.push(
+function removeBrackets(decorations: Range<Decoration>[], node: CriticMarkupNode, is_livepreview: boolean) {
+	if (!is_livepreview) return;
+	decorations.push(
 		Decoration.replace({
 			attributes: { 'data-contents': 'string' },
-		}).range(node.from, node.from + 3)
+		}).range(node.from, node.from + 3),
 	);
 	decorations.push(
 		Decoration.replace({
 			attributes: { 'data-contents': 'string' },
-		}).range(node.to - 3, node.to)
+		}).range(node.to - 3, node.to),
 	);
 }
 
-function removeBracket(decorations: Range<Decoration>[], node: CriticMarkupNode, left: boolean) {
+function removeBracket(decorations: Range<Decoration>[], node: CriticMarkupNode, left: boolean, is_livepreview: boolean) {
+	if (!is_livepreview) return;
+
 	if (left)
 		decorations.push(
 			Decoration.replace({
 				attributes: { 'data-contents': 'string' },
-			}).range(node.from, node.from + 3)
+			}).range(node.from, node.from + 3),
 		);
 	else
 		decorations.push(
 			Decoration.replace({
 				attributes: { 'data-contents': 'string' },
-			}).range(node.to - 3, node.to)
+			}).range(node.to - 3, node.to),
 		);
 }
 
 function hideNode(decorations: Range<Decoration>[], node: CriticMarkupNode) {
 	decorations.push(
-		Decoration.replace({}).range(node.from, node.to)
+		Decoration.replace({}).range(node.from, node.to),
 	);
 }
 
@@ -216,7 +219,7 @@ function markContents(decorations: Range<Decoration>[], node: CriticMarkupNode, 
 				Decoration.mark({
 					attributes: { 'data-contents': 'string' },
 					class: style,
-				}).range(node.from + 3, node.to - 3)
+				}).range(node.from + 3, node.to - 3),
 			);
 		}
 	}
@@ -232,9 +235,6 @@ export const livePreviewRenderer = (settings: PluginSettings) => StateField.defi
 		const tree = tr.state.field(treeParser).tree;
 		const nodes = nodesInSelection(tree);
 
-		if (!is_livepreview)
-			return Decoration.none;
-
 		// const builder = new RangeSetBuilder<Decoration>();
 		const decorations: Range<Decoration>[] = [];
 
@@ -243,51 +243,51 @@ export const livePreviewRenderer = (settings: PluginSettings) => StateField.defi
 				if (!settings.suggest_mode && tr.selection?.ranges?.some(range => node.partially_in_range(range.from, range.to))) {
 					markContents(decorations, node, 'criticmarkup-editing');
 				} else if (node.type === NodeType.SUBSTITUTION) {
-					removeBracket(decorations, node, true);
-					markContents(decorations, node, 'criticmarkup-editing criticmarkup-inline criticmarkup-deletion criticmarkup-substitution', true)
+					removeBracket(decorations, node, true, is_livepreview);
+					markContents(decorations, node, 'criticmarkup-editing criticmarkup-inline criticmarkup-deletion criticmarkup-substitution', true);
 					decorations.push(
 						Decoration.replace({
 							attributes: { 'data-contents': 'string' },
-						}).range((node as SubstitutionNode).middle, (node as SubstitutionNode).middle + 2)
+						}).range((node as SubstitutionNode).middle, (node as SubstitutionNode).middle + 2),
 					);
-					markContents(decorations, node, 'criticmarkup-editing criticmarkup-inline criticmarkup-addition criticmarkup-substitution', false)
-					removeBracket(decorations, node, false);
+					markContents(decorations, node, 'criticmarkup-editing criticmarkup-inline criticmarkup-addition criticmarkup-substitution', false);
+					removeBracket(decorations, node, false, is_livepreview);
 				} else {
-					removeBracket(decorations, node, true);
+					removeBracket(decorations, node, true, is_livepreview);
 					markContents(decorations, node, `criticmarkup-editing criticmarkup-inline criticmarkup-${node.repr.toLowerCase()}`);
-					removeBracket(decorations, node, false);
+					removeBracket(decorations, node, false, is_livepreview);
 				}
 			} else if (settings.preview_mode === 1) {
 				if (node.type === NodeType.ADDITION) {
-					removeBracket(decorations, node, true);
-					markContents(decorations, node, 'criticmarkup-accepted')
-					removeBracket(decorations, node, false);
+					removeBracket(decorations, node, true, is_livepreview);
+					markContents(decorations, node, 'criticmarkup-accepted');
+					removeBracket(decorations, node, false, is_livepreview);
 				} else if (node.type === NodeType.DELETION) {
 					// markContents(decorations, node, 'rejected')
 					hideNode(decorations, node);
 				} else if (node.type === NodeType.SUBSTITUTION) {
 					decorations.push(Decoration.replace({}).range(node.from, node.from + 3));
-					markContents(decorations, node, 'criticmarkup-accepted', true)
+					markContents(decorations, node, 'criticmarkup-accepted', true);
 					// markContents(decorations, node, 'rejected', false)
 					decorations.push(Decoration.replace({}).range((node as SubstitutionNode).middle, node.to));
 				} else {
-					removeBrackets(decorations, node);
+					removeBrackets(decorations, node, is_livepreview);
 				}
 			} else if (settings.preview_mode === 2) {
 				if (node.type === NodeType.ADDITION) {
 					// markContents(decorations, node, 'rejected');
 					hideNode(decorations, node);
 				} else if (node.type === NodeType.DELETION) {
-					removeBracket(decorations, node, true);
-					markContents(decorations, node, 'criticmarkup-accepted')
-					removeBracket(decorations, node, false);
+					removeBracket(decorations, node, true, is_livepreview);
+					markContents(decorations, node, 'criticmarkup-accepted');
+					removeBracket(decorations, node, false, is_livepreview);
 				} else if (node.type === NodeType.SUBSTITUTION) {
 					decorations.push(Decoration.replace({}).range(node.from, (node as SubstitutionNode).middle + 2));
 					// markContents(decorations, node, 'rejected', true);
 					markContents(decorations, node, 'criticmarkup-accepted', false);
 					decorations.push(Decoration.replace({}).range(node.to - 3, node.to));
 				} else {
-					removeBrackets(decorations, node);
+					removeBrackets(decorations, node, is_livepreview);
 				}
 			}
 		}
@@ -296,12 +296,11 @@ export const livePreviewRenderer = (settings: PluginSettings) => StateField.defi
 
 	provide(field: StateField<DecorationSet>): Extension {
 		return EditorView.decorations.from(field);
-	}
+	},
 });
 
 
-
-export function livePreview (settings: PluginSettings): Extension {
+export function livePreview(settings: PluginSettings): Extension {
 	return ViewPlugin.fromClass(
 		class CriticMarkupViewPlugin implements PluginValue {
 			settings: PluginSettings;
