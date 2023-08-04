@@ -14,7 +14,7 @@ crashes/malfuctions in Obsidian. In the [Obsidian Discord](https://discord.com/i
 under `Extensions > Plugin Advanced > Commentator`, you can report bugs there, or in the [Github issues page](https://github.com/Fevol/obsidian-criticmarkup/issues).
 
 ### Parser
-- [X] Parsing of CriticMarkup syntax (see [CriticMarkup parser library](https://github.com/Fevol/criticmarkup-parser/t))
+- [X] Parsing of CriticMarkup syntax (see [CriticMarkup parser library](https://github.com/Fevol/criticmarkup-parser/))
 - [ ] Parsing of annotations and extended syntax (see **Syntax**)
 
 ### UIX
