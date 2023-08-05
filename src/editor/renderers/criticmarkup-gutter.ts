@@ -47,14 +47,14 @@ function buildMarkers(view: EditorView, tree: Tree): RangeSet<CriticMarkupMarker
 			type: node.type,
 			line_start: view.state.doc.lineAt(node.from).number,
 			line_end: view.state.doc.lineAt(node.to).number,
-		}
+		};
 	});
 
 	const line_numbers = [...Array(view.state.doc.lines + 1).keys()];
 	line_numbers.shift();
-	const line_markers: Record<number, {isStart: boolean, isEnd: boolean, types: Set<NodeType>}> = {};
+	const line_markers: Record<number, { isStart: boolean, isEnd: boolean, types: Set<NodeType> }> = {};
 	line_numbers.forEach((line_number: number) => {
-		line_markers[line_number] = { isStart: false, isEnd: false, types: new Set([]), }
+		line_markers[line_number] = { isStart: false, isEnd: false, types: new Set([]) };
 	});
 
 	for (const node of markers) {
@@ -80,9 +80,8 @@ function buildMarkers(view: EditorView, tree: Tree): RangeSet<CriticMarkupMarker
 	return builder.finish();
 }
 
-
 export const gutterExtension = (settings: PluginSettings) => gutter({
-	class: 'criticmarkup-gutter' + (!settings.hide_empty_gutter ? ' criticmarkup-gutter-show-empty' : '') + (app.vault.getConfig('cssTheme') === "Minimal" ? ' is-minimal' : ''),
+	class: 'criticmarkup-gutter' + (!settings.hide_empty_gutter ? ' criticmarkup-gutter-show-empty' : '') + (app.vault.getConfig('cssTheme') === 'Minimal' ? ' is-minimal' : ''),
 	markers(view: EditorView) {
 		return buildMarkers(view, view.state.field(treeParser).tree) ?? RangeSet.empty;
 	},

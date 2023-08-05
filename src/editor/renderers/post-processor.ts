@@ -5,6 +5,10 @@ import { criticmarkupLanguage } from '../parser';
 import { CM_NodeTypes, CM_Syntax } from '../../util';
 
 export function postProcess(el: HTMLElement, ctx: any, settings: any) {
+	// TODO: Rewrite to new nodes system for unified interface
+	// FIXME: Each el is a standalone part of the document, figure out how to determine which part of the text it belongs to
+	//        and determine which node type (if any) it belongs to
+
 	const tree = criticmarkupLanguage.parser.parse(el.innerHTML);
 
 	let changes = [];
@@ -105,8 +109,6 @@ export function postProcessorUpdate() {
 }
 
 export function postProcessorRerender() {
-	for (const leaf of app.workspace.getLeavesOfType("markdown")) {
-		// @ts-ignore
-		(<MarkdownView>leaf).view.previewMode.rerender(true)
-	}
+	for (const leaf of app.workspace.getLeavesOfType("markdown"))
+		(leaf.view as MarkdownView).previewMode.rerender(true)
 }

@@ -124,8 +124,12 @@ class CommentIconWidget extends WidgetType {
 		if (this.is_block) {
 			this.icon.onclick = (e) => {
 				const gutterElements = view.state.field(commentGutterWidgets);
+				e.preventDefault();
 				gutterElements.between(this.node.from, this.node.to, (from, to, widget) => {
-					widget.focus();
+					if (this.node.equals(widget.node)) {
+						widget.focus();
+						return false;
+					}
 				});
 			};
 		} else {

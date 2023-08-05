@@ -1,6 +1,6 @@
-import { RangeSet, RangeSetBuilder, StateField } from '@codemirror/state';
+import { Extension, Line, RangeSet, RangeSetBuilder, StateField } from '@codemirror/state';
 import { EditorView, GutterMarker } from '@codemirror/view';
-import { NodeType, PluginSettings } from '../../types';
+import { NodeType } from '../../types';
 
 import { treeParser } from '../tree-parser';
 
@@ -12,7 +12,7 @@ import { Component, editorEditorField, MarkdownRenderer } from 'obsidian';
 
 // TODO: Rerender gutter on Ctrl+Scroll
 
-export class CriticMarkupMarker extends GutterMarker {
+export class CommentMarker extends GutterMarker {
 	node: CriticMarkupNode;
 	comment: HTMLElement | null = null;
 	view: EditorView;
@@ -24,7 +24,7 @@ export class CriticMarkupMarker extends GutterMarker {
 	}
 
 	toDOM() {
-		let class_list = '';
+		const class_list = '';
 
 		this.comment = createDiv({ cls: class_list });
 		this.comment.contentEditable = 'true';
@@ -45,18 +45,15 @@ export class CriticMarkupMarker extends GutterMarker {
 		}
 		this.comment.onfocus = (e) => {
 			this.comment!.innerText = contents;
+			const top = this.view.lineBlockAt(this.node.from).top - 100;
 
-			const top = this.view.lineBlockAt(this.node.from).top;
-			this.view.scrollDOM.scrollTo({ top, behavior: 'smooth'});
+			setTimeout(() => {
+				// TODO: Probably might need to repeat .focus element here
 
-
-			// TODO: Call a function inside the gutter to trigger movement of markers
-
-			// Get a reference to the Gutter extension
-			// @ts-ignore
-			// console.log(this.view.plugin(commentGutterExtension))
-			// const gutter = ;
-
+				// @ts-ignore
+				this.view.plugin(commentGutterExtension[1][0][0]).moveGutter(this);
+				this.view.scrollDOM.scrollTo({ top, behavior: 'smooth'})
+			}, 200);
 
 		}
 
@@ -71,7 +68,7 @@ export class CriticMarkupMarker extends GutterMarker {
 	}
 }
 
-export const commentGutterWidgets = StateField.define<RangeSet<CriticMarkupMarker>>({
+export const commentGutterWidgets = StateField.define<RangeSet<CommentMarker>>({
 	create() {
 		return RangeSet.empty;
 	},
@@ -80,7 +77,7 @@ export const commentGutterWidgets = StateField.define<RangeSet<CriticMarkupMarke
 			return oldSet;
 
 		const tree = tr.state.field(treeParser).tree;
-		const builder = new RangeSetBuilder<CriticMarkupMarker>();
+		const builder = new RangeSetBuilder<CommentMarker>();
 		const nodes: CriticMarkupNodes = nodesInSelection(tree);
 		const view = tr.state.field(editorEditorField);
 
@@ -92,28 +89,13 @@ export const commentGutterWidgets = StateField.define<RangeSet<CriticMarkupMarke
 		}
 
 		return builder.finish();
-	},
-
-	// provide(field: StateField<CriticMarkupMarker>): Extension {
-	// 	return (field);
-	// }
+	}
 });
 
-export const commentGutterExtension = /*(settings: PluginSettings) =>*/ [
+export const commentGutterExtension: Extension[] = /*(settings: PluginSettings) =>*/ [
 	commentGutterWidgets,
 	right_gutter({
 		class: 'criticmarkup-comment-gutter' + (app.vault.getConfig('cssTheme') === "Minimal" ? ' is-minimal' : ''),
 		markers: v => v.state.field(commentGutterWidgets),
 	}),
 ];
-
-
-// export const commentGutterExtension = (settings: PluginSettings) => right_gutter({
-// 	class: 'criticmarkup-comment-gutter',
-// 	markers(view: EditorView) {
-// 		return buildMarkers(view, view.state.field(treeParser).tree) ?? RangeSet.empty;
-// 	},
-// 	doX() {
-// 		console.log("xxx")
-// 	}
-// });

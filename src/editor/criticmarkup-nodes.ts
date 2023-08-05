@@ -15,6 +15,14 @@ export abstract class CriticMarkupNode {
 		this.repr = repr;
 	}
 
+	copy(): CriticMarkupNode {
+		return Object.assign(Object.create(Object.getPrototypeOf(this)), this);
+	}
+
+	equals(other: CriticMarkupNode) {
+		return this.from === other.from && this.to === other.to && this.type === other.type;
+	}
+
 	num_ignored_chars(from: number, to: number): number {
 		if (from >= this.to || to <= this.from || this.encloses_range(from, to)) return 0;
 		if (this.in_range(from, to)) return 6;

@@ -9,14 +9,17 @@ import {
 	Direction,
 	GutterMarker,
 } from '@codemirror/view';
-import { request } from 'obsidian';
+import { CommentMarker } from './comment-gutter';
 
-/// Facet used to add a class to all gutter elements for a given line.
-/// Markers given to this facet should _only_ define an
-/// [`elementclass`](#view.GutterMarker.elementClass), not a
-/// [`toDOM`](#view.GutterMarker.toDOM) (or the marker will appear
-/// in all gutters for the line).
+
+/** Facet used to add a class to all gutter elements for a given line.
+ * Markers given to this facet should _only_ define an
+ * [`elementclass`](#view.GutterMarker.elementClass), not a
+ * [`toDOM`](#view.GutterMarker.toDOM) (or the marker will appear
+ in all gutters for the line). */
 export const gutterLineClass = Facet.define<RangeSet<GutterMarker>>();
+
+const MARGIN_BETWEEN = 5;
 
 type Handlers = { [event: string]: (view: EditorView, line: BlockInfo, event: Event) => boolean }
 
@@ -107,8 +110,6 @@ const gutterView = ViewPlugin.fromClass(class {
 			this.dom.style.position = 'sticky';
 		}
 
-		// TODO: None of the marker Elements are rendered at this point, does this happen in syncGutters or does it happen on update
-
 		this.syncGutters(false);
 		// MODIFICATION: Added nextSibling to view.contentDOM
 		view.scrollDOM.insertBefore(this.dom, view.contentDOM.nextSibling);
@@ -172,10 +173,10 @@ const gutterView = ViewPlugin.fromClass(class {
 
 			// If block consists of text
 			else if (line.type == BlockType.Text) {
-				// ??? Advance cursor to line (might do nothing?)
+				// Advance cursor to line to grab corresponding line classes
 				advanceCursor(lineClasses, classSet, line.from);
 
-				// For each gutter update context, call line
+				// For each gutter update context, call line()
 				for (const cx of contexts)
 					cx.line(this.view, line, classSet);
 			}
@@ -220,8 +221,25 @@ const gutterView = ViewPlugin.fromClass(class {
 		return change;
 	}
 
-	moveGutter(marker: GutterMarker, position: number) {
+	public moveGutter(marker: GutterMarker) {
+		const activeGutter = this.gutters[0]
 
+		const elementIdx = activeGutter.elements.findIndex(element => element.markers.includes(marker));
+		if (elementIdx === -1) return;
+
+		const gutterElement = activeGutter.elements[elementIdx];
+
+		const widgetIndex  = gutterElement.markers.indexOf(marker);
+
+		const margin_top = 50
+
+		// @ts-ignore (offsetTop is in the element)
+		let offset = gutterElement.dom.children[widgetIndex].offsetTop - gutterElement.block!.top - margin_top;
+		if (Math.abs(offset) < 10) offset = 0;
+		if (offset) {
+			const element = activeGutter.elements[0];
+			element.dom.style.marginTop = parseInt(element.dom.style.marginTop || '0') - offset + 'px';
+		}
 	}
 
 	destroy() {
@@ -240,20 +258,17 @@ function asArray<T>(val: T | readonly T[]) {
 	return (Array.isArray(val) ? val : [val]) as readonly T[];
 }
 
+/**
+ * Advance cursor to position
+ * @param cursor - Cursor to advance
+ * @param collect - Array to collect encountered markers in
+ * @param pos - Position to advance to
+ */
 function advanceCursor(cursor: RangeCursor<GutterMarker>, collect: GutterMarker[], pos: number) {
 	while (cursor.value && cursor.from <= pos) {
 		if (cursor.from == pos) collect.push(cursor.value);
 		cursor.next();
 	}
-}
-
-function getElementHeight(element: HTMLElement): Promise<number> {
-	return new Promise(resolve => {
-		requestAnimationFrame(() => {
-			const height = element.offsetHeight;
-			resolve(height);
-		});
-	});
 }
 
 
@@ -326,9 +341,11 @@ class UpdateContext {
 	line(view: EditorView, line: BlockInfo, extraMarkers: readonly GutterMarker[]) {
 		let localMarkers: GutterMarker[] = [];
 		// advanceCursor will place all GutterMarkers between this.cursor and line.from into localMarkers
+		// advanceCursor will place all GutterMarkers between the last this.cursor position and line.from into localMarkers
+
 		advanceCursor(this.cursor, localMarkers, line.from);
 
-		// never happens
+		// Never happens (related to lineClass)
 		if (extraMarkers.length) localMarkers = localMarkers.concat(extraMarkers);
 
 		// Only happens when we set lineMarker in config
@@ -391,7 +408,7 @@ class SingleGutterView {
 		// Constructs markers as rangeSet
 		this.markers = asArray(config.markers(view));
 		if (config.initialSpacer) {
-			this.spacer = new GutterElement(view, 0, 0, [config.initialSpacer(view)]);
+			this.spacer = new GutterElement(view, 0, 0, [config.initialSpacer(view)], null);
 			this.dom.appendChild(this.spacer.dom);
 			this.spacer.dom.style.cssText += 'visibility: hidden; pointer-events: none';
 		}
@@ -424,14 +441,16 @@ class GutterElement {
 	height: number = -1;
 	above: number = 0;
 	markers: readonly GutterMarker[] = [];
+	block: BlockInfo | null = null;
 
-	constructor(view: EditorView, height: number, above: number, markers: readonly GutterMarker[]) {
+	constructor(view: EditorView, height: number, above: number, markers: readonly GutterMarker[], block: BlockInfo | null) {
 		this.dom = document.createElement('div');
 		this.dom.className = 'cm-gutterElement';
 		this.update(view, height, above, markers);
 	}
 
-	update(view: EditorView, height: number, above: number, markers: readonly GutterMarker[]) {
+	update(view: EditorView, height: number, above: number, markers: readonly GutterMarker[], block: BlockInfo | null = null) {
+		this.block = block;
 		if (this.height != height)
 			this.dom.style.height = (this.height = height) + 'px';
 		if (this.above != above)
@@ -472,6 +491,8 @@ class GutterElement {
 				if (matched) domPos = domPos!.nextSibling;
 				else {
 					const domRendered = marker.toDOM(view);
+					// @ts-ignore
+					domRendered.style.marginBottom = MARGIN_BETWEEN + "px";
 					this.dom.insertBefore(domRendered, domPos);
 					// // Get height of domRendered
 					// setTimeout(() => {

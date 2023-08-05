@@ -187,7 +187,7 @@
 	border: 2px solid var(--background-modifier-border);
 	border-radius: var(--radius-l);
 	padding: var(--size-4-2);
-	transition: border-color 200ms ease-in-out;
+	transition: border-color 200ms ease-in-out 0ms, background-color 200ms ease-in-out 0ms;
 	background-color: var(--background-secondary-alt);
 
 	// Position comments relative to their optical center
@@ -198,13 +198,18 @@
 }
 
 
-//.criticmarkup-comment-gutter .cm-gutterElement {
-//	margin-bottom: 10px;
-//}
+.criticmarkup-comment-gutter .cm-gutterElement {
+	transition: margin 200ms ease-in-out;
+}
 
 .criticmarkup-gutter-comment * {
 	margin-block-start: 0.25em;
 	margin-block-end: 0.25em;
+}
+
+.criticmarkup-gutter-comment:hover {
+	border: 2px solid var(--background-modifier-active-hover);
+	background-color: var(--background-primary-alt);
 }
 
 
