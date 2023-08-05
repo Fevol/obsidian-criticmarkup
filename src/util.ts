@@ -1,4 +1,5 @@
 import { NodeType } from './types';
+import { RangeSet, RangeValue } from '@codemirror/state';
 
 type EnumDictionary<T extends string | symbol | number, U> = {
 	[K in T]: U;
@@ -92,6 +93,18 @@ export function spliceString(str: string, remove: [number, number][]) {
 			str = str.slice(0, start) + str.slice(start + length);
 	return str;
 }
+
+export function debugRangeset<Type extends RangeValue>(set: RangeSet<Type>): { from: number, to: number, value: Type }[] {
+	const ptr = set.iter();
+	const output: { from: number, to: number, value: Type }[] = [];
+	while(true) {
+		if (!ptr.value) break;
+		output.push({from: ptr.from, to: ptr.to, value: ptr.value})
+		ptr.next();
+	}
+	return output;
+}
+
 
 
 export const hSpace = /\S\n\v\f\r\u2028\u2029/;

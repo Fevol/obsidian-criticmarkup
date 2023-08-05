@@ -350,6 +350,8 @@ class UpdateContext {
 		let localMarkers: GutterMarker[] = [];
 		// advanceCursor will place all GutterMarkers between the last this.cursor position and line.from into localMarkers
 
+		// Widgets that are not part of the same 'viewport' block as the document line block will be skipped
+		// See comment-gutter.ts for a more eloquent, analytical and in-depth explanation
 		advanceCursor(this.cursor, localMarkers, line.from);
 
 		// Never happens (related to lineClass)
