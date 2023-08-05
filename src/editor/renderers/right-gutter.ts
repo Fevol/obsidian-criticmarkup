@@ -305,42 +305,49 @@ class UpdateContext {
 		const block_start = block.top < this.height ? this.height : block.top;
 
 
-		// TODO: In here, all the code should be managed for setting the location
+		// FIXME: This is very dependant on... well, everything, but at least it kind of works
+		// TODO: Find a more robust manner to determine the height of the block
+		const char_line_length = 42;
+		const line_pixel_height = 18;
+		const PADDING = 16;
+		const INNER_MARGIN = 6;
+		const WIGGLE_ROOM = 0;
+		const BORDER_SIZE = 4;
+		let height = 0;
+		const indiv_heights = [];
+		for (const marker of (markers as CommentMarker[])) {
+			const node_text = view.state.doc.sliceString(marker.node.from, marker.node.to);
+			const num_end_line = node_text.match(/\n/g)?.length || 0;
+			const comment_length = marker.node.to - marker.node.from - 6 - num_end_line;
+			const num_lines = Math.ceil(comment_length / char_line_length) + num_end_line;
+			height += num_lines * line_pixel_height + MARGIN_BETWEEN + PADDING + INNER_MARGIN + BORDER_SIZE;
+			indiv_heights.push(num_lines * line_pixel_height + MARGIN_BETWEEN + PADDING + INNER_MARGIN);
+		}
+		height += WIGGLE_ROOM;
 
-		const custom_block_height = Math.max(150, 44 * markers.length);
 
 
 		// Constructs element if gutter was initialised from empty
 		if (this.i == gutter.elements.length) {
 			// Create a new Gutter Element at position
-			const newElt = new GutterElement(view, custom_block_height, above, markers);
+			const newElt = new GutterElement(view, height, above, markers, block);
 			gutter.elements.push(newElt);
 
-
 			gutter.dom.appendChild(newElt.dom);
-
-			// TODO: get height of gutterElement as part of above
-
 		}
 
 		// Update element (move up/down) if gutter already exists
 		else {
-			gutter.elements[this.i].update(view, custom_block_height, above, markers);
+			gutter.elements[this.i].update(view, height, above, markers, block);
 		}
 
-		// console.log(`ABV: ${above}\t`, `| BLT ${block.top}\t`, `| BLB ${block.bottom}\t`, `| BLH ${block.bottom - block.top}\t`, `| HIG ${this.height}\t`, `| NHI ${block.bottom - block.height + custom_block_height}`);
-
-		this.height = block_start + custom_block_height;
-
-		// this.previousEnd = block.top + ELEMENT.height:
-
+		this.height = block_start + height;
 
 		this.i++;
 	}
 
 	line(view: EditorView, line: BlockInfo, extraMarkers: readonly GutterMarker[]) {
 		let localMarkers: GutterMarker[] = [];
-		// advanceCursor will place all GutterMarkers between this.cursor and line.from into localMarkers
 		// advanceCursor will place all GutterMarkers between the last this.cursor position and line.from into localMarkers
 
 		advanceCursor(this.cursor, localMarkers, line.from);
