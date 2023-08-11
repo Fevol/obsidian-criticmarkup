@@ -1,5 +1,7 @@
 import { type EventRef, type MarkdownPostProcessor, MarkdownPreviewRenderer, Notice, Platform, Plugin } from 'obsidian';
 
+
+import { Tree } from '@lezer/common';
 import { EditorView } from '@codemirror/view';
 import type { Extension } from '@codemirror/state';
 
@@ -31,7 +33,8 @@ import { objectDifference } from './util';
 
 import { DEFAULT_SETTINGS, REQUIRES_FULL_RELOAD } from './constants';
 import type { PluginSettings } from './types';
-import { Tree } from '@lezer/common';
+import { Database } from './database';
+import { criticmarkupLanguage } from './editor/parser';
 
 
 
@@ -47,6 +50,8 @@ export default class CommentatorPlugin extends Plugin {
 	loadSuggestButtonsEvent!: EventRef;
 
 	remove_monkeys: any[] = [];
+
+	database: Database = new Database();
 
 	postProcessor!: MarkdownPostProcessor;
 
@@ -167,12 +172,12 @@ export default class CommentatorPlugin extends Plugin {
 			this.addCommand(command);
 		}
 
-		this.app.workspace.onLayoutReady(() => {
+		this.app.workspace.onLayoutReady(async () => {
 			// FIXME: Probably an unnecessary hack, but toggle-source mode does not have an event to hook into,
 			//   so in order to also update the live preview of this plugin, we need to monkey around the toggle-source command.
 			this.remove_monkeys.push(around(app.commands.editorCommands['editor:toggle-source'], {
 				checkCallback: (oldMethod) => {
-					return (...args: any) => {
+					return (...args) => {
 						const result = oldMethod && oldMethod.apply(app.commands.editorCommands['editor:toggle-source'], args);
 						if (result && !args[0])
 							this.loadEditorExtensions();
@@ -180,14 +185,44 @@ export default class CommentatorPlugin extends Plugin {
 					};
 				},
 			}));
+
+
+			// TODO: Put into a worker
+			if (await this.database.isEmpty()) {
+				const document_fragment = new DocumentFragment();
+				const message = document_fragment.createEl('div');
+				message.textContent = 'Commentator: loading database...';
+
+				const center = document_fragment.createEl('div', {
+					cls: 'commentator-progress-bar',
+				});
+
+				const markdownFiles = app.vault.getMarkdownFiles();
+
+				const progress_bar = center.createEl('progress');
+				progress_bar.setAttribute('max', markdownFiles.length.toString());
+				progress_bar.setAttribute('value', '0');
+				const notice = new Notice(document_fragment, 0);
+
+				for (let i = 0; i < markdownFiles.length; i++) {
+					const file = markdownFiles[i];
+					const contents = await this.app.vault.cachedRead(file);
+					const tree = criticmarkupLanguage.parser.parse(contents);
+					await this.database.storeKey(file.path, nodesInSelection(tree).nodes);
+
+					progress_bar.setAttribute('value', (i + 1).toString());
+				}
+
+				notice.hide();
+			}
 		});
 	}
 
 	async onunload() {
 		if (this.settings.editor_preview_button)
-			removePreviewButtons();
+			await removePreviewButtons();
 		if (this.settings.editor_suggest_button)
-			removeSuggestButtons();
+			await removeSuggestButtons();
 
 		MarkdownPreviewRenderer.unregisterPostProcessor(this.postProcessor);
 
@@ -207,7 +242,7 @@ export default class CommentatorPlugin extends Plugin {
 		this.previous_settings = Object.assign({}, this.settings);
 
 		if (this.changed_settings.suggest_mode !== undefined) {
-			updateSuggestButtons(this);
+			await updateSuggestButtons(this);
 		}
 
 		if (this.changed_settings.editor_preview_button !== undefined) {
@@ -216,7 +251,7 @@ export default class CommentatorPlugin extends Plugin {
 				this.loadPreviewButtonsEvent = app.workspace.on('layout-change', () => loadPreviewButtons(this));
 				this.registerEvent(this.loadPreviewButtonsEvent);
 			} else {
-				removePreviewButtons();
+				await removePreviewButtons();
 				app.workspace.offref(this.loadPreviewButtonsEvent);
 				this.settings.preview_mode = 0;
 			}
@@ -228,7 +263,7 @@ export default class CommentatorPlugin extends Plugin {
 				this.loadSuggestButtonsEvent = app.workspace.on('layout-change', () => loadSuggestButtons(this));
 				this.registerEvent(this.loadSuggestButtonsEvent);
 			} else {
-				removeSuggestButtons();
+				await removeSuggestButtons();
 				app.workspace.offref(this.loadSuggestButtonsEvent);
 			}
 		}
