@@ -1,7 +1,7 @@
 // For the reason why I'm re-implementing these keybinds, see index.ts
 
-import { EditorSelection, EditorState, SelectionRange, StateCommand, Transaction } from '@codemirror/state';
-import { Command, Direction, EditorView } from '@codemirror/view';
+import { EditorSelection, EditorState, SelectionRange, type StateCommand, Transaction } from '@codemirror/state';
+import { type Command, Direction, EditorView } from '@codemirror/view';
 
 type CommandTarget = { state: EditorState, dispatch: (tr: Transaction) => void }
 

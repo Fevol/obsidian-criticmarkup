@@ -1,4 +1,4 @@
-import { Extension, Line, RangeSet, RangeSetBuilder, StateField } from '@codemirror/state';
+import { type Extension, Line, RangeSet, RangeSetBuilder, StateField } from '@codemirror/state';
 import { EditorView, GutterMarker } from '@codemirror/view';
 import { NodeType } from '../../types';
 

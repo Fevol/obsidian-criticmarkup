@@ -1,4 +1,4 @@
-import { Facet, Extension, RangeSet, RangeCursor } from '@codemirror/state';
+import { Facet, type Extension, RangeSet, type RangeCursor } from '@codemirror/state';
 import {
 	EditorView,
 	ViewPlugin,

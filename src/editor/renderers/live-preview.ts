@@ -5,9 +5,9 @@ import type { Extension, Range, Transaction } from '@codemirror/state';
 import { RangeSetBuilder, StateField } from '@codemirror/state';
 import {
 	Decoration,
-	DecorationSet,
+	type DecorationSet,
 	EditorView,
-	PluginValue,
+	type PluginValue,
 	ViewPlugin,
 	ViewUpdate,
 	WidgetType,

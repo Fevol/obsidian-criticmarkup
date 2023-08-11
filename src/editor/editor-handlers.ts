@@ -1,5 +1,5 @@
 import { EditorView } from '@codemirror/view';
-import { ChangeSpec, EditorSelection, EditorState, Prec } from '@codemirror/state';
+import { type ChangeSpec, EditorSelection, EditorState, Prec } from '@codemirror/state';
 
 import { treeParser } from './tree-parser';
 

@@ -1,5 +1,5 @@
 import { EditorSelection, SelectionRange } from '@codemirror/state';
-import { NodeType, CriticMarkupOperation, EditorChange, OperationReturn } from '../../types';
+import { NodeType, type CriticMarkupOperation, type EditorChange, type OperationReturn } from '../../types';
 
 import { CriticMarkupNode, CriticMarkupNodes, SubstitutionNode } from '../criticmarkup-nodes';
 

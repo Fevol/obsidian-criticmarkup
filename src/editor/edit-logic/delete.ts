@@ -1,5 +1,5 @@
 import { EditorSelection, EditorState, Text } from '@codemirror/state';
-import { CriticMarkupOperation, EditorChange, NodeType, OperationReturn } from '../../types';
+import { type CriticMarkupOperation, type EditorChange, NodeType, type OperationReturn } from '../../types';
 
 import { CriticMarkupNodes, SubstitutionNode } from '../criticmarkup-nodes';
 import { cursor_move } from '.';

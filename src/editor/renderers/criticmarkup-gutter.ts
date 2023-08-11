@@ -3,7 +3,7 @@ import { Menu } from 'obsidian';
 import type { Tree } from '@lezer/common';
 import { RangeSet, RangeSetBuilder } from '@codemirror/state';
 import { EditorView, gutter, GutterMarker } from '@codemirror/view';
-import { NodeType, PluginSettings } from '../../types';
+import { NodeType, type PluginSettings } from '../../types';
 
 import { treeParser } from '../tree-parser';
 

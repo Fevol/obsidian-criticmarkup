@@ -1,5 +1,6 @@
 import { Text } from '@codemirror/state';
 import { StringNodeType, NodeType } from '../types';
+import { type StringNodeType, NodeType } from '../types';
 
 export abstract class CriticMarkupNode {
 	from: number;

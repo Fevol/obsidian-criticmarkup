@@ -1,5 +1,5 @@
-import { EditorSelection, EditorState, Extension, SelectionRange, Transaction } from '@codemirror/state';
-import { CriticMarkupOperation, PluginSettings } from '../../types';
+import { EditorSelection, EditorState, type Extension, SelectionRange, Transaction } from '@codemirror/state';
+import type { CriticMarkupOperation, PluginSettings } from '../../types';
 
 import { treeParser } from '../tree-parser';
 

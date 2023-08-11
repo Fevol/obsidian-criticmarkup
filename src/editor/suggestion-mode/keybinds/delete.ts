@@ -1,12 +1,12 @@
 // For the reason why I'm re-implementing these keybinds, see index.ts
 
-import { Command, EditorView } from '@codemirror/view';
+import { type Command, EditorView } from '@codemirror/view';
 import {
 	CharCategory,
 	countColumn,
 	EditorSelection, EditorState,
 	findClusterBreak,
-	StateCommand,
+	type StateCommand,
 	Transaction,
 } from '@codemirror/state';
 import { getIndentUnit } from '@codemirror/language';

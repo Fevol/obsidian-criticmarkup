@@ -1,5 +1,5 @@
 import { CharCategory, EditorSelection, EditorState } from '@codemirror/state';
-import { CriticMarkupRange } from '../../types';
+import { type CriticMarkupRange } from '../../types';
 
 import { CriticMarkupNode, CriticMarkupNodes, SubstitutionNode } from '../criticmarkup-nodes';
 

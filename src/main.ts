@@ -1,4 +1,4 @@
-import { EventRef, MarkdownPostProcessor, MarkdownPreviewRenderer, Platform, Plugin } from 'obsidian';
+import { type EventRef, type MarkdownPostProcessor, MarkdownPreviewRenderer, Notice, Platform, Plugin } from 'obsidian';
 
 import { EditorView } from '@codemirror/view';
 import type { Extension } from '@codemirror/state';
