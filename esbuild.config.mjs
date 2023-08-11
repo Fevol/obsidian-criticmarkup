@@ -1,7 +1,11 @@
 import esbuild, { analyzeMetafile } from 'esbuild';
+import esbuildSvelte from "esbuild-svelte";
+import {sassPlugin} from "esbuild-sass-plugin";
+
+import sveltePreprocess from "svelte-preprocess";
+
 import process from "process";
 import builtins from 'builtin-modules'
-import {sassPlugin} from "esbuild-sass-plugin";
 
 const banner =
     `/*
@@ -59,6 +63,14 @@ const context = await esbuild.context({
 
     plugins: [
         sassPlugin(),
+        esbuildSvelte({
+            compilerOptions: {css: "injected"},
+            preprocess: sveltePreprocess(),
+            filterWarnings: (warning) => {
+                // Remove accessibility warnings (base Obsidian ignores these guidelines too)
+                return warning.code !== "a11y-click-events-have-key-events" && warning.code !== "a11y-no-static-element-interactions"
+            },
+        })
     ]
 });
 

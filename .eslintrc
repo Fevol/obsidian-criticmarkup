@@ -8,17 +8,33 @@
     "extends": [
         "eslint:recommended",
         "plugin:@typescript-eslint/eslint-recommended",
-        "plugin:@typescript-eslint/recommended"
+        "plugin:@typescript-eslint/recommended",
+        "plugin:svelte/recommended"
+
     ],
     "parserOptions": {
-        "sourceType": "module"
+        "sourceType": "module",
+        "extraFileExtensions": [".svelte"]
     },
     "rules": {
+        "no-undef": "off",
         "no-unused-vars": "off",
         "@typescript-eslint/no-unused-vars": ["error", { "args": "none" }],
         "@typescript-eslint/ban-ts-comment": "off",
         "no-prototype-builtins": "off",
         "@typescript-eslint/no-empty-function": "off",
         "no-mixed-spaces-and-tabs": "off"
-    }
+    },
+    "overrides": [
+        {
+            "files": ["*.svelte"],
+            "parser": "svelte-eslint-parser",
+            "parserOptions": {
+                "parser": "@typescript-eslint/parser"
+            },
+            "rules": {
+                "svelte/no-at-html-tags": "off"
+            }
+        }
+    ]
 }
