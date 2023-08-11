@@ -19,6 +19,61 @@
 }
 
 
+
+// FIXME: Joke, do not uncomment
+//body.minimal-theme::after {
+//	content: "PLEASE TELL KEPANO TO FIX COMMENTATOR STYLING";
+//	position: absolute;
+//	z-index: 1000000;
+//	font-size: 8em;
+//	left: 20%;
+//	top: 30%;
+//
+//	background: linear-gradient(to right, #6666ff, #0099ff , #00ff00, #ff3399, #6666ff);
+//	-webkit-background-clip: text;
+//	background-clip: text;
+//	color: transparent;
+//	animation: commentator-rainbow_animation 3s ease-in-out infinite,
+//			   commentator-scale-updown 1.5s ease-in-out infinite,
+//			   commentator-rotate-leftright 3s ease-in-out infinite;
+//	background-size: 400% 100%;
+//
+//}
+//
+//@keyframes commentator-rainbow_animation {
+//	0%,100% {
+//		background-position: 0 0;
+//	}
+//
+//	50% {
+//		background-position: 100% 0;
+//	}
+//}
+//
+//@keyframes commentator-scale-updown {
+//	0%, 100% {
+//		transform: scale(1);
+//	}
+//
+//	50% {
+//		transform: scale(1.1);
+//	}
+//}
+//
+//@keyframes commentator-rotate-leftright {
+//	// Rotate left 30 degrees, then right 60 degrees from center
+//	0%, 100% {
+//		transform-orientation: -100% 50%;
+//		transform: rotate(20deg);
+//	}
+//
+//	50% {
+//		transform-orientation: 100% 50%;
+//		transform: rotate(-20deg);
+//	}
+//
+//}
+
 // ================================================
 //           CriticMarkup Editor Styles
 // ================================================
