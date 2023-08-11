@@ -27,6 +27,7 @@ import { loadSuggestButtons, removeSuggestButtons, updateSuggestButtons } from '
 
 import {around} from 'monkey-around';
 
+import { CRITICMARKUP_VIEW, CriticMarkupView } from './ui/view';
 import { CommentatorSettings } from './ui/settings';
 
 import { objectDifference } from './util';
@@ -115,6 +116,8 @@ export default class CommentatorPlugin extends Plugin {
 
 
 	async onload() {
+		this.registerView(CRITICMARKUP_VIEW,  (leaf) => new CriticMarkupView(leaf, this));
+
 		this.settings = Object.assign({}, this.settings, await this.loadData());
 		this.previous_settings = Object.assign({}, this.settings);
 
@@ -161,6 +164,15 @@ export default class CommentatorPlugin extends Plugin {
 			callback: async () => {
 				this.app.vault.setConfig('vimMode', !this.app.vault.getConfig('vimMode'));
 			},
+		});
+
+		commands.push({
+			id: 'commentator-view',
+			name: 'Open CriticMarkup view',
+			icon: 'comment',
+			callback: async () => {
+				await this.activateView();
+			}
 		});
 
 		for (const command of commands) {
@@ -276,7 +288,20 @@ export default class CommentatorPlugin extends Plugin {
 			postProcessorRerender();
 		}
 
-		this.updateEditorExtension();
+		await this.updateEditorExtension();
+	}
+
+	async activateView() {
+		this.app.workspace.detachLeavesOfType(CRITICMARKUP_VIEW);
+
+		await this.app.workspace.getRightLeaf(false).setViewState({
+			type: CRITICMARKUP_VIEW,
+			active: true,
+		});
+
+		this.app.workspace.revealLeaf(
+			this.app.workspace.getLeavesOfType(CRITICMARKUP_VIEW)[0]
+		);
 	}
 }
 

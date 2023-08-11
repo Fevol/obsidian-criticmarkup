@@ -1,5 +1,4 @@
 import { Text } from '@codemirror/state';
-import { StringNodeType, NodeType } from '../types';
 import { type StringNodeType, NodeType } from '../types';
 
 export abstract class CriticMarkupNode {
@@ -496,3 +495,19 @@ export class CriticMarkupNodes {
 	}
 }
 
+
+export const NODE_ICON_MAPPER = {
+	[NodeType.ADDITION]: "plus-circle",
+	[NodeType.DELETION]: "minus-square",
+	[NodeType.SUBSTITUTION]: "replace",
+	[NodeType.HIGHLIGHT]: "highlighter",
+	[NodeType.COMMENT]: "message-square",
+}
+
+export const NODE_PROTOTYPE_MAPPER = {
+	[NodeType.ADDITION]: AdditionNode,
+	[NodeType.DELETION]: DeletionNode,
+	[NodeType.HIGHLIGHT]: HighlightNode,
+	[NodeType.SUBSTITUTION]: SubstitutionNode,
+	[NodeType.COMMENT]: CommentNode,
+}

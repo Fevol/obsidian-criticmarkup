@@ -1,3 +1,5 @@
+@import "../ui/components/main.scss";
+
 .theme-light {
 	--addition-color: var(--color-green);
 	--deletion-color: var(--color-red);
@@ -152,6 +154,51 @@
 
 
 // ================================================
+//              View CriticMarkup Styles
+// ================================================
+
+.criticmarkup-view-container {
+	padding: 0 0 0 var(--size-4-4);
+	height: 95%;
+}
+
+.criticmarkup-view-node {
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-l);
+	padding: var(--size-4-2);
+	background: var(--background-primary);
+	margin: 2px 8px 8px 2px;
+	max-height: 400px;
+	overflow-y: scroll;
+}
+
+.criticmarkup-view-node:hover {
+	outline: 2px solid var(--interactive-accent);
+}
+
+.criticmarkup-view-node-selected {
+	outline: 2px solid var(--interactive-accent);
+}
+
+.criticmarkup-view-node-top {
+	display: flex;
+	align-items: center;
+	gap: var(--size-4-2);
+}
+
+.criticmarkup-view-node-icon { }
+
+.criticmarkup-view-node-title {
+	font-variant: all-small-caps;
+	font-weight: var(--bold-weight);
+}
+
+.criticmarkup-view-node-empty {
+	color: var(--text-faint);
+}
+
+
+// ================================================
 //            Editor UIX Elements Styling
 // ================================================
 
@@ -232,6 +279,10 @@
 	left: 20px;
 }
 
+.cm-gutters.cm-gutters:has(>.criticmarkup-comment-gutter) {
+	padding-inline-end: 0;
+}
+
 .criticmarkup-comment-gutter {
 	width: 300px;
 	margin-top: 50px;
@@ -271,6 +322,12 @@
 .criticmarkup-gutter-comment:focus {
 	border: 2px solid var(--comment-border-color);
 	background-color: var(--background-primary);
+}
+
+.commentator-progress-bar {
+	display: flex;
+	justify-content: center;
+	accent-color: var(--color-accent);
 }
 
 

@@ -105,6 +105,8 @@ export function debugRangeset<Type extends RangeValue>(set: RangeSet<Type>): { f
 	return output;
 }
 
-
+export function capitalizeFirstLetter(string: string) {
+	return string.charAt(0).toUpperCase() + string.toLowerCase().slice(1);
+}
 
 export const hSpace = /\S\n\v\f\r\u2028\u2029/;
