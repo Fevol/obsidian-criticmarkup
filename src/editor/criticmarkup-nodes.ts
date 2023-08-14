@@ -1,5 +1,6 @@
 import { Text } from '@codemirror/state';
 import { type StringNodeType, NodeType } from '../types';
+import { CM_All_Brackets } from '../util';
 
 export abstract class CriticMarkupNode {
 	from: number;
@@ -45,10 +46,16 @@ export abstract class CriticMarkupNode {
 		return str.slice(Math.max(this.from - offset + 3, 0), Math.min(this.to - offset - 3, str.length));
 	}
 
-	unwrap_part(pos: number, str: string, left: boolean) {
-		if (left)
-			return str.slice(Math.max(this.from + 3, pos), this.to - 3);
-		return str.slice(this.from + 3, Math.min(this.to - 3, pos));
+	unwrap_bracket(str: string, left = false, offset = 0) {
+		if (left) {
+			return str.slice(Math.max(this.from - offset + 3, 0));
+		} else {
+			return str.slice(0, Math.min(this.to - offset - 3, str.length));
+		}
+	}
+
+	unwrap_parts(str: string, offset = 0): string[] {
+		return [this.unwrap(str, offset)];
 	}
 
 	unwrap_slice(str: string, from: number, to: number) {
@@ -72,7 +79,8 @@ export abstract class CriticMarkupNode {
 		return this.from <= cursor && this.to >= cursor;
 	}
 
-	encloses_range(start: number, end: number) {
+	encloses_range(start: number, end: number, strict = false) {
+		if (strict) return this.from < start && this.to > end;
 		return this.from <= start && this.to >= end;
 	}
 
@@ -120,7 +128,7 @@ export abstract class CriticMarkupNode {
 				cursor = this.to - 3;
 			if (this.touches_left_bracket(cursor, false, true))
 				cursor = this.from;
-		}  else {
+		} else {
 			if (this.touches_left_bracket(cursor, true, false))
 				cursor = this.from + 3;
 			if (this.touches_right_bracket(cursor, false, true))
@@ -164,6 +172,21 @@ export abstract class CriticMarkupNode {
 			|| this.touches_right_bracket(cursor, outside_loose, inside_loose);
 	}
 
+
+	postprocess(str: string, unwrap: boolean = true, livepreview_mode: number = 0, tag: string = "div", left: boolean | null = null) {
+		if (unwrap) {
+			// Node is larger than what is actually given (no end bracket found within text)
+			if (this.to >= str.length && !str.endsWith(CM_All_Brackets[this.type].at(-1)!))
+				str = this.unwrap_bracket(str, true);
+			/*else if (this.from === 0 && !str.startsWith(CM_All_Brackets[this.type][0]))
+				str = this.unwrap_bracket(str, false);*/
+			else
+				str = this.unwrap(str);
+		}
+
+		return `<${tag} class='criticmarkup-${this.repr.toLowerCase()}'>${str}</${tag}>`;
+	}
+
 }
 
 export class AdditionNode extends CriticMarkupNode {
@@ -178,6 +201,25 @@ export class AdditionNode extends CriticMarkupNode {
 	reject(str: string, offset = 0) {
 		return '';
 	}
+
+	postprocess(str: string, unwrap: boolean = true, livepreview_mode: number = 0, tag: string = "div", left: boolean | null = null) {
+		if (unwrap) {
+			// Node is larger than what is actually given (no end bracket found within text)
+			if (this.to >= str.length && !str.endsWith(CM_All_Brackets[this.type].at(-1)!))
+				str = this.unwrap_bracket(str, true);
+			/*else if (this.from === 0 && !str.startsWith(CM_All_Brackets[this.type][0]))
+				str = this.unwrap_bracket(str, false);*/
+			else
+				str = this.unwrap(str);
+		}
+		if (!livepreview_mode)
+			str = `<${tag} class='criticmarkup-preview criticmarkup-addition'>${str}</${tag}>`;
+		else if (livepreview_mode === 1)
+			str = `<${tag} class='criticmarkup-preview'>${str}</${tag}>`;
+		else
+			str = `<${tag} class='criticmarkup-preview'/>`;
+		return str;
+	}
 }
 
 export class DeletionNode extends CriticMarkupNode {
@@ -191,6 +233,25 @@ export class DeletionNode extends CriticMarkupNode {
 
 	reject(str: string, offset = 0) {
 		return this.unwrap(str, offset);
+	}
+
+	postprocess(str: string, unwrap: boolean = true, livepreview_mode: number = 0, tag: string = "div", left: boolean | null = null) {
+		if (unwrap) {
+			// Node is larger than what is actually given (no end bracket found within text)
+			if (this.to >= str.length && !str.endsWith(CM_All_Brackets[this.type].at(-1)!))
+				str = this.unwrap_bracket(str, true);
+			/*else if (this.from === 0 && !str.startsWith(CM_All_Brackets[this.type][0]))
+				str = this.unwrap_bracket(str, false);*/
+			else
+				str = this.unwrap(str);
+		}
+		if (!livepreview_mode)
+			str = `<${tag} class='criticmarkup-preview criticmarkup-deletion'>${str}</${tag}>`;
+		else if (livepreview_mode === 1)
+			str = `<${tag} class='criticmarkup-preview'/>`;
+		else
+			str = `<${tag} class='criticmarkup-preview'>${str}</${tag}>`;
+		return str;
 	}
 }
 
@@ -218,19 +279,24 @@ export class SubstitutionNode extends CriticMarkupNode {
 			str.slice(this.middle - offset + 2, Math.min(this.to - offset - 3, str.length));
 	}
 
-	unwrap_part(pos: number, str: string, left: boolean) {
+	unwrap_parts(str: string, offset = 0) {
+		return [
+			str.slice(Math.max(this.from - offset + 3, 0), this.middle - offset),
+			str.slice(this.middle - offset + 2, Math.min(this.to - offset - 3, str.length)),
+		];
+	}
+
+	unwrap_parts_bracket(str: string, left: boolean, offset = 0) {
 		if (left) {
-			if (pos < this.middle)
-				return str.slice(Math.max(this.from + 3, pos), this.middle) +
-					str.slice(this.middle + 2, this.to - 3);
-			else
-				return str.slice(Math.max(this.middle + 2, pos), this.to - 3);
+			return [
+				str.slice(Math.max(this.from + 3 - offset, 0), this.middle - offset),
+				str.slice(this.middle - offset + 2),
+			]
 		} else {
-			if (pos > this.middle + 2)
-				return str.slice(this.from + 3, this.middle) +
-					str.slice(this.middle + 2, Math.min(this.to - 3, pos));
-			else
-				return str.slice(this.from + 3, Math.min(this.middle, pos));
+			return [
+				str.slice(this.from, this.middle - offset),
+				str.slice(this.middle - offset + 2, this.to - offset - 3),
+			]
 		}
 	}
 
@@ -291,6 +357,42 @@ export class SubstitutionNode extends CriticMarkupNode {
 	reject(str: string, offset = 0) {
 		return this.unwrap(str, offset).slice(this.middle - this.from - 3);
 	}
+
+	postprocess(str: string, unwrap: boolean = true, livepreview_mode: number = 0, tag: string = "div", left: boolean | null = null) {
+		let parts: string[] = [str];
+		if (unwrap) {
+			// Node is larger than what is actually given (no end bracket found within text)
+			if (this.to >= str.length && !str.endsWith(CM_All_Brackets[NodeType.SUBSTITUTION][2]))
+				parts = this.unwrap_parts_bracket(str, true);
+			else if (this.from <= 0 && !str.startsWith(CM_All_Brackets[NodeType.SUBSTITUTION][0]))
+				parts = this.unwrap_parts_bracket(str, false);
+			else
+				parts = this.unwrap_parts(str);
+		}
+
+		if (parts.length === 1) {
+			if (!livepreview_mode)
+				str = `<${tag} class='criticmarkup-preview criticmarkup-${left ? "deletion" : "addition"}'>${parts[0]}</${tag}>`;
+			else if (livepreview_mode === 1)
+				str = left ? "" : `<${tag} class='criticmarkup-preview'>${parts[0]}</${tag}>`;
+			else
+				str = left ? `<${tag} class='criticmarkup-preview'>${parts[0]}</${tag}>` : "";
+		} else {
+			if (!livepreview_mode) {
+				str = "";
+				if (parts[0].length)
+					str += `<${tag} class='criticmarkup-preview criticmarkup-deletion'>${parts[0]}</${tag}>`;
+				if (parts[1].length)
+					str += `<${tag} class='criticmarkup-preview criticmarkup-addition'>${parts[1]}</${tag}>`;
+			}
+			else if (livepreview_mode === 1)
+				str = `<${tag} class='criticmarkup-preview'>${parts[1]}</${tag}>`;
+			else
+				str = `<${tag} class='criticmarkup-preview'>${parts[0]}</${tag}>`;
+		}
+		return str;
+	}
+
 }
 
 export class HighlightNode extends CriticMarkupNode {
@@ -345,7 +447,7 @@ export class CriticMarkupNodes {
 	// Right breaks ties if cursor between two nodes, defaults to the left node
 	at_cursor(cursor: number, strict = false, right = false) {
 		return right ? this.nodes.slice().reverse().find(node => node.encloses(cursor, strict))
-					 : this.nodes.find(node => node.encloses(cursor, strict));
+			: this.nodes.find(node => node.encloses(cursor, strict));
 	}
 
 	between_cursor(cursor_start: number, cursor_end: number, left: boolean, loose = false) {
@@ -497,12 +599,12 @@ export class CriticMarkupNodes {
 
 
 export const NODE_ICON_MAPPER = {
-	[NodeType.ADDITION]: "plus-circle",
-	[NodeType.DELETION]: "minus-square",
-	[NodeType.SUBSTITUTION]: "replace",
-	[NodeType.HIGHLIGHT]: "highlighter",
-	[NodeType.COMMENT]: "message-square",
-}
+	[NodeType.ADDITION]: 'plus-circle',
+	[NodeType.DELETION]: 'minus-square',
+	[NodeType.SUBSTITUTION]: 'replace',
+	[NodeType.HIGHLIGHT]: 'highlighter',
+	[NodeType.COMMENT]: 'message-square',
+};
 
 export const NODE_PROTOTYPE_MAPPER = {
 	[NodeType.ADDITION]: AdditionNode,
@@ -510,4 +612,4 @@ export const NODE_PROTOTYPE_MAPPER = {
 	[NodeType.HIGHLIGHT]: HighlightNode,
 	[NodeType.SUBSTITUTION]: SubstitutionNode,
 	[NodeType.COMMENT]: CommentNode,
-}
+};

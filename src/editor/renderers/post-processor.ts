@@ -1,106 +1,167 @@
-import type { MarkdownView } from 'obsidian';
+import type { MarkdownPostProcessorContext, MarkdownView } from 'obsidian';
+import { decodeHTML, DecodingMode } from 'entities';
 
 import { criticmarkupLanguage } from '../parser';
+import { nodesInSelection } from '../editor-util';
 
-import { CM_NodeTypes, CM_Syntax } from '../../util';
-
-export function postProcess(el: HTMLElement, ctx: any, settings: any) {
-	// TODO: Rewrite to new nodes system for unified interface
-	// FIXME: Each el is a standalone part of the document, figure out how to determine which part of the text it belongs to
-	//        and determine which node type (if any) it belongs to
-
-	const tree = criticmarkupLanguage.parser.parse(el.innerHTML);
-
-	let changes = [];
-	let output = el.innerHTML;
+import type { PluginSettings } from '../../types';
+import { NodeType } from '../../types';
+import type { CriticMarkupNode } from '../criticmarkup-nodes';
+import { NODE_PROTOTYPE_MAPPER, SubstitutionNode } from '../criticmarkup-nodes';
+import { CM_All_Brackets } from '../../util';
 
 
-	const cursor = tree.cursor();
-	while (cursor.next()) {
-		const start = cursor.from;
-		const end = cursor.to;
-		const name = cursor.name;
+// FIXME: Issue: MarkdownRenderer.render(...) on custom elements does not provide global context?
+export async function postProcess(el: HTMLElement, ctx: MarkdownPostProcessorContext, settings: PluginSettings) {
+	let nodes_in_range: CriticMarkupNode[] | null = null;
+	let start_char: number | null = null, end_char: number | null = null;
 
-		if (name === '⚠') {
-			changes.pop();
-			break;
-		} else if (name === 'MSub') continue;
+	// Undo HTML encoding of specific characters
+	let element_contents = decodeHTML(el.innerHTML, DecodingMode.Strict);
 
-		const is_rendered = output[start + 1] !== CM_Syntax[CM_NodeTypes[name]][0];
+	if (ctx) {
+		const lines = ctx.getSectionInfo(el);
+		if (lines) {
+			const all_nodes = nodesInSelection(criticmarkupLanguage.parser.parse(lines.text));
 
-		if (name === 'Substitution') {
-			cursor.firstChild();
-			if (cursor.name !== 'MSub') continue;
+			// We have access to the endlines, so we can determine which node(s) the element belongs to
+			const endlines = [...lines.text.matchAll(/\n/g)].map((m) => m.index!);
 
-			changes.push({
-				start: start,
-				end: end,
-				name: name,
-				middle: cursor.from,
-				is_rendered: is_rendered,
-			});
-		} else {
-			changes.push({
-				start: start,
-				end: end,
-				name: name,
-				is_rendered: is_rendered,
-			});
-		}
-	}
+			start_char = !lines.lineStart ? 0 : endlines[lines.lineStart - 1] + 1;
+			end_char = endlines[lines.lineEnd] ?? lines.text.length;
 
-	changes = changes.reverse();
+			nodes_in_range = all_nodes.nodes_in_range(start_char, end_char, true);
 
-	for (const change of changes) {
-		let new_content = output.substring(change.start, change.end).slice(3, -3);
-		let new_element = '';
-		if (change.name === 'Addition') {
-			if (!settings.preview_mode)
-				new_element = `<span class='criticmarkup-preview criticmarkup-inline criticmarkup-addition'>${new_content}</span>`;
-			else if (settings.preview_mode === 1)
-				new_element = `<span class='criticmarkup-preview'>${new_content}</span>`;
-			else
-				new_element = `<span class='criticmarkup-preview'/>`;
-		} else if (change.name === 'Deletion') {
-			if (!settings.preview_mode)
-				new_element = `<span class='criticmarkup-preview criticmarkup-inline criticmarkup-deletion'>${new_content}</span>`;
-			else if (settings.preview_mode === 1)
-				new_element = `<span class='criticmarkup-preview'/>`;
-			else
-				new_element = `<span class='criticmarkup-preview'>${new_content}</span>`;
-		} else if (change.name === 'Substitution') {
-			let middle = <number>change.middle - change.start + 2;
-			if (change.is_rendered) {
-				new_content = new_content.slice(3, -4);
-				middle -= 3;
+			if (!nodes_in_range.length) return;
+
+			if (nodes_in_range.length === 1) {
+				const node = nodes_in_range[0];
+				let in_range = false;
+				let left: boolean | null = null;
+				if (node.type === NodeType.SUBSTITUTION) {
+					// Determines whether range belongs to the left or right part of the substitution
+					if (node.part_encloses_range(start_char, end_char, true) && (in_range = true, left = true)) {}
+					else if (node.part_encloses_range(start_char, end_char, false) && (in_range = true, left = false)) {}
+				} else {
+					in_range = node.encloses_range(start_char, end_char);
+				}
+
+				if (in_range) {
+					// TEMPORARY: Remove the ~> from the element contents
+					if (node.type === NodeType.SUBSTITUTION)
+						element_contents = element_contents.replace(/~>/g, "");
+
+					const left_unwrap = start_char === node.from;
+					const right_unwrap = end_char === node.to;
+
+
+					const right_bracket = CM_All_Brackets[node.type].at(-1)!;
+					const left_bracket = CM_All_Brackets[node.type][0];
+
+					// Remove last occurence of right bracket
+					if (right_unwrap) {
+						const last_bracket = element_contents.lastIndexOf(right_bracket);
+						element_contents = element_contents.substring(0, last_bracket) + element_contents.substring(last_bracket + 3);
+					}
+
+					if (left_unwrap) {
+						const first_bracket = element_contents.indexOf(left_bracket);
+						element_contents = element_contents.substring(0, first_bracket) + element_contents.substring(first_bracket + 3);
+					}
+
+
+
+					// FIXME: Unwrap is still the issue: find when to remove brackets correctly
+					el.innerHTML = node.postprocess(element_contents, false, settings.preview_mode, "div", left);
+
+					return;
+				}
 			}
-
-			if (!settings.preview_mode)
-				new_element = `<span class='criticmarkup-preview criticmarkup-inline criticmarkup-deletion'>${new_content.slice(0, middle - 5)}</span><span class='criticmarkup-inline criticmarkup-addition'>${new_content.substring(middle)}</span>`;
-			else if (settings.preview_mode === 1)
-				new_element = `<span class='criticmarkup-preview'>${new_content.substring(middle)}</span>`;
-			else
-				new_element = `<span class='criticmarkup-preview'>${new_content.substring(0, middle - 5)}</span>`;
-		} else if (change.name === 'Highlight') {
-			if (change.is_rendered)
-				new_content = new_content.slice(4, -5);
-			new_element = `<mark>${new_content}</mark>`;
-		} else if (change.name === 'Comment') {
-			if (change.is_rendered)
-				new_content = new_content.slice(6, -6);
-			new_element = `<span class='criticmarkup-comment'>${new_content}</span>`;
 		}
-
-		output = output.slice(0, change.start) + new_element + output.slice(change.end);
 	}
-	el.innerHTML = output;
+
+	// If code lands here, the element includes a transition of a node (either in/out of a node, or passing middle arrow)
+
+	// Revert markdown rendering of stricken through text and other incorrectly applied markup (that normally would be rendered as <del>...</del>)
+	element_contents = element_contents.replaceAll(/{<del>|{<\/del>/g, "{~~")
+										.replaceAll(/<del>}|<\/del>}/g, "~~}")
+										.replaceAll(/{<mark>|{<\/mark>/g, "{==")
+										.replaceAll(/<mark>}|<\/mark>}/g, "==}")
+										.replaceAll(/{=<mark>=}|{=<\/mark>=}/g, "{====}")
+
+	const tree = criticmarkupLanguage.parser.parse(element_contents);
+
+	// Part of the block is one or more CriticMarkup nodes
+	const element_nodes = nodesInSelection(tree).nodes;
+
+	if (!element_nodes.length && !nodes_in_range?.length) return;
+
+	let previous_start = 0;
+	let new_element = "";
+
+	// Case where node was opened in earlier block, and closed in current block
+	// Parser on element contents will not register the end bracket as a valid node,
+	// so we need to manually catch it
+	let missing_node: CriticMarkupNode | null = null;
+	let left_outside: boolean | null = null;
+	let right_outside: boolean | null = null;
+	if (nodes_in_range !== null && element_nodes.length !== nodes_in_range.length) {
+		// ..._outside means that node in given direction was not completed with bracket within the block
+		left_outside = start_char! > nodes_in_range[0].from;
+		right_outside = end_char! < nodes_in_range.at(-1)!.to;
+		missing_node = right_outside ? nodes_in_range.at(-1)! : nodes_in_range[0];
+	}
+
+	// This is a special case where you have A ~> B not surrounded by brackets
+	if (missing_node && left_outside && right_outside && missing_node.type === NodeType.SUBSTITUTION) {
+		const missing_node_middle = element_contents.indexOf(CM_All_Brackets[NodeType.SUBSTITUTION][1]);
+		const TempNode = new SubstitutionNode(-Infinity, missing_node_middle, Infinity);
+		new_element += TempNode.postprocess(element_contents, true, settings.preview_mode, "span")
+		el.innerHTML = new_element;
+		return;
+	}
+
+	if (missing_node && !right_outside) {
+		const missing_node_end = element_contents.indexOf(CM_All_Brackets[missing_node.type].at(-1)!) + 3;
+
+		let TempNode: CriticMarkupNode;
+		if (missing_node.type === NodeType.SUBSTITUTION) {
+			const missing_node_middle = element_contents.indexOf(CM_All_Brackets[NodeType.SUBSTITUTION][1]);
+			TempNode = new SubstitutionNode(-Infinity, missing_node_middle === -1 ? -Infinity : missing_node_middle, missing_node_end);
+		} else
+			TempNode = new NODE_PROTOTYPE_MAPPER[missing_node.type](-Infinity, missing_node_end);
+		new_element += TempNode.postprocess(element_contents, true, settings.preview_mode, "span");
+		previous_start = TempNode.to;
+	}
+
+	for (const node of element_nodes) {
+		new_element += element_contents.slice(previous_start, node.from) +
+						node.postprocess(element_contents, true, settings.preview_mode, "span");
+		previous_start = node.to;
+	}
+
+	if (missing_node && right_outside) {
+		const missing_node_start = element_contents.lastIndexOf(CM_All_Brackets[missing_node.type][0]);
+
+		let TempNode: CriticMarkupNode;
+		if (missing_node.type === NodeType.SUBSTITUTION)
+			TempNode = new SubstitutionNode(0, Infinity, Infinity);
+		else
+			TempNode = new NODE_PROTOTYPE_MAPPER[missing_node.type](0, Infinity);
+		new_element += element_contents.slice(previous_start, missing_node_start) +
+			TempNode.postprocess(element_contents.slice(missing_node_start, -4), true, settings.preview_mode, "span");
+		previous_start = Infinity;
+	}
+	new_element += element_contents.slice(previous_start);
+
+	el.innerHTML = new_element;
 }
 
 export function postProcessorUpdate() {
 	// Credits to depose/dp0z/@Profile8647 for finding this code
 	for (const leaf of app.workspace.getLeavesOfType("markdown")) {
 		const view = <MarkdownView>leaf.view;
-		for (const section of view.previewMode.renderer.sections.filter(s => s.el.querySelector('span.criticmarkup-preview'))) {
+		for (const section of view.previewMode.renderer.sections.filter(s => s.el.querySelector('.criticmarkup-preview'))) {
 			section.rendered = false;
 			section.html = '';
 		}
