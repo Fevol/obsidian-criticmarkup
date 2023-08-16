@@ -32,7 +32,7 @@ export class CommentMarker extends GutterMarker {
 		const component = new Component();
 		this.comment.classList.add('criticmarkup-gutter-comment');
 		const contents = this.view.state.doc.sliceString(this.node.from + 3, this.node.to - 3);
-		MarkdownRenderer.renderMarkdown(contents, this.comment, '', component);
+		MarkdownRenderer.render(app, contents, this.comment, '', component);
 
 		this.comment.onblur = () => {
 			setTimeout(() => this.view.dispatch({

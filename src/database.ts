@@ -32,6 +32,10 @@ export class Database {
 		return await Promise.all(keys.map(key => this.cache.getItem(key)));
 	}
 
+	async getValue(key: string): Promise<any> {
+		return (await this.cache.getItem(key));
+	}
+
 	async allEntries(): Promise<any[]> {
 		const keys = await this.allKeys();
 		return await Promise.all(keys.map(key => this.cache.getItem(key).then(value => [key, value])));

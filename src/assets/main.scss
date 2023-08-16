@@ -170,14 +170,11 @@
 	margin: 2px 8px 8px 2px;
 	max-height: 400px;
 	overflow-y: scroll;
+	word-wrap: break-word;
 }
 
-.criticmarkup-view-node:hover {
-	outline: 2px solid var(--interactive-accent);
-}
-
-.criticmarkup-view-node-selected {
-	outline: 2px solid var(--interactive-accent);
+.criticmarkup-view-node:hover, .criticmarkup-view-node-selected {
+	box-shadow: 0 0 0 2px var(--interactive-accent);
 }
 
 .criticmarkup-view-node-top {

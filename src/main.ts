@@ -1,4 +1,11 @@
-import { type EventRef, type MarkdownPostProcessor, MarkdownPreviewRenderer, Notice, Platform, Plugin } from 'obsidian';
+import {
+	type EventRef,
+	type MarkdownPostProcessor,
+	MarkdownPreviewRenderer,
+	Notice,
+	Platform,
+	Plugin, TFile,
+} from 'obsidian';
 
 
 import { Tree } from '@lezer/common';
@@ -36,7 +43,6 @@ import { DEFAULT_SETTINGS, REQUIRES_FULL_RELOAD } from './constants';
 import type { PluginSettings } from './types';
 import { Database } from './database';
 import { criticmarkupLanguage } from './editor/parser';
-
 
 
 export default class CommentatorPlugin extends Plugin {
@@ -123,15 +129,28 @@ export default class CommentatorPlugin extends Plugin {
 
 		if (this.settings.editor_preview_button) {
 			loadPreviewButtons(this);
-			this.loadPreviewButtonsEvent = app.workspace.on('layout-change', () => loadPreviewButtons(this));
+			this.loadPreviewButtonsEvent = this.app.workspace.on('layout-change', () => loadPreviewButtons(this));
 			this.registerEvent(this.loadPreviewButtonsEvent);
 		}
 
 		if (this.settings.editor_suggest_button) {
 			loadSuggestButtons(this);
-			this.loadSuggestButtonsEvent = app.workspace.on('layout-change', () => loadSuggestButtons(this));
+			this.loadSuggestButtonsEvent = this.app.workspace.on('layout-change', () => loadSuggestButtons(this));
 			this.registerEvent(this.loadSuggestButtonsEvent);
 		}
+
+
+		// Alternatives: use 'this.editorExtensions.push(EditorView.updateListener.of(async (update) => {'
+		// 	for instant View updates, but this requires the file to be read into the cache first
+		this.registerEvent(this.app.vault.on('modify', async(file) => {
+			const parseTree = criticmarkupLanguage.parser.parse(await this.app.vault.cachedRead(file as TFile));
+			const nodes = nodesInSelection(parseTree).nodes;
+			await this.database.storeKey(file.path, nodes);
+			const plugin_views = this.app.workspace.getLeavesOfType(CRITICMARKUP_VIEW);
+			for (const plugin_view of plugin_views) {
+				(plugin_view.view as CriticMarkupView).receiveUpdate();
+			}
+		}));
 
 
 		this.addSettingTab(new CommentatorSettings(this.app, this));
@@ -260,11 +279,11 @@ export default class CommentatorPlugin extends Plugin {
 		if (this.changed_settings.editor_preview_button !== undefined) {
 			if (this.changed_settings.editor_preview_button) {
 				loadPreviewButtons(this);
-				this.loadPreviewButtonsEvent = app.workspace.on('layout-change', () => loadPreviewButtons(this));
+				this.loadPreviewButtonsEvent = this.app.workspace.on('layout-change', () => loadPreviewButtons(this));
 				this.registerEvent(this.loadPreviewButtonsEvent);
 			} else {
 				await removePreviewButtons();
-				app.workspace.offref(this.loadPreviewButtonsEvent);
+				this.app.workspace.offref(this.loadPreviewButtonsEvent);
 				this.settings.preview_mode = 0;
 			}
 		}
@@ -272,11 +291,11 @@ export default class CommentatorPlugin extends Plugin {
 		if (this.changed_settings.editor_suggest_button !== undefined) {
 			if (this.changed_settings.editor_suggest_button) {
 				loadSuggestButtons(this);
-				this.loadSuggestButtonsEvent = app.workspace.on('layout-change', () => loadSuggestButtons(this));
+				this.loadSuggestButtonsEvent = this.app.workspace.on('layout-change', () => loadSuggestButtons(this));
 				this.registerEvent(this.loadSuggestButtonsEvent);
 			} else {
 				await removeSuggestButtons();
-				app.workspace.offref(this.loadSuggestButtonsEvent);
+				this.app.workspace.offref(this.loadSuggestButtonsEvent);
 			}
 		}
 
