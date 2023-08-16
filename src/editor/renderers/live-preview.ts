@@ -96,7 +96,7 @@ class CommentIconWidget extends WidgetType {
 		if (!this.tooltip) {
 			this.tooltip = document.createElement('div');
 			this.tooltip.classList.add('criticmarkup-comment-tooltip');
-			MarkdownRenderer.renderMarkdown(this.contents, this.tooltip, '', this.component);
+			MarkdownRenderer.render(app, this.contents, this.tooltip, '', this.component);
 			this.component.load();
 			this.icon!.appendChild(this.tooltip);
 
@@ -244,16 +244,20 @@ export const livePreviewRenderer = (settings: PluginSettings) => StateField.defi
 
 		for (const node of nodes.nodes) {
 			if (!settings.preview_mode) {
-				if (!settings.suggest_mode && tr.selection?.ranges?.some(range => node.partially_in_range(range.from, range.to))) {
+				const in_range = tr.selection?.ranges?.some(range => node.partially_in_range(range.from, range.to));
+
+				if (!settings.suggest_mode && in_range && !settings.editor_styling) {
 					markContents(decorations, node, 'criticmarkup-editing');
 				} else if (node.type === NodeType.SUBSTITUTION) {
 					removeBracket(decorations, node, true, is_livepreview);
 					markContents(decorations, node, 'criticmarkup-editing criticmarkup-inline criticmarkup-deletion criticmarkup-substitution', true);
-					decorations.push(
-						Decoration.replace({
-							attributes: { 'data-contents': 'string' },
-						}).range((node as SubstitutionNode).middle, (node as SubstitutionNode).middle + 2),
-					);
+					if (is_livepreview) {
+						decorations.push(
+							Decoration.replace({
+								attributes: { 'data-contents': 'string' },
+							}).range((node as SubstitutionNode).middle, (node as SubstitutionNode).middle + 2),
+						);
+					}
 					markContents(decorations, node, 'criticmarkup-editing criticmarkup-inline criticmarkup-addition criticmarkup-substitution', false);
 					removeBracket(decorations, node, false, is_livepreview);
 				} else {
