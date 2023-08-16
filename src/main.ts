@@ -25,7 +25,7 @@ import { keybindExtensions } from './editor/suggestion-mode/keybinds';
 import { suggestionMode } from './editor/suggestion-mode/suggestion-mode';
 import { nodeCorrecter, bracketMatcher } from './editor/editor-handlers';
 
-import { gutterExtension } from './editor/renderers/criticmarkup-gutter';
+import { criticmarkupGutterExtension } from './editor/renderers/criticmarkup-gutter';
 import { commentGutterExtension } from './editor/renderers/comment-gutter';
 
 import { loadPreviewButtons, removePreviewButtons } from './editor/renderers/editor-preview-buttons';
@@ -80,9 +80,10 @@ export default class CommentatorPlugin extends Plugin {
 				this.editorExtensions.push(livePreview(this.settings));
 		}
 
-		// Performance: ~3ms in stress-test
+		// TODO: Rerender gutter on Ctrl+Scroll
+		// TODO: Check performance costs of statefield vs viewport gutter
 		if (this.settings.editor_gutter)
-			this.editorExtensions.push(gutterExtension(this.settings));
+			this.editorExtensions.push(criticmarkupGutterExtension(this.settings));
 
 		// Performance: ~1ms in stress-test
 		if (this.settings.suggest_mode)
