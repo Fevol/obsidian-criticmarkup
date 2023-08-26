@@ -182,7 +182,7 @@ export default class CommentatorPlugin extends Plugin {
 			name: '(DEBUG) Toggle Vim mode',
 			icon: 'comment',
 			callback: async () => {
-				this.app.vault.setConfig('vimMode', !this.app.vault.getConfig('vimMode'));
+				this.app.vault.setConfig("vimMode", !this.app.vault.getConfig('vimMode'));
 			},
 		});
 
@@ -229,7 +229,7 @@ export default class CommentatorPlugin extends Plugin {
 					cls: 'commentator-progress-bar',
 				});
 
-				const markdownFiles = app.vault.getMarkdownFiles();
+				const markdownFiles = this.app.vault.getMarkdownFiles();
 
 				const progress_bar = center.createEl('progress');
 				progress_bar.setAttribute('max', markdownFiles.length.toString());
@@ -244,7 +244,6 @@ export default class CommentatorPlugin extends Plugin {
 
 					progress_bar.setAttribute('value', (i + 1).toString());
 				}
-
 				notice.hide();
 			}
 		});

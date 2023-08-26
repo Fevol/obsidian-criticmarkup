@@ -1,6 +1,5 @@
 import type { PluginSettings } from './types';
 
-
 export const DEFAULT_SETTINGS: PluginSettings = {
 	preview_mode: 0,
 	editor_preview_button: true,
