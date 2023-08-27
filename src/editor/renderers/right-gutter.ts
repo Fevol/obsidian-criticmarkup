@@ -313,15 +313,14 @@ class UpdateContext {
 		const INNER_MARGIN = 6;
 		const WIGGLE_ROOM = 0;
 		const BORDER_SIZE = 4;
+		const MAX_HEIGHT = 150;
 		let height = 0;
-		const indiv_heights = [];
 		for (const marker of (markers as CommentMarker[])) {
 			const node_text = view.state.doc.sliceString(marker.node.from, marker.node.to);
 			const num_end_line = node_text.match(/\n/g)?.length || 0;
 			const comment_length = marker.node.to - marker.node.from - 6 - num_end_line;
 			const num_lines = Math.max(1, Math.ceil(comment_length / char_line_length)) + num_end_line;
-			height += num_lines * line_pixel_height + MARGIN_BETWEEN + PADDING + INNER_MARGIN + BORDER_SIZE;
-			indiv_heights.push(num_lines * line_pixel_height + MARGIN_BETWEEN + PADDING + INNER_MARGIN);
+			height += Math.min(MAX_HEIGHT, num_lines * line_pixel_height + PADDING + INNER_MARGIN + BORDER_SIZE) + MARGIN_BETWEEN;
 		}
 		height += WIGGLE_ROOM;
 

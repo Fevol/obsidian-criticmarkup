@@ -159,6 +159,7 @@ export default class CommentatorPlugin extends Plugin {
 		this.registerEditorExtension(this.editorExtensions);
 
 		if (this.settings.post_processor) {
+			// TODO: Ask whether it would be possible to register a postprocessor that can run *before* even the markdown renderer
 			this.postProcessor = this.registerMarkdownPostProcessor(async (el, ctx) => postProcess(el, ctx, this.settings), -99999);
 			postProcessorUpdate();
 		}
