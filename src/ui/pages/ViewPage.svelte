@@ -83,7 +83,7 @@
 	});
 
 	export async function updateNodes() {
-		all_nodes = (await plugin.database.allEntries() as [string, { data: CriticMarkupNode[], time: number }][])
+		all_nodes = (await plugin.database.allEntries())!
 			.filter(([_, value]) => value.data.length > 0)
 			.map(([key, value]) => {
 				return [key, {

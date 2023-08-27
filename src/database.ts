@@ -42,36 +42,58 @@ export class Database<T> extends Component {
 		this.cache = localforage.createInstance({ name, driver: localforage.INDEXEDDB, description });
 
 		plugin.app.workspace.onLayoutReady(async () => {
+			const document_fragment = new DocumentFragment();
+			const message = document_fragment.createEl('div');
+			const center = document_fragment.createEl('div', { cls: 'commentator-progress-bar' });
+
+			const markdownFiles = plugin.app.vault.getMarkdownFiles();
+
+			const progress_bar = center.createEl('progress');
+			progress_bar.setAttribute('max', markdownFiles.length.toString());
+			progress_bar.setAttribute('value', '0');
+
+			const notice = new Notice(document_fragment, 0);
+
 			if (await this.isEmpty()) {
-				const document_fragment = new DocumentFragment();
-				const message = document_fragment.createEl('div');
 				message.textContent = `Initializing ${title} database...`;
-				const center = document_fragment.createEl('div', { cls: 'commentator-progress-bar' });
-
-				const markdownFiles = plugin.app.vault.getMarkdownFiles();
-
-				const progress_bar = center.createEl('progress');
-				progress_bar.setAttribute('max', markdownFiles.length.toString());
-				progress_bar.setAttribute('value', '0');
-				const notice = new Notice(document_fragment, 0);
 
 				for (let i = 0; i < markdownFiles.length; i++) {
 					const file = markdownFiles[i];
-					await this.storeKey(file.path, await onModify(file));
+					await this.storeKey(file.path, await onModify(file), file.stat.mtime);
 					progress_bar.setAttribute('value', (i + 1).toString());
 				}
 				notice.hide();
 
 				setTimeout(onUpdate, 1000);
 				await onCreate();
-			}
+			} else {
+				message.textContent = `Loading ${title} database...`;
 
+				for (const key of await this.allKeys()) {
+					if (!markdownFiles.some(file => file.path === key))
+						await this.deleteKey(key);
+				}
+
+				for (let i = 0; i < markdownFiles.length; i++) {
+					const file = markdownFiles[i];
+					const value = await this.getValue(file.path);
+					if (value === null || value.time < file.stat.mtime)
+						await this.storeKey(file.path, await onModify(file), file.stat.mtime);
+
+					progress_bar.setAttribute('value', (i + 1).toString());
+				}
+
+				notice.hide();
+				setTimeout(onUpdate, 1000);
+			}
 
 			// Alternatives: use 'this.editorExtensions.push(EditorView.updateListener.of(async (update) => {'
 			// 	for instant View updates, but this requires the file to be read into the cache first
 			this.registerEvent(plugin.app.vault.on('modify', async (file) => {
-				await this.storeKey(file.path, await onModify(file as TFile));
-				await onUpdate();
+				if (file instanceof TFile) {
+					await this.storeKey(file.path, await onModify(file), file.stat.mtime);
+					await onUpdate();
+				}
 			}));
 
 			this.registerEvent(plugin.app.vault.on('delete', async (file) => {
@@ -83,24 +105,24 @@ export class Database<T> extends Component {
 
 			this.registerEvent(plugin.app.vault.on('rename', async (file, oldPath) => {
 				if (file instanceof TFile) {
-					await this.renameKey(oldPath, file.path);
+					await this.renameKey(oldPath, file.path, file.stat.mtime);
 					await onUpdate();
 				}
 			}));
 
 			this.registerEvent(plugin.app.vault.on('create', async (file) => {
 				if (file instanceof TFile) {
-					await this.storeKey(file.path, defaultValue());
+					await this.storeKey(file.path, defaultValue(), file.stat.mtime);
 					await onUpdate();
 				}
 			}));
 		});
 	}
 
-	async storeKey(key: string, value: T) {
+	async storeKey(key: string, value: T, time?: number) {
 		await this.cache.setItem(key, {
 			data: value,
-			time: Date.now()
+			time: time ?? Date.now()
 		});
 	}
 
@@ -108,11 +130,11 @@ export class Database<T> extends Component {
 		await this.cache.removeItem(key);
 	}
 
-	async renameKey(oldKey: string, newKey: string) {
+	async renameKey(oldKey: string, newKey: string, time?: number) {
 		const value = await this.getValue(oldKey);
 		if (value == null) throw new Error("Key does not exist");
 
-		await this.storeKey(newKey, value.data);
+		await this.storeKey(newKey, value.data, time);
 		await this.deleteKey(oldKey);
 	}
 
