@@ -42,8 +42,9 @@ export class CriticMarkupView extends ItemView {
 		const state = super.getState();
 
 		if (this.view) {
-			state.filter_node_type = this.view.$$.ctx[<number>this.view.$$.props.filter_node_type];
-			state.filter_location = this.view.$$.ctx[<number>this.view.$$.props.filter_location];
+			state.node_type_filter = this.view.$$.ctx[<number>this.view.$$.props.node_type_filter];
+			state.location_filter = this.view.$$.ctx[<number>this.view.$$.props.location_filter];
+			state.content_filter = this.view.$$.ctx[<string>this.view.$$.props.content_filter];
 		}
 
 		return state;
@@ -60,8 +61,9 @@ export class CriticMarkupView extends ItemView {
 		}
 
 		this.view.$set({
-			filter_node_type: state.filter_node_type || 0,
-			filter_location: state.filter_location || 0,
+			node_type_filter: state.node_type_filter || 0,
+			location_filter: state.location_filter || 0,
+			content_filter: state.content_filter || 0,
 		})
 
 		await super.setState(state, result);

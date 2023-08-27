@@ -188,7 +188,12 @@
 	margin-bottom: var(--size-4-1);
 }
 
-.criticmarkup-view-node:hover, .criticmarkup-view-node-selected {
+.criticmarkup-view-node:hover {
+	box-shadow: unset;
+	outline: 2px dashed var(--interactive-accent-hover);
+}
+
+.criticmarkup-view-node-selected {
 	box-shadow: 0 0 0 2px var(--interactive-accent);
 }
 
