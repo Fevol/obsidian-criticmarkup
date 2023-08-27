@@ -2,7 +2,6 @@ import {
 	type EventRef,
 	type MarkdownPostProcessor,
 	MarkdownPreviewRenderer,
-	Notice,
 	Platform,
 	Plugin, TFile,
 } from 'obsidian';
@@ -43,6 +42,7 @@ import { DEFAULT_SETTINGS, REQUIRES_FULL_RELOAD } from './constants';
 import type { PluginSettings } from './types';
 import { Database } from './database';
 import { criticmarkupLanguage } from './editor/parser';
+import type { CriticMarkupNode } from './editor/criticmarkup-nodes';
 
 
 export default class CommentatorPlugin extends Plugin {
@@ -56,9 +56,22 @@ export default class CommentatorPlugin extends Plugin {
 	loadPreviewButtonsEvent!: EventRef;
 	loadSuggestButtonsEvent!: EventRef;
 
-	remove_monkeys: any[] = [];
+	remove_monkeys: (() => void)[] = [];
 
-	database: Database = new Database();
+	database: Database<CriticMarkupNode[]> = new Database(
+		this,
+		"commentator/cache/" + this.app.appId,
+		"Commentator cache",
+		"Vault-wide cache for Commentator plugin",
+		() => [],
+		async (file) => {
+			const parseTree = criticmarkupLanguage.parser.parse(await this.app.vault.cachedRead(file as TFile));
+			return nodesInSelection(parseTree).nodes;
+		},
+		async () => {
+			this.updateCriticmarkupViews();
+		},
+	);
 
 	postProcessor!: MarkdownPostProcessor;
 
@@ -121,6 +134,11 @@ export default class CommentatorPlugin extends Plugin {
 
 	}
 
+	updateCriticmarkupViews() {
+		for (const plugin_view of this.app.workspace.getLeavesOfType(CRITICMARKUP_VIEW))
+			(plugin_view.view as CriticMarkupView).receiveUpdate();
+	}
+
 
 	async onload() {
 		this.registerView(CRITICMARKUP_VIEW,  (leaf) => new CriticMarkupView(leaf, this));
@@ -139,19 +157,6 @@ export default class CommentatorPlugin extends Plugin {
 			this.loadSuggestButtonsEvent = this.app.workspace.on('layout-change', () => loadSuggestButtons(this));
 			this.registerEvent(this.loadSuggestButtonsEvent);
 		}
-
-
-		// Alternatives: use 'this.editorExtensions.push(EditorView.updateListener.of(async (update) => {'
-		// 	for instant View updates, but this requires the file to be read into the cache first
-		this.registerEvent(this.app.vault.on('modify', async(file) => {
-			const parseTree = criticmarkupLanguage.parser.parse(await this.app.vault.cachedRead(file as TFile));
-			const nodes = nodesInSelection(parseTree).nodes;
-			await this.database.storeKey(file.path, nodes);
-			const plugin_views = this.app.workspace.getLeavesOfType(CRITICMARKUP_VIEW);
-			for (const plugin_view of plugin_views) {
-				(plugin_view.view as CriticMarkupView).receiveUpdate();
-			}
-		}));
 
 
 		this.addSettingTab(new CommentatorSettings(this.app, this));
@@ -218,35 +223,6 @@ export default class CommentatorPlugin extends Plugin {
 					};
 				},
 			}));
-
-
-			// TODO: Put into a worker
-			if (await this.database.isEmpty()) {
-				const document_fragment = new DocumentFragment();
-				const message = document_fragment.createEl('div');
-				message.textContent = 'Commentator: loading database...';
-
-				const center = document_fragment.createEl('div', {
-					cls: 'commentator-progress-bar',
-				});
-
-				const markdownFiles = this.app.vault.getMarkdownFiles();
-
-				const progress_bar = center.createEl('progress');
-				progress_bar.setAttribute('max', markdownFiles.length.toString());
-				progress_bar.setAttribute('value', '0');
-				const notice = new Notice(document_fragment, 0);
-
-				for (let i = 0; i < markdownFiles.length; i++) {
-					const file = markdownFiles[i];
-					const contents = await this.app.vault.cachedRead(file);
-					const tree = criticmarkupLanguage.parser.parse(contents);
-					await this.database.storeKey(file.path, nodesInSelection(tree).nodes);
-
-					progress_bar.setAttribute('value', (i + 1).toString());
-				}
-				notice.hide();
-			}
 		});
 	}
 
@@ -258,9 +234,9 @@ export default class CommentatorPlugin extends Plugin {
 
 		MarkdownPreviewRenderer.unregisterPostProcessor(this.postProcessor);
 
-		for (const monkey of this.remove_monkeys) {
-			monkey();
-		}
+		for (const monkey of this.remove_monkeys) monkey();
+
+		this.database.unload();
 	}
 
 	async loadSettings() {
