@@ -5,15 +5,14 @@
 	import { MarkdownRenderer, Icon, View, StateButton, NavHeader, Button, Input, clickOutside } from '../components';
 	import VirtualList from 'svelte-virtual-list-ce';
 
-	import { type TFile, Menu, debounce, prepareSimpleSearch } from 'obsidian';
+	import { type TFile, Menu, debounce, prepareSimpleSearch, Notice } from 'obsidian';
 
 	import { NodeType } from '../../types';
 	import { NODE_ICON_MAPPER, NODE_PROTOTYPE_MAPPER, type CriticMarkupNode } from '../../editor/criticmarkup-nodes';
-	import { acceptSuggestionsInFile } from '../../editor/commands';
+    import { acceptSuggestionsInFile, rejectSuggestionsInFile } from '../../editor/commands';
 
 	export let plugin: CommentatorPlugin;
 
-	let selected_nodes: [string, CriticMarkupNode][] = [];
 
 	enum NodeTypeFilter {
 		ALL,
@@ -47,6 +46,7 @@
 
 	let all_nodes: [string, { data: CriticMarkupNode[], time: number }][] | null = null;
 	let flattened_nodes: {path: string, node: CriticMarkupNode, text: string[]}[] = [];
+	let selected_nodes: {path: string, node: CriticMarkupNode}[] = [];
 
 	const node_filters = [
 		{ icon: 'asterisk', tooltip: 'All markup' },
@@ -117,40 +117,81 @@
 			}
 		}
 
-		if (node_type_filter !== NodeTypeFilter.ALL) {
-			temp = temp.filter(([_, value]) => value.data.some(node => node.type === node_type_filter - 1));
-		}
-
 		for (const [key, _] of temp) {
 			const file = plugin.app.vault.getAbstractFileByPath(key);
 			if (!file) continue;
 			file_cache[key] = await plugin.app.vault.cachedRead(<TFile>file);
 		}
 
-		if (search_filter.length) {
-			const primitiveSearcher = prepareSimpleSearch(search_filter);
-			temp = temp.map(([key, value]) => {
-				return [key, {
-					data: value.data.filter(node => primitiveSearcher(node.unwrap_parts(file_cache[key]).join(' '))?.score),
-					time: value.time,
-				}];
-			});
-			temp = temp.filter(([_, value]) => value.data.length > 0);
-		}
+        flattened_nodes = temp.flatMap(([key, value]) => value.data.map(node => {
+            return {path: key, node: node, text: visibleText(key, node)}
+        }));
 
-		flattened_nodes = temp.flatMap(([key, value]) => value.data.map(node => {
-			return {path: key, node: node, text: visibleText(key, node)}
-		}));
+        if (node_type_filter !== NodeTypeFilter.ALL)
+            flattened_nodes = flattened_nodes.filter(item => item.node.type === node_type_filter - 1);
 
-		if (content_filter !== ContentFilter.ALL) {
-			flattened_nodes = flattened_nodes.filter(item => (content_filter === ContentFilter.CONTENT) !== item.node.empty());
-		}
+        if (content_filter !== ContentFilter.ALL)
+            flattened_nodes = flattened_nodes.filter(item => (content_filter === ContentFilter.CONTENT) !== item.node.empty());
+
+		if (search_filter.length)
+            flattened_nodes = flattened_nodes.filter(item => prepareSimpleSearch(search_filter)(item.text.join(' '))?.score);
 	}
 
 	function visibleText(path: string, node: CriticMarkupNode): string[] {
 		if (!file_cache[path]) return [''];
 		node.__proto__ = NODE_PROTOTYPE_MAPPER[node.type].prototype;
 		return node.unwrap_parts(file_cache[path]);
+	}
+
+	async function editSelectedNodes(accept: boolean, entry?: {path: string, node: CriticMarkupNode, text: string[]}) {
+        const grouped_nodes = selected_nodes.reduce((acc: Record<string, CriticMarkupNode[]>, {path, node}) => {
+			if (!acc[path]) acc[path] = [];
+			acc[path].push(node);
+			return acc;
+		}, {});
+
+		if (entry && !grouped_nodes[entry.path])
+			grouped_nodes[entry.path] = [entry.node];
+
+        const editFunction = accept ? acceptSuggestionsInFile : rejectSuggestionsInFile;
+
+		const undo_history_entry: Record<string, string> = {};
+		for (const [key, value] of Object.entries(grouped_nodes)) {
+			const file = plugin.app.vault.getAbstractFileByPath(key);
+			if (!file) continue;
+			undo_history_entry[key] = await plugin.app.vault.cachedRead(<TFile>file);
+			await editFunction(<TFile>file, value);
+		}
+		undo_history.push(undo_history_entry);
+	}
+
+	async function handleKey(e: KeyboardEvent) {
+		if (e.key === 'z' && e.ctrlKey && !e.shiftKey && !e.altKey && !e.metaKey) {
+			console.log("Undid")
+			if (undo_history.length) {
+				console.log(undo_history);
+				const undo_history_entry = undo_history.pop();
+				console.log(undo_history_entry);
+				for (const [key, value] of Object.entries(undo_history_entry!)) {
+					const file = plugin.app.vault.getAbstractFileByPath(key);
+					if (!file) continue;
+					await plugin.app.vault.modify(<TFile>file, value);
+					console.log("Returned")
+				}
+			} else {
+				new Notice("There is nothing to undo", 4000)
+			}
+		} else if (e.key === 'a' && e.ctrlKey && !e.shiftKey && !e.altKey && !e.metaKey) {
+            selected_nodes = [...flattened_nodes];
+        } else if (e.key === 'Escape') {
+			selected_nodes = [];
+        }
+	}
+
+
+    async function onClickOutside() {
+        console.log("First")
+        selected_nodes = [];
 	}
 </script>
 
@@ -193,7 +234,7 @@
 					states={node_filters}
 				/>
 				<Button class='clickable-icon nav-action-button' icon='lasso' tooltip='Select all markup' onClick={() => {
-					selected_nodes = all_nodes.flatMap(([key, value]) => value.data.map(node => [key, node]));
+					selected_nodes = [...flattened_nodes];
 				}} />
 				<StateButton
 					onContextMenu={(e) => {
@@ -240,75 +281,67 @@
 	</svelte:fragment>
 
 	<svelte:fragment slot='view'>
-		{#if flattened_nodes?.length}
-			<div class='criticmarkup-view-container'>
-				<VirtualList items={flattened_nodes} let:item>
-					{#if !node_type_filter || item.node.type === node_type_filter - 1}
-						<div class='criticmarkup-view-node'
-							 class:criticmarkup-view-node-selected={selected_nodes.some(([key, value]) => key === item.path && value === item.node)}
-							 on:click={async (e) => {
-									if (e.shiftKey) {
-										const original_length = selected_nodes.length;
-										selected_nodes = selected_nodes.filter(([key, value]) => key !== item.path || value !== item.node);
-										if (selected_nodes.length === original_length)
-											selected_nodes.push([item.path, item.node]);
-									} else {
-										selected_nodes = [];
-										const leaves = plugin.app.workspace.getLeavesOfType("markdown");
-										if (!leaves.length) return;
-										const lastActiveLeaf = leaves.reduce((a, b) => (a.activeTime > b.activeTime) ? a : b);
+		<div class='criticmarkup-view-container' tabindex='-1' use:clickOutside={".menu"} on:click_outside={onClickOutside} on:keydown={handleKey}>
+			<VirtualList items={flattened_nodes} let:item>
+				<div class='criticmarkup-view-node'
+					 class:criticmarkup-view-node-selected={selected_nodes.some(({path, node}) => path === item.path && node === item.node)}
+					 on:click={async (e) => {
+							if (e.shiftKey) {
+								const original_length = selected_nodes.length;
+								selected_nodes = selected_nodes.filter(({path, node}) => path !== item.path || node !== item.node);
+								if (selected_nodes.length === original_length)
+									selected_nodes.push({path: item.path, node: item.node});
+							} else {
+								selected_nodes = [];
+								const leaves = plugin.app.workspace.getLeavesOfType("markdown");
+								if (!leaves.length) return;
+								const lastActiveLeaf = leaves.reduce((a, b) => (a.activeTime > b.activeTime) ? a : b);
 
-										const file = plugin.app.vault.getAbstractFileByPath(item.path);
-										if (!file) return;
-										const view = lastActiveLeaf.view;
+								const file = plugin.app.vault.getAbstractFileByPath(item.path);
+								if (!file) return;
+								const view = lastActiveLeaf.view;
 
-										if (file !== view.file)
-											await lastActiveLeaf.openFile(file);
+								if (file !== view.file)
+									await lastActiveLeaf.openFile(file);
 
-										view.editor.setSelection(view.editor.offsetToPos(item.node.from), view.editor.offsetToPos(item.node.to));
-									}
-								}}
-							 on:contextmenu={(e) => {
-									const menu = new Menu();
-									menu.addItem((item) => {
-										item.setTitle("Accept" + (selected_nodes.length ? " selected changes" : " changes"));
-										item.setIcon("check");
-										item.onClick(() => {
-											// TODO: Accept logic
-										});
-									});
-									menu.addItem((item) => {
-										item.setTitle("Reject" + (selected_nodes.length ? " selected changes" : " changes"));
-										item.setIcon("cross");
-										item.onClick(() => {
-											// TODO: Reject logic
-										});
-									});
+								view.editor.setSelection(view.editor.offsetToPos(item.node.from), view.editor.offsetToPos(item.node.to));
+							}
+						}}
+					 on:contextmenu={(e) => {
+							const menu = new Menu();
+							menu.addItem((m_item) => {
+								m_item.setTitle("Accept" + (selected_nodes.length ? " selected changes" : " changes"));
+								m_item.setIcon("check");
+								m_item.onClick(async () => editSelectedNodes(true, item));
+							});
+							menu.addItem((m_item) => {
+								m_item.setTitle("Reject" + (selected_nodes.length ? " selected changes" : " changes"));
+								m_item.setIcon("cross");
+								m_item.onClick(async () => editSelectedNodes(false, item));
+							});
 
-									menu.showAtMouseEvent(e);
-								}}
-						>
-							<div class='criticmarkup-view-node-top'>
-								<Icon size={24} icon={NODE_ICON_MAPPER[item.node.type]} />
-								<span class='criticmarkup-view-node-title'>{item.path}</span>
-							</div>
+							menu.showAtMouseEvent(e);
+						}}
+				>
+					<div class='criticmarkup-view-node-top'>
+						<Icon size={24} icon={NODE_ICON_MAPPER[item.node.type]} />
+						<span class='criticmarkup-view-node-title'>{item.path}</span>
+					</div>
 
-							{#key item.text}
-								<div class='criticmarkup-view-node-text'>
-									{#if !item.text.some(part => part.length)}
-										<span class='criticmarkup-view-node-empty'>This node is empty</span>
-									{:else}
-										<MarkdownRenderer {plugin} text={item.text[0]} source={item.path} />
-										{#if item.node.type === NodeType.SUBSTITUTION}
-											<MarkdownRenderer {plugin} text={item.text[1]} source={item.path} />
-										{/if}
-									{/if}
-								</div>
-							{/key}
+					{#key item.text}
+						<div class='criticmarkup-view-node-text'>
+							{#if !item.text.some(part => part.length)}
+								<span class='criticmarkup-view-node-empty'>This node is empty</span>
+							{:else}
+								<MarkdownRenderer {plugin} text={item.text[0]} source={item.path} />
+								{#if item.node.type === NodeType.SUBSTITUTION}
+									<MarkdownRenderer {plugin} text={item.text[1]} source={item.path} />
+								{/if}
+							{/if}
 						</div>
-					{/if}
-				</VirtualList>
-			</div>
-		{/if}
+					{/key}
+				</div>
+			</VirtualList>
+		</div>
 	</svelte:fragment>
 </View>

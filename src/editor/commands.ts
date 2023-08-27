@@ -1,4 +1,4 @@
-import type { Editor, MarkdownView } from 'obsidian';
+import type { Editor, MarkdownView, TFile } from 'obsidian';
 
 import { treeParser } from './tree-parser';
 
@@ -11,6 +11,7 @@ import { NodeType } from '../types';
 
 import { addBracket, CM_NodeTypes, unwrapBracket, unwrapBracket2, wrapBracket } from '../util';
 import { ltEP, maxEP, minEP, nodesInSelection, selectionToRange } from './editor-util';
+import type { CriticMarkupNode } from './criticmarkup-nodes';
 
 
 function changeSelectionType(editor: Editor, view: MarkdownView, type: NodeType) {
@@ -236,6 +237,20 @@ export function acceptAllSuggestions(state: EditorState, from?: number, to?: num
 	return changes;
 }
 
+export async function acceptSuggestionsInFile(file: TFile, nodes: CriticMarkupNode[]) {
+	const text = await app.vault.cachedRead(file);
+
+	let output = '';
+	let last_node = 0;
+	for (const node of nodes) {
+		output += text.slice(last_node, node.from) + node.accept(text);
+		last_node = node.to;
+	}
+	output += text.slice(last_node);
+
+	await app.vault.modify(file, output);
+}
+
 
 export function rejectAllSuggestions(state: EditorState, from?: number, to?: number): ChangeSpec[] {
 	const tree: Tree = state.field(treeParser).tree;
@@ -252,6 +267,20 @@ export function rejectAllSuggestions(state: EditorState, from?: number, to?: num
 			changes.push({ from: node.from, to: node.to, insert: unwrapBracket2(text.slice(node.from, node.to), node.type)[0] });
 	}
 	return changes;
+}
+
+export async function rejectSuggestionsInFile(file: TFile, nodes: CriticMarkupNode[]) {
+	const text = await app.vault.cachedRead(file);
+
+	let output = '';
+	let last_node = 0;
+	for (const node of nodes) {
+		output += text.slice(last_node, node.from) + node.reject(text);
+		last_node = node.to;
+	}
+	output += text.slice(last_node);
+
+	await app.vault.modify(file, output);
 }
 
 
