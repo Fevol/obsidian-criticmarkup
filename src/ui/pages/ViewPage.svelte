@@ -167,16 +167,12 @@
 
 	async function handleKey(e: KeyboardEvent) {
 		if (e.key === 'z' && e.ctrlKey && !e.shiftKey && !e.altKey && !e.metaKey) {
-			console.log("Undid")
 			if (undo_history.length) {
-				console.log(undo_history);
 				const undo_history_entry = undo_history.pop();
-				console.log(undo_history_entry);
 				for (const [key, value] of Object.entries(undo_history_entry!)) {
 					const file = plugin.app.vault.getAbstractFileByPath(key);
 					if (!file) continue;
 					await plugin.app.vault.modify(<TFile>file, value);
-					console.log("Returned")
 				}
 			} else {
 				new Notice("There is nothing to undo", 4000)
@@ -190,7 +186,6 @@
 
 
     async function onClickOutside() {
-        console.log("First")
         selected_nodes = [];
 	}
 </script>

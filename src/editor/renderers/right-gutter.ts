@@ -319,7 +319,7 @@ class UpdateContext {
 			const node_text = view.state.doc.sliceString(marker.node.from, marker.node.to);
 			const num_end_line = node_text.match(/\n/g)?.length || 0;
 			const comment_length = marker.node.to - marker.node.from - 6 - num_end_line;
-			const num_lines = Math.ceil(comment_length / char_line_length) + num_end_line;
+			const num_lines = Math.max(1, Math.ceil(comment_length / char_line_length)) + num_end_line;
 			height += num_lines * line_pixel_height + MARGIN_BETWEEN + PADDING + INNER_MARGIN + BORDER_SIZE;
 			indiv_heights.push(num_lines * line_pixel_height + MARGIN_BETWEEN + PADDING + INNER_MARGIN);
 		}

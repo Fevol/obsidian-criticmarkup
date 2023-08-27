@@ -27,31 +27,45 @@ export class CommentMarker extends GutterMarker {
 		const class_list = '';
 
 		this.comment = createDiv({ cls: class_list });
-		this.comment.contentEditable = 'true';
+		this.comment.contentEditable = 'false';
 
 		const component = new Component();
 		this.comment.classList.add('criticmarkup-gutter-comment');
 		const contents = this.view.state.doc.sliceString(this.node.from + 3, this.node.to - 3);
-		MarkdownRenderer.render(app, contents, this.comment, '', component);
+		MarkdownRenderer.render(app, contents || "&nbsp;", this.comment, '', component);
 
 		this.comment.onblur = () => {
-			setTimeout(() => this.view.dispatch({
-				changes: {
-					from: this.node.from + 3,
-					to: this.node.to - 3,
-					insert: this.comment!.innerText
-				}
-			}));
+			if (this.comment!.innerText === contents) {
+				this.comment!.replaceChildren();
+				this.comment!.innerText = "";
+				this.comment!.contentEditable = 'false';
+				MarkdownRenderer.render(app, contents || "&nbsp;", this.comment!, '', component);
+			} else {
+				setTimeout(() => this.view.dispatch({
+					changes: {
+						from: this.node.from + 3,
+						to: this.node.to - 3,
+						insert: this.comment!.innerText
+					}
+				}));
+			}
 		}
-		this.comment.onfocus = (e) => {
+
+		this.comment.ondblclick = (e) => {
+			e.stopPropagation();
+
+			this.comment!.contentEditable = 'true';
+			this.comment!.replaceChildren();
 			this.comment!.innerText = contents;
+			this.comment!.focus();
+		}
+
+		this.comment.onclick = (e) => {
 			const top = this.view.lineBlockAt(this.node.from).top - 100;
 
 			setTimeout(() => {
-				// TODO: Probably might need to repeat .focus element here
-
-				// @ts-ignore
-				this.view.plugin(commentGutterExtension[1][0][0]).moveGutter(this);
+				// @ts-expect-error (Directly accessing function of unexported class)
+				this.view.plugin(commentGutterExtension[1][0][0])!.moveGutter(this);
 				this.view.scrollDOM.scrollTo({ top, behavior: 'smooth'})
 			}, 200);
 
