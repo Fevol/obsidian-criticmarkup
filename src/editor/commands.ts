@@ -10,7 +10,7 @@ import type { CommandI } from '../../types';
 import { NodeType, type OperationReturn } from '../types';
 
 import { applyToText, CM_All_Brackets, CM_NodeTypes } from '../util';
-import { nodesInSelection, selectionToEditorRange, selectionToRange } from './editor-util';
+import { nodesInSelection, selectionToEditorRange } from './editor-util';
 import { type CriticMarkupNode, CriticMarkupNodes } from './criticmarkup-nodes';
 import { text_delete, text_replace } from './edit-logic';
 
@@ -183,11 +183,10 @@ export const commands: Array<CommandI> = [...suggestion_commands,
 		name: 'Accept suggestions in selection',
 		icon: 'check',
 		editor_context: true,
-		callback: async (editor: Editor, view: MarkdownView) => {
-			const [from, to] = selectionToRange(editor);
-			editor.cm.dispatch(editor.cm.state.update({
-				changes: acceptAllSuggestions(editor.cm.state, from, to),
-			}));
+		callback: async (editor: Editor, _) => {
+			const selections = editor.cm.state.selection.ranges;
+			const changes = selections.map(selection => acceptAllSuggestions(editor.cm.state, selection.from, selection.to));
+			editor.cm.dispatch(editor.cm.state.update({ changes }));
 		},
 	},
 	{
@@ -195,11 +194,10 @@ export const commands: Array<CommandI> = [...suggestion_commands,
 		name: 'Reject suggestions in selection',
 		icon: 'cross',
 		editor_context: true,
-		callback: async (editor: Editor, view: MarkdownView) => {
-			const [from, to] = selectionToRange(editor);
-			editor.cm.dispatch(editor.cm.state.update({
-				changes: rejectAllSuggestions(editor.cm.state, from, to),
-			}));
+		callback: async (editor: Editor, _) => {
+			const selections = editor.cm.state.selection.ranges;
+			const changes = selections.map(selection => rejectAllSuggestions(editor.cm.state, selection.from, selection.to));
+			editor.cm.dispatch(editor.cm.state.update({ changes }));
 		},
 	}
 ];

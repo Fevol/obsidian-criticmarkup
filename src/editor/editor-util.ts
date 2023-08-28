@@ -14,30 +14,6 @@ import { constructNode, CriticMarkupNode, CriticMarkupNodes } from './criticmark
 import { type CriticMarkupOperation } from '../types';
 
 
-export function eqEP(a: EditorPosition, b: EditorPosition): boolean {
-	return a.line === b.line && a.ch === b.ch;
-}
-
-export function ltEP(a: EditorPosition, b: EditorPosition): boolean {
-	if (a.line !== b.line)
-		return a.line < b.line;
-	return a.ch < b.ch;
-}
-
-export function lteEP(a: EditorPosition, b: EditorPosition): boolean {
-	if (a === b)
-		return true;
-	return ltEP(a, b);
-}
-
-export function minEP(a: EditorPosition, b: EditorPosition): EditorPosition {
-	return ltEP(a, b) ? a : b;
-}
-
-export function maxEP(a: EditorPosition, b: EditorPosition): EditorPosition {
-	return ltEP(a, b) ? b : a;
-}
-
 export function moveEditorCursor(selection: EditorSelection, change_start: number, offset: number) {
 	if (change_start >= selection.ranges[0].from)
 		return selection;
@@ -45,15 +21,6 @@ export function moveEditorCursor(selection: EditorSelection, change_start: numbe
 		selection.ranges[0].from + offset,
 		selection.ranges[0].to + offset,
 	);
-}
-
-
-export function selectionToRange(editor: Editor): number[] {
-	const selection = editor.listSelections()[0];
-	return [
-		editor.posToOffset(minEP(selection.anchor, selection.head)),
-		editor.posToOffset(maxEP(selection.anchor, selection.head)),
-	];
 }
 
 
@@ -148,16 +115,6 @@ export function getUserEvents(tr: Transaction) {
 
 export function cursorMoved(tr: Transaction) {
 	return tr.startState.selection.ranges[0].from !== tr.selection!.ranges[0].from || tr.startState.selection.ranges[0].to !== tr.selection!.ranges[0].to;
-}
-
-export function cursorMovedForward(tr: Transaction) {
-	return tr.startState.selection.ranges[0].from !== tr.selection!.ranges[0].from ?
-		tr.startState.selection.ranges[0].from > tr.selection!.ranges[0].from :
-		tr.startState.selection.ranges[0].to > tr.selection!.ranges[0].to;
-}
-
-export function cursorIsSelection(tr: Transaction) {
-	return tr.selection!.ranges[0].from !== tr.selection!.ranges[0].to;
 }
 
 export function getEditorRanges(changes: ChangeSet, doc: Text): CriticMarkupOperation[] {

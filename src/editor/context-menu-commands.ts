@@ -1,6 +1,4 @@
 import type { EventRef } from 'obsidian';
-
-import { selectionToRange } from './editor-util';
 import { acceptAllSuggestions, rejectAllSuggestions } from './commands';
 
 
@@ -11,10 +9,9 @@ export const change_suggestions: EventRef =
 				.setIcon('check')
 				.setSection('criticmarkup')
 				.onClick(() => {
-					const [from, to] = selectionToRange(editor);
-					editor.cm.dispatch(editor.cm.state.update({
-						changes: acceptAllSuggestions(editor.cm.state, from, to),
-					}));
+					const selections = editor.cm.state.selection.ranges;
+					const changes = selections.map(selection => acceptAllSuggestions(editor.cm.state, selection.from, selection.to));
+					editor.cm.dispatch(editor.cm.state.update({ changes }));
 				});
 		});
 
@@ -23,10 +20,9 @@ export const change_suggestions: EventRef =
 				.setIcon('cross')
 				.setSection('criticmarkup')
 				.onClick(() => {
-					const [from, to] = selectionToRange(editor);
-					editor.cm.dispatch(editor.cm.state.update({
-						changes: rejectAllSuggestions(editor.cm.state, from, to),
-					}));
+					const selections = editor.cm.state.selection.ranges;
+					const changes = selections.map(selection => rejectAllSuggestions(editor.cm.state, selection.from, selection.to));
+					editor.cm.dispatch(editor.cm.state.update({ changes }));
 				});
 		});
 	});

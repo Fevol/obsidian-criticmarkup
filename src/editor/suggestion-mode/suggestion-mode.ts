@@ -143,8 +143,6 @@ function applySuggestion(tr: Transaction, settings: PluginSettings): Transaction
 		const changes = [];
 		const selections: SelectionRange[] = [];
 
-		// TODO: Copy to clipboard: remove all markup?
-
 		if (operation_type === OperationType.INSERTION) {
 			let offset = 0;
 
