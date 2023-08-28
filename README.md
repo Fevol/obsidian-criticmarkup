@@ -3,6 +3,9 @@
 A [CriticMarkup](https://github.com/CriticMarkup/CriticMarkup-toolkit) renderer for [Obsidian](https://obsidian.md/) for
 collaborative editing and reviewing your notes. Includes a suggestion mode for keeping track of changes, and a comment mode for easily leaving comments.
 
+This plugin was built upon the excellent work and advice of @kometenstaub, the original repositories can be found here: [CriticMarkup plugin](https://github.com/kometenstaub/obsidian-criticmarkup)
+and [CriticMarkup parser](https://github.com/kometenstaub/lang-criticmarkup).
+
 Roadmap for full product can be found below. No timeline will be given for when (and in which order)
 these features will be implemented. If features prove to be completely infeasible to implement, they will be removed from the roadmap. 
 
@@ -26,11 +29,15 @@ under `Extensions > Plugin Advanced > Commentator`, you can report bugs there, o
 - [X] Auto-close critic-markup brackets when typing
 - [ ] Automatically correct invalid markup
 - [ ] Automatically simplify dangling and (partially) empty markup
-- [ ] Vault-wide index of all suggestions and comments
-- [ ] Custom view for viewing suggestions and comments over entire vault
+- [X] Vault-wide index of all suggestions and comments
+  - [X] Automatically create/re-synchronize on vault opening
+  - [X] Stays up-to-date with changes in vault
+- [X] Custom view for viewing suggestions and comments over entire vault
   - [ ] Filter by recency
   - [ ] Filter by author (see also custom syntax)
-  - [ ] Accept/Close selection of suggestions and comments
+  - [ ] Performance improvements
+  - [ ] UIX/Scrolling improvements
+  - [X] Accept/Close selection of suggestions and comments
 - [X] Preview of `Accept/Reject` commands in editor
 - [X] Toggling suggestion mode on/off in editor
 - [ ] Toggling comment mode on/off in editor
@@ -39,9 +46,9 @@ under `Extensions > Plugin Advanced > Commentator`, you can report bugs there, o
 ### Rendering
 - [X] Rendering of markup in Live Preview
 - [X] Rendering of markup in Reading View (Postprocessor)
-- [ ] Rendering comments 
-  - [ ] In right-side gutter of document
-  - [ ] On hover in document
+- [X] Rendering comments 
+  - [X] In right-side gutter of document
+  - [X] On hover in document
 
 ### Syntax
 - [ ] Extend CriticMarkup syntax to allow for authorship and timestamp annotation
