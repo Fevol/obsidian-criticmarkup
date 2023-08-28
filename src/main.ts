@@ -224,6 +224,18 @@ export default class CommentatorPlugin extends Plugin {
 				},
 			}));
 		});
+
+
+		this.remove_monkeys.push(around(this.app.plugins, {
+			uninstallPlugin: (oldMethod) => {
+				return async (id: string) => {
+					oldMethod && await oldMethod.apply(this.app.plugins, [id]);
+					if (id === 'criticmarkup') {
+						await this.database.dropDatabase();
+					}
+				};
+			}
+		}));
 	}
 
 	async onunload() {

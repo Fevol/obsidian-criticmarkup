@@ -155,5 +155,9 @@ export class Database<T> extends Component {
 		const keys = await this.allKeys();
 		return await Promise.all(keys.map(key => this.cache.getItem(key).then(value => [key, value] as [string, DatabaseEntry<T>])));
 	}
+
+	async dropDatabase() {
+		await this.cache.dropInstance();
+	}
 }
 
