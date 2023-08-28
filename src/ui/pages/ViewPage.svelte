@@ -75,15 +75,17 @@
 
 
 	onMount(async () => {
-		await updateNodes();
+		plugin.database.on("database-update", updateNodes)
+
+		await updateNodes(await plugin.database.allEntries());
 	});
 
 	onDestroy(() => {
 		plugin.app.workspace.offref(file_change_event);
 	});
 
-	export async function updateNodes() {
-		all_nodes = (await plugin.database.allEntries())!
+	async function updateNodes(nodes: [string, { data: CriticMarkupNode[], time: number }][] = []) {
+		all_nodes = nodes
 			.filter(([_, value]) => value.data.length > 0)
 			.map(([key, value]) => {
 				return [key, {

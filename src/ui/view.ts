@@ -68,9 +68,4 @@ export class CriticMarkupView extends ItemView {
 
 		await super.setState(state, result);
 	}
-
-
-	receiveUpdate() {
-		this.view!.updateNodes();
-	}
 }

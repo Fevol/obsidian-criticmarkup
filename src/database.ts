@@ -1,163 +1,227 @@
 import localforage from 'localforage';
-import { Component, Notice, type Plugin, TFile } from 'obsidian';
+import { type EventRef, Events, Notice, type Plugin, TFile } from 'obsidian';
 
-type DatabaseEntry<T> = {
-	data: T,
-	time: number
+type DatabaseItem<T> = {
+    data: T,
+    mtime: number
 }
+
+
+export class EventComponent extends Events {
+    _events: (() => void)[] = [];
+
+    onunload() {
+    }
+
+    unload() {
+        while (this._events.length > 0) {
+            this._events.pop()!();
+        }
+    }
+
+    register(event_unload: () => void) {
+        this._events.push(event_unload);
+    }
+
+    registerEvent(event: EventRef) {
+        // @ts-ignore (Eventref contains reference to the Events object it was attached to)
+        this.register(() => event.e.offref(event));
+    }
+}
+
 
 /**
  * Generic database class for storing data in indexedDB, automatically updates on file changes
  */
-export class Database<T> extends Component {
-	cache: typeof localforage;
+export class Database<T> extends EventComponent {
+    cache: typeof localforage;
 
-	async isEmpty(): Promise<boolean> {
-		return (await this.cache.length()) == 0;
-	}
+    on(name: 'database-update' | 'database-create', callback: (entries: DatabaseItem<T>[]) => void, ctx?: any) {
+        return super.on.call(this, name, callback, ctx);
+    }
 
-	/**
-	 * Constructor for the database
-	 * @param plugin The plugin that owns the database
-	 * @param name Name of the database within indexedDB
-	 * @param title
-	 * @param description Description of the database
-	 * @param defaultValue Constructor for the default value of the database
-	 * @param onModify Provide new values for database on file modification
-	 * @param [onUpdate=] Function to run when the database is updated
-	 * @param [onCreate=] Function to run when the database is created
-	 */
-	constructor(
-		plugin: Plugin,
-		name: string,
-		title: string,
-		description: string,
-		defaultValue: () => T,
-		onModify: (file: TFile) => Promise<T>,
-		onUpdate: () => Promise<void> = async () => { },
-		onCreate: () => Promise<void> = async () => { }
-	) {
-		super();
+    /**
+     * Constructor for the database
+     * @param plugin The plugin that owns the database
+     * @param name Name of the database within indexedDB
+     * @param title Title of the database
+     * @param version Version of the database
+     * @param description Description of the database
+     * @param defaultValue Constructor for the default value of the database
+     * @param extractValue Provide new values for database on file modification
+     */
+    constructor(
+        plugin: Plugin,
+        name: string,
+        title: string,
+        version: number,
+        description: string,
+        defaultValue: () => T,
+        extractValue: (file: TFile) => Promise<T>,
+    ) {
+        super();
 
-		this.cache = localforage.createInstance({ name, driver: localforage.INDEXEDDB, description });
+        // localforage does not offer a method for accessing the database version, so we store it separately
+        const oldVersion = parseFloat(plugin.app.loadLocalStorage(name + '-version')) || null;
 
-		plugin.app.workspace.onLayoutReady(async () => {
-			const document_fragment = new DocumentFragment();
-			const message = document_fragment.createEl('div');
-			const center = document_fragment.createEl('div', { cls: 'commentator-progress-bar' });
+        this.cache = localforage.createInstance({
+            name: name + `/${plugin.app.appId}`,
+            driver: localforage.INDEXEDDB,
+            description,
+            version,
+        });
 
-			const markdownFiles = plugin.app.vault.getMarkdownFiles();
+        plugin.app.workspace.onLayoutReady(async () => {
+            const document_fragment = new DocumentFragment();
+            const message = document_fragment.createEl('div');
+            const center = document_fragment.createEl('div', { cls: 'commentator-progress-bar' });
 
-			const progress_bar = center.createEl('progress');
-			progress_bar.setAttribute('max', markdownFiles.length.toString());
-			progress_bar.setAttribute('value', '0');
+            const markdownFiles = plugin.app.vault.getMarkdownFiles();
 
-			const notice = new Notice(document_fragment, 0);
+            const progress_bar = center.createEl('progress');
+            progress_bar.setAttribute('max', markdownFiles.length.toString());
+            progress_bar.setAttribute('value', '0');
 
-			if (await this.isEmpty()) {
-				message.textContent = `Initializing ${title} database...`;
+            const notice = new Notice(document_fragment, 0);
 
-				for (let i = 0; i < markdownFiles.length; i++) {
-					const file = markdownFiles[i];
-					await this.storeKey(file.path, await onModify(file), file.stat.mtime);
-					progress_bar.setAttribute('value', (i + 1).toString());
-				}
-				notice.hide();
+            if (oldVersion !== null && oldVersion < version && !await this.isEmpty()) {
+                message.textContent = `Migrating ${title} database...`;
 
-				setTimeout(onUpdate, 1000);
-				await onCreate();
-			} else {
-				message.textContent = `Loading ${title} database...`;
+                // Current setting: rebuild the entire database
+                for (let i = 0; i < markdownFiles.length; i++) {
+                    const file = markdownFiles[i];
+                    await this.storeKey(file.path, await extractValue(file), file.stat.mtime);
+                    progress_bar.setAttribute('value', (i + 1).toString());
+                }
+                notice.hide();
 
-				for (const key of await this.allKeys()) {
-					if (!markdownFiles.some(file => file.path === key))
-						await this.deleteKey(key);
-				}
+                setTimeout(async () => this.trigger('database-update', await this.allEntries()), 1000);
+                // this.trigger('database-migrate');
+                plugin.app.saveLocalStorage(name + '-version', version.toString());
+            } else if (await this.isEmpty()) {
+                message.textContent = `Initializing ${title} database...`;
 
-				for (let i = 0; i < markdownFiles.length; i++) {
-					const file = markdownFiles[i];
-					const value = await this.getValue(file.path);
-					if (value === null || value.time < file.stat.mtime)
-						await this.storeKey(file.path, await onModify(file), file.stat.mtime);
+                for (let i = 0; i < markdownFiles.length; i++) {
+                    const file = markdownFiles[i];
+                    await this.storeKey(file.path, await extractValue(file), file.stat.mtime);
+                    progress_bar.setAttribute('value', (i + 1).toString());
+                }
+                notice.hide();
 
-					progress_bar.setAttribute('value', (i + 1).toString());
-				}
+                setTimeout(async () => this.trigger('database-update', await this.allEntries()), 1000);
+                this.trigger('database-create');
+            } else {
+                message.textContent = `Loading ${title} database...`;
 
-				notice.hide();
-				setTimeout(onUpdate, 1000);
-			}
+                for (const key of await this.allKeys()) {
+                    if (!markdownFiles.some(file => file.path === key))
+                        await this.deleteKey(key);
+                }
 
-			// Alternatives: use 'this.editorExtensions.push(EditorView.updateListener.of(async (update) => {'
-			// 	for instant View updates, but this requires the file to be read into the cache first
-			this.registerEvent(plugin.app.vault.on('modify', async (file) => {
-				if (file instanceof TFile) {
-					await this.storeKey(file.path, await onModify(file), file.stat.mtime);
-					await onUpdate();
-				}
-			}));
+                for (let i = 0; i < markdownFiles.length; i++) {
+                    const file = markdownFiles[i];
+                    const value = await this.getItem(file.path);
+                    if (value === null || value.mtime < file.stat.mtime)
+                        await this.storeKey(file.path, await extractValue(file), file.stat.mtime);
 
-			this.registerEvent(plugin.app.vault.on('delete', async (file) => {
-				if (file instanceof TFile) {
-					await this.deleteKey(file.path);
-					await onUpdate();
-				}
-			}));
+                    progress_bar.setAttribute('value', (i + 1).toString());
+                }
 
-			this.registerEvent(plugin.app.vault.on('rename', async (file, oldPath) => {
-				if (file instanceof TFile) {
-					await this.renameKey(oldPath, file.path, file.stat.mtime);
-					await onUpdate();
-				}
-			}));
+                notice.hide();
+                setTimeout(async () => {
+                    this.trigger('database-update', await this.allEntries());
+                }, 1000);
+                plugin.app.saveLocalStorage(name + '-version', version.toString());
+            }
 
-			this.registerEvent(plugin.app.vault.on('create', async (file) => {
-				if (file instanceof TFile) {
-					await this.storeKey(file.path, defaultValue(), file.stat.mtime);
-					await onUpdate();
-				}
-			}));
-		});
-	}
+            // Alternatives: use 'this.editorExtensions.push(EditorView.updateListener.of(async (update) => {'
+            // 	for instant View updates, but this requires the file to be read into the cache first
+            this.registerEvent(plugin.app.vault.on('modify', async (file) => {
+                if (file instanceof TFile) {
+                    await this.storeKey(file.path, await extractValue(file), file.stat.mtime);
+                    this.trigger('database-update', await this.allEntries());
+                }
+            }));
 
-	async storeKey(key: string, value: T, time?: number) {
-		await this.cache.setItem(key, {
-			data: value,
-			time: time ?? Date.now()
-		});
-	}
+            this.registerEvent(plugin.app.vault.on('delete', async (file) => {
+                if (file instanceof TFile) {
+                    await this.deleteKey(file.path);
+                    this.trigger('database-update', await this.allEntries());
+                }
+            }));
 
-	async deleteKey(key: string) {
-		await this.cache.removeItem(key);
-	}
+            this.registerEvent(plugin.app.vault.on('rename', async (file, oldPath) => {
+                if (file instanceof TFile) {
+                    await this.renameKey(oldPath, file.path, file.stat.mtime);
+                    this.trigger('database-update', await this.allEntries());
+                }
+            }));
 
-	async renameKey(oldKey: string, newKey: string, time?: number) {
-		const value = await this.getValue(oldKey);
-		if (value == null) throw new Error("Key does not exist");
+            this.registerEvent(plugin.app.vault.on('create', async (file) => {
+                if (file instanceof TFile) {
+                    await this.storeKey(file.path, defaultValue(), file.stat.mtime);
+                    this.trigger('database-update', await this.allEntries());
+                }
+            }));
+        });
+    }
 
-		await this.storeKey(newKey, value.data, time);
-		await this.deleteKey(oldKey);
-	}
+    async storeKey(key: string, value: T, mtime?: number) {
+        await this.cache.setItem(key, {
+            data: value,
+            mtime: mtime ?? Date.now(),
+        });
+    }
 
-	async allKeys(): Promise<string[]> {
-		return await this.cache.keys();
-	}
+    async deleteKey(key: string) {
+        await this.cache.removeItem(key);
+    }
 
-	async allValues(): Promise<DatabaseEntry<T>[]> {
-		const keys = await this.allKeys();
-		return await Promise.all(keys.map(key => this.cache.getItem(key) as Promise<DatabaseEntry<T>>));
-	}
+    async renameKey(oldKey: string, newKey: string, mtime?: number) {
+        const value = await this.getItem(oldKey);
+        if (value == null) throw new Error('Key does not exist');
 
-	async getValue(key: string): Promise<DatabaseEntry<T> | null> {
-		return (await this.cache.getItem(key));
-	}
+        await this.storeKey(newKey, value.data, mtime);
+        await this.deleteKey(oldKey);
+    }
 
-	async allEntries(): Promise<[string, DatabaseEntry<T>][] | null> {
-		const keys = await this.allKeys();
-		return await Promise.all(keys.map(key => this.cache.getItem(key).then(value => [key, value] as [string, DatabaseEntry<T>])));
-	}
+    async allKeys(): Promise<string[]> {
+        return await this.cache.keys();
+    }
 
-	async dropDatabase() {
-		await this.cache.dropInstance();
-	}
+    async getValue(key: string): Promise<T | null> {
+        return (await this.cache.getItem(key) as DatabaseItem<T> | null)?.data ?? null;
+    }
+
+    async allValues(): Promise<T[]> {
+        const keys = await this.allKeys();
+        return await Promise.all(keys.map(key => this.getValue(key) as Promise<T>));
+    }
+
+    async getItem(key: string): Promise<DatabaseItem<T> | null> {
+        return await this.cache.getItem(key);
+    }
+
+    async allItems(): Promise<DatabaseItem<T>[]> {
+        const keys = await this.allKeys();
+        return await Promise.all(keys.map(key => this.cache.getItem(key) as Promise<DatabaseItem<T>>));
+    }
+
+    async allEntries(): Promise<[string, DatabaseItem<T>][] | null> {
+        const keys = await this.allKeys();
+        return await Promise.all(keys.map(key => this.cache.getItem(key).then(value => [key, value] as [string, DatabaseItem<T>])));
+    }
+
+    async dropDatabase() {
+        await this.cache.dropInstance();
+    }
+
+    async clearDatabase() {
+        await this.cache.clear();
+    }
+
+    async isEmpty(): Promise<boolean> {
+        return (await this.cache.length()) == 0;
+    }
 }
 

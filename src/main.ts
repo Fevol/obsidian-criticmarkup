@@ -60,17 +60,15 @@ export default class CommentatorPlugin extends Plugin {
 
 	database: Database<CriticMarkupNode[]> = new Database(
 		this,
-		"commentator/cache/" + this.app.appId,
+		"commentator/cache",
 		"Commentator cache",
+		1.1,
 		"Vault-wide cache for Commentator plugin",
 		() => [],
 		async (file) => {
 			const parseTree = criticmarkupLanguage.parser.parse(await this.app.vault.cachedRead(file as TFile));
 			return nodesInSelection(parseTree).nodes;
-		},
-		async () => {
-			this.updateCriticmarkupViews();
-		},
+		}
 	);
 
 	postProcessor!: MarkdownPostProcessor;
@@ -133,12 +131,6 @@ export default class CommentatorPlugin extends Plugin {
 			postProcessorUpdate();
 
 	}
-
-	updateCriticmarkupViews() {
-		for (const plugin_view of this.app.workspace.getLeavesOfType(CRITICMARKUP_VIEW))
-			(plugin_view.view as CriticMarkupView).receiveUpdate();
-	}
-
 
 	async onload() {
 		this.registerView(CRITICMARKUP_VIEW,  (leaf) => new CriticMarkupView(leaf, this));
