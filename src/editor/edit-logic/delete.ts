@@ -1,4 +1,4 @@
-import { EditorSelection, EditorState, Text } from '@codemirror/state';
+import { EditorSelection, EditorState, SelectionRange, Text } from '@codemirror/state';
 import { type CriticMarkupOperation, type EditorChange, NodeType, type OperationReturn } from '../../types';
 
 import { CriticMarkupNodes, SubstitutionNode } from '../criticmarkup-nodes';
@@ -9,7 +9,8 @@ import { findBlockingChar } from '../editor-util';
 
 
 export function text_delete(range: CriticMarkupOperation, nodes: CriticMarkupNodes, offset: number, doc: Text,
-							backwards_delete: boolean, group_delete: boolean, selection_delete: boolean, state: EditorState): OperationReturn {
+							backwards_delete: boolean, group_delete: boolean, selection_delete: boolean, state: EditorState,
+							keep_selection: boolean = false): OperationReturn {
 	// FIXME: Efficiency: Reduce if statement complexity (redundant if checks, deep nesting) <-> readability
 	// TODO: Readability: Better commenting
 	// FIXME: Efficiency: nodes.XXX operations might be pretty expensive, B+tree or smarter usage
@@ -40,6 +41,9 @@ export function text_delete(range: CriticMarkupOperation, nodes: CriticMarkupNod
 	const encountered_nodes = nodes.filter_range(deletion_start, deletion_end, true);
 	const inside_node = encountered_nodes.nodes.length === 1 && encountered_nodes.nodes[0].encloses_range(deletion_start, deletion_end);
 
+	let anchor_deletion_start = null;
+	let extra_deletion_start = null;
+
 	// For efficiency, no need to re-construct nodes if deletion is cursor movement operation (inside DEL or left part of SUB)
 	if (inside_node && (encountered_nodes.nodes[0].type === NodeType.DELETION ||
 		(encountered_nodes.nodes[0].type === NodeType.SUBSTITUTION && encountered_nodes.nodes[0].part_encloses_range(deletion_start, deletion_end, true))
@@ -50,7 +54,6 @@ export function text_delete(range: CriticMarkupOperation, nodes: CriticMarkupNod
 			right_node = encountered_nodes.at_cursor(deletion_end, false, true);
 
 		const original_deletion_start = deletion_start;
-		let anchor_deletion_start = null;
 
 		// Move deletion range to account for critic markup deletions
 		if (left_node) {
@@ -64,14 +67,18 @@ export function text_delete(range: CriticMarkupOperation, nodes: CriticMarkupNod
 				else left_node = undefined;
 			}
 
+			// TODO: Deletion in addition -> Turn entire thing into Substitution?
 			if (left_node) {
 				if (left_node.type === NodeType.DELETION && right_node?.type === NodeType.SUBSTITUTION
 					&& deletion_start <= (right_node as SubstitutionNode).middle + 2) {
 					anchor_deletion_start = left_node.to;
+					extra_deletion_start = range.from;
+					console.log("CASE 1")
 					deletion_start = left_node.from;
 					left_node = undefined;
 				} else if (left_node.type === NodeType.SUBSTITUTION && deletion_start <= (left_node as SubstitutionNode).middle) {
 					anchor_deletion_start = deletion_start + 3;
+					console.log("CASE 2")
 					deletion_start = left_node.from;
 					left_node = undefined;
 				} else if (deletion_start === left_node.to) {
@@ -94,6 +101,7 @@ export function text_delete(range: CriticMarkupOperation, nodes: CriticMarkupNod
 			}
 
 			if (right_node) {
+				// TODO: Investigate - Why did I write this code? What does it do?
 				if (deletion_end === right_node.from) {
 					if (right_node.type === NodeType.DELETION)
 						deletion_end = right_node.from + 3;
@@ -101,6 +109,7 @@ export function text_delete(range: CriticMarkupOperation, nodes: CriticMarkupNod
 						if (left_node?.type === NodeType.DELETION) {
 							anchor_deletion_start = deletion_start;
 							deletion_start = left_node.from;
+							console.error("BIG OL WARNING")
 							left_node = undefined;
 						}
 						deletion_end = right_node.from + 3;
@@ -164,7 +173,19 @@ export function text_delete(range: CriticMarkupOperation, nodes: CriticMarkupNod
 		deletion_cursor = (anchor_deletion_start ?? deletion_start) + (backwards_delete ? 0 : encountered_text.output.length);
 	}
 
-	const selection = EditorSelection.cursor(deletion_cursor + cursor_offset + offset);
+	let selection: SelectionRange;
+	if (!keep_selection)
+		selection = EditorSelection.cursor(deletion_cursor + cursor_offset + offset);
+	else {
+		const additional_offset = -9;
+
+
+		console.log(offset, anchor_deletion_start)
+		selection = EditorSelection.range(
+			extra_deletion_start ?? deletion_start,
+			deletion_end + offset
+		);
+	}
 
 	return { changes, selection, offset };
 }

@@ -62,7 +62,7 @@ export class Database<T> extends EventComponent {
         super();
 
         // localforage does not offer a method for accessing the database version, so we store it separately
-        const oldVersion = parseFloat(plugin.app.loadLocalStorage(name + '-version')) || null;
+        const oldVersion = parseInt(plugin.app.loadLocalStorage(name + '-version')) || null;
 
         this.cache = localforage.createInstance({
             name: name + `/${plugin.app.appId}`,

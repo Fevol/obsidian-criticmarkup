@@ -1,5 +1,6 @@
 import { NodeType } from './types';
 import { RangeSet, RangeValue } from '@codemirror/state';
+import type { CriticMarkupNode } from './editor/criticmarkup-nodes';
 
 type EnumDictionary<T extends string | symbol | number, U> = {
 	[K in T]: U;
@@ -69,6 +70,16 @@ export function addBracket(content: string, type: NodeType, left: boolean) {
 		return '{' + CM_Syntax[type][0].repeat(2) + content;
 	else
 		return content + CM_Syntax[type][1].repeat(2) + '}';
+}
+
+export function applyToText(text: string, fn: (node: CriticMarkupNode, text: string) => string, nodes: CriticMarkupNode[]) {
+	let output = '';
+	let last_node = 0;
+	for (const node of nodes) {
+		output += text.slice(last_node, node.from) + fn(node, text);
+		last_node = node.to;
+	}
+	return output + text.slice(last_node);
 }
 
 

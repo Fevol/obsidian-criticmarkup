@@ -556,44 +556,66 @@ export class CriticMarkupNodes {
 
 	}
 
-	unwrap_in_range(doc: Text, start = 0, to = doc.length, nodes: CriticMarkupNode[] | null = null) {
+	unwrap_in_range(doc: Text, from = 0, to = doc.length, nodes: CriticMarkupNode[] | null = null):
+		{output: string, from: number, to: number, front_node?: CriticMarkupNode, back_node?: CriticMarkupNode} {
 		const str = doc.toString();
 
-		const string_in_range = str.slice(start, to);
+		const string_in_range = str.slice(from, to);
+		let front_node: undefined | CriticMarkupNode;
+		let back_node: undefined | CriticMarkupNode;
+
 
 		if (!nodes)
-			nodes = this.nodes_in_range(start, to, true);
+			nodes = this.nodes_in_range(from, to, true);
 
 		if (nodes.length === 0)
-			return { output: string_in_range, start, to };
+			return { output: string_in_range, from, to };
 
-		let unwrapped_string = '';
+		let output = '';
 		if (nodes.length === 1) {
 			const node = nodes[0];
-			if (start < node.from)
-				unwrapped_string += str.slice(start, node.from);
-			unwrapped_string += node.unwrap_slice(str, start, to);
+			if (from < node.from)
+				output += str.slice(from, node.from);
+			else
+				front_node = node;
+			output += node.unwrap_slice(str, from, to);
 			if (to > node.to)
-				unwrapped_string += str.slice(node.to, to);
-			return { output: unwrapped_string, start: node.from, to: node.to };
+				output += str.slice(node.to, to);
+			else
+				back_node = node;
+		} else {
+			if (from < nodes[0].from)
+				output += str.slice(from, nodes[0].from);
+			else
+				front_node = nodes[0];
+
+			let prev_node = -1;
+			for (const node of nodes) {
+				if (prev_node !== -1)
+					output += str.slice(prev_node, node.from);
+				output += node.unwrap_slice(str, from, to);
+				prev_node = node.to;
+			}
+
+			if (to > nodes.at(-1)!.to)
+				output += str.slice(nodes.at(-1)!.to, to);
+			else
+				back_node = nodes.at(-1)!;
+
 		}
 
+		const new_from = front_node ? front_node.cursor_move_outside(from, true) : from;
+		const new_to = back_node ? back_node.cursor_move_outside(to, false) : to;
+		if (new_from !== from || from === front_node?.from) front_node = undefined;
+		if (new_to !== to || to === back_node?.to) back_node = undefined;
 
-		if (start < nodes[0].from)
-			unwrapped_string += str.slice(start, nodes[0].from);
-
-		let prev_node = -1;
-		for (const node of nodes) {
-			if (prev_node !== -1)
-				unwrapped_string += str.slice(prev_node, node.from);
-			unwrapped_string += node.unwrap_slice(str, start, to);
-			prev_node = node.to;
-		}
-
-		if (to > nodes.at(-1)!.to)
-			unwrapped_string += str.slice(nodes.at(-1)!.to, to);
-
-		return { output: unwrapped_string, start: start, to: to };
+		return {
+			output,
+			from: new_from,
+			to: new_to,
+			front_node,
+			back_node
+		};
 	}
 }
 

@@ -1,9 +1,9 @@
 import { EditorSelection, EditorState, type Extension, SelectionRange, Transaction } from '@codemirror/state';
-import type { CriticMarkupOperation, PluginSettings } from '../../types';
+import { type PluginSettings } from '../../types';
 
 import { treeParser } from '../tree-parser';
 
-import { cursorMoved, getUserEvents, nodesInSelection } from '../editor-util';
+import { cursorMoved, getEditorRanges, getUserEvents, nodesInSelection } from '../editor-util';
 import { text_insert, text_delete, text_replace, cursor_move } from '../edit-logic';
 
 
@@ -128,30 +128,7 @@ function applySuggestion(tr: Transaction, settings: PluginSettings): Transaction
 
 		if (!event_type) return tr;
 
-		const changed_ranges: CriticMarkupOperation[] = [];
-
-		tr.changes.iterChanges((fromA, toA, fromB, toB, inserted) => {
-			let text = '';
-			// @ts-ignore (Inserted always exists when iterating changes)
-			if (inserted.text.length === 1 && inserted.text[0] === '')
-				text += '';
-			else {
-				// @ts-ignore (text exists on Text in inserted)
-				const change_text = inserted.text.join('');
-				text += change_text.length ? change_text : '\n';
-			}
-
-			changed_ranges.push({
-				from: fromA,
-				to: toA,
-				offset: {
-					removed: toA - fromA,
-					added: toB - fromB,
-				},
-				inserted: text,
-				deleted: toA - fromA ? tr.startState.doc.sliceString(fromA, toA) : '',
-			});
-		});
+		const changed_ranges = getEditorRanges(tr.changes, tr.startState.doc)
 
 		if (changed_ranges[0].offset.removed) {
 			if (!changed_ranges[0].offset.added)

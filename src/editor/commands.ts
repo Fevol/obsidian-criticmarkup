@@ -2,221 +2,107 @@ import type { Editor, MarkdownView, TFile } from 'obsidian';
 
 import { treeParser } from './tree-parser';
 
-import type { ChangeSpec } from '@codemirror/state';
-import { EditorSelection, EditorState } from '@codemirror/state';
+import type { ChangeSpec, SelectionRange } from '@codemirror/state';
+import { EditorSelection, EditorState, Text } from '@codemirror/state';
 import type { Tree } from '@lezer/common';
 
 import type { CommandI } from '../../types';
 import { NodeType } from '../types';
 
-import { addBracket, CM_NodeTypes, unwrapBracket, unwrapBracket2, wrapBracket } from '../util';
-import { ltEP, maxEP, minEP, nodesInSelection, selectionToRange } from './editor-util';
-import type { CriticMarkupNode } from './criticmarkup-nodes';
+import { applyToText, CM_All_Brackets, CM_NodeTypes } from '../util';
+import { nodesInSelection, selectionToEditorRange, selectionToRange } from './editor-util';
+import { type CriticMarkupNode, CriticMarkupNodes } from './criticmarkup-nodes';
+import { text_delete, text_replace } from './edit-logic';
 
 
-function changeSelectionType(editor: Editor, view: MarkdownView, type: NodeType) {
+export function changeSelectionType(text: Text, selection: SelectionRange, type: NodeType, nodes: CriticMarkupNodes) {
+	let selection_start = selection.from, selection_end = selection.to;
+	const nodes_in_range = nodes.nodes_in_range(selection_start, selection_end);
+	const unwrapped_text = nodes.unwrap_in_range(text, selection_start, selection_end, nodes_in_range);
+
+	selection_start = unwrapped_text.from;
+	selection_end = unwrapped_text.to;
+
+	let start_offset = 0, end_offset = 0;
+
+
+	let output_text = "";
+	if (unwrapped_text.front_node) {
+		if (unwrapped_text.front_node.type !== type) {
+			output_text += CM_All_Brackets[unwrapped_text.front_node.type].at(-1);
+			start_offset += 3;
+			output_text += CM_All_Brackets[type].at(0);
+		}
+	} else {
+		output_text += CM_All_Brackets[type].at(0);
+	}
+	output_text += unwrapped_text.output;
+
+
+	if (unwrapped_text.back_node) {
+		if (unwrapped_text.back_node.type !== type) {
+			output_text += CM_All_Brackets[type].at(-1);
+			end_offset -= 3;
+			output_text += CM_All_Brackets[unwrapped_text.back_node.type].at(0);
+		}
+	} else {
+		output_text += CM_All_Brackets[type].at(-1);
+	}
+
+	end_offset += output_text.length - (selection.to - selection.from)
+
+	return {
+		changes: [{
+			from: selection_start,
+			to: selection_end,
+			insert: output_text,
+		}],
+		selection: EditorSelection.range(selection_start + start_offset, selection_end + end_offset),
+	}
+}
+
+
+export function changeType(editor: Editor, view: MarkdownView, type: NodeType) {
 	const tree: Tree = editor.cm.state.field(treeParser).tree;
-
-	const selection = editor.listSelections()[0];
-	if (!selection) return;
-
-	let selection_start = minEP(selection.head, selection.anchor);
-	let selection_end = maxEP(selection.head, selection.anchor);
-
-	const selection_left = editor.posToOffset(selection_start);
-	const selection_right = editor.posToOffset(selection_end);
-
-	const nodes = nodesInSelection(tree, selection_left, selection_right);
-
-	// TODO: Replace editor.replaceSelection with CM equivalents
-
-	// CASE 0: Selection is empty
-	if (selection_left === selection_right) {
-		editor.replaceSelection(wrapBracket('', type));
-		if (type === NodeType.SUBSTITUTION)
-			editor.cm.dispatch(editor.cm.state.update({
-				selection: EditorSelection.cursor(selection_left + 1),
-			}));
-		editor.cm.dispatch(editor.cm.state.update({
-			selection: EditorSelection.cursor(selection_right + 3),
-		}));
+	const nodes = nodesInSelection(tree);
+	const text = editor.cm.state.doc;
+	const editor_changes: ChangeSpec[] = [], selections: SelectionRange[] = [];
 
 
-		return;
-	}
+	let fn: (text: Text, sel: SelectionRange, type: NodeType, nodes: CriticMarkupNodes) => {changes: ChangeSpec[], selection: SelectionRange};
+	let offset = 0;
 
-	// CASE 1: Selection is not in a CriticMarkup node
-	if (!nodes.nodes.length) {
-		editor.replaceSelection(wrapBracket(editor.getSelection(), type));
-	}
-	// CASE 2: Selection is (partially/fully) inside CriticMarkup nodes
-	else {
-		let in_selection = '';
-		let left_unselected_node = '', right_unselected_node = '';
-
-
-		// Error case: if only a bracket is selected, do nothing
-		if (selection_right - selection_left <= 3 &&
-			((selection_right <= nodes.get(0).from + 3 && selection_left >= nodes.get(0).from) ||
-				(selection_left >= nodes.get(-1).to - 3 && selection_right <= nodes.get(-1).to))) {
-			return;
+	if (type === NodeType.DELETION) {
+		fn = (text, sel, type, nodes) => {
+			return text_delete(
+				selectionToEditorRange(sel, text, true),
+				nodes, offset, text, false, false,
+				true, editor.cm.state, true
+			);
 		}
-
-
-		const selected_left_bracket = selection_left <= nodes.get(0).from + 3;
-		const selected_right_bracket = selection_right >= nodes.get(-1).to - 3;
-		const outside_left_bracket = selection_left < nodes.get(0).from;
-		const outside_right_bracket = selection_right > nodes.get(-1).to;
-
-		let all_same_type = true;
-
-		// CASE 2.1: Fully selected CriticMarkup nodes
-		if (!(outside_left_bracket || outside_right_bracket) && selected_left_bracket && selected_right_bracket) {
-			for (let i = 0; i < nodes.nodes.length; i++) {
-				in_selection += unwrapBracket(editor.getRange(editor.offsetToPos(nodes.get(i).from), editor.offsetToPos(nodes.get(i).to)));
-				all_same_type &&= nodes.get(i).type === type;
-			}
-			// OPTION 1: All nodes are of the same type
-			// {++ Selection ++} -> Selection
-
-			// OPTION 2: Nodes are of different types
-			// {++ Selection ++}{-- Selection --} -> {++ Selection  Selection ++}
-			editor.replaceRange(all_same_type ? in_selection : wrapBracket(in_selection, type),
-				editor.offsetToPos(nodes.get(0).from), editor.offsetToPos(nodes.get(-1).to));
-
+	} else if (type === NodeType.SUBSTITUTION) {
+		fn = (text, sel, type, nodes) => {
+			return text_replace(
+				selectionToEditorRange(sel, text, true),
+				nodes, offset, text
+			)
 		}
-
-		// CASE 2.2: Partially selected CriticMarkup node
-		else if (nodes.nodes.length === 1 && selection_left >= nodes.get(0).from && selection_right <= nodes.get(0).to) {
-			const node = nodes.get(0);
-
-			const node_start = editor.offsetToPos(node.from), node_end = editor.offsetToPos(node.to);
-
-			// OPTION 1: Unmark entire node (if type same)
-			// if (node.type === type) {
-			// 	// {++ Text Selection Text ++} -> Text Selection Text
-			// 	// editor.replaceRange(unwrapBracket(editor.getRange(node_start, node_end)), node_start, node_end);
-			// }
-
-			// OPTION 2: (Un)mark part of node
-			// {++ Text Selection Text ++} -> {++ Text ++} Selection {++ Text ++}
-			// {-- Text Selection Text --} -> {-- Text --} {++ Selection ++} {-- Text --}
-
-			let left_unselected = '', middle_selection = '', right_unselected = '';
-
-			if (selected_left_bracket)
-				selection_start = editor.offsetToPos(node.from + 3);
-			else
-				left_unselected = addBracket(editor.getRange(node_start, selection_start), node.type, false);
-			if (selected_right_bracket)
-				selection_end = editor.offsetToPos(node.to - 3);
-			else
-				right_unselected = addBracket(editor.getRange(selection_end, node_end), node.type, true);
-			if (ltEP(selection_start, selection_end)) {
-				middle_selection = editor.getRange(selection_start, selection_end);
-				if (node.type !== type)
-					middle_selection = wrapBracket(middle_selection, type);
-			}
-
-			editor.replaceRange(left_unselected + middle_selection + right_unselected, node_start, node_end);
-
-		}
-		// CASE 2.3: Selection only includes right bracket of other node
-		else if (outside_left_bracket && selected_left_bracket && nodes.get(0).from + 3 >= selection_right) {
-			const node = nodes.get(0);
-
-			const outside_node_content = editor.getRange(selection_start, editor.offsetToPos(node.from));
-
-			if (node.type === type) {
-				// Selection {++ Text ++}  -> {++ Selection Text ++}
-				const content = wrapBracket(outside_node_content +
-					unwrapBracket(editor.getRange(editor.offsetToPos(node.from), editor.offsetToPos(node.to))), type);
-				editor.replaceRange(content, selection_start, editor.offsetToPos(node.to));
-			} else {
-				editor.replaceRange(wrapBracket(outside_node_content, type), selection_start, editor.offsetToPos(node.from));
-			}
-		}
-
-		// CASE 2.4: Selection only includes left bracket of other node
-		else if (outside_right_bracket && selected_right_bracket && nodes.get(-1).to - 3 <= selection_left) {
-			const node = nodes.get(-1);
-
-			const outside_node_content = editor.getRange(editor.offsetToPos(node.to), selection_end);
-			if (node.type === type) {
-				// {++ Text ++} Selection  -> {++ Text Selection ++}
-				const content = wrapBracket(unwrapBracket(editor.getRange(editor.offsetToPos(node.from), editor.offsetToPos(node.to))) +
-					outside_node_content, type);
-				editor.replaceRange(content, editor.offsetToPos(node.from), selection_end);
-			} else {
-				editor.replaceRange(wrapBracket(outside_node_content, type), editor.offsetToPos(node.to), selection_end);
-			}
-		}
-
-
-		// CASE 2.5: Selection is over multiple nodes
-		else {
-			const unselected_left_outside = editor.getRange(editor.offsetToPos(selection_left), editor.offsetToPos(nodes.get(0).from));
-			const unselected_right_outside = editor.getRange(editor.offsetToPos(nodes.get(-1).to), editor.offsetToPos(selection_right));
-
-			in_selection += unselected_left_outside;
-
-			const start_range = minEP(selection_start, editor.offsetToPos(nodes.get(0).from)),
-				end_range = maxEP(selection_end, editor.offsetToPos(nodes.get(-1).to));
-
-
-			for (const [i, node] of nodes.nodes.entries()) {
-				let node_content = unwrapBracket(editor.getRange(editor.offsetToPos(node.from), editor.offsetToPos(node.to)));
-				// Handles cases where selection is partially within node of other type
-				// {-- Text Sel --} ection -> {-- Text --} {++ Sel ection ++}
-				if (i === 0 && type !== node.type && selection_left > node.from + 3) {
-					const node_split = selection_left - node.from - 3;
-					left_unselected_node = wrapBracket(node_content.slice(0, node_split), node.type);
-					node_content = node_content.slice(node_split);
-				}
-
-				if (i === nodes.nodes.length - 1 && type !== node.type && selection_right < node.to - 3) {
-					const node_split = selection_right - node.from - 3;
-					right_unselected_node = wrapBracket(node_content.slice(node_split), node.type);
-					node_content = node_content.slice(0, node_split);
-				}
-				in_selection += node_content;
-
-				if (i < nodes.nodes.length - 1 && nodes.get(i + 1).from - node.to > 0) {
-					const text_between_nodes = editor.getRange(editor.offsetToPos(node.to), editor.offsetToPos(nodes.get(i + 1).from));
-					if (text_between_nodes) {
-						in_selection += text_between_nodes;
-					}
-				}
-
-			}
-
-			in_selection += unselected_right_outside;
-
-			editor.replaceRange(left_unselected_node + wrapBracket(in_selection, type) + right_unselected_node,
-				start_range, end_range);
+	} else {
+		fn = (text, sel, type, nodes) => {
+			return changeSelectionType(text, sel, type, nodes);
 		}
 	}
 
-	if (type === NodeType.SUBSTITUTION) {
-		const range = editor.getRange(editor.offsetToPos(selection_left + 3), editor.offsetToPos(selection_right + 3));
-		const has_endline = range.includes('\n');
-		const has_whitespace: boolean = range[0]?.match(/\s/) !== null;
-
-		// Okay so listen, this is... weird code. I know. But it totally makes sense, I swear.
-		// Basically, if the selection is on a single line, and is *not* preceded by a whitespace,
-		//   we must first move the cursor inside the `~~` brackets - since they automatically get rendered
-		//   and *then* we can move the cursor to the correct position. (5 is the length of `{~~` and `~>`)
-		if (!(has_whitespace || has_endline))
-			editor.cm.dispatch(editor.cm.state.update({
-				selection: EditorSelection.cursor(selection_right + 3),
-			}));
-
-		// FIXME: Cursor will not get placed in middle when selection also contains another node, since that node would
-		//    also need to have the cursor placed inside it, and I can't be arsed to also write an exception for that.
-		editor.cm.dispatch(editor.cm.state.update({
-			selection: EditorSelection.cursor(Math.min(selection_right + 5, editor.cm.state.doc.length)),
-		}));
+	for (const sel of editor.cm.state.selection.ranges) {
+		const {changes, selection} = fn(text, sel, type, nodes);
+		editor_changes.push(...changes);
+		selections.push(selection);
 	}
+
+	editor.cm.dispatch(editor.cm.state.update({
+		changes: editor_changes,
+		selection: EditorSelection.create(selections),
+	}));
 }
 
 
@@ -224,29 +110,15 @@ export function acceptAllSuggestions(state: EditorState, from?: number, to?: num
 	const tree: Tree = state.field(treeParser).tree;
 	const text = state.doc.toString();
 
-	const nodes = nodesInSelection(tree, from, to);
-	const changes: ChangeSpec[] = [];
-	for (const node of nodes.nodes) {
-		if (node.type === NodeType.ADDITION)
-			changes.push({ from: node.from, to: node.to, insert: unwrapBracket(text.slice(node.from, node.to)) });
-		else if (node.type === NodeType.DELETION)
-			changes.push({ from: node.from, to: node.to, insert: '' });
-		else if (node.type === NodeType.SUBSTITUTION)
-			changes.push({ from: node.from, to: node.to, insert: unwrapBracket2(text.slice(node.from, node.to), node.type)[1] });
-	}
-	return changes;
+	return nodesInSelection(tree, from, to).nodes
+		.filter(node => node.type === NodeType.ADDITION || node.type === NodeType.DELETION || node.type === NodeType.SUBSTITUTION)
+		.map(node => ({ from: node.from, to: node.to, insert: node.accept(text) }));
 }
 
 export async function acceptSuggestionsInFile(file: TFile, nodes: CriticMarkupNode[]) {
 	const text = await app.vault.cachedRead(file);
 
-	let output = '';
-	let last_node = 0;
-	for (const node of nodes) {
-		output += text.slice(last_node, node.from) + node.accept(text);
-		last_node = node.to;
-	}
-	output += text.slice(last_node);
+	const output = applyToText(text, (node, text) => node.accept(text), nodes);
 
 	await app.vault.modify(file, output);
 }
@@ -256,29 +128,15 @@ export function rejectAllSuggestions(state: EditorState, from?: number, to?: num
 	const tree: Tree = state.field(treeParser).tree;
 	const text = state.doc.toString();
 
-	const nodes = nodesInSelection(tree, from, to).nodes.reverse();
-	const changes: ChangeSpec[] = [];
-	for (const node of nodes) {
-		if (node.type === NodeType.ADDITION)
-			changes.push({ from: node.from, to: node.to, insert: '' });
-		else if (node.type === NodeType.DELETION)
-			changes.push({ from: node.from, to: node.to, insert: unwrapBracket(text.slice(node.from, node.to)) });
-		else if (node.type === NodeType.SUBSTITUTION)
-			changes.push({ from: node.from, to: node.to, insert: unwrapBracket2(text.slice(node.from, node.to), node.type)[0] });
-	}
-	return changes;
+	return nodesInSelection(tree, from, to).nodes
+		.filter(node => node.type === NodeType.ADDITION || node.type === NodeType.DELETION || node.type === NodeType.SUBSTITUTION)
+		.map(node => ({ from: node.from, to: node.to, insert: node.reject(text) }));
 }
 
 export async function rejectSuggestionsInFile(file: TFile, nodes: CriticMarkupNode[]) {
 	const text = await app.vault.cachedRead(file);
 
-	let output = '';
-	let last_node = 0;
-	for (const node of nodes) {
-		output += text.slice(last_node, node.from) + node.reject(text);
-		last_node = node.to;
-	}
-	output += text.slice(last_node);
+	const output = applyToText(text, (node, text) => node.reject(text), nodes);
 
 	await app.vault.modify(file, output);
 }
@@ -290,7 +148,7 @@ const suggestion_commands = Object.entries(CM_NodeTypes).map(([text, type]) => (
 	icon: text.toLowerCase(),
 	editor_context: true,
 	callback: async (editor: Editor, view: MarkdownView) => {
-		changeSelectionType(editor, view, type);
+		changeType(editor, view, type);
 	},
 }));
 
