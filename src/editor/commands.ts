@@ -7,7 +7,7 @@ import { EditorSelection, EditorState, Text } from '@codemirror/state';
 import type { Tree } from '@lezer/common';
 
 import type { CommandI } from '../../types';
-import { NodeType } from '../types';
+import { NodeType, type OperationReturn } from '../types';
 
 import { applyToText, CM_All_Brackets, CM_NodeTypes } from '../util';
 import { nodesInSelection, selectionToEditorRange, selectionToRange } from './editor-util';
@@ -15,7 +15,7 @@ import { type CriticMarkupNode, CriticMarkupNodes } from './criticmarkup-nodes';
 import { text_delete, text_replace } from './edit-logic';
 
 
-export function changeSelectionType(text: Text, selection: SelectionRange, type: NodeType, nodes: CriticMarkupNodes) {
+export function changeSelectionType(text: Text, selection: SelectionRange, type: NodeType, nodes: CriticMarkupNodes, offset: number): OperationReturn {
 	let selection_start = selection.from, selection_end = selection.to;
 	const nodes_in_range = nodes.nodes_in_range(selection_start, selection_end);
 	const unwrapped_text = nodes.unwrap_in_range(text, selection_start, selection_end, nodes_in_range);
@@ -57,7 +57,8 @@ export function changeSelectionType(text: Text, selection: SelectionRange, type:
 			to: selection_end,
 			insert: output_text,
 		}],
-		selection: EditorSelection.range(selection_start + start_offset, selection_end + end_offset),
+		selection: EditorSelection.range(selection_start + start_offset + offset, selection_end + end_offset + offset),
+		offset: output_text.length - (selection.to - selection.from),
 	}
 }
 
@@ -69,14 +70,14 @@ export function changeType(editor: Editor, view: MarkdownView, type: NodeType) {
 	const editor_changes: ChangeSpec[] = [], selections: SelectionRange[] = [];
 
 
-	let fn: (text: Text, sel: SelectionRange, type: NodeType, nodes: CriticMarkupNodes) => {changes: ChangeSpec[], selection: SelectionRange};
-	let offset = 0;
+	let fn: (text: Text, sel: SelectionRange, type: NodeType, nodes: CriticMarkupNodes) => OperationReturn;
+	let current_offset = 0;
 
 	if (type === NodeType.DELETION) {
 		fn = (text, sel, type, nodes) => {
 			return text_delete(
 				selectionToEditorRange(sel, text, true),
-				nodes, offset, text, false, false,
+				nodes, current_offset, text, false, false,
 				true, editor.cm.state, true
 			);
 		}
@@ -84,19 +85,20 @@ export function changeType(editor: Editor, view: MarkdownView, type: NodeType) {
 		fn = (text, sel, type, nodes) => {
 			return text_replace(
 				selectionToEditorRange(sel, text, true),
-				nodes, offset, text
+				nodes, current_offset, text
 			)
 		}
 	} else {
 		fn = (text, sel, type, nodes) => {
-			return changeSelectionType(text, sel, type, nodes);
+			return changeSelectionType(text, sel, type, nodes, current_offset);
 		}
 	}
 
 	for (const sel of editor.cm.state.selection.ranges) {
-		const {changes, selection} = fn(text, sel, type, nodes);
+		const {changes, selection, offset } = fn(text, sel, type, nodes);
 		editor_changes.push(...changes);
 		selections.push(selection);
+		current_offset = offset;
 	}
 
 	editor.cm.dispatch(editor.cm.state.update({

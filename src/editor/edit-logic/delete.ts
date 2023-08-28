@@ -16,6 +16,7 @@ export function text_delete(range: CriticMarkupOperation, nodes: CriticMarkupNod
 	// FIXME: Efficiency: nodes.XXX operations might be pretty expensive, B+tree or smarter usage
 
 	const changes: EditorChange[] = [];
+	const original_offset = offset;
 
 	let cursor_offset = 0;
 	let deletion_start = range.from;
@@ -73,12 +74,10 @@ export function text_delete(range: CriticMarkupOperation, nodes: CriticMarkupNod
 					&& deletion_start <= (right_node as SubstitutionNode).middle + 2) {
 					anchor_deletion_start = left_node.to;
 					extra_deletion_start = range.from;
-					console.log("CASE 1")
 					deletion_start = left_node.from;
 					left_node = undefined;
 				} else if (left_node.type === NodeType.SUBSTITUTION && deletion_start <= (left_node as SubstitutionNode).middle) {
 					anchor_deletion_start = deletion_start + 3;
-					console.log("CASE 2")
 					deletion_start = left_node.from;
 					left_node = undefined;
 				} else if (deletion_start === left_node.to) {
@@ -177,12 +176,8 @@ export function text_delete(range: CriticMarkupOperation, nodes: CriticMarkupNod
 	if (!keep_selection)
 		selection = EditorSelection.cursor(deletion_cursor + cursor_offset + offset);
 	else {
-		const additional_offset = -9;
-
-
-		console.log(offset, anchor_deletion_start)
 		selection = EditorSelection.range(
-			extra_deletion_start ?? deletion_start,
+			(extra_deletion_start ?? deletion_start) + original_offset,
 			deletion_end + offset
 		);
 	}
