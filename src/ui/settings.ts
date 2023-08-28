@@ -166,17 +166,6 @@ export class CommentatorSettings extends PluginSettingTab {
             ));
 
         new Setting(containerEl)
-            .setName("Alternative Live preview renderer")
-            .setDesc("May bring worse performance, but offers a more accurate preview")
-            .addToggle(toggle => toggle.setValue(this.plugin.settings.alternative_live_preview)
-                .onChange(async (value) => {
-                        this.plugin.settings.alternative_live_preview = value;
-                        await this.plugin.saveSettings();
-                }
-            ));
-
-
-        new Setting(containerEl)
             .setName("Alternative cursor movement")
             .setDesc("Toggle corrected cursor movement of cursor when CriticMarkup tags are present")
             .addToggle(toggle => toggle.setValue(this.plugin.settings.alternative_cursor_movement)

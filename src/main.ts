@@ -17,7 +17,7 @@ import { change_suggestions } from './editor/context-menu-commands';
 import { treeParser } from './editor/tree-parser';
 import { nodesInSelection } from './editor/editor-util';
 
-import { inlineCommentRenderer, livePreview, livePreviewRenderer } from './editor/renderers/live-preview';
+import { inlineCommentRenderer, livePreviewRenderer } from './editor/renderers/live-preview';
 import { postProcess, postProcessorRerender, postProcessorUpdate } from './editor/renderers/post-processor';
 
 import { keybindExtensions } from './editor/suggestion-mode/keybinds';
@@ -85,10 +85,7 @@ export default class CommentatorPlugin extends Plugin {
 			this.editorExtensions.push(commentGutterExtension/*(this.settings)*/);
 
 		if (this.settings.live_preview) {
-			if (this.settings.alternative_live_preview)
-				this.editorExtensions.push(livePreviewRenderer(this.settings));
-			else
-				this.editorExtensions.push(livePreview(this.settings));
+			this.editorExtensions.push(livePreviewRenderer(this.settings));
 		}
 
 		// TODO: Rerender gutter on Ctrl+Scroll
