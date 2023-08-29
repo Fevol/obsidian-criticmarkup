@@ -226,70 +226,72 @@
 					/>
 				</div>
 
-				<StateButton
-					onContextMenu={(e) => {
-						let menu = new Menu();
+				<div style='display: flex'>
+					<StateButton
+						onContextMenu={(e) => {
+							let menu = new Menu();
 
-						node_filters.map((filter, index) => {
-							menu.addItem((item) => {
-								item.setTitle(filter.tooltip);
-								item.setIcon(filter.icon);
-								item.onClick(() => {
-									node_type_filter = index;
+							node_filters.map((filter, index) => {
+								menu.addItem((item) => {
+									item.setTitle(filter.tooltip);
+									item.setIcon(filter.icon);
+									item.onClick(() => {
+										node_type_filter = index;
+									});
 								});
 							});
-						});
 
-						menu.showAtMouseEvent(e);
-					}}
-					class='clickable-icon nav-action-button'
-					bind:value={node_type_filter}
-					states={node_filters}
-				/>
-				<Button class='clickable-icon nav-action-button' icon='lasso' tooltip='Select all markup' onClick={() => {
-					selected_nodes = Array.from(flattened_nodes.keys());
-					anchor_selected_node = 0;
-				}} />
-				<StateButton
-					onContextMenu={(e) => {
-						let menu = new Menu();
+							menu.showAtMouseEvent(e);
+						}}
+						class='clickable-icon nav-action-button'
+						bind:value={node_type_filter}
+						states={node_filters}
+					/>
+					<Button class='clickable-icon nav-action-button' icon='lasso' tooltip='Select all markup' onClick={() => {
+						selected_nodes = Array.from(flattened_nodes.keys());
+						anchor_selected_node = 0;
+					}} />
+					<StateButton
+						onContextMenu={(e) => {
+							let menu = new Menu();
 
-						location_filters.map((filter, index) => {
-							menu.addItem((item) => {
-								item.setTitle(filter.tooltip);
-								item.setIcon(filter.icon);
-								item.onClick(() => {
-									location_filter = index;
+							location_filters.map((filter, index) => {
+								menu.addItem((item) => {
+									item.setTitle(filter.tooltip);
+									item.setIcon(filter.icon);
+									item.onClick(() => {
+										location_filter = index;
+									});
 								});
 							});
-						});
 
-						menu.showAtMouseEvent(e);
-					}}
-					class='clickable-icon nav-action-button'
-					bind:value={location_filter}
-					states={location_filters}
-				/>
-				<StateButton
-					onContextMenu={(e) => {
-						let menu = new Menu();
+							menu.showAtMouseEvent(e);
+						}}
+						class='clickable-icon nav-action-button'
+						bind:value={location_filter}
+						states={location_filters}
+					/>
+					<StateButton
+                        onContextMenu={(e) => {
+                            let menu = new Menu();
 
-						content_filters.map((filter, index) => {
-							menu.addItem((item) => {
-								item.setTitle(filter.tooltip);
-								item.setIcon(filter.icon);
-								item.onClick(() => {
-									content_filter = index;
-								});
-							});
-						});
+                            content_filters.map((filter, index) => {
+                                menu.addItem((item) => {
+                                    item.setTitle(filter.tooltip);
+                                    item.setIcon(filter.icon);
+                                    item.onClick(() => {
+                                        content_filter = index;
+                                    });
+                                });
+                            });
 
-						menu.showAtMouseEvent(e);
-					}}
-					class='clickable-icon nav-action-button'
-					bind:value={content_filter}
-					states={content_filters}
-				/>
+                            menu.showAtMouseEvent(e);
+                        }}
+                        class='clickable-icon nav-action-button'
+                        bind:value={content_filter}
+                        states={content_filters}
+					/>
+				</div>
 			</svelte:fragment>
 		</NavHeader>
 	</svelte:fragment>

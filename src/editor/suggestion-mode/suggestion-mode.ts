@@ -14,13 +14,6 @@ enum OperationType {
 	SELECTION,
 }
 
-enum EventType {
-	NONE,
-	INSERTION,
-	DELETION,
-	PASTE,
-}
-
 const vim_action_resolver = {
 	'moveByCharacters': {
 		'group': false,
@@ -99,7 +92,6 @@ export const suggestionMode = (settings: PluginSettings): Extension => EditorSta
 
 
 // TODO: Functionality: Double click mouse should also floodfill (problem: no specific userevent attached)
-// TODO: Functionality: Pasting images does not result in transaction (problem: prec does not work; how is this handled?)
 // TODO: Logic: Inserting/Replacing in Deletion - Result in Substitution or added text in Deletion?
 function applySuggestion(tr: Transaction, settings: PluginSettings): Transaction {
 	const userEvents = getUserEvents(tr);
@@ -116,27 +108,26 @@ function applySuggestion(tr: Transaction, settings: PluginSettings): Transaction
 
 	// Handle edit operations
 	if (tr.docChanged) {
+		const changed_ranges = getEditorRanges(tr.changes, tr.startState.doc);
+		// ISSUE: Pasting an image yields no userEvent that could be used to determine the type, so the
+		//      operation type needs to be determined via the changed ranges. However, a change of the state
+		//      *will* result in the new transaction being filtered through the suggestion mode filter again (recursion)
+		// TODO: Check if filter: false is better alternative than userEvent: 'ignore' for avoiding above issue
+		//       Setting filter: false, will make it so that ALL transactionfilters will not be able to edit the transaction
+		//			--> Solution: set Prec.lowest() to suggestionMode filter
+		if (!changed_ranges.length || userEvents.includes('ignore')) return tr;
+
 		let operation_type: OperationType;
-		let event_type: EventType = EventType.NONE;
-
-		if (tr.isUserEvent('input'))
-			event_type = EventType.INSERTION;
-		else if (tr.isUserEvent('delete'))
-			event_type = EventType.DELETION;
-		else if (tr.isUserEvent('input.paste') || tr.isUserEvent('paste'))
-			event_type = EventType.PASTE;
-
-		if (!event_type) return tr;
-
-		const changed_ranges = getEditorRanges(tr.changes, tr.startState.doc)
-
-		if (changed_ranges[0].offset.removed) {
-			if (!changed_ranges[0].offset.added)
-				operation_type = OperationType.DELETION;
-			else
-				operation_type = OperationType.REPLACEMENT;
-		} else
+		if (changed_ranges[0].offset.added && changed_ranges[0].offset.removed)
+			operation_type = OperationType.REPLACEMENT;
+		else if (changed_ranges[0].offset.added)
 			operation_type = OperationType.INSERTION;
+		else if (changed_ranges[0].offset.removed)
+			operation_type = OperationType.DELETION;
+		else {
+			console.error("No operation type could be determined")
+			return tr;
+		}
 
 		// TODO: Optimize(!): Can take >1ms to gather (in stress-test environment with >1000 nodes)
 		const nodes = nodesInSelection(tr.startState.field(treeParser).tree);
@@ -152,11 +143,6 @@ function applySuggestion(tr: Transaction, settings: PluginSettings): Transaction
 				selections.push(insert_operation.selection);
 				offset = insert_operation.offset;
 			}
-
-			return tr.startState.update({
-				changes,
-				selection: EditorSelection.create(selections),
-			});
 		} else if (operation_type === OperationType.DELETION) {
 			const userEvents = getUserEvents(tr);
 			const backwards_delete = userEvents.includes('delete.backward') || userEvents.includes('delete.selection.backward');
@@ -170,11 +156,6 @@ function applySuggestion(tr: Transaction, settings: PluginSettings): Transaction
 				selections.push(delete_operation.selection);
 				offset = delete_operation.offset;
 			}
-
-			return tr.startState.update({
-				changes,
-				selection: EditorSelection.create(selections),
-			});
 		} else if (operation_type === OperationType.REPLACEMENT) {
 			let offset = 0;
 			for (const range of changed_ranges) {
@@ -183,13 +164,13 @@ function applySuggestion(tr: Transaction, settings: PluginSettings): Transaction
 				selections.push(replace_operation.selection);
 				offset = replace_operation.offset;
 			}
-
-			return tr.startState.update({
-				changes,
-				selection: EditorSelection.create(selections),
-			});
-
 		}
+
+		return tr.startState.update({
+			changes,
+			selection: EditorSelection.create(selections),
+			userEvent: "ignore"
+		});
 	}
 
 	// Handle cursor movements
