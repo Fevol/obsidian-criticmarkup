@@ -26,7 +26,7 @@ export abstract class CriticMarkupNode {
 
 	num_ignored_chars(from: number, to: number): number {
 		if (from >= this.to || to <= this.from || this.encloses_range(from, to)) return 0;
-		if (this.in_range(from, to)) return 6;
+		if (this.fully_in_range(from, to)) return 6;
 		return 3;
 	}
 
@@ -63,7 +63,7 @@ export abstract class CriticMarkupNode {
 	}
 
 
-	in_range(start: number, end: number, strict = false) {
+	fully_in_range(start: number, end: number, strict = false) {
 		if (strict)
 			return this.from + 3 >= start && this.to - 3 <= end;
 		return this.from >= start && this.to <= end;
@@ -472,6 +472,10 @@ export class CriticMarkupNodes {
 		return nodes;
 	}
 
+	range_contains_node(from: number, to: number) {
+		return this.nodes.some(node => node.partially_in_range(from, to));
+	}
+
 	range_passes_node(from: number, to: number, left: boolean) {
 		if (left)
 			return this.nodes.slice().reverse().find(node => (from >= node.to && node.to >= to) || (from > node.from && node.from >= to));
@@ -524,7 +528,7 @@ export class CriticMarkupNodes {
 	nodes_in_range(start: number, end: number, partial = true) {
 		if (partial)
 			return this.nodes.filter(node => node.partially_in_range(start, end));
-		return this.nodes.filter(node => node.in_range(start, end));
+		return this.nodes.filter(node => node.fully_in_range(start, end));
 	}
 
 	filter_range(start: number, end: number, partial = true) {

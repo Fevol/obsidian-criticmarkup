@@ -10,12 +10,20 @@ import {
 } from '@codemirror/state';
 import { constructNode, CriticMarkupNode, CriticMarkupNodes } from './criticmarkup-nodes';
 import { type CriticMarkupOperation } from '../types';
+import { treeParser } from './tree-parser';
 
 
 export function selectionRangeOverlap(selection: EditorSelection, rangeFrom: number, rangeTo: number) {
     return selection.ranges.some(range => range.from <= rangeTo && range.to >= rangeFrom);
 }
 
+export function selectionContainsNodes(state: EditorState) {
+    const tree = state.field(treeParser).tree;
+    const nodes = nodesInSelection(tree);
+    return nodes.nodes.length && state.selection.ranges.some(range =>
+        nodes.range_contains_node(range.from, range.to)
+    );
+}
 
 export function nodesInSelection(tree: Tree, start?: number, end?: number) {
     const nodes: CriticMarkupNode[] = [];
