@@ -47,7 +47,6 @@ export class CommentMarker extends GutterMarker {
 						to: this.node.to - 3,
 						insert: this.comment!.innerText
 					},
-					userEvent: 'ignore'
 				}));
 			}
 		}

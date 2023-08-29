@@ -109,13 +109,18 @@ function applySuggestion(tr: Transaction, settings: PluginSettings): Transaction
 	// Handle edit operations
 	if (tr.docChanged) {
 		const changed_ranges = getEditorRanges(tr.changes, tr.startState.doc);
+
+
+		const is_recognized_edit_operation = tr.isUserEvent('input') || tr.isUserEvent('paste') || tr.isUserEvent('delete');
+
 		// ISSUE: Pasting an image yields no userEvent that could be used to determine the type, so the
 		//      operation type needs to be determined via the changed ranges. However, a change of the state
 		//      *will* result in the new transaction being filtered through the suggestion mode filter again (recursion)
-		// TODO: Check if filter: false is better alternative than userEvent: 'ignore' for avoiding above issue
-		//       Setting filter: false, will make it so that ALL transactionfilters will not be able to edit the transaction
-		//			--> Solution: set Prec.lowest() to suggestionMode filter
-		if (!changed_ranges.length || userEvents.includes('ignore')) return tr;
+		// TODO: Currently, a only transactions with valid userEvents editevents considered, *or*
+		//       transactions that are potentially image pastes (i.e. the changed range starts with '![[')
+		if (!is_recognized_edit_operation && !changed_ranges[0].inserted.startsWith('![['))
+			return tr;
+
 
 		let operation_type: OperationType;
 		if (changed_ranges[0].offset.added && changed_ranges[0].offset.removed)

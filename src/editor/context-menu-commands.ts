@@ -15,7 +15,6 @@ export const change_suggestions: EventRef =
 						const changes = selections.map(selection => acceptAllSuggestions(editor.cm.state, selection.from, selection.to));
 						editor.cm.dispatch(editor.cm.state.update({
 							changes,
-							userEvent: 'ignore'
 						}));
 					});
 			});
@@ -29,7 +28,6 @@ export const change_suggestions: EventRef =
 						const changes = selections.map(selection => rejectAllSuggestions(editor.cm.state, selection.from, selection.to));
 						editor.cm.dispatch(editor.cm.state.update({
 							changes,
-							userEvent: 'ignore'
 						}));
 					});
 			});

@@ -9,6 +9,7 @@ import { CriticMarkupNodes, SubstitutionNode } from '../src/editor/criticmarkup-
 import { overridden_keymap } from '../src/editor/suggestion-mode/keybinds';
 import { App } from 'obsidian';
 import { DEFAULT_SETTINGS } from '../src/constants';
+import { applyToText } from '../src/util';
 
 const test_cases = [
 	'uv. wx yz',
@@ -142,18 +143,12 @@ for (let test_case of test_cases) {
 		const nodes = nodesInSelection(tree);
 
 		// TODO: Put in criticmarkup-nodes.ts
-		let accepted_string = '';
-		let prev_idx = 0;
-		for (const node of nodes.nodes) {
-			accepted_string += test_case.substring(prev_idx, node.from);
-			accepted_string += node.unwrap(test_case);
-			prev_idx = node.to;
-		}
-		accepted_string += test_case.substring(prev_idx);
+
+		const unwrapped_string = applyToText(test_case, (node, text) => node.unwrap(test_case), nodes.nodes);
 
 		const actual_view = new EditorView({
 			state: EditorState.create({
-				doc: accepted_string,
+				doc: unwrapped_string,
 				extensions: [treeParser, suggestionMode(DEFAULT_SETTINGS)],
 			}),
 		});

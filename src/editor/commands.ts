@@ -103,7 +103,6 @@ export function changeType(editor: Editor, view: MarkdownView, type: NodeType) {
 	editor.cm.dispatch(editor.cm.state.update({
 		changes: editor_changes,
 		selection: EditorSelection.create(selections),
-		userEvent: 'ignore'
 	}));
 }
 
@@ -167,7 +166,6 @@ export const commands: ECommand[] = [...suggestion_commands,
 			// TODO: Add warning is #nodes > 100 ('Are you sure you want to accept all suggestions?')
 			editor.cm.dispatch(editor.cm.state.update({
 				changes: acceptAllSuggestions(editor.cm.state),
-				userEvent: 'ignore'
 			}));
 		},
 	}, {
@@ -178,7 +176,6 @@ export const commands: ECommand[] = [...suggestion_commands,
 		regular_callback: (editor: Editor, _) => {
 			editor.cm.dispatch(editor.cm.state.update({
 				changes: rejectAllSuggestions(editor.cm.state),
-				userEvent: 'ignore'
 			}));
 		},
 	},
@@ -195,7 +192,6 @@ export const commands: ECommand[] = [...suggestion_commands,
 			const changes = selections.map(selection => acceptAllSuggestions(editor.cm.state, selection.from, selection.to));
 			editor.cm.dispatch(editor.cm.state.update({
 				changes,
-				userEvent: 'ignore'
 			}));
 		},
 	},
@@ -212,7 +208,6 @@ export const commands: ECommand[] = [...suggestion_commands,
 			const changes = selections.map(selection => rejectAllSuggestions(editor.cm.state, selection.from, selection.to));
 			editor.cm.dispatch(editor.cm.state.update({
 				changes,
-				userEvent: 'ignore'
 			}));
 		},
 	}
