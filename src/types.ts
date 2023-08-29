@@ -4,6 +4,12 @@ import type { Command } from 'obsidian';
 
 export type StringNodeType = 'Addition' | 'Deletion' | 'Substitution' | 'Highlight' | 'Comment';
 
+export enum PreviewMode {
+	ALL = 0,
+	ACCEPT = 1,
+	REJECT = 2,
+}
+
 export enum NodeType {
 	ADDITION,
 	DELETION,
@@ -20,7 +26,7 @@ export interface PluginSettings {
 	 * - 1: Visualise 'accept' action (only show regular text and Addition Nodes)
 	 * - 2: Visualise 'reject' action (only show regular text and Deletion Nodes)
 	 */
-	preview_mode: number;
+	preview_mode: PreviewMode;
 	/**
 	 * Add a toggle button for quickly toggling between preview modes
 	 */
@@ -73,8 +79,6 @@ export interface PluginSettings {
 	 * Enable live preview rendering
 	 */
 	live_preview: boolean;
-	/** Enable alternative live preview renderer */
-	alternative_live_preview: boolean;
 
 	/**
 	 * Enable corrected cursor movement near/within nodes
