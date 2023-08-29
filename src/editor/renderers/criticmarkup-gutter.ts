@@ -102,6 +102,7 @@ export const criticmarkupGutterExtension = (settings: PluginSettings) => [
 						.onClick(() => {
 							view.dispatch({
 								changes: acceptAllSuggestions(view.state, line.from, line.to),
+								userEvent: 'ignore'
 							});
 						});
 
@@ -112,6 +113,7 @@ export const criticmarkupGutterExtension = (settings: PluginSettings) => [
 						.onClick(() => {
 							view.dispatch({
 								changes: rejectAllSuggestions(view.state, line.from, line.to),
+								userEvent: 'ignore'
 							});
 						});
 

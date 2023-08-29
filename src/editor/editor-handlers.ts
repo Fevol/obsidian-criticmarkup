@@ -21,6 +21,7 @@ export const bracketMatcher = Prec.high(EditorView.inputHandler.of((view, from, 
 		view.dispatch({
 			changes,
 			selection: EditorSelection.cursor(to + 1),
+			userEvent: 'ignore'
 		});
 		return true;
 	}

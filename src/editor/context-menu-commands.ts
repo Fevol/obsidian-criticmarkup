@@ -13,7 +13,10 @@ export const change_suggestions: EventRef =
 					.onClick(() => {
 						const selections = editor.cm.state.selection.ranges;
 						const changes = selections.map(selection => acceptAllSuggestions(editor.cm.state, selection.from, selection.to));
-						editor.cm.dispatch(editor.cm.state.update({ changes }));
+						editor.cm.dispatch(editor.cm.state.update({
+							changes,
+							userEvent: 'ignore'
+						}));
 					});
 			});
 
@@ -24,7 +27,10 @@ export const change_suggestions: EventRef =
 					.onClick(() => {
 						const selections = editor.cm.state.selection.ranges;
 						const changes = selections.map(selection => rejectAllSuggestions(editor.cm.state, selection.from, selection.to));
-						editor.cm.dispatch(editor.cm.state.update({ changes }));
+						editor.cm.dispatch(editor.cm.state.update({
+							changes,
+							userEvent: 'ignore'
+						}));
 					});
 			});
 		}
