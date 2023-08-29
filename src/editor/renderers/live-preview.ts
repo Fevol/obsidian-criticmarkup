@@ -127,7 +127,7 @@ class CommentIconWidget extends WidgetType {
 				e.preventDefault();
 				gutterElements.between(this.node.from, this.node.to, (from, to, widget) => {
 					if (this.node.equals(widget.node)) {
-						widget.focus();
+						widget.comment!.dispatchEvent(new MouseEvent('dblclick'));
 						return false;
 					}
 				});
