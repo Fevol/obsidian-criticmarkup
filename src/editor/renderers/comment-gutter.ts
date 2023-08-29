@@ -51,6 +51,12 @@ export class CommentMarker extends GutterMarker {
 			}
 		}
 
+		this.comment.onkeyup = (e) => {
+			if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+				this.comment!.blur();
+			}
+		}
+
 		this.comment.ondblclick = (e) => {
 			e.stopPropagation();
 

@@ -2,8 +2,7 @@
 	import type CommentatorPlugin from '../../main';
 
 	import { onDestroy, onMount } from 'svelte';
-	import { MarkdownRenderer, Icon, View, StateButton, NavHeader, Button, Input, clickOutside } from '../components';
-	import VirtualList from 'svelte-virtual-list-ce';
+	import { MarkdownRenderer, Icon, View, StateButton, NavHeader, Button, Input, VirtualList, clickOutside } from '../components';
 
 	import { type TFile, Menu, debounce, prepareSimpleSearch, Notice } from 'obsidian';
 
@@ -35,6 +34,12 @@
 		EMPTY,
 	}
 
+	type NodeEntry = {
+		path: string,
+		node: CriticMarkupNode,
+		text: string[],
+	}
+
 	export let node_type_filter: NodeTypeFilter = NodeTypeFilter.ALL;
 	export let location_filter: LocationFilter = LocationFilter.VAULT;
 	export let content_filter: ContentFilter = ContentFilter.ALL;
@@ -45,8 +50,9 @@
 	});
 
 	let all_nodes: [string, { data: CriticMarkupNode[], time: number }][] | null = null;
-	let flattened_nodes: {path: string, node: CriticMarkupNode, text: string[]}[] = [];
-	let selected_nodes: {path: string, node: CriticMarkupNode}[] = [];
+	let flattened_nodes: NodeEntry[] = [];
+	let selected_nodes: number[] = [];
+	let anchor_selected_node: number | null = null;
 
 	const node_filters = [
 		{ icon: 'asterisk', tooltip: 'All markup' },
@@ -71,8 +77,10 @@
 
 	const debouncedUpdate = debounce(filterNodes, 500);
 
-	const undo_history: Record<string, string>[] = [];
+	const undo_history: {file_history: Record<string, string>, selected_nodes: number[]}[] = [];
 
+	// TODO: File cache should be a TEMPORARY solution
+	const file_cache: Record<string, string> = {};
 
 	onMount(async () => {
 		plugin.database.on("database-update", updateNodes)
@@ -100,10 +108,9 @@
 	}
 
 
-	$: node_type_filter, location_filter, content_filter, selected_nodes = [], filterNodes();
+	$: node_type_filter, location_filter, content_filter, selected_nodes = [], anchor_selected_node = null, filterNodes();
 
-	// TODO: File cache should be a TEMPORARY solution
-	const file_cache: Record<string, string> = {};
+
 
 	async function filterNodes(): Promise<void> {
 		if (!all_nodes) return;
@@ -145,33 +152,39 @@
 		return node.unwrap_parts(file_cache[path]);
 	}
 
-	async function editSelectedNodes(accept: boolean, entry?: {path: string, node: CriticMarkupNode, text: string[]}) {
-        const grouped_nodes = selected_nodes.reduce((acc: Record<string, CriticMarkupNode[]>, {path, node}) => {
+	async function editSelectedNodes(accept: boolean, entry?: number) {
+		if (entry && !selected_nodes.length) {
+			selected_nodes = [entry];
+			anchor_selected_node = entry;
+		}
+
+		const current_nodes = selected_nodes.map(value => flattened_nodes[value]);
+
+        const grouped_nodes = current_nodes.reduce((acc: Record<string, CriticMarkupNode[]>, {path, node}) => {
 			if (!acc[path]) acc[path] = [];
 			acc[path].push(node);
 			return acc;
 		}, {});
 
-		if (entry && !grouped_nodes[entry.path])
-			grouped_nodes[entry.path] = [entry.node];
-
         const editFunction = accept ? acceptSuggestionsInFile : rejectSuggestionsInFile;
 
-		const undo_history_entry: Record<string, string> = {};
+		const file_history: Record<string, string> = {};
 		for (const [key, value] of Object.entries(grouped_nodes)) {
 			const file = plugin.app.vault.getAbstractFileByPath(key);
 			if (!file) continue;
-			undo_history_entry[key] = await plugin.app.vault.cachedRead(<TFile>file);
+			file_history[key] = await plugin.app.vault.cachedRead(<TFile>file);
 			await editFunction(<TFile>file, value);
 		}
-		undo_history.push(undo_history_entry);
+		undo_history.push({file_history, selected_nodes});
+		selected_nodes = [];
 	}
 
 	async function handleKey(e: KeyboardEvent) {
 		if (e.key === 'z' && e.ctrlKey && !e.shiftKey && !e.altKey && !e.metaKey) {
 			if (undo_history.length) {
-				const undo_history_entry = undo_history.pop();
-				for (const [key, value] of Object.entries(undo_history_entry!)) {
+				const undo_history_entry = undo_history.pop()!;
+				selected_nodes = undo_history_entry.selected_nodes;
+				for (const [key, value] of Object.entries(undo_history_entry.file_history)) {
 					const file = plugin.app.vault.getAbstractFileByPath(key);
 					if (!file) continue;
 					await plugin.app.vault.modify(<TFile>file, value);
@@ -180,15 +193,18 @@
 				new Notice("There is nothing to undo", 4000)
 			}
 		} else if (e.key === 'a' && e.ctrlKey && !e.shiftKey && !e.altKey && !e.metaKey) {
-            selected_nodes = [...flattened_nodes];
+            selected_nodes = Array.from(flattened_nodes.keys());
+			anchor_selected_node = 0;
         } else if (e.key === 'Escape') {
 			selected_nodes = [];
+			anchor_selected_node = null;
         }
 	}
 
 
     async function onClickOutside() {
         selected_nodes = [];
+		anchor_selected_node = null;
 	}
 </script>
 
@@ -231,7 +247,8 @@
 					states={node_filters}
 				/>
 				<Button class='clickable-icon nav-action-button' icon='lasso' tooltip='Select all markup' onClick={() => {
-					selected_nodes = [...flattened_nodes];
+					selected_nodes = Array.from(flattened_nodes.keys());
+					anchor_selected_node = 0;
 				}} />
 				<StateButton
 					onContextMenu={(e) => {
@@ -279,15 +296,25 @@
 
 	<svelte:fragment slot='view'>
 		<div class='criticmarkup-view-container' tabindex='-1' use:clickOutside={".menu"} on:click_outside={onClickOutside} on:keydown={handleKey}>
-			<VirtualList items={flattened_nodes} let:item>
+			<VirtualList items={flattened_nodes} let:item let:index>
 				<div class='criticmarkup-view-node'
-					 class:criticmarkup-view-node-selected={selected_nodes.some(({path, node}) => path === item.path && node === item.node)}
+					 class:criticmarkup-view-node-selected={selected_nodes.some(value => value === index)}
 					 on:click={async (e) => {
 							if (e.shiftKey) {
+								if (anchor_selected_node) {
+									const start = Math.min(anchor_selected_node, index);
+									const end = Math.max(anchor_selected_node, index);
+									selected_nodes = Array.from({length: end - start + 1}, (_, i) => i + start);
+								} else {
+									selected_nodes = [index];
+									anchor_selected_node = index;
+								}
+							} else if (e.ctrlKey || e.metaKey) {
+								anchor_selected_node = index;
 								const original_length = selected_nodes.length;
-								selected_nodes = selected_nodes.filter(({path, node}) => path !== item.path || node !== item.node);
+								selected_nodes = selected_nodes.filter((value) => value !== index);
 								if (selected_nodes.length === original_length)
-									selected_nodes.push({path: item.path, node: item.node});
+									selected_nodes = [...selected_nodes, index];
 							} else {
 								selected_nodes = [];
 								const leaves = plugin.app.workspace.getLeavesOfType("markdown");
@@ -309,17 +336,18 @@
 							menu.addItem((m_item) => {
 								m_item.setTitle("Accept" + (selected_nodes.length ? " selected changes" : " changes"));
 								m_item.setIcon("check");
-								m_item.onClick(async () => editSelectedNodes(true, item));
+								m_item.onClick(async () => editSelectedNodes(true, index));
 							});
 							menu.addItem((m_item) => {
 								m_item.setTitle("Reject" + (selected_nodes.length ? " selected changes" : " changes"));
 								m_item.setIcon("cross");
-								m_item.onClick(async () => editSelectedNodes(false, item));
+								m_item.onClick(async () => editSelectedNodes(false, index));
 							});
 
 							menu.showAtMouseEvent(e);
 						}}
 				>
+					<!-- TODO: Only show path if folder/vault-wide filter is active -->
 					<div class='criticmarkup-view-node-top'>
 						<Icon size={24} icon={NODE_ICON_MAPPER[item.node.type]} />
 						<span class='criticmarkup-view-node-title'>{item.path}</span>

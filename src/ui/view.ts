@@ -31,7 +31,7 @@ export class CriticMarkupView extends ItemView {
 	}
 
 	getDisplayText(): string {
-		return 'Vault Comments';
+		return 'Vault suggestions and comments';
 	}
 
 	getIcon(): string {

@@ -117,6 +117,7 @@ export function acceptAllSuggestions(state: EditorState, from?: number, to?: num
 }
 
 export async function acceptSuggestionsInFile(file: TFile, nodes: CriticMarkupNode[]) {
+	nodes.sort((a, b) => a.from - b.from);
 	const text = await app.vault.cachedRead(file);
 
 	const output = applyToText(text, (node, text) => node.accept(text), nodes);
@@ -135,6 +136,7 @@ export function rejectAllSuggestions(state: EditorState, from?: number, to?: num
 }
 
 export async function rejectSuggestionsInFile(file: TFile, nodes: CriticMarkupNode[]) {
+	nodes.sort((a, b) => a.from - b.from);
 	const text = await app.vault.cachedRead(file);
 
 	const output = applyToText(text, (node, text) => node.reject(text), nodes);
