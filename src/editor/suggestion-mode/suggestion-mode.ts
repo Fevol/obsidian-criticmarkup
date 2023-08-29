@@ -116,9 +116,9 @@ function applySuggestion(tr: Transaction, settings: PluginSettings): Transaction
 		// ISSUE: Pasting an image yields no userEvent that could be used to determine the type, so the
 		//      operation type needs to be determined via the changed ranges. However, a change of the state
 		//      *will* result in the new transaction being filtered through the suggestion mode filter again (recursion)
-		// TODO: Currently, a only transactions with valid userEvents editevents considered, *or*
-		//       transactions that are potentially image pastes (i.e. the changed range starts with '![[')
-		if (!is_recognized_edit_operation && !changed_ranges[0].inserted.startsWith('![['))
+		// TODO: Currently, a only transactions with valid userEvents editevents considered
+		//       Somehow, someway, image pastes need to get an userevent attached (monkey-around insertFiles?)
+		if (!is_recognized_edit_operation)
 			return tr;
 
 
