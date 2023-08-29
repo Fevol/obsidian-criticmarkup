@@ -6,11 +6,10 @@ import type { ChangeSpec, SelectionRange } from '@codemirror/state';
 import { EditorSelection, EditorState, Text } from '@codemirror/state';
 import type { Tree } from '@lezer/common';
 
-import type { CommandI } from '../../types';
-import { NodeType, type OperationReturn } from '../types';
+import { type ECommand, NodeType, type OperationReturn } from '../types';
 
 import { applyToText, CM_All_Brackets, CM_NodeTypes } from '../util';
-import { nodesInSelection, selectionToEditorRange } from './editor-util';
+import { nodesInSelection, selectionContainsNodes, selectionToEditorRange } from './editor-util';
 import { type CriticMarkupNode, CriticMarkupNodes } from './criticmarkup-nodes';
 import { text_delete, text_replace } from './edit-logic';
 
@@ -144,24 +143,24 @@ export async function rejectSuggestionsInFile(file: TFile, nodes: CriticMarkupNo
 }
 
 
-const suggestion_commands = Object.entries(CM_NodeTypes).map(([text, type]) => ({
+const suggestion_commands: ECommand[] = Object.entries(CM_NodeTypes).map(([text, type]) => ({
 	id: `commentator-toggle-${text.toLowerCase()}`,
 	name: `Mark as ${text}`,
 	icon: text.toLowerCase(),
 	editor_context: true,
-	callback: async (editor: Editor, view: MarkdownView) => {
+	regular_callback: (editor: Editor, view: MarkdownView) => {
 		changeType(editor, view, type);
 	},
 }));
 
 
-export const commands: Array<CommandI> = [...suggestion_commands,
+export const commands: ECommand[] = [...suggestion_commands,
 	{
 		id: 'commentator-accept-all-suggestions',
 		name: 'Accept all suggestions',
 		icon: 'check-check',
 		editor_context: true,
-		callback: async (editor: Editor, view: MarkdownView) => {
+		regular_callback: (editor: Editor, _) => {
 			// TODO: Add warning is #nodes > 100 ('Are you sure you want to accept all suggestions?')
 			editor.cm.dispatch(editor.cm.state.update({
 				changes: acceptAllSuggestions(editor.cm.state),
@@ -172,7 +171,7 @@ export const commands: Array<CommandI> = [...suggestion_commands,
 		name: 'Reject all suggestions',
 		icon: 'cross',
 		editor_context: true,
-		callback: async (editor: Editor, view: MarkdownView) => {
+		regular_callback: (editor: Editor, _) => {
 			editor.cm.dispatch(editor.cm.state.update({
 				changes: rejectAllSuggestions(editor.cm.state),
 			}));
@@ -183,7 +182,10 @@ export const commands: Array<CommandI> = [...suggestion_commands,
 		name: 'Accept suggestions in selection',
 		icon: 'check',
 		editor_context: true,
-		callback: async (editor: Editor, _) => {
+		check_callback: (checking: boolean, editor: Editor, _) => {
+			const contains_node = selectionContainsNodes(editor.cm.state);
+			if (checking || !contains_node)
+				return contains_node;
 			const selections = editor.cm.state.selection.ranges;
 			const changes = selections.map(selection => acceptAllSuggestions(editor.cm.state, selection.from, selection.to));
 			editor.cm.dispatch(editor.cm.state.update({ changes }));
@@ -194,7 +196,10 @@ export const commands: Array<CommandI> = [...suggestion_commands,
 		name: 'Reject suggestions in selection',
 		icon: 'cross',
 		editor_context: true,
-		callback: async (editor: Editor, _) => {
+		check_callback: (checking: boolean, editor: Editor, _) => {
+			const contains_node = selectionContainsNodes(editor.cm.state);
+			if (checking || !contains_node)
+				return contains_node;
 			const selections = editor.cm.state.selection.ranges;
 			const changes = selections.map(selection => rejectAllSuggestions(editor.cm.state, selection.from, selection.to));
 			editor.cm.dispatch(editor.cm.state.update({ changes }));

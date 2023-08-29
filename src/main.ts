@@ -165,8 +165,8 @@ export default class CommentatorPlugin extends Plugin {
 			id: 'commentator-suggest-mode',
 			name: 'Toggle suggestion mode',
 			icon: 'comment',
-			plugin_context: true,
-			callback: async () => {
+			editor_context: true,
+			regular_callback: async () => {
 				this.settings.suggest_mode = !this.settings.suggest_mode;
 				await this.saveSettings();
 			},
@@ -176,7 +176,7 @@ export default class CommentatorPlugin extends Plugin {
 			id: 'commentator-toggle-vim',
 			name: '(DEBUG) Toggle Vim mode',
 			icon: 'comment',
-			callback: async () => {
+			regular_callback: async () => {
 				this.app.vault.setConfig("vimMode", !this.app.vault.getConfig('vimMode'));
 			},
 		});
@@ -185,24 +185,36 @@ export default class CommentatorPlugin extends Plugin {
 			id: 'commentator-view',
 			name: 'Open CriticMarkup view',
 			icon: 'comment',
-			callback: async () => {
+			regular_callback: async () => {
 				await this.activateView();
 			}
 		});
 
 		for (const command of commands) {
 			if (Platform.isMobile || command.editor_context) {
-				command.editorCallback = command.callback;
-				delete command.callback;
+				if (command.regular_callback) {
+					command.editorCallback = command.regular_callback;
+					delete command.regular_callback;
+				} else {
+					command.editorCheckCallback = command.check_callback;
+					delete command.check_callback;
+				}
+			} else {
+				if (command.regular_callback) {
+					command.callback = command.regular_callback;
+					delete command.regular_callback;
+				} else {
+					command.checkCallback = command.check_callback;
+					delete command.check_callback;
+				}
 			}
-
 			this.addCommand(command);
 		}
 
 		this.app.workspace.onLayoutReady(async () => {
 			// FIXME: Probably an unnecessary hack, but toggle-source mode does not have an event to hook into,
 			//   so in order to also update the live preview of this plugin, we need to monkey around the toggle-source command.
-			this.remove_monkeys.push(around(app.commands.editorCommands['editor:toggle-source'], {
+			this.remove_monkeys.push(around(this.app.commands.editorCommands['editor:toggle-source'], {
 				checkCallback: (oldMethod) => {
 					return (...args) => {
 						const result = oldMethod && oldMethod.apply(app.commands.editorCommands['editor:toggle-source'], args);

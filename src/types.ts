@@ -1,4 +1,5 @@
 import type { SelectionRange } from '@codemirror/state';
+import type { Command } from 'obsidian';
 
 
 export type StringNodeType = 'Addition' | 'Deletion' | 'Substitution' | 'Highlight' | 'Comment';
@@ -110,4 +111,25 @@ export interface OperationReturn {
 	changes: EditorChange[];
 	selection: SelectionRange;
 	offset: number;
+}
+
+/**
+ * Simple interface to automatically convert regular callback commands to editor callbacks on mobile
+ */
+export interface ECommand extends Command {
+	/**
+	 * Whether the callback will be set to editorCallback or regular callback
+	 * @remark Will be overridden to always be true if mobile
+	 */
+	editor_context?: boolean;
+
+	/**
+	 * Command with regular callback, if mobile, command will be set to editorCallback by default to add the command to the mobile toolbar
+	 */
+	regular_callback?: (...args: any[]) => any;
+
+	/**
+	 * Command with checking callback, if mobile, command will be set to editorCheckCallback by default to add the command to the mobile toolbar
+	 */
+	check_callback?: (checking: boolean, ...args: any[]) => any;
 }

@@ -20,9 +20,9 @@ export function selectionRangeOverlap(selection: EditorSelection, rangeFrom: num
 export function selectionContainsNodes(state: EditorState) {
     const tree = state.field(treeParser).tree;
     const nodes = nodesInSelection(tree);
-    return nodes.nodes.length && state.selection.ranges.some(range =>
+    return nodes.nodes.length ? state.selection.ranges.some(range =>
         nodes.range_contains_node(range.from, range.to)
-    );
+    ) : false;
 }
 
 export function nodesInSelection(tree: Tree, start?: number, end?: number) {
