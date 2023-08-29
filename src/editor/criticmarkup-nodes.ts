@@ -311,7 +311,7 @@ export class SubstitutionNode extends CriticMarkupNode {
 
 
 	accept(str: string, offset = 0) {
-		return this.unwrap(str, offset).slice(0, this.middle - this.from - 3);
+		return this.unwrap_parts(str, offset)[1];
 	}
 
 	touches_separator(cursor: number, left_loose = false, right_loose = false) {
@@ -355,7 +355,7 @@ export class SubstitutionNode extends CriticMarkupNode {
 	}
 
 	reject(str: string, offset = 0) {
-		return this.unwrap(str, offset).slice(this.middle - this.from - 3);
+		return this.unwrap_parts(str, offset)[0];
 	}
 
 	postprocess(str: string, unwrap: boolean = true, livepreview_mode: number = 0, tag: string = "div", left: boolean | null = null) {

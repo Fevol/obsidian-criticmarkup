@@ -152,12 +152,11 @@
 		return node.unwrap_parts(file_cache[path]);
 	}
 
-	async function editSelectedNodes(accept: boolean, entry?: number) {
-		if (entry && !selected_nodes.length) {
+	async function editSelectedNodes(accept: boolean, entry: number | null) {
+		if (entry != null && !selected_nodes.length) {
 			selected_nodes = [entry];
 			anchor_selected_node = entry;
 		}
-
 		const current_nodes = selected_nodes.map(value => flattened_nodes[value]);
 
         const grouped_nodes = current_nodes.reduce((acc: Record<string, CriticMarkupNode[]>, {path, node}) => {
