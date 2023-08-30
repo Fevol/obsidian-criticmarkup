@@ -211,22 +211,6 @@ export default class CommentatorPlugin extends Plugin {
 			this.addCommand(command);
 		}
 
-		this.app.workspace.onLayoutReady(async () => {
-			// FIXME: Probably an unnecessary hack, but toggle-source mode does not have an event to hook into,
-			//   so in order to also update the live preview of this plugin, we need to monkey around the toggle-source command.
-			this.remove_monkeys.push(around(this.app.commands.editorCommands['editor:toggle-source'], {
-				checkCallback: (oldMethod) => {
-					return (...args) => {
-						const result = oldMethod && oldMethod.apply(app.commands.editorCommands['editor:toggle-source'], args);
-						if (result && !args[0])
-							this.loadEditorExtensions();
-						return result;
-					};
-				},
-			}));
-		});
-
-
 		this.remove_monkeys.push(around(this.app.plugins, {
 			uninstallPlugin: (oldMethod) => {
 				return async (id: string) => {
