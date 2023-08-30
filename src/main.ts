@@ -231,7 +231,7 @@ export default class CommentatorPlugin extends Plugin {
 			uninstallPlugin: (oldMethod) => {
 				return async (id: string) => {
 					oldMethod && await oldMethod.apply(this.app.plugins, [id]);
-					if (id === 'criticmarkup') {
+					if (id === 'commentator') {
 						await this.database.dropDatabase();
 					}
 				};
