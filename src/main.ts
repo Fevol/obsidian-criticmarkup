@@ -7,7 +7,6 @@ import {
 } from 'obsidian';
 
 
-import { Tree } from '@lezer/common';
 import { EditorView } from '@codemirror/view';
 import type { Extension } from '@codemirror/state';
 
@@ -16,6 +15,7 @@ import { change_suggestions } from './editor/context-menu-commands';
 
 import { treeParser } from './editor/tree-parser';
 import { nodesInSelection } from './editor/editor-util';
+import { text_copy } from './editor/edit-logic';
 
 import { inlineCommentRenderer, livePreviewRenderer } from './editor/renderers/live-preview';
 import { postProcess, postProcessorRerender, postProcessorUpdate } from './editor/renderers/post-processor';
@@ -103,17 +103,7 @@ export default class CommentatorPlugin extends Plugin {
 			this.editorExtensions.push(nodeCorrecter);
 
 		this.editorExtensions.push(EditorView.domEventHandlers({
-			copy: (event, view) => {
-				if (event.clipboardData && this.settings.clipboard_remove_syntax) {
-					const selection = view.state.selection.main;
-					const tree: Tree = view.state.field(treeParser).tree;
-					const nodes = nodesInSelection(tree, selection.from, selection.to);
-
-					const removed_syntax = nodes.unwrap_in_range(view.state.doc, selection.from, selection.to).output;
-					event.clipboardData.setData('text/plain', removed_syntax);
-					event.preventDefault();
-				}
-			},
+			copy: text_copy.bind(null, this.settings),
 		}));
 
 	}
