@@ -1,5 +1,5 @@
 import type { EventRef } from 'obsidian';
-import { acceptAllSuggestions, rejectAllSuggestions } from './commands';
+import { acceptSuggestions, rejectSuggestions } from './commands';
 import { selectionContainsNodes } from './editor-util';
 
 
@@ -12,7 +12,7 @@ export const change_suggestions: EventRef =
 					.setSection('criticmarkup')
 					.onClick(() => {
 						const selections = editor.cm.state.selection.ranges;
-						const changes = selections.map(selection => acceptAllSuggestions(editor.cm.state, selection.from, selection.to));
+						const changes = selections.map(selection => acceptSuggestions(editor.cm.state, selection.from, selection.to));
 						editor.cm.dispatch(editor.cm.state.update({
 							changes,
 						}));
@@ -25,7 +25,7 @@ export const change_suggestions: EventRef =
 					.setSection('criticmarkup')
 					.onClick(() => {
 						const selections = editor.cm.state.selection.ranges;
-						const changes = selections.map(selection => rejectAllSuggestions(editor.cm.state, selection.from, selection.to));
+						const changes = selections.map(selection => rejectSuggestions(editor.cm.state, selection.from, selection.to));
 						editor.cm.dispatch(editor.cm.state.update({
 							changes,
 						}));

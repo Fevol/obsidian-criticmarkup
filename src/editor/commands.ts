@@ -106,8 +106,10 @@ export function changeType(editor: Editor, view: MarkdownView, type: NodeType) {
 }
 
 
-export function acceptAllSuggestions(state: EditorState, from?: number, to?: number): ChangeSpec[] {
-	const nodes = state.field(treeParser).nodes;
+export function acceptSuggestions(state: EditorState, from?: number, to?: number): ChangeSpec[] {
+	let nodes = state.field(treeParser).nodes
+	if (from || to)
+		nodes = nodes.filter_range(from ?? 0, to ?? Infinity, true);
 	const text = state.doc.toString();
 
 	return nodes.nodes
@@ -125,8 +127,10 @@ export async function acceptSuggestionsInFile(file: TFile, nodes: CriticMarkupNo
 }
 
 
-export function rejectAllSuggestions(state: EditorState, from?: number, to?: number): ChangeSpec[] {
-	const nodes = state.field(treeParser).nodes;
+export function rejectSuggestions(state: EditorState, from?: number, to?: number): ChangeSpec[] {
+	let nodes = state.field(treeParser).nodes;
+	if (from || to)
+		nodes = nodes.filter_range(from ?? 0, to ?? Infinity, true);
 	const text = state.doc.toString();
 
 	return nodes.nodes
@@ -164,7 +168,7 @@ export const commands: ECommand[] = [...suggestion_commands,
 		regular_callback: (editor: Editor, _) => {
 			// TODO: Add warning is #nodes > 100 ('Are you sure you want to accept all suggestions?')
 			editor.cm.dispatch(editor.cm.state.update({
-				changes: acceptAllSuggestions(editor.cm.state),
+				changes: acceptSuggestions(editor.cm.state),
 			}));
 		},
 	}, {
@@ -174,7 +178,7 @@ export const commands: ECommand[] = [...suggestion_commands,
 		editor_context: true,
 		regular_callback: (editor: Editor, _) => {
 			editor.cm.dispatch(editor.cm.state.update({
-				changes: rejectAllSuggestions(editor.cm.state),
+				changes: rejectSuggestions(editor.cm.state),
 			}));
 		},
 	},
@@ -188,7 +192,7 @@ export const commands: ECommand[] = [...suggestion_commands,
 			if (checking || !contains_node)
 				return contains_node;
 			const selections = editor.cm.state.selection.ranges;
-			const changes = selections.map(selection => acceptAllSuggestions(editor.cm.state, selection.from, selection.to));
+			const changes = selections.map(selection => acceptSuggestions(editor.cm.state, selection.from, selection.to));
 			editor.cm.dispatch(editor.cm.state.update({
 				changes,
 			}));
@@ -204,7 +208,7 @@ export const commands: ECommand[] = [...suggestion_commands,
 			if (checking || !contains_node)
 				return contains_node;
 			const selections = editor.cm.state.selection.ranges;
-			const changes = selections.map(selection => rejectAllSuggestions(editor.cm.state, selection.from, selection.to));
+			const changes = selections.map(selection => rejectSuggestions(editor.cm.state, selection.from, selection.to));
 			editor.cm.dispatch(editor.cm.state.update({
 				changes,
 			}));
