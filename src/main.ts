@@ -91,7 +91,7 @@ export default class CommentatorPlugin extends Plugin {
 		// TODO: Rerender gutter on Ctrl+Scroll
 		// TODO: Check performance costs of statefield vs viewport gutter
 		if (this.settings.editor_gutter)
-			this.editorExtensions.push(criticmarkupGutterExtension(this.settings));
+			this.editorExtensions.push(criticmarkupGutterExtension(this));
 
 		// Performance: ~1ms in stress-test
 		if (this.settings.suggest_mode)

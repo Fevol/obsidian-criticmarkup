@@ -1,16 +1,13 @@
 import { Menu } from 'obsidian';
 
-import { RangeSet, RangeSetBuilder, StateField } from '@codemirror/state';
-import { gutter, GutterMarker } from '@codemirror/view';
-import { NodeType, type PluginSettings } from '../../types';
+import { RangeSet, RangeSetBuilder } from '@codemirror/state';
+import { EditorView, gutter, GutterMarker, type PluginValue, ViewPlugin, ViewUpdate } from '@codemirror/view';
 
+import type CommentatorPlugin from '../../main';
 import { treeParser } from '../tree-parser';
+import { NodeType } from '../../types';
 
-import { acceptAllSuggestions, rejectAllSuggestions } from '../commands';
-
-import { nodesInSelection } from '../editor-util';
-import { CriticMarkupNodes } from '../criticmarkup-nodes';
-
+import { acceptSuggestions, rejectSuggestions } from '../commands';
 
 
 export class CriticMarkupMarker extends GutterMarker {
@@ -35,48 +32,43 @@ export class CriticMarkupMarker extends GutterMarker {
 	}
 }
 
-const criticmarkupGutterWidgets = StateField.define<RangeSet<CriticMarkupMarker>>({
-	create() {
-		return RangeSet.empty;
-	},
 
-	update(oldSet, tr) {
-		if (!tr.docChanged && oldSet.size) return oldSet;
+export const criticmarkupGutterMarkers = ViewPlugin.fromClass(class CriticmarkupGutterMarkers implements PluginValue {
+	markers: RangeSet<CriticMarkupMarker> = RangeSet.empty;
 
-		const tree = tr.state.field(treeParser).tree;
-
+	constructMarkers(view: EditorView) {
+		const nodes = view.state.field(treeParser).nodes;
 		const builder = new RangeSetBuilder<CriticMarkupMarker>();
 
-		const nodes: CriticMarkupNodes = nodesInSelection(tree);
-
-		const markers = nodes.nodes.map((node) => {
-			return {
-				type: node.type,
-				line_start: tr.state.doc.lineAt(node.from).number,
-				line_end: tr.state.doc.lineAt(node.to).number,
-			};
-		});
-
-		const line_numbers = [...Array(tr.state.doc.lines + 1).keys()];
-		line_numbers.shift();
 		const line_markers: Record<number, { isStart: boolean, isEnd: boolean, types: Set<NodeType> }> = {};
-		line_numbers.forEach((line_number: number) => {
-			line_markers[line_number] = { isStart: false, isEnd: false, types: new Set([]) };
-		});
 
-		for (const node of markers) {
-			if (!line_markers[node.line_start].types.size)
-				line_markers[node.line_start].isStart = true;
-			for (let i = node.line_start; i <= node.line_end; i++) {
-				line_markers[i].isEnd = false;
-				line_markers[i].types.add(node.type);
+		for (const node of nodes.nodes) {
+			if (!view.visibleRanges.some(range => node.partially_in_range(range.from, range.to)))
+				continue;
+
+			const node_line_start = view.state.doc.lineAt(node.from).number;
+			const node_line_end = view.state.doc.lineAt(node.to).number;
+			const lines = Array.from({ length: node_line_end - node_line_start + 1 }, (_, i) => node_line_start + i);
+
+			if (line_markers[node_line_start])
+				line_markers[node_line_start].isStart = true;
+			else
+				line_markers[node_line_start] = { isStart: true, isEnd: false, types: new Set()};
+
+			for (const line of lines) {
+				if (line_markers[line]) {
+					line_markers[line].isEnd = false;
+					line_markers[line].types.add(node.type);
+				} else {
+					line_markers[line] = { isStart: false, isEnd: false, types: new Set([node.type]) };
+				}
 			}
-			line_markers[node.line_end].isEnd = true;
+			if (line_markers[node_line_end])
+				line_markers[node_line_end].isEnd = true;
 		}
 
-		for (const line_number of line_numbers) {
-			const marker = line_markers[line_number];
-			const line = tr.state.doc.line(line_number);
+		for (const [line_number, marker] of Object.entries(line_markers)) {
+			const line = view.state.doc.line(Number(line_number));
 			builder.add(line.from, line.to, new CriticMarkupMarker(
 				marker.types,
 				marker.isStart,
@@ -84,15 +76,26 @@ const criticmarkupGutterWidgets = StateField.define<RangeSet<CriticMarkupMarker>
 			));
 		}
 
-		return builder.finish();
-	},
+		this.markers = builder.finish();
+	}
+
+	constructor(view: EditorView) {
+		this.constructMarkers(view);
+	}
+
+	update(update: ViewUpdate) {
+		if (update.docChanged || update.viewportChanged || update.heightChanged)
+			this.constructMarkers(update.view);
+	}
 });
 
-export const criticmarkupGutterExtension = (settings: PluginSettings) => [
-	criticmarkupGutterWidgets,
+
+export const criticmarkupGutterExtension = (plugin: CommentatorPlugin) => [
+	criticmarkupGutterMarkers,
 	gutter({
-		class: 'criticmarkup-gutter' + (!settings.hide_empty_gutter ? ' criticmarkup-gutter-show-empty' : '') + (app.vault.getConfig('cssTheme') === 'Minimal' ? ' is-minimal' : ''),
-		markers: v => v.state.field(criticmarkupGutterWidgets),
+		class: 'criticmarkup-gutter' + (!plugin.settings.hide_empty_gutter ? ' criticmarkup-gutter-show-empty' : '') +
+				(plugin.app.vault.getConfig('cssTheme') === 'Minimal' ? ' is-minimal' : ''),
+		markers: v => v.plugin(criticmarkupGutterMarkers)!.markers,
 		domEventHandlers: {
 			click: (view, line, event: Event) => {
 				const menu = new Menu();
@@ -100,27 +103,20 @@ export const criticmarkupGutterExtension = (settings: PluginSettings) => [
 					item.setTitle('Accept changes')
 						.setIcon('check')
 						.onClick(() => {
-							view.dispatch({
-								changes: acceptAllSuggestions(view.state, line.from, line.to),
-							});
+							view.dispatch({ changes: acceptSuggestions(view.state, line.from, line.to) });
 						});
-
 				});
 				menu.addItem(item => {
 					item.setTitle('Reject changes')
 						.setIcon('cross')
 						.onClick(() => {
-							view.dispatch({
-								changes: rejectAllSuggestions(view.state, line.from, line.to),
-							});
+							view.dispatch({ changes: rejectSuggestions(view.state, line.from, line.to) });
 						});
-
 				});
 
 				menu.showAtMouseEvent(<MouseEvent>event);
-
 				return false;
 			},
 		},
-	}),
+	})
 ];
