@@ -4,7 +4,6 @@ import { type ChangeSpec, EditorSelection, EditorState, Prec } from '@codemirror
 import { treeParser } from './tree-parser';
 
 import { CM_Brackets } from '../util';
-import { nodesInSelection } from './editor-util';
 import { NodeType } from '../types';
 
 export const bracketMatcher = Prec.high(EditorView.inputHandler.of((view, from, to, text) => {
@@ -37,8 +36,7 @@ export const nodeCorrecter = EditorState.transactionFilter.of(tr => {
 
 		if (current_selection.anchor === current_selection.head) {
 			const text = tr.startState.doc.toString();
-			const tree = tr.startState.field(treeParser).tree;
-			const nodes = nodesInSelection(tree)
+			const nodes = tr.startState.field(treeParser).nodes;
 
 			const start_node = nodes.at_cursor(previous_selection.head);
 			const end_node = nodes.at_cursor(current_selection.head);

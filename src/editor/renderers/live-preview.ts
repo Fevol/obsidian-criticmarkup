@@ -1,15 +1,11 @@
 import { treeParser } from '../tree-parser';
 
-import type { Tree } from '@lezer/common';
 import type { Extension, Range, Transaction } from '@codemirror/state';
 import { RangeSetBuilder, StateField } from '@codemirror/state';
 import {
 	Decoration,
 	type DecorationSet,
 	EditorView,
-	type PluginValue,
-	ViewPlugin,
-	ViewUpdate,
 	WidgetType,
 } from '@codemirror/view';
 
@@ -22,7 +18,6 @@ import {
 
 import type { PluginSettings } from '../../types';
 import { NodeType } from '../../types';
-import { nodesInSelection, selectionRangeOverlap } from '../editor-util';
 import { CriticMarkupNode, SubstitutionNode } from '../criticmarkup-nodes';
 import { commentGutterWidgets } from './comment-gutter';
 
@@ -34,7 +29,6 @@ export const inlineCommentRenderer = (settings: PluginSettings) => StateField.de
 
 	update(oldSet: DecorationSet, tr: Transaction) {
 		const is_livepreview = tr.state.field(editorLivePreviewField);
-		// TODO: Find cleaner way to check if preview was toggled
 		const preview_changed = is_livepreview !== tr.startState.field(editorLivePreviewField);
 
 
@@ -47,8 +41,7 @@ export const inlineCommentRenderer = (settings: PluginSettings) => StateField.de
 
 		const builder = new RangeSetBuilder<Decoration>();
 
-		const tree: Tree = tr.state.field(treeParser).tree;
-		const nodes = nodesInSelection(tree);
+		const nodes = tr.state.field(treeParser).nodes;
 
 		if (is_livepreview) {
 			for (const node of nodes.nodes) {
@@ -236,8 +229,7 @@ export const livePreviewRenderer = (settings: PluginSettings) => StateField.defi
 
 	update(oldSet: DecorationSet, tr: Transaction) {
 		const is_livepreview = tr.state.field(editorLivePreviewField);
-		const tree = tr.state.field(treeParser).tree;
-		const nodes = nodesInSelection(tree);
+		const nodes = tr.state.field(treeParser).nodes;
 
 		// const builder = new RangeSetBuilder<Decoration>();
 		const decorations: Range<Decoration>[] = [];

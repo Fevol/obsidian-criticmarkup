@@ -9,7 +9,7 @@ import type { Tree } from '@lezer/common';
 import { type ECommand, NodeType, type OperationReturn } from '../types';
 
 import { applyToText, CM_All_Brackets, CM_NodeTypes } from '../util';
-import { nodesInSelection, selectionContainsNodes, selectionToEditorRange } from './editor-util';
+import { selectionContainsNodes, selectionToEditorRange } from './editor-util';
 import { type CriticMarkupNode, CriticMarkupNodes } from './criticmarkup-nodes';
 import { text_delete, text_replace } from './edit-logic';
 
@@ -63,8 +63,7 @@ export function changeSelectionType(text: Text, selection: SelectionRange, type:
 
 
 export function changeType(editor: Editor, view: MarkdownView, type: NodeType) {
-	const tree: Tree = editor.cm.state.field(treeParser).tree;
-	const nodes = nodesInSelection(tree);
+	const nodes = editor.cm.state.field(treeParser).nodes;
 	const text = editor.cm.state.doc;
 	const editor_changes: ChangeSpec[] = [], selections: SelectionRange[] = [];
 
@@ -108,10 +107,10 @@ export function changeType(editor: Editor, view: MarkdownView, type: NodeType) {
 
 
 export function acceptAllSuggestions(state: EditorState, from?: number, to?: number): ChangeSpec[] {
-	const tree: Tree = state.field(treeParser).tree;
+	const nodes = state.field(treeParser).nodes;
 	const text = state.doc.toString();
 
-	return nodesInSelection(tree, from, to).nodes
+	return nodes.nodes
 		.filter(node => node.type === NodeType.ADDITION || node.type === NodeType.DELETION || node.type === NodeType.SUBSTITUTION)
 		.map(node => ({ from: node.from, to: node.to, insert: node.accept(text) }));
 }
@@ -127,10 +126,10 @@ export async function acceptSuggestionsInFile(file: TFile, nodes: CriticMarkupNo
 
 
 export function rejectAllSuggestions(state: EditorState, from?: number, to?: number): ChangeSpec[] {
-	const tree: Tree = state.field(treeParser).tree;
+	const nodes = state.field(treeParser).nodes;
 	const text = state.doc.toString();
 
-	return nodesInSelection(tree, from, to).nodes
+	return nodes.nodes
 		.filter(node => node.type === NodeType.ADDITION || node.type === NodeType.DELETION || node.type === NodeType.SUBSTITUTION)
 		.map(node => ({ from: node.from, to: node.to, insert: node.reject(text) }));
 }

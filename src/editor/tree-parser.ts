@@ -2,16 +2,16 @@ import { StateField } from '@codemirror/state';
 import type { ChangedRange, Tree } from '@lezer/common';
 import { TreeFragment } from '@lezer/common';
 import { criticmarkupLanguage } from './parser';
+import { nodesInSelection } from './editor-util';
+import { type CriticMarkupNodes } from './criticmarkup-nodes';
 
-export const treeParser: StateField<{tree: Tree, fragments: readonly TreeFragment[]}> = StateField.define({
+export const treeParser: StateField<{tree: Tree, fragments: readonly TreeFragment[], nodes: CriticMarkupNodes}> = StateField.define({
 	create(state) {
 		const tree = criticmarkupLanguage.parser.parse(state.doc.toString());
 		const fragments = TreeFragment.addTree(tree);
+		const nodes = nodesInSelection(tree);
 
-		return {
-			tree: tree,
-			fragments: fragments,
-		}
+		return { tree, nodes, fragments }
 	},
 
 	// @ts-ignore (Not sure how to set fragments as readonly)
@@ -27,10 +27,8 @@ export const treeParser: StateField<{tree: Tree, fragments: readonly TreeFragmen
 
 		const tree = criticmarkupLanguage.parser.parse(tr.state.doc.toString(), fragments);
 		fragments = TreeFragment.addTree(tree, fragments);
+		const nodes = nodesInSelection(tree);
 
-		return {
-			tree: tree,
-			fragments: fragments,
-		}
+		return { tree, nodes, fragments }
 	},
 });

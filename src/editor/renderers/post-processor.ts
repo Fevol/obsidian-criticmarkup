@@ -2,13 +2,13 @@ import type { MarkdownPostProcessorContext, MarkdownView } from 'obsidian';
 import { decodeHTML, DecodingMode } from 'entities';
 
 import { criticmarkupLanguage } from '../parser';
-import { nodesInSelection } from '../editor-util';
 
 import type { PluginSettings } from '../../types';
 import { NodeType } from '../../types';
 import type { CriticMarkupNode } from '../criticmarkup-nodes';
 import { NODE_PROTOTYPE_MAPPER, SubstitutionNode } from '../criticmarkup-nodes';
 import { CM_All_Brackets } from '../../util';
+import { nodesInSelection } from '../editor-util';
 
 
 // FIXME: Issue: MarkdownRenderer.render(...) on custom elements does not provide global context?
