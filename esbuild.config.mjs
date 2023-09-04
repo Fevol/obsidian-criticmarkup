@@ -1,6 +1,7 @@
 import esbuild, { analyzeMetafile } from 'esbuild';
 import esbuildSvelte from "esbuild-svelte";
 import {sassPlugin} from "esbuild-sass-plugin";
+import inlineWorkerPlugin from "esbuild-plugin-inline-worker";
 
 import sveltePreprocess from "svelte-preprocess";
 
@@ -70,7 +71,8 @@ const context = await esbuild.context({
                 // Remove accessibility warnings (base Obsidian ignores these guidelines too)
                 return warning.code !== "a11y-click-events-have-key-events" && warning.code !== "a11y-no-static-element-interactions"
             },
-        })
+        }),
+        inlineWorkerPlugin({ workerName: "Commentator Indexer" }),
     ]
 });
 

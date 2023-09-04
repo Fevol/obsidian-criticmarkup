@@ -7,3 +7,6 @@
 [submodule "src/ui/components"]
 	path = src/ui/components
 	url = https://github.com/Fevol/obsidian-svelte-component-library.git
+[submodule "src/database"]
+	path = src/database
+	url = https://github.com/Fevol/obsidian-database-library.git
