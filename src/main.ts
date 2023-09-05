@@ -70,8 +70,7 @@ export default class CommentatorPlugin extends Plugin {
 		},
 		2,
 		(data) => {
-			// @ts-ignore
-			return data.map(node => Object.assign(new NODE_PROTOTYPE_MAPPER[node.type](), node));
+			return data.map(node => Object.setPrototypeOf(node, NODE_PROTOTYPE_MAPPER[node.type].prototype));
 		}
 	);
 

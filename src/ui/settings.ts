@@ -174,5 +174,15 @@ export class CommentatorSettings extends PluginSettingTab {
                         await this.plugin.saveSettings();
                 }
             ));
+
+        new Setting(containerEl)
+            .setName("ADVANCED: Re-initialize database")
+            .setDesc("If you're getting a database upgrade error, you can use this to re-initialize the database; this will *not* alter your notes in any way")
+            .addButton(button => button
+                .setButtonText("Re-initialize database")
+                .onClick(async () => {
+                    await this.plugin.database.reinitializeDatabase();
+                }
+            ));
     }
 }
