@@ -42,6 +42,7 @@ import { DEFAULT_SETTINGS, REQUIRES_FULL_RELOAD } from './constants';
 import type { PluginSettings } from './types';
 import { Database } from './database';
 import type { CriticMarkupNode } from './editor/criticmarkup-nodes';
+import { NODE_PROTOTYPE_MAPPER } from './editor/criticmarkup-nodes';
 
 
 export default class CommentatorPlugin extends Plugin {
@@ -61,12 +62,16 @@ export default class CommentatorPlugin extends Plugin {
 		this,
 		"commentator/cache",
 		"Commentator cache",
-		2,
+		3,
 		"Vault-wide cache for Commentator plugin",
 		() => [],
 		async (file) => {
-			const parseTree = criticmarkupLanguage.parser.parse(await this.app.vault.cachedRead(file as TFile));
-			return nodesInSelection(parseTree).nodes;
+			return getNodesInText(await this.app.vault.cachedRead(file as TFile)).nodes;
+		},
+		2,
+		(data) => {
+			// @ts-ignore
+			return data.map(node => Object.assign(new NODE_PROTOTYPE_MAPPER[node.type](), node));
 		}
 	);
 

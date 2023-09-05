@@ -6,12 +6,11 @@ type EnumDictionary<T extends string | symbol | number, U> = {
     [K in T]: U;
 };
 
-export function objectDifference(new_obj: any, old_obj: any): Partial<typeof new_obj> {
+export function objectDifference<T>(new_obj: T, old_obj: T): Partial<T> {
     const diff: Partial<typeof new_obj> = {};
-    for (const key in new_obj) {
+    for (const key in new_obj)
         if (new_obj[key] !== old_obj[key])
             diff[key] = new_obj[key];
-    }
     return diff;
 }
 
@@ -94,3 +93,10 @@ export function capitalizeFirstLetter(string: string) {
 }
 
 export const hSpace = /\S\n\v\f\r\u2028\u2029/;
+
+export function splitIntoEvenChunks<T>(array: T[], chunk_count: number): T[][] {
+    const result: T[][] = [];
+    for (let i = chunk_count; i > 0; i--)
+        result.push(array.splice(0, Math.ceil(array.length / i)));
+    return result;
+}

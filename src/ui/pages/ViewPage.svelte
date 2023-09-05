@@ -6,8 +6,10 @@
 
 	import { type TFile, Menu, debounce, prepareSimpleSearch, Notice } from 'obsidian';
 
+	import { type DatabaseEntry } from '../../database';
 	import { NodeType } from '../../types';
-	import { NODE_ICON_MAPPER, NODE_PROTOTYPE_MAPPER, type CriticMarkupNode } from '../../editor/criticmarkup-nodes';
+
+	import { NODE_ICON_MAPPER, type CriticMarkupNode } from '../../editor/criticmarkup-nodes';
     import { acceptSuggestionsInFile, rejectSuggestionsInFile } from '../../editor/commands';
 
 	export let plugin: CommentatorPlugin;
@@ -34,22 +36,16 @@
 		EMPTY,
 	}
 
-	type NodeEntry = {
-		path: string,
-		node: CriticMarkupNode,
-		text: string[],
-	}
+	type NodeEntry = { path: string, node: CriticMarkupNode }
 
 	export let node_type_filter: NodeTypeFilter = NodeTypeFilter.ALL;
 	export let location_filter: LocationFilter = LocationFilter.VAULT;
 	export let content_filter: ContentFilter = ContentFilter.ALL;
 	let search_filter: string = '';
 
-	const file_change_event = plugin.app.workspace.on('active-leaf-change', async () => {
-		filterNodes();
-	});
+	const file_change_event = plugin.app.workspace.on('active-leaf-change', filterNodes);
 
-	let all_nodes: [string, { data: CriticMarkupNode[], time: number }][] | null = null;
+	let all_nodes: DatabaseEntry<CriticMarkupNode[]>[] = [];
 	let flattened_nodes: NodeEntry[] = [];
 	let selected_nodes: number[] = [];
 	let anchor_selected_node: number | null = null;
@@ -88,18 +84,8 @@
 		plugin.app.workspace.offref(file_change_event);
 	});
 
-	async function updateNodes(nodes: [string, { data: CriticMarkupNode[], time: number }][] = []) {
-		all_nodes = nodes
-			.filter(([_, value]) => value.data.length > 0)
-			.map(([key, value]) => {
-				return [key, {
-					data: value.data.map(node => {
-						node.__proto__ = NODE_PROTOTYPE_MAPPER[node.type].prototype;
-						return node;
-					}),
-					time: value.time,
-				}];
-			});
+	async function updateNodes(nodes: DatabaseEntry<CriticMarkupNode[]>[]) {
+		all_nodes = nodes;
 		await filterNodes();
 	}
 
@@ -133,13 +119,7 @@
             flattened_nodes = flattened_nodes.filter(item => (content_filter === ContentFilter.CONTENT) !== item.node.empty());
 
 		if (search_filter.length)
-            flattened_nodes = flattened_nodes.filter(item => prepareSimpleSearch(search_filter)(item.text.join(' '))?.score);
-	}
-
-	function visibleText(path: string, node: CriticMarkupNode): string[] {
-		if (!file_cache[path]) return [''];
-		node.__proto__ = NODE_PROTOTYPE_MAPPER[node.type].prototype;
-		return node.unwrap_parts(file_cache[path]);
+            flattened_nodes = flattened_nodes.filter(item => prepareSimpleSearch(search_filter)(item.node.text)?.score);
 	}
 
 	async function editSelectedNodes(accept: boolean, entry: number | null) {
