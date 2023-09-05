@@ -89,7 +89,7 @@ export class CommentMarker extends GutterMarker {
 	}
 }
 
-function createWidgets(state: EditorState) {
+function createMarkers(state: EditorState) {
 	const builder = new RangeSetBuilder<CommentMarker>();
 	const view = state.field(editorEditorField);
 	const nodes = state.field(treeParser).nodes;
@@ -118,7 +118,7 @@ function createWidgets(state: EditorState) {
 		// As to why I'm making this entire rant: it took me four hours to figure out
 
 		// Oh yeah, and that doesn't even MENTION the fact that RangeSet is a heap and thus does not keep the
-		// order of the widgets, so comments in the same block have no guarantee of appearing in the same error,
+		// order of the markers, so comments in the same block have no guarantee of appearing in the same error,
 		// so your comment about a reference might instead be added to something else entirely within the same block
 		// ... I should probably make a separate FIXME for that
 
@@ -137,22 +137,22 @@ function createWidgets(state: EditorState) {
 	return builder.finish();
 }
 
-export const commentGutterWidgets = StateField.define<RangeSet<CommentMarker>>({
+export const commentGutterMarkers = StateField.define<RangeSet<CommentMarker>>({
 	create(state) {
-		return createWidgets(state);
+		return createMarkers(state);
 	},
 
 	update(oldSet, tr) {
 		if (!tr.docChanged)
 			return oldSet;
-		return createWidgets(tr.state);
+		return createMarkers(tr.state);
 	}
 });
 
 export const commentGutterExtension = [
-	commentGutterWidgets,
+	commentGutterMarkers,
 	right_gutter({
 		class: 'criticmarkup-comment-gutter' + (app.vault.getConfig('cssTheme') === "Minimal" ? ' is-minimal' : ''),
-		markers: v => v.state.field(commentGutterWidgets),
+		markers: v => v.state.field(commentGutterMarkers),
 	}),
 ];
