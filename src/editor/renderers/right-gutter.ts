@@ -316,8 +316,7 @@ class UpdateContext {
 		const MAX_HEIGHT = 150;
 		let height = 0;
 		for (const marker of (markers as CommentMarker[])) {
-			const node_text = view.state.doc.sliceString(marker.node.from, marker.node.to);
-			const num_end_line = node_text.match(/\n/g)?.length || 0;
+			const num_end_line = marker.node.text.match(/\n/g)?.length || 0;
 			const comment_length = marker.node.to - marker.node.from - 6 - num_end_line;
 			const num_lines = Math.max(1, Math.ceil(comment_length / char_line_length)) + num_end_line;
 			height += Math.min(MAX_HEIGHT, num_lines * line_pixel_height + PADDING + INNER_MARGIN + BORDER_SIZE) + MARGIN_BETWEEN;

@@ -134,8 +134,7 @@ function applySuggestion(tr: Transaction, settings: PluginSettings): Transaction
 			return tr;
 		}
 
-		// TODO: Optimize(!): Can take >1ms to gather (in stress-test environment with >1000 nodes)
-		const nodes = nodesInSelection(tr.startState.field(treeParser).tree);
+		const nodes = tr.startState.field(treeParser).nodes;
 		const changes = [];
 		const selections: SelectionRange[] = [];
 
@@ -185,8 +184,7 @@ function applySuggestion(tr: Transaction, settings: PluginSettings): Transaction
 			return tr;
 
 
-		// FIXME: nodes in selection is currently not cached
-		const nodes = nodesInSelection(tr.startState.field(treeParser).tree);
+		const nodes = tr.startState.field(treeParser).nodes;
 
 		const backwards_select = userEvents.includes('select.backward');
 		const group_select = userEvents.includes('select.group');

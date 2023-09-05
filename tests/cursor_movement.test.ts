@@ -139,12 +139,9 @@ for (let test_case of test_cases) {
 			}),
 		});
 
-		const tree = view.state.field(treeParser).tree;
-		const nodes = nodesInSelection(tree);
+		const nodes = view.state.field(treeParser).nodes;
 
-		// TODO: Put in criticmarkup-nodes.ts
-
-		const unwrapped_string = applyToText(test_case, (node, text) => node.unwrap(test_case), nodes.nodes);
+		const unwrapped_string = applyToText(test_case, (node, text) => node.unwrap(), nodes.nodes);
 
 		const actual_view = new EditorView({
 			state: EditorState.create({

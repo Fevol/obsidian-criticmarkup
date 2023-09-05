@@ -50,7 +50,7 @@ export const inlineCommentRenderer = (settings: PluginSettings) => StateField.de
 						node.from,
 						node.to,
 						Decoration.replace({
-							widget: new CommentIconWidget(node, tr.state.sliceDoc(node.from + 3, node.to - 3), settings.comment_style === 'block'),
+							widget: new CommentIconWidget(node, settings.comment_style === 'block'),
 						}),
 					);
 				}
@@ -67,21 +67,14 @@ export const inlineCommentRenderer = (settings: PluginSettings) => StateField.de
 
 
 class CommentIconWidget extends WidgetType {
-	contents: string;
 	tooltip: HTMLElement | null = null;
 	icon: HTMLElement | null = null;
 
-	node: CriticMarkupNode;
-
 	component: Component;
 	focused = false;
-	is_block = false;
 
-	constructor(node: CriticMarkupNode, contents: string, is_block = false) {
+	constructor(public node: CriticMarkupNode, public is_block = false) {
 		super();
-		this.node = node;
-		this.contents = contents;
-		this.is_block = is_block;
 		this.component = new Component();
 	}
 
@@ -89,7 +82,7 @@ class CommentIconWidget extends WidgetType {
 		if (!this.tooltip) {
 			this.tooltip = document.createElement('div');
 			this.tooltip.classList.add('criticmarkup-comment-tooltip');
-			MarkdownRenderer.render(app, this.contents, this.tooltip, '', this.component);
+			MarkdownRenderer.render(app, this.node.text, this.tooltip, '', this.component);
 			this.component.load();
 			this.icon!.appendChild(this.tooltip);
 
@@ -126,7 +119,7 @@ class CommentIconWidget extends WidgetType {
 				});
 			};
 		} else {
-			if (this.contents.length) {
+			if (this.node.length) {
 				this.icon.onmouseenter = () => {
 					this.renderTooltip();
 				};
@@ -258,6 +251,8 @@ export const livePreviewRenderer = (settings: PluginSettings) => StateField.defi
 					removeBracket(decorations, node, false, is_livepreview);
 				}
 			} else if (settings.preview_mode === 1) {
+				// FIXME: Always remove brackets in source mode!
+
 				if (node.type === NodeType.ADDITION) {
 					removeBracket(decorations, node, true, is_livepreview);
 					markContents(decorations, node, 'criticmarkup-accepted');

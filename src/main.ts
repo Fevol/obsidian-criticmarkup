@@ -14,7 +14,7 @@ import { commands } from './editor/commands';
 import { change_suggestions } from './editor/context-menu-commands';
 
 import { treeParser } from './editor/tree-parser';
-import { nodesInSelection } from './editor/editor-util';
+import { getNodesInText } from './editor/editor-util';
 import { text_copy } from './editor/edit-logic';
 
 import { inlineCommentRenderer, livePreviewRenderer } from './editor/renderers/live-preview';
@@ -41,7 +41,6 @@ import { objectDifference } from './util';
 import { DEFAULT_SETTINGS, REQUIRES_FULL_RELOAD } from './constants';
 import type { PluginSettings } from './types';
 import { Database } from './database';
-import { criticmarkupLanguage } from './editor/parser';
 import type { CriticMarkupNode } from './editor/criticmarkup-nodes';
 
 

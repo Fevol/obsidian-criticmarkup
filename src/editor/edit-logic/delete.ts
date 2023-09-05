@@ -26,6 +26,7 @@ export function text_delete(range: CriticMarkupOperation, nodes: CriticMarkupNod
 	// Iff cursor delete: find cursor position of delete as if CM syntax does not exist
 	if (!selection_delete) {
 		const deletion_anchor = !backwards_delete ? deletion_start : deletion_end;
+		// TODO: Replace instances of state with searching through node text (cheaper)
 		const deletion_head = group_delete ? findBlockingChar(deletion_anchor, !backwards_delete, state)[0]
 			: deletion_anchor + (backwards_delete ? -1 : 1);
 

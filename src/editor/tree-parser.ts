@@ -7,9 +7,10 @@ import { type CriticMarkupNodes } from './criticmarkup-nodes';
 
 export const treeParser: StateField<{tree: Tree, fragments: readonly TreeFragment[], nodes: CriticMarkupNodes}> = StateField.define({
 	create(state) {
-		const tree = criticmarkupLanguage.parser.parse(state.doc.toString());
+		const text = state.doc.toString();
+		const tree = criticmarkupLanguage.parser.parse(text);
 		const fragments = TreeFragment.addTree(tree);
-		const nodes = nodesInSelection(tree);
+		const nodes = nodesInSelection(tree, text);
 
 		return { tree, nodes, fragments }
 	},
@@ -25,9 +26,10 @@ export const treeParser: StateField<{tree: Tree, fragments: readonly TreeFragmen
 
 		let fragments = TreeFragment.applyChanges(value.fragments, changed_ranges);
 
-		const tree = criticmarkupLanguage.parser.parse(tr.state.doc.toString(), fragments);
+		const text = tr.state.doc.toString();
+		const tree = criticmarkupLanguage.parser.parse(text, fragments);
 		fragments = TreeFragment.addTree(tree, fragments);
-		const nodes = nodesInSelection(tree);
+		const nodes = nodesInSelection(tree, text);
 
 		return { tree, nodes, fragments }
 	},

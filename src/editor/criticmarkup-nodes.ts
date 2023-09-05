@@ -1,19 +1,11 @@
-import { Text } from '@codemirror/state';
+import { ChangeSet, Text } from '@codemirror/state';
 import { type StringNodeType, NodeType } from '../types';
 import { CM_All_Brackets } from '../util';
 
 export abstract class CriticMarkupNode {
-	from: number;
-	to: number;
-	type: NodeType;
-	repr: StringNodeType;
 	num_ignore_chars = 6;
+	constructor(public from: number, public to: number, public type: NodeType, public repr: StringNodeType, public text: string) {
 
-	constructor(from: number, to: number, type: NodeType, repr: StringNodeType) {
-		this.from = from;
-		this.to = to;
-		this.type = type;
-		this.repr = repr;
 	}
 
 	copy(): CriticMarkupNode {
@@ -21,7 +13,7 @@ export abstract class CriticMarkupNode {
 	}
 
 	equals(other: CriticMarkupNode) {
-		return this.from === other.from && this.to === other.to && this.type === other.type;
+		return this.type === other.type && this.text === other.text;
 	}
 
 	num_ignored_chars(from: number, to: number): number {
@@ -35,38 +27,29 @@ export abstract class CriticMarkupNode {
 	}
 
 	empty() {
-		return this.from + 3 === this.to - 3;
+		return 6 === this.to - this.from;
 	}
 
-	text(str: string, offset = 0) {
-		return str.slice(Math.max(this.from - offset, 0), Math.min(this.to - offset, str.length));
+	unwrap() {
+		return this.text.slice(3, -3);
 	}
 
-	unwrap(str: string, offset = 0) {
-		return str.slice(Math.max(this.from - offset + 3, 0), Math.min(this.to - offset - 3, str.length));
+	unwrap_bracket(left = false) {
+		return left ? this.text.slice(3) : this.text.slice(0, -3);
 	}
 
-	unwrap_bracket(str: string, left = false, offset = 0) {
-		if (left) {
-			return str.slice(Math.max(this.from - offset + 3, 0));
-		} else {
-			return str.slice(0, Math.min(this.to - offset - 3, str.length));
-		}
+	unwrap_parts(): string[] {
+		return [this.unwrap()];
 	}
 
-	unwrap_parts(str: string, offset = 0): string[] {
-		return [this.unwrap(str, offset)];
+	unwrap_slice(from: number, to: number) {
+		return this.text.slice(Math.max(3, from), Math.min(this.text.length - 3, to));
 	}
-
-	unwrap_slice(str: string, from: number, to: number) {
-		return str.slice(Math.max(this.from + 3, from), Math.min(this.to - 3, to));
-	}
-
 
 	fully_in_range(start: number, end: number, strict = false) {
 		if (strict)
-			return this.from + 3 >= start && this.to - 3 <= end;
-		return this.from >= start && this.to <= end;
+			return start <= this.from + 3 && this.to - 3 <= end;
+		return start <= this.from && this.to <= end;
 	}
 
 	partially_in_range(start: number, end: number) {
@@ -88,12 +71,12 @@ export abstract class CriticMarkupNode {
 		return this.encloses_range(start, end);
 	}
 
-	accept(str: string, offset = 0) {
-		return this.text(str, offset);
+	accept() {
+		return this.text;
 	}
 
-	reject(str: string, offset = 0) {
-		return this.text(str, offset);
+	reject() {
+		return this.text;
 	}
 
 	touches(cursor: number) {
@@ -109,6 +92,13 @@ export abstract class CriticMarkupNode {
 		return left ? cursor <= this.from : cursor >= this.to;
 	}
 
+	range_infront(start: number, end: number) {
+		return this.to < start;
+	}
+
+	range_behind(start: number, end: number) {
+		return end < this.from
+	}
 
 	cursor_infront(cursor: number, left: boolean, strict = false) {
 		if (strict)
@@ -173,44 +163,60 @@ export abstract class CriticMarkupNode {
 	}
 
 
-	postprocess(str: string, unwrap: boolean = true, livepreview_mode: number = 0, tag: string = "div", left: boolean | null = null) {
-		if (unwrap) {
+	postprocess(unwrap: boolean = true, livepreview_mode: number = 0, tag: string = "div", left: boolean | null = null, text?: string) {
+		let str = text ?? this.text;
+		if (!text && unwrap) {
 			// Node is larger than what is actually given (no end bracket found within text)
 			if (this.to >= str.length && !str.endsWith(CM_All_Brackets[this.type].at(-1)!))
-				str = this.unwrap_bracket(str, true);
+				str = this.unwrap_bracket(true);
 			/*else if (this.from === 0 && !str.startsWith(CM_All_Brackets[this.type][0]))
 				str = this.unwrap_bracket(str, false);*/
 			else
-				str = this.unwrap(str);
+				str = this.unwrap();
 		}
 
 		return `<${tag} class='criticmarkup-${this.repr.toLowerCase()}'>${str}</${tag}>`;
 	}
 
+	apply_change(changes: ChangeSet) {
+		this.from = changes.mapPos(this.from, 1);
+		this.to = changes.mapPos(this.to, 1);
+	}
+
+	apply_offset(offset: number) {
+		this.from += offset;
+		this.to += offset;
+	}
+
+
+	get length() {
+		return this.to - this.from - 6;
+	}
 }
 
 export class AdditionNode extends CriticMarkupNode {
-	constructor(from: number, to: number) {
-		super(from, to, NodeType.ADDITION, 'Addition');
+	constructor(from: number, to: number, text: string) {
+		super(from, to, NodeType.ADDITION, 'Addition', text);
 	}
 
-	accept(str: string, offset = 0) {
-		return this.unwrap(str, offset);
+	accept() {
+		return this.unwrap();
 	}
 
-	reject(str: string, offset = 0) {
+	reject() {
 		return '';
 	}
 
-	postprocess(str: string, unwrap: boolean = true, livepreview_mode: number = 0, tag: string = "div", left: boolean | null = null) {
-		if (unwrap) {
+	postprocess(unwrap: boolean = true, livepreview_mode: number = 0, tag: string = "div", left: boolean | null = null, text?: string) {
+		let str = text ?? this.text;
+		if (!text && unwrap) {
 			// Node is larger than what is actually given (no end bracket found within text)
 			if (this.to >= str.length && !str.endsWith(CM_All_Brackets[this.type].at(-1)!))
-				str = this.unwrap_bracket(str, true);
+				str = this.unwrap_bracket(true);
 			/*else if (this.from === 0 && !str.startsWith(CM_All_Brackets[this.type][0]))
 				str = this.unwrap_bracket(str, false);*/
 			else
-				str = this.unwrap(str);
+				str = this.unwrap();
 		}
 		if (!livepreview_mode)
 			str = `<${tag} class='criticmarkup-preview criticmarkup-addition'>${str}</${tag}>`;
@@ -223,27 +229,28 @@ export class AdditionNode extends CriticMarkupNode {
 }
 
 export class DeletionNode extends CriticMarkupNode {
-	constructor(from: number, to: number) {
-		super(from, to, NodeType.DELETION, 'Deletion');
+	constructor(from: number, to: number, text: string) {
+		super(from, to, NodeType.DELETION, 'Deletion', text);
 	}
 
-	accept(str: string, offset = 0) {
+	accept() {
 		return '';
 	}
 
-	reject(str: string, offset = 0) {
-		return this.unwrap(str, offset);
+	reject() {
+		return this.unwrap();
 	}
 
-	postprocess(str: string, unwrap: boolean = true, livepreview_mode: number = 0, tag: string = "div", left: boolean | null = null) {
-		if (unwrap) {
+	postprocess(unwrap: boolean = true, livepreview_mode: number = 0, tag: string = "div", left: boolean | null = null, text?: string) {
+		let str = text ?? this.text;
+		if (!text && unwrap) {
 			// Node is larger than what is actually given (no end bracket found within text)
 			if (this.to >= str.length && !str.endsWith(CM_All_Brackets[this.type].at(-1)!))
-				str = this.unwrap_bracket(str, true);
+				str = this.unwrap_bracket(true);
 			/*else if (this.from === 0 && !str.startsWith(CM_All_Brackets[this.type][0]))
 				str = this.unwrap_bracket(str, false);*/
 			else
-				str = this.unwrap(str);
+				str = this.unwrap();
 		}
 		if (!livepreview_mode)
 			str = `<${tag} class='criticmarkup-preview criticmarkup-deletion'>${str}</${tag}>`;
@@ -256,12 +263,10 @@ export class DeletionNode extends CriticMarkupNode {
 }
 
 export class SubstitutionNode extends CriticMarkupNode {
-	middle: number;
 	num_ignore_chars = 8;
 
-	constructor(from: number, middle: number, to: number) {
-		super(from, to, NodeType.SUBSTITUTION, 'Substitution');
-		this.middle = middle;
+	constructor(from: number, public middle: number, to: number, text: string) {
+		super(from, to, NodeType.SUBSTITUTION, 'Substitution', text);
 	}
 
 	num_ignored_chars(from: number, to: number): number {
@@ -274,44 +279,47 @@ export class SubstitutionNode extends CriticMarkupNode {
 		return 8;
 	}
 
-	unwrap(str: string, offset = 0) {
-		return str.slice(Math.max(this.from - offset + 3, 0), this.middle - offset) +
-			str.slice(this.middle - offset + 2, Math.min(this.to - offset - 3, str.length));
+	unwrap() {
+		return this.text.slice(3, this.middle) + this.text.slice(this.middle + 2, -3);
 	}
 
-	unwrap_parts(str: string, offset = 0) {
+	unwrap_parts() {
 		return [
-			str.slice(Math.max(this.from - offset + 3, 0), this.middle - offset),
-			str.slice(this.middle - offset + 2, Math.min(this.to - offset - 3, str.length)),
+			this.text.slice(3, this.middle),
+			this.text.slice(this.middle + 2, -3),
 		];
 	}
 
-	unwrap_parts_bracket(str: string, left: boolean, offset = 0) {
+	unwrap_parts_bracket(left: boolean, offset = 0) {
 		if (left) {
 			return [
-				str.slice(Math.max(this.from + 3 - offset, 0), this.middle - offset),
-				str.slice(this.middle - offset + 2),
+				this.text.slice(3, this.middle),
+				this.text.slice(this.middle + 2),
 			]
 		} else {
 			return [
-				str.slice(this.from, this.middle - offset),
-				str.slice(this.middle - offset + 2, this.to - offset - 3),
+				this.text.slice(0, this.middle),
+				this.text.slice(this.middle + 2, -3),
 			]
 		}
 	}
 
-	unwrap_slice(str: string, from: number, to: number) {
+	unwrap_slice(from: number, to: number) {
 		if (from >= this.middle)
-			return str.slice(Math.max(this.middle + 2, from), Math.min(this.to - 3, to));
+			return this.text.slice(Math.max(this.middle + 2, from), Math.min(this.to - 3, to));
 		if (to <= this.middle)
-			return str.slice(Math.max(this.from + 3, from), Math.min(this.middle, to));
-		return str.slice(Math.max(this.from + 3, from), this.middle) +
-			str.slice(this.middle + 2, Math.min(this.to - 3, to));
+			return this.text.slice(Math.max(this.from + 3, from), Math.min(this.middle, to));
+		return this.text.slice(Math.max(this.from + 3, from), this.middle) +
+			   this.text.slice(this.middle + 2, Math.min(this.to - 3, to));
 	}
 
 
-	accept(str: string, offset = 0) {
-		return this.unwrap_parts(str, offset)[1];
+	accept() {
+		return this.unwrap_parts()[1];
+	}
+
+	reject() {
+		return this.unwrap_parts()[0];
 	}
 
 	touches_separator(cursor: number, left_loose = false, right_loose = false) {
@@ -354,20 +362,17 @@ export class SubstitutionNode extends CriticMarkupNode {
 		return left ? this.from + 3 === this.middle : this.middle + 2 === this.to - 3;
 	}
 
-	reject(str: string, offset = 0) {
-		return this.unwrap_parts(str, offset)[0];
-	}
-
-	postprocess(str: string, unwrap: boolean = true, livepreview_mode: number = 0, tag: string = "div", left: boolean | null = null) {
+	postprocess(unwrap: boolean = true, livepreview_mode: number = 0, tag: string = "div", left: boolean | null = null, text?: string) {
+		let str = text ?? this.text;
 		let parts: string[] = [str];
-		if (unwrap) {
+		if (!text && unwrap) {
 			// Node is larger than what is actually given (no end bracket found within text)
 			if (this.to >= str.length && !str.endsWith(CM_All_Brackets[NodeType.SUBSTITUTION][2]))
-				parts = this.unwrap_parts_bracket(str, true);
+				parts = this.unwrap_parts_bracket(true);
 			else if (this.from <= 0 && !str.startsWith(CM_All_Brackets[NodeType.SUBSTITUTION][0]))
-				parts = this.unwrap_parts_bracket(str, false);
+				parts = this.unwrap_parts_bracket(false);
 			else
-				parts = this.unwrap_parts(str);
+				parts = this.unwrap_parts();
 		}
 
 		if (parts.length === 1) {
@@ -396,30 +401,30 @@ export class SubstitutionNode extends CriticMarkupNode {
 }
 
 export class HighlightNode extends CriticMarkupNode {
-	constructor(from: number, to: number) {
-		super(from, to, NodeType.HIGHLIGHT, 'Highlight');
+	constructor(from: number, to: number, text: string) {
+		super(from, to, NodeType.HIGHLIGHT, 'Highlight', text);
 	}
 }
 
 export class CommentNode extends CriticMarkupNode {
-	constructor(from: number, to: number) {
-		super(from, to, NodeType.COMMENT, 'Comment');
+	constructor(from: number, to: number, text: string) {
+		super(from, to, NodeType.COMMENT, 'Comment', text);
 	}
 }
 
 
-export function constructNode(from: number, to: number, type: string, middle?: number) {
+export function constructNode(from: number, to: number, type: string, text: string, middle?: number) {
 	switch (type) {
 		case 'Addition':
-			return new AdditionNode(from, to);
+			return new AdditionNode(from, to, text);
 		case 'Deletion':
-			return new DeletionNode(from, to);
+			return new DeletionNode(from, to, text);
 		case 'Substitution':
-			return new SubstitutionNode(from, middle!, to);
+			return new SubstitutionNode(from, middle!, to, text);
 		case 'Highlight':
-			return new HighlightNode(from, to);
+			return new HighlightNode(from, to, text);
 		case 'Comment':
-			return new CommentNode(from, to);
+			return new CommentNode(from, to, text);
 	}
 }
 
@@ -565,9 +570,7 @@ export class CriticMarkupNodes {
 		const str = doc.toString();
 
 		const string_in_range = str.slice(from, to);
-		let front_node: undefined | CriticMarkupNode;
-		let back_node: undefined | CriticMarkupNode;
-
+		let front_node: undefined | CriticMarkupNode, back_node: undefined | CriticMarkupNode;
 
 		if (!nodes)
 			nodes = this.nodes_in_range(from, to, true);
@@ -576,37 +579,24 @@ export class CriticMarkupNodes {
 			return { output: string_in_range, from, to };
 
 		let output = '';
-		if (nodes.length === 1) {
-			const node = nodes[0];
-			if (from < node.from)
-				output += str.slice(from, node.from);
-			else
-				front_node = node;
-			output += node.unwrap_slice(str, from, to);
-			if (to > node.to)
-				output += str.slice(node.to, to);
-			else
-				back_node = node;
-		} else {
-			if (from < nodes[0].from)
-				output += str.slice(from, nodes[0].from);
-			else
-				front_node = nodes[0];
+		if (from < nodes[0].from)
+			output += str.slice(from, nodes[0].from);
+		else
+			front_node = nodes[0];
 
-			let prev_node = -1;
-			for (const node of nodes) {
-				if (prev_node !== -1)
-					output += str.slice(prev_node, node.from);
-				output += node.unwrap_slice(str, from, to);
-				prev_node = node.to;
-			}
-
-			if (to > nodes.at(-1)!.to)
-				output += str.slice(nodes.at(-1)!.to, to);
-			else
-				back_node = nodes.at(-1)!;
-
+		let prev_node = -1;
+		for (const node of nodes) {
+			if (prev_node !== -1)
+				output += str.slice(prev_node, node.from);
+			output += node.unwrap_slice(Math.max(0, from - node.from), to - node.from);
+			prev_node = node.to;
 		}
+
+		if (to >= nodes.at(-1)!.to)
+			output += str.slice(nodes.at(-1)!.to, to);
+		else
+			back_node = nodes.at(-1)!;
+
 
 		const new_from = front_node ? front_node.cursor_move_outside(from, true) : from;
 		const new_to = back_node ? back_node.cursor_move_outside(to, false) : to;

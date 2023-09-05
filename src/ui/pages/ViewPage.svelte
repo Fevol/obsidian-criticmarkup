@@ -79,13 +79,9 @@
 
 	const undo_history: {file_history: Record<string, string>, selected_nodes: number[]}[] = [];
 
-	// TODO: File cache should be a TEMPORARY solution
-	const file_cache: Record<string, string> = {};
-
-	onMount(async () => {
-		plugin.database.on("database-update", updateNodes)
-
-		await updateNodes(await plugin.database.allEntries());
+	onMount(() => {
+		plugin.database.on("database-update", updateNodes);
+		updateNodes(plugin.database.allEntries()!);
 	});
 
 	onDestroy(() => {
@@ -112,7 +108,7 @@
 
 
 
-	async function filterNodes(): Promise<void> {
+	async function filterNodes() {
 		if (!all_nodes) return;
 		let temp = all_nodes!;
 
@@ -126,14 +122,8 @@
 			}
 		}
 
-		for (const [key, _] of temp) {
-			const file = plugin.app.vault.getAbstractFileByPath(key);
-			if (!file) continue;
-			file_cache[key] = await plugin.app.vault.cachedRead(<TFile>file);
-		}
-
-        flattened_nodes = temp.flatMap(([key, value]) => value.data.map(node => {
-            return {path: key, node: node, text: visibleText(key, node)}
+        flattened_nodes = temp.flatMap(([path, value]) => value.data.map(node => {
+            return { path, node }
         }));
 
         if (node_type_filter !== NodeTypeFilter.ALL)
@@ -354,14 +344,15 @@
 						<span class='criticmarkup-view-node-title'>{item.path}</span>
 					</div>
 
-					{#key item.text}
+					{#key item.node.text}
 						<div class='criticmarkup-view-node-text'>
-							{#if !item.text.some(part => part.length)}
+							{#if item.node.empty()}
 								<span class='criticmarkup-view-node-empty'>This node is empty</span>
 							{:else}
-								<MarkdownRenderer {plugin} text={item.text[0]} source={item.path} />
+								{@const parts = item.node.unwrap_parts()}
+								<MarkdownRenderer {plugin} text={parts[0]} source={item.path} />
 								{#if item.node.type === NodeType.SUBSTITUTION}
-									<MarkdownRenderer {plugin} text={item.text[1]} source={item.path} />
+									<MarkdownRenderer {plugin} text={parts[1]} source={item.path} />
 								{/if}
 							{/if}
 						</div>

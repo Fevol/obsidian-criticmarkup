@@ -1,14 +1,11 @@
 import type { MarkdownPostProcessorContext, MarkdownView } from 'obsidian';
 import { decodeHTML, DecodingMode } from 'entities';
 
-import { criticmarkupLanguage } from '../parser';
-
-import type { PluginSettings } from '../../types';
-import { NodeType } from '../../types';
-import type { CriticMarkupNode } from '../criticmarkup-nodes';
+import { type PluginSettings, NodeType } from '../../types';
+import { type CriticMarkupNode } from '../criticmarkup-nodes';
 import { NODE_PROTOTYPE_MAPPER, SubstitutionNode } from '../criticmarkup-nodes';
 import { CM_All_Brackets } from '../../util';
-import { nodesInSelection } from '../editor-util';
+import { getNodesInText } from '../editor-util';
 
 
 // FIXME: Issue: MarkdownRenderer.render(...) on custom elements does not provide global context?
@@ -22,7 +19,7 @@ export async function postProcess(el: HTMLElement, ctx: MarkdownPostProcessorCon
 	if (ctx) {
 		const lines = ctx.getSectionInfo(el);
 		if (lines) {
-			const all_nodes = nodesInSelection(criticmarkupLanguage.parser.parse(lines.text));
+			const all_nodes = getNodesInText(lines.text);
 
 			// We have access to the endlines, so we can determine which node(s) the element belongs to
 			const endlines = [...lines.text.matchAll(/\n/g)].map((m) => m.index!);
@@ -34,6 +31,7 @@ export async function postProcess(el: HTMLElement, ctx: MarkdownPostProcessorCon
 
 			if (!nodes_in_range.length) return;
 
+			// Potential check: element is entirely enclosed by a single node
 			if (nodes_in_range.length === 1) {
 				const node = nodes_in_range[0];
 				let in_range = false;
@@ -55,24 +53,21 @@ export async function postProcess(el: HTMLElement, ctx: MarkdownPostProcessorCon
 					const right_unwrap = end_char === node.to;
 
 
-					const right_bracket = CM_All_Brackets[node.type].at(-1)!;
-					const left_bracket = CM_All_Brackets[node.type][0];
-
-					// Remove last occurence of right bracket
+					// Remove last occurrence of right bracket
 					if (right_unwrap) {
-						const last_bracket = element_contents.lastIndexOf(right_bracket);
+						const last_bracket = element_contents.lastIndexOf(CM_All_Brackets[node.type].at(-1)!);
 						element_contents = element_contents.substring(0, last_bracket) + element_contents.substring(last_bracket + 3);
 					}
 
 					if (left_unwrap) {
-						const first_bracket = element_contents.indexOf(left_bracket);
+						const first_bracket = element_contents.indexOf(CM_All_Brackets[node.type][0]);
 						element_contents = element_contents.substring(0, first_bracket) + element_contents.substring(first_bracket + 3);
 					}
 
 
 
 					// FIXME: Unwrap is still the issue: find when to remove brackets correctly
-					el.innerHTML = node.postprocess(element_contents, false, settings.preview_mode, "div", left);
+					el.innerHTML = node.postprocess(false, settings.preview_mode, "div", left, element_contents);
 
 					return;
 				}
@@ -89,19 +84,28 @@ export async function postProcess(el: HTMLElement, ctx: MarkdownPostProcessorCon
 										.replaceAll(/<mark>}|<\/mark>}/g, "==}")
 										.replaceAll(/{=<mark>=}|{=<\/mark>=}/g, "{====}")
 
-	const tree = criticmarkupLanguage.parser.parse(element_contents);
-
 	// Part of the block is one or more CriticMarkup nodes
-	const element_nodes = nodesInSelection(tree).nodes;
 
+	const element_nodes = getNodesInText(element_contents).nodes;
+
+	// If markup exists in heading or similar, the text might get duplicated into a data-... field
+	// Fix: if two duplicate nodes adjacent to each other, remove the former
+	for (let i = 0; i < element_nodes.length - 1; i++) {
+		const node = element_nodes[i], next_node = element_nodes[i + 1];
+		if (node.equals(next_node)) {
+			element_nodes.splice(i, 1);
+			i--;
+		}
+	}
+
+
+	// No node syntax found in element, and no context was provided to determine whether the element is even part of a noe
 	if (!element_nodes.length && !nodes_in_range?.length) return;
 
-	let previous_start = 0;
-	let new_element = "";
+	let previous_start = 0, new_element = "";
 
 	// Case where node was opened in earlier block, and closed in current block
-	// Parser on element contents will not register the end bracket as a valid node,
-	// so we need to manually catch it
+	// Parser on element contents will not register the end bracket as a valid node, so we need to manually construct the node
 	let missing_node: CriticMarkupNode | null = null;
 	let left_outside: boolean | null = null;
 	let right_outside: boolean | null = null;
@@ -112,44 +116,46 @@ export async function postProcess(el: HTMLElement, ctx: MarkdownPostProcessorCon
 		missing_node = right_outside ? nodes_in_range.at(-1)! : nodes_in_range[0];
 	}
 
-	// This is a special case where you have A ~> B not surrounded by brackets
+	// CASE 1: A ~> B SUBSTITUTION where {~~ and ~~} exist in different blocks
 	if (missing_node && left_outside && right_outside && missing_node.type === NodeType.SUBSTITUTION) {
 		const missing_node_middle = element_contents.indexOf(CM_All_Brackets[NodeType.SUBSTITUTION][1]);
-		const TempNode = new SubstitutionNode(-Infinity, missing_node_middle, Infinity);
-		new_element += TempNode.postprocess(element_contents, true, settings.preview_mode, "span")
+		const TempNode = new SubstitutionNode(-Infinity, missing_node_middle, Infinity, element_contents);
+		new_element += TempNode.postprocess(true, settings.preview_mode, "span")
 		el.innerHTML = new_element;
 		return;
 	}
 
+	// CASE 2: Node for which the start bracket exists in a previous block
 	if (missing_node && !right_outside) {
 		const missing_node_end = element_contents.indexOf(CM_All_Brackets[missing_node.type].at(-1)!) + 3;
 
 		let TempNode: CriticMarkupNode;
 		if (missing_node.type === NodeType.SUBSTITUTION) {
 			const missing_node_middle = element_contents.indexOf(CM_All_Brackets[NodeType.SUBSTITUTION][1]);
-			TempNode = new SubstitutionNode(-Infinity, missing_node_middle === -1 ? -Infinity : missing_node_middle, missing_node_end);
+			TempNode = new SubstitutionNode(-Infinity, missing_node_middle === -1 ? -Infinity : missing_node_middle, missing_node_end, element_contents);
 		} else
-			TempNode = new NODE_PROTOTYPE_MAPPER[missing_node.type](-Infinity, missing_node_end);
-		new_element += TempNode.postprocess(element_contents, true, settings.preview_mode, "span");
+			TempNode = new NODE_PROTOTYPE_MAPPER[missing_node.type](-Infinity, missing_node_end, element_contents);
+		new_element += TempNode.postprocess(true, settings.preview_mode, "span");
 		previous_start = TempNode.to;
 	}
 
+	// DEFAULT: Nodes get processed as normal (nodes which exists completely within the block)
 	for (const node of element_nodes) {
 		new_element += element_contents.slice(previous_start, node.from) +
-						node.postprocess(element_contents, true, settings.preview_mode, "span");
+						node.postprocess( true, settings.preview_mode, "span");
 		previous_start = node.to;
 	}
 
+	// CASE 3: Node for which the end bracket exists in a later block
 	if (missing_node && right_outside) {
 		const missing_node_start = element_contents.lastIndexOf(CM_All_Brackets[missing_node.type][0]);
 
 		let TempNode: CriticMarkupNode;
 		if (missing_node.type === NodeType.SUBSTITUTION)
-			TempNode = new SubstitutionNode(0, Infinity, Infinity);
+			TempNode = new SubstitutionNode(0, Infinity, Infinity, element_contents.slice(missing_node_start, -4));
 		else
-			TempNode = new NODE_PROTOTYPE_MAPPER[missing_node.type](0, Infinity);
-		new_element += element_contents.slice(previous_start, missing_node_start) +
-			TempNode.postprocess(element_contents.slice(missing_node_start, -4), true, settings.preview_mode, "span");
+			TempNode = new NODE_PROTOTYPE_MAPPER[missing_node.type](0, Infinity, element_contents.slice(missing_node_start, -4));
+		new_element += element_contents.slice(previous_start, missing_node_start) + TempNode.postprocess( true, settings.preview_mode, "span");
 		previous_start = Infinity;
 	}
 	new_element += element_contents.slice(previous_start);

@@ -1,4 +1,4 @@
-import type { Tree } from '@lezer/common';
+import { type Tree } from '@lezer/common';
 import {
     ChangeSet,
     CharCategory,
@@ -11,6 +11,7 @@ import {
 import { constructNode, CriticMarkupNode, CriticMarkupNodes } from './criticmarkup-nodes';
 import { type CriticMarkupOperation } from '../types';
 import { treeParser } from './tree-parser';
+import { criticmarkupLanguage } from './parser';
 
 
 export function selectionRangeOverlap(selection: EditorSelection, rangeFrom: number, rangeTo: number) {
@@ -18,14 +19,13 @@ export function selectionRangeOverlap(selection: EditorSelection, rangeFrom: num
 }
 
 export function selectionContainsNodes(state: EditorState) {
-    const tree = state.field(treeParser).tree;
-    const nodes = nodesInSelection(tree);
+    const nodes = state.field(treeParser).nodes;
     return nodes.nodes.length ? state.selection.ranges.some(range =>
         nodes.range_contains_node(range.from, range.to)
     ) : false;
 }
 
-export function nodesInSelection(tree: Tree, start?: number, end?: number) {
+export function nodesInSelection(tree: Tree, text: string, start?: number, end?: number) {
     const nodes: CriticMarkupNode[] = [];
 
     tree.iterate({
@@ -40,13 +40,18 @@ export function nodesInSelection(tree: Tree, start?: number, end?: number) {
             if (node.type.name === 'Substitution') {
                 if (node.node.firstChild?.type.name !== 'MSub')
                     return;
-                nodes.push(constructNode(node.from, node.to, node.type.name, node.node.firstChild?.from)!);
+                nodes.push(constructNode(node.from, node.to, node.type.name, text.slice(node.from, node.to), node.node.firstChild?.from)!);
             } else {
-                nodes.push(constructNode(node.from, node.to, node.type.name, node.node.firstChild?.from)!);
+                nodes.push(constructNode(node.from, node.to, node.type.name, text.slice(node.from, node.to), node.node.firstChild?.from)!);
             }
         },
     });
     return new CriticMarkupNodes(nodes);
+}
+
+export function getNodesInText(text: string, from?: number, to?: number) {
+    const tree = criticmarkupLanguage.parser.parse(text);
+    return nodesInSelection(tree, text, from, to);
 }
 
 

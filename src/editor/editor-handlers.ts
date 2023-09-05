@@ -35,7 +35,6 @@ export const nodeCorrecter = EditorState.transactionFilter.of(tr => {
 		const previous_selection = tr.startState.selection.main, current_selection = tr.selection!.main;
 
 		if (current_selection.anchor === current_selection.head) {
-			const text = tr.startState.doc.toString();
 			const nodes = tr.startState.field(treeParser).nodes;
 
 			const start_node = nodes.at_cursor(previous_selection.head);
@@ -44,7 +43,7 @@ export const nodeCorrecter = EditorState.transactionFilter.of(tr => {
 			// Execute only if the cursor is moved outside a particular node
 			if (start_node && start_node !== end_node &&
 				(start_node.type === NodeType.SUBSTITUTION || start_node.type === NodeType.HIGHLIGHT)) {
-				let new_text = start_node.unwrap(text);
+				let new_text = start_node.unwrap();
 				let changed = false;
 
 				let removed_characters = 0;

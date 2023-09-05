@@ -67,6 +67,7 @@ function encountered_node(head: number, node: CriticMarkupNode, nodes: CriticMar
 
 	// If head is not PAST the back bracket
 	if (!node.empty() && !node.cursor_infront(head, backwards_select)) {
+		// TODO: Replace instances of state with searching through node text (cheaper)
 		const cat_inside = (node.empty() || node.part_is_empty(!backwards_select)) ? null : getCharCategory(node_front + 3 * offset, state, backwards_select);
 		// CASE 1: Cursor cannot enter node
 		if (cat_inside !== null && cat_before !== null && cat_before !== 1 && cat_inside !== cat_before)
