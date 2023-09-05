@@ -280,37 +280,37 @@ export class SubstitutionNode extends CriticMarkupNode {
 	}
 
 	unwrap() {
-		return this.text.slice(3, this.middle) + this.text.slice(this.middle + 2, -3);
+		return this.text.slice(3, this.char_middle) + this.text.slice(this.char_middle + 2, -3);
 	}
 
 	unwrap_parts() {
 		return [
-			this.text.slice(3, this.middle),
-			this.text.slice(this.middle + 2, -3),
+			this.text.slice(3, this.char_middle),
+			this.text.slice(this.char_middle + 2, -3),
 		];
 	}
 
 	unwrap_parts_bracket(left: boolean, offset = 0) {
 		if (left) {
 			return [
-				this.text.slice(3, this.middle),
-				this.text.slice(this.middle + 2),
+				this.text.slice(3, this.char_middle),
+				this.text.slice(this.char_middle + 2),
 			]
 		} else {
 			return [
-				this.text.slice(0, this.middle),
-				this.text.slice(this.middle + 2, -3),
+				this.text.slice(0, this.char_middle),
+				this.text.slice(this.char_middle + 2, -3),
 			]
 		}
 	}
 
 	unwrap_slice(from: number, to: number) {
-		if (from >= this.middle)
-			return this.text.slice(Math.max(this.middle + 2, from), Math.min(this.to - 3, to));
-		if (to <= this.middle)
-			return this.text.slice(Math.max(this.from + 3, from), Math.min(this.middle, to));
-		return this.text.slice(Math.max(this.from + 3, from), this.middle) +
-			   this.text.slice(this.middle + 2, Math.min(this.to - 3, to));
+		if (from >= this.char_middle)
+			return this.text.slice(Math.max(this.char_middle + 2, from), Math.min(this.text.length - 3, to));
+		if (to <= this.char_middle)
+			return this.text.slice(Math.max(3, from), Math.min(this.char_middle, to));
+		return this.text.slice(Math.max(3, from), this.char_middle) +
+			   this.text.slice(this.char_middle + 2, Math.min(this.text.length - 3, to));
 	}
 
 
@@ -410,6 +410,10 @@ export class SubstitutionNode extends CriticMarkupNode {
 
 	get length() {
 		return this.to - this.from - 8;
+	}
+
+	get char_middle() {
+		return this.middle - this.from;
 	}
 }
 
