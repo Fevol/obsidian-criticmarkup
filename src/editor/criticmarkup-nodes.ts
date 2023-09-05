@@ -398,6 +398,19 @@ export class SubstitutionNode extends CriticMarkupNode {
 		return str;
 	}
 
+	apply_change(changes: ChangeSet): void {
+		super.apply_change(changes);
+		this.to = changes.mapPos(this.to, 1);
+	}
+
+	apply_offset(offset: number) {
+		super.apply_offset(offset);
+		this.middle += offset;
+	}
+
+	get length() {
+		return this.to - this.from - 8;
+	}
 }
 
 export class HighlightNode extends CriticMarkupNode {
@@ -610,6 +623,16 @@ export class CriticMarkupNodes {
 			front_node,
 			back_node
 		};
+	}
+
+	applyChanges(changes: ChangeSet) {
+		const nodes: CriticMarkupNode[] = [];
+		for (const node of this.nodes) {
+			const new_node = node.copy();
+			new_node.apply_change(changes);
+			nodes.push(new_node);
+		}
+		return new CriticMarkupNodes(nodes);
 	}
 }
 

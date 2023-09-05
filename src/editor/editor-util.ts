@@ -135,6 +135,32 @@ export function getEditorRanges(changes: ChangeSet, doc: Text): CriticMarkupOper
     return changed_ranges;
 }
 
+function compareChanges(previous: CriticMarkupNodes, current: CriticMarkupNodes, tr: Transaction): {
+    removed: CriticMarkupNode[], added: CriticMarkupNode[]
+} {
+    const removed: CriticMarkupNode[] = [];
+    const added: CriticMarkupNode[] = [];
+
+    const changes = getEditorRanges(tr.changes, tr.startState.doc);
+    let offset = 0;
+
+    for (const change of changes) {
+        const current_offset = change.offset.added - change.offset.removed;
+        const nodes_affected = previous.nodes_in_range(change.from, change.to);
+        const new_nodes = current.nodes_in_range(change.from + offset, change.to + current_offset + offset);
+
+        if (nodes_affected.length)
+            removed.push(...nodes_affected);
+        if (new_nodes.length)
+            added.push(...new_nodes);
+
+        offset += current_offset;
+    }
+
+    return { removed, added };
+}
+
+
 export function selectionToEditorRange(selection: SelectionRange, text: Text, isDelete = false): CriticMarkupOperation {
     return {
         from: selection.from,
