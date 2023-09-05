@@ -301,11 +301,12 @@
 }
 
 .criticmarkup-comment-gutter {
-	width: 300px;
 	margin-top: 50px;
+	transition: width 200ms ease-in-out;
 }
 
 .criticmarkup-gutter-comment {
+	width: 300px;
 	color: var(--text-muted);
 	border: 2px solid var(--background-modifier-border);
 	border-radius: var(--radius-l);
@@ -318,6 +319,7 @@
 
 	max-height: 150px;
 	overflow-y: scroll;
+	word-wrap: break-word;
 }
 
 
