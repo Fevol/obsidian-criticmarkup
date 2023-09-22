@@ -227,6 +227,11 @@ export default class CommentatorPlugin extends Plugin {
 				await this.suggestionModeButton.updateButtons(this.settings.suggest_mode ? 1 : 0);
 		}
 
+		if (this.changed_settings.show_editor_buttons_labels !== undefined) {
+			this.previewModeButton.toggleLabels();
+			this.suggestionModeButton.toggleLabels();
+		}
+
 		if (this.changed_settings.editor_preview_button !== undefined) {
 			this.changed_settings.editor_preview_button ?
 				this.previewModeButton.renderButtons() :

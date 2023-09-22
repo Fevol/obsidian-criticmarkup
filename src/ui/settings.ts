@@ -28,19 +28,15 @@ export class CommentatorSettings extends PluginSettingTab {
                 }
             ));
 
-
         new Setting(containerEl)
-            .setName("Editor suggestion mode button")
-            .setDesc("Add button to editor toolbar to toggle suggestion mode")
-            .addToggle(toggle => toggle.setValue(this.plugin.settings.editor_suggest_button)
+            .setName("ADVANCED: Alternative cursor movement")
+            .setDesc("Toggle corrected cursor movement of cursor in suggestion mode when CriticMarkup tags are present")
+            .addToggle(toggle => toggle.setValue(this.plugin.settings.alternative_cursor_movement)
                 .onChange(async (value) => {
-                    this.plugin.settings.editor_suggest_button = value;
-                    await this.plugin.saveSettings();
-                }
-            ));
-
-
-
+                        this.plugin.settings.alternative_cursor_movement = value;
+                        await this.plugin.saveSettings();
+                    }
+                ));
 
 
         new Setting(containerEl)
@@ -87,6 +83,27 @@ export class CommentatorSettings extends PluginSettingTab {
                         await this.plugin.saveSettings();
                     }
                 ));
+
+        new Setting(containerEl)
+            .setName("Editor suggestion mode button")
+            .setDesc("Add button to editor toolbar to toggle suggestion mode")
+            .addToggle(toggle => toggle.setValue(this.plugin.settings.editor_suggest_button)
+                .onChange(async (value) => {
+                        this.plugin.settings.editor_suggest_button = value;
+                        await this.plugin.saveSettings();
+                    }
+                ));
+
+        new Setting(containerEl)
+            .setName("Show button labels")
+            .setDesc("Show labels of buttons in editor toolbar")
+            .addToggle(toggle => toggle.setValue(this.plugin.settings.show_editor_buttons_labels)
+                .onChange(async (value) => {
+                        this.plugin.settings.show_editor_buttons_labels = value;
+                        await this.plugin.saveSettings();
+                    }
+                ));
+
 
         new Setting(containerEl)
             .setName("Remove syntax on copy")
@@ -138,42 +155,31 @@ export class CommentatorSettings extends PluginSettingTab {
                 }
             ));
 
-
-
-
         new Setting(containerEl)
-            .setHeading()
-            .setName("Advanced Settings")
-
-        new Setting(containerEl)
-            .setName("Reading view renderer")
+            .setName("ADVANCED: Reading view renderer")
             .setDesc("Toggle rendering of CriticMarkup tags in reading view mode")
             .addToggle(toggle => toggle.setValue(this.plugin.settings.post_processor)
                 .onChange(async (value) => {
                         this.plugin.settings.post_processor = value;
                         await this.plugin.saveSettings();
-                }
-            ));
+                    }
+                ));
 
         new Setting(containerEl)
-            .setName("Live preview renderer")
+            .setName("ADVANCED: Live preview renderer")
             .setDesc("Toggle rendering of CriticMarkup tags in live preview")
             .addToggle(toggle => toggle.setValue(this.plugin.settings.live_preview)
                 .onChange(async (value) => {
                         this.plugin.settings.live_preview = value;
                         await this.plugin.saveSettings();
-                }
-            ));
+                    }
+                ));
+
+
 
         new Setting(containerEl)
-            .setName("Alternative cursor movement")
-            .setDesc("Toggle corrected cursor movement of cursor when CriticMarkup tags are present")
-            .addToggle(toggle => toggle.setValue(this.plugin.settings.alternative_cursor_movement)
-                .onChange(async (value) => {
-                        this.plugin.settings.alternative_cursor_movement = value;
-                        await this.plugin.saveSettings();
-                }
-            ));
+            .setHeading()
+            .setName("Database Settings")
 
         new Setting(containerEl)
             .setName("ADVANCED: Re-initialize database")

@@ -16,6 +16,8 @@ export const DEFAULT_SETTINGS: PluginSettings = {
 	suggest_mode: false,
 	editor_suggest_button: true,
 
+	show_editor_buttons_labels: true,
+
 	post_processor: true,
 	live_preview: true,
 	alternative_cursor_movement: true,

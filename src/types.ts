@@ -59,6 +59,11 @@ export interface PluginSettings {
 	editor_suggest_button: boolean;
 
 	/**
+	 * Show the labels on the buttons found in the header
+	 */
+	show_editor_buttons_labels: boolean;
+
+	/**
 	 * Enable post processor rendering
 	 */
 	post_processor: boolean;

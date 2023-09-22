@@ -60,6 +60,30 @@ export class HeaderButton {
 		}
 	}
 
+	toggleLabels() {
+		this.has_label = !this.has_label;
+
+		if (!this.changeEvent) return;
+
+		const { text } = this.states[this.index];
+		for (const leaf of this.plugin.app.workspace.getLeavesOfType('markdown')) {
+			const view = leaf.view as MarkdownView;
+			const elements = this.active_mapping.get(view);
+			if (!elements) continue;
+
+			if (elements.status) {
+				elements.status.detach();
+				elements.status = null;
+			} else {
+				const status = elements.button.createSpan({ text, cls: this.cls });
+				// @ts-ignore (Parent element exists)
+				elements.button.parentElement.insertBefore(status, elements.button);
+				elements.status = status;
+				// this.active_mapping.set(view, elements);
+			}
+		}
+	}
+
 	detachButtons() {
 		if (!this.changeEvent) return;
 

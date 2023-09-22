@@ -8,7 +8,7 @@ export const previewModeButton = (plugin: CommentatorPlugin) => new HeaderButton
 		{ icon: 'check', tooltip: 'Preview "accept all"', text: 'Previewing "accept all"' },
 		{ icon: 'cross', tooltip: 'Preview "reject all"', text: 'Previewing "reject all"' },
 	],
-	true,
+	plugin.settings.show_editor_buttons_labels,
 	'criticmarkup-suggestion-status',
 	plugin
 );
@@ -19,7 +19,7 @@ export const suggestionModeButton = (plugin: CommentatorPlugin) => new HeaderBut
 		{ icon: 'file-edit', tooltip: 'Directly edit document',  text: 'Editing' },
 		{ icon: 'edit', tooltip: 'Mark edits as suggestions', text: 'Suggesting',  },
 	],
-	true,
+	plugin.settings.show_editor_buttons_labels,
 	'criticmarkup-suggestion-status',
 	plugin
 );
