@@ -2,14 +2,15 @@ import { EditorState } from '@codemirror/state';
 import { EditorView } from '@codemirror/view';
 
 import { suggestionMode } from '../src/editor/suggestion-mode/suggestion-mode';
-import { treeParser } from '../src/editor/tree-parser';
-
-import { findBlockingChar, nodesInSelection } from '../src/editor/editor-util';
-import { CriticMarkupNodes, SubstitutionNode } from '../src/editor/criticmarkup-nodes';
 import { overridden_keymap } from '../src/editor/suggestion-mode/keybinds';
+
+import {
+	nodeParser, CriticMarkupNodes, SubstitutionNode,
+	findBlockingChar, applyToText,
+} from '../src/editor/base';
+
 import { App } from 'obsidian';
 import { DEFAULT_SETTINGS } from '../src/constants';
-import { applyToText } from '../src/util';
 
 const test_cases = [
 	'uv. wx yz',
@@ -135,18 +136,18 @@ for (let test_case of test_cases) {
 		const view = new EditorView({
 			state: EditorState.create({
 				doc: test_case,
-				extensions: [treeParser, suggestionMode(DEFAULT_SETTINGS)],
+				extensions: [nodeParser, suggestionMode(DEFAULT_SETTINGS)],
 			}),
 		});
 
-		const nodes = view.state.field(treeParser).nodes;
+		const nodes = view.state.field(nodeParser).nodes;
 
 		const unwrapped_string = applyToText(test_case, (node, text) => node.unwrap(), nodes.nodes);
 
 		const actual_view = new EditorView({
 			state: EditorState.create({
 				doc: unwrapped_string,
-				extensions: [treeParser, suggestionMode(DEFAULT_SETTINGS)],
+				extensions: [nodeParser, suggestionMode(DEFAULT_SETTINGS)],
 			}),
 		});
 
