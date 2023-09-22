@@ -72,7 +72,10 @@ const context = await esbuild.context({
                 return warning.code !== "a11y-click-events-have-key-events" && warning.code !== "a11y-no-static-element-interactions"
             },
         }),
-        inlineWorkerPlugin({ workerName: "Commentator Indexer" }),
+        inlineWorkerPlugin({
+            workerName: "Commentator Indexer",
+            external: ["obsidian"]
+        }),
     ]
 });
 
