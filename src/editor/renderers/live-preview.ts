@@ -19,7 +19,7 @@ import {
 import type { PluginSettings } from '../../types';
 import { NodeType } from '../../types';
 import { CriticMarkupNode, SubstitutionNode } from '../criticmarkup-nodes';
-import { commentGutterWidgets } from './comment-gutter';
+import { commentGutterMarkers } from './comment-gutter';
 
 
 export const inlineCommentRenderer = (settings: PluginSettings) => StateField.define<DecorationSet>({
@@ -109,7 +109,7 @@ class CommentIconWidget extends WidgetType {
 
 		if (this.is_block) {
 			this.icon.onclick = (e) => {
-				const gutterElements = view.state.field(commentGutterWidgets);
+				const gutterElements = view.state.field(commentGutterMarkers);
 				e.preventDefault();
 				gutterElements.between(this.node.from, this.node.to, (from, to, widget) => {
 					if (this.node.equals(widget.node)) {
