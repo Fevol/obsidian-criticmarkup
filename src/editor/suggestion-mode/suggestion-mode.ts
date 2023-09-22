@@ -1,10 +1,11 @@
 import { EditorSelection, EditorState, type Extension, SelectionRange, Transaction } from '@codemirror/state';
 import { type PluginSettings } from '../../types';
 
-import { treeParser } from '../tree-parser';
-
-import { cursorMoved, getEditorRanges, getUserEvents, nodesInSelection } from '../editor-util';
-import { text_insert, text_delete, text_replace, cursor_move } from '../edit-logic';
+import {
+	nodeParser,
+	text_insert, text_delete, text_replace, cursor_move,
+	cursorMoved, getEditorRanges, getUserEvents
+} from '../base';
 
 
 enum OperationType {
@@ -17,8 +18,8 @@ enum OperationType {
 const vim_action_resolver = {
 	'moveByCharacters': {
 		'group': false,
-	}
-}
+	},
+};
 
 // }
 // { keys: 'h', motion: 'moveByCharacters',
@@ -86,7 +87,6 @@ function isUserEvent(event: string, events: string[]): boolean {
 }
 
 
-
 // FIXME: Ask somebody whether this is the cleanest/most efficient way to access settings inside of the extension
 export const suggestionMode = (settings: PluginSettings): Extension => EditorState.transactionFilter.of(tr => applySuggestion(tr, settings));
 
@@ -101,7 +101,7 @@ function applySuggestion(tr: Transaction, settings: PluginSettings): Transaction
 	if (!tr.docChanged && tr.selection && vim_mode) {
 		if (cursorMoved(tr))
 			userEvents.push(tr.startState.selection.ranges[0].from < tr.selection!.ranges[0].from ? 'select.forward' : 'select.backward');
-		if ( vim_action_resolver[app.workspace.activeEditor?.editor?.cm.cm?.state.vim.lastMotion?.name as keyof typeof vim_action_resolver]?.group)
+		if (vim_action_resolver[app.workspace.activeEditor?.editor?.cm.cm?.state.vim.lastMotion?.name as keyof typeof vim_action_resolver]?.group)
 			userEvents.push('select.group');
 	}
 
@@ -130,11 +130,11 @@ function applySuggestion(tr: Transaction, settings: PluginSettings): Transaction
 		else if (changed_ranges[0].offset.removed)
 			operation_type = OperationType.DELETION;
 		else {
-			console.error("No operation type could be determined")
+			console.error('No operation type could be determined');
 			return tr;
 		}
 
-		const nodes = tr.startState.field(treeParser).nodes;
+		const nodes = tr.startState.field(nodeParser).nodes;
 		const changes = [];
 		const selections: SelectionRange[] = [];
 
@@ -173,7 +173,7 @@ function applySuggestion(tr: Transaction, settings: PluginSettings): Transaction
 		return tr.startState.update({
 			changes,
 			selection: EditorSelection.create(selections),
-			userEvent: "ignore"
+			userEvent: 'ignore',
 		});
 	}
 
@@ -184,14 +184,14 @@ function applySuggestion(tr: Transaction, settings: PluginSettings): Transaction
 			return tr;
 
 
-		const nodes = tr.startState.field(treeParser).nodes;
+		const nodes = tr.startState.field(nodeParser).nodes;
 
 		const backwards_select = userEvents.includes('select.backward');
 		const group_select = userEvents.includes('select.group');
 		const is_selection = userEvents.includes('select.extend');
 		const selections: SelectionRange[] = [];
 		for (const [idx, range] of tr.selection!.ranges.entries()) {
-			const cursor_operation = cursor_move(range,  tr.startState.selection!.ranges[idx],
+			const cursor_operation = cursor_move(range, tr.startState.selection!.ranges[idx],
 				nodes, tr.startState, backwards_select, group_select, is_selection, vim_mode);
 			selections.push(cursor_operation.selection);
 		}

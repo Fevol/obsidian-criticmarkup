@@ -1,18 +1,15 @@
-import { ItemView, type ViewStateResult, WorkspaceLeaf } from 'obsidian';
+import { ItemView, type Plugin, type ViewStateResult, WorkspaceLeaf } from 'obsidian';
 
 import type {SvelteComponent} from "svelte";
 import ViewPage from "./pages/ViewPage.svelte";
 
-import CommentatorPlugin from '../main';
-
 export const CRITICMARKUP_VIEW = "criticmarkup-view";
-
 
 
 export class CriticMarkupView extends ItemView {
 	view: SvelteComponent | null = null;
 
-	constructor(leaf: WorkspaceLeaf, public plugin: CommentatorPlugin) {
+	constructor(leaf: WorkspaceLeaf, public plugin: Plugin) {
 		super(leaf);
 	}
 

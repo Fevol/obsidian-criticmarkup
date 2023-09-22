@@ -1,10 +1,6 @@
-import { NodeType } from './types';
 import { RangeSet, RangeValue } from '@codemirror/state';
-import type { CriticMarkupNode } from './editor/criticmarkup-nodes';
 
-type EnumDictionary<T extends string | symbol | number, U> = {
-    [K in T]: U;
-};
+
 
 export function objectDifference<T>(new_obj: T, old_obj: T): Partial<T> {
     const diff: Partial<typeof new_obj> = {};
@@ -13,49 +9,6 @@ export function objectDifference<T>(new_obj: T, old_obj: T): Partial<T> {
             diff[key] = new_obj[key];
     return diff;
 }
-
-export const CM_NodeTypes: EnumDictionary<string, NodeType> = {
-    'Addition': NodeType.ADDITION,
-    'Deletion': NodeType.DELETION,
-    'Substitution': NodeType.SUBSTITUTION,
-    'Highlight': NodeType.HIGHLIGHT,
-    'Comment': NodeType.COMMENT,
-};
-
-
-export const CM_Syntax: EnumDictionary<NodeType, [string, string]> = {
-    [NodeType.ADDITION]: ['+', '+'],
-    [NodeType.DELETION]: ['-', '-'],
-    [NodeType.SUBSTITUTION]: ['~', '~'],
-    [NodeType.HIGHLIGHT]: ['=', '='],
-    [NodeType.COMMENT]: ['>', '<'],
-};
-export const CM_All_Brackets: EnumDictionary<NodeType, string[]> = {
-    [NodeType.ADDITION]: ['{++', '++}'],
-    [NodeType.DELETION]: ['{--', '--}'],
-    [NodeType.SUBSTITUTION]: ['{~~', '~>', '~~}'],
-    [NodeType.HIGHLIGHT]: ['{==', '==}'],
-    [NodeType.COMMENT]: ['{>>', '<<}'],
-};
-export const CM_Brackets: { [key: string]: string[] } = {
-    '{++': ['++}'],
-    '{--': ['--}'],
-    '{~~': ['~>', '~~}'],
-    '{==': ['==}'],
-    '{>>': ['<<}'],
-};
-
-
-export function applyToText(text: string, fn: (node: CriticMarkupNode, text: string) => string, nodes: CriticMarkupNode[]) {
-    let output = '';
-    let last_node = 0;
-    for (const node of nodes) {
-        output += text.slice(last_node, node.from) + fn(node, text);
-        last_node = node.to;
-    }
-    return output + text.slice(last_node);
-}
-
 
 export function indexOfRegex(string: string, regex: RegExp, fromIndex?: number) {
     const str = fromIndex ? string.substring(fromIndex) : string;

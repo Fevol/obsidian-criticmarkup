@@ -1,23 +1,10 @@
-import type { SelectionRange } from '@codemirror/state';
 import type { Command } from 'obsidian';
-
-
-export type StringNodeType = 'Addition' | 'Deletion' | 'Substitution' | 'Highlight' | 'Comment';
 
 export enum PreviewMode {
 	ALL = 0,
 	ACCEPT = 1,
 	REJECT = 2,
 }
-
-export enum NodeType {
-	ADDITION,
-	DELETION,
-	SUBSTITUTION,
-	HIGHLIGHT,
-	COMMENT,
-}
-
 
 export interface PluginSettings {
 	/**
@@ -84,37 +71,6 @@ export interface PluginSettings {
 	 * Enable corrected cursor movement near/within nodes
 	 */
 	alternative_cursor_movement: boolean;
-}
-
-
-
-export interface CriticMarkupRange {
-	from: number;
-	to: number;
-	head?: number;
-	anchor?: number;
-}
-
-
-export interface CriticMarkupOperation extends CriticMarkupRange {
-	offset: {
-		removed: number,
-		added: number,
-	};
-	inserted: string;
-	deleted: string | undefined;
-}
-
-export interface EditorChange {
-	from: number;
-	to: number;
-	insert: string;
-}
-
-export interface OperationReturn {
-	changes: EditorChange[];
-	selection: SelectionRange;
-	offset: number;
 }
 
 /**

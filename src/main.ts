@@ -1,48 +1,33 @@
-import {
-	type EventRef,
-	type MarkdownPostProcessor,
-	MarkdownPreviewRenderer,
-	Platform,
-	Plugin, TFile,
-} from 'obsidian';
-
+import { type MarkdownPostProcessor, MarkdownPreviewRenderer, Platform, Plugin, TFile } from 'obsidian';
 
 import { EditorView } from '@codemirror/view';
-import type { Extension } from '@codemirror/state';
+import { type Extension } from '@codemirror/state';
 
-import { commands } from './editor/commands';
-import { change_suggestions } from './editor/context-menu-commands';
+import { around } from 'monkey-around';
 
-import { treeParser } from './editor/tree-parser';
-import { getNodesInText } from './editor/editor-util';
-import { text_copy } from './editor/edit-logic';
+import {
+	nodeParser, type CriticMarkupNode, NODE_PROTOTYPE_MAPPER,
+	getNodesInText, text_copy
+} from './editor/base';
 
-import { inlineCommentRenderer, livePreviewRenderer } from './editor/renderers/live-preview';
-import { postProcess, postProcessorRerender, postProcessorUpdate } from './editor/renderers/post-processor';
-
+import { commands, cmenuCommands, nodeCorrecter, bracketMatcher } from './editor/uix';
 import { keybindExtensions } from './editor/suggestion-mode/keybinds';
 import { suggestionMode } from './editor/suggestion-mode/suggestion-mode';
-import { nodeCorrecter, bracketMatcher } from './editor/editor-handlers';
 
-import { criticmarkupGutterExtension } from './editor/renderers/criticmarkup-gutter';
-import { commentGutterExtension } from './editor/renderers/comment-gutter';
+import { postProcess, postProcessorRerender, postProcessorUpdate } from './editor/renderers/post-process';
+import { markupRenderer, commentRenderer } from './editor/renderers/live-preview';
+import { criticmarkupGutter, commentGutter } from './editor/renderers/gutters';
+import { type HeaderButton, previewModeButton, suggestionModeButton } from './editor/view-header';
 
-import { loadPreviewButtons, removePreviewButtons } from './editor/renderers/editor-preview-buttons';
-import { loadSuggestButtons, removeSuggestButtons, updateSuggestButtons } from './editor/renderers/editor-suggestion-buttons';
-
-
-import {around} from 'monkey-around';
 
 import { CRITICMARKUP_VIEW, CriticMarkupView } from './ui/view';
 import { CommentatorSettings } from './ui/settings';
 
-import { objectDifference } from './util';
-
-import { DEFAULT_SETTINGS, REQUIRES_FULL_RELOAD } from './constants';
-import type { PluginSettings } from './types';
 import { Database } from './database';
-import type { CriticMarkupNode } from './editor/criticmarkup-nodes';
-import { NODE_PROTOTYPE_MAPPER } from './editor/criticmarkup-nodes';
+
+import { objectDifference } from './util';
+import { DEFAULT_SETTINGS, REQUIRES_FULL_RELOAD } from './constants';
+import { type PluginSettings } from './types';
 
 
 export default class CommentatorPlugin extends Plugin {
@@ -50,28 +35,27 @@ export default class CommentatorPlugin extends Plugin {
 
 	settings: PluginSettings = DEFAULT_SETTINGS;
 	previous_settings: Partial<PluginSettings> = {};
-
 	changed_settings: Partial<PluginSettings> = {};
 
-	loadPreviewButtonsEvent!: EventRef;
-	loadSuggestButtonsEvent!: EventRef;
+	previewModeButton!: HeaderButton;
+	suggestionModeButton!: HeaderButton;
 
 	remove_monkeys: (() => void)[] = [];
 
 	database: Database<CriticMarkupNode[]> = new Database(
 		this,
-		"commentator/cache",
-		"Commentator cache",
+		'commentator/cache',
+		'Commentator cache',
 		3,
-		"Vault-wide cache for Commentator plugin",
+		'Vault-wide cache for Commentator plugin',
 		() => [],
 		async (file) => {
 			return getNodesInText(await this.app.vault.cachedRead(file as TFile)).nodes;
 		},
 		2,
-		(data) => {
+		(data: CriticMarkupNode[]) => {
 			return data.map(node => Object.setPrototypeOf(node, NODE_PROTOTYPE_MAPPER[node.type].prototype));
-		}
+		},
 	);
 
 	postProcessor!: MarkdownPostProcessor;
@@ -80,21 +64,21 @@ export default class CommentatorPlugin extends Plugin {
 		this.editorExtensions.length = 0;
 
 		this.editorExtensions.push(keybindExtensions);
-		this.editorExtensions.push(treeParser);
+		this.editorExtensions.push(nodeParser);
 
-		if (this.settings.comment_style === "icon" || this.settings.comment_style === "block")
-			this.editorExtensions.push(inlineCommentRenderer(this.settings));
-		if (this.settings.comment_style === "block")
-			this.editorExtensions.push(commentGutterExtension);
+		if (this.settings.comment_style === 'icon' || this.settings.comment_style === 'block')
+			this.editorExtensions.push(commentRenderer(this.settings));
+		if (this.settings.comment_style === 'block')
+			this.editorExtensions.push(commentGutter);
 
 		if (this.settings.live_preview) {
-			this.editorExtensions.push(livePreviewRenderer(this.settings));
+			this.editorExtensions.push(markupRenderer(this.settings));
 		}
 
 		// TODO: Rerender gutter on Ctrl+Scroll
 		// TODO: Check performance costs of statefield vs viewport gutter
 		if (this.settings.editor_gutter)
-			this.editorExtensions.push(criticmarkupGutterExtension(this));
+			this.editorExtensions.push(criticmarkupGutter(this));
 
 		// Performance: ~1ms in stress-test
 		if (this.settings.suggest_mode)
@@ -123,22 +107,20 @@ export default class CommentatorPlugin extends Plugin {
 	}
 
 	async onload() {
-		this.registerView(CRITICMARKUP_VIEW,  (leaf) => new CriticMarkupView(leaf, this));
+		this.registerView(CRITICMARKUP_VIEW, (leaf) => new CriticMarkupView(leaf, this));
 
 		this.settings = Object.assign({}, this.settings, await this.loadData());
 		this.previous_settings = Object.assign({}, this.settings);
 
-		if (this.settings.editor_preview_button) {
-			loadPreviewButtons(this);
-			this.loadPreviewButtonsEvent = this.app.workspace.on('layout-change', () => loadPreviewButtons(this));
-			this.registerEvent(this.loadPreviewButtonsEvent);
-		}
 
-		if (this.settings.editor_suggest_button) {
-			loadSuggestButtons(this);
-			this.loadSuggestButtonsEvent = this.app.workspace.on('layout-change', () => loadSuggestButtons(this));
-			this.registerEvent(this.loadSuggestButtonsEvent);
-		}
+		this.previewModeButton = previewModeButton(this);
+		this.suggestionModeButton = suggestionModeButton(this);
+
+		if (this.settings.editor_preview_button)
+			this.previewModeButton.renderButtons();
+
+		if (this.settings.editor_suggest_button)
+			this.suggestionModeButton.renderButtons();
 
 
 		this.addSettingTab(new CommentatorSettings(this.app, this));
@@ -146,12 +128,12 @@ export default class CommentatorPlugin extends Plugin {
 		this.registerEditorExtension(this.editorExtensions);
 
 		if (this.settings.post_processor) {
-			// TODO: Ask whether it would be possible to register a postprocessor that can run *before* even the markdown renderer
+			// TODO: Run postprocessor before any other MD postprocessors
 			this.postProcessor = this.registerMarkdownPostProcessor(async (el, ctx) => postProcess(el, ctx, this.settings), -99999);
 			postProcessorUpdate();
 		}
 
-		this.registerEvent(change_suggestions);
+		this.registerEvent(cmenuCommands);
 		// this.registerEvent(file_view_modes);
 
 		commands.push({
@@ -170,7 +152,7 @@ export default class CommentatorPlugin extends Plugin {
 			name: '(DEBUG) Toggle Vim mode',
 			icon: 'comment',
 			regular_callback: async () => {
-				this.app.vault.setConfig("vimMode", !this.app.vault.getConfig('vimMode'));
+				this.app.vault.setConfig('vimMode', !this.app.vault.getConfig('vimMode'));
 			},
 		});
 
@@ -180,7 +162,7 @@ export default class CommentatorPlugin extends Plugin {
 			icon: 'comment',
 			regular_callback: async () => {
 				await this.activateView();
-			}
+			},
 		});
 
 		for (const command of commands) {
@@ -212,15 +194,13 @@ export default class CommentatorPlugin extends Plugin {
 						await this.database.dropDatabase();
 					}
 				};
-			}
+			},
 		}));
 	}
 
 	async onunload() {
-		if (this.settings.editor_preview_button)
-			await removePreviewButtons();
-		if (this.settings.editor_suggest_button)
-			await removeSuggestButtons();
+		this.previewModeButton.detachButtons();
+		this.suggestionModeButton.detachButtons();
 
 		MarkdownPreviewRenderer.unregisterPostProcessor(this.postProcessor);
 
@@ -239,31 +219,25 @@ export default class CommentatorPlugin extends Plugin {
 		this.changed_settings = objectDifference(this.settings, this.previous_settings);
 		this.previous_settings = Object.assign({}, this.settings);
 
-		if (this.changed_settings.suggest_mode !== undefined) {
-			await updateSuggestButtons(this);
+		// Checks if settings are opened or not (prevents feedback loop with setting buttons calling saveSettings)
+		if (this.app.setting.activateTab) {
+			if (this.changed_settings.preview_mode !== undefined)
+				await this.previewModeButton.updateButtons(this.settings.preview_mode);
+
+			if (this.changed_settings.suggest_mode !== undefined)
+				await this.suggestionModeButton.updateButtons(this.settings.suggest_mode ? 1 : 0);
 		}
 
 		if (this.changed_settings.editor_preview_button !== undefined) {
-			if (this.changed_settings.editor_preview_button) {
-				loadPreviewButtons(this);
-				this.loadPreviewButtonsEvent = this.app.workspace.on('layout-change', () => loadPreviewButtons(this));
-				this.registerEvent(this.loadPreviewButtonsEvent);
-			} else {
-				await removePreviewButtons();
-				this.app.workspace.offref(this.loadPreviewButtonsEvent);
-				this.settings.preview_mode = 0;
-			}
+			this.changed_settings.editor_preview_button ?
+				this.previewModeButton.renderButtons() :
+				this.previewModeButton.detachButtons();
 		}
 
 		if (this.changed_settings.editor_suggest_button !== undefined) {
-			if (this.changed_settings.editor_suggest_button) {
-				loadSuggestButtons(this);
-				this.loadSuggestButtonsEvent = this.app.workspace.on('layout-change', () => loadSuggestButtons(this));
-				this.registerEvent(this.loadSuggestButtonsEvent);
-			} else {
-				await removeSuggestButtons();
-				this.app.workspace.offref(this.loadSuggestButtonsEvent);
-			}
+			this.changed_settings.editor_suggest_button ?
+				this.suggestionModeButton.renderButtons() :
+				this.suggestionModeButton.detachButtons();
 		}
 
 		if (this.changed_settings.post_processor !== undefined) {
@@ -277,6 +251,11 @@ export default class CommentatorPlugin extends Plugin {
 		await this.updateEditorExtension();
 	}
 
+	async setSetting<K extends keyof PluginSettings>(key: K, value: PluginSettings[K]) {
+		this.settings[key] = value;
+		await this.saveSettings();
+	}
+
 	async activateView() {
 		this.app.workspace.detachLeavesOfType(CRITICMARKUP_VIEW);
 
@@ -286,9 +265,7 @@ export default class CommentatorPlugin extends Plugin {
 		});
 
 		this.app.workspace.revealLeaf(
-			this.app.workspace.getLeavesOfType(CRITICMARKUP_VIEW)[0]
+			this.app.workspace.getLeavesOfType(CRITICMARKUP_VIEW)[0],
 		);
 	}
 }
-
-

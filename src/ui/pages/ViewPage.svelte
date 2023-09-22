@@ -7,10 +7,11 @@
 	import { type TFile, Menu, debounce, prepareSimpleSearch, Notice } from 'obsidian';
 
 	import { type DatabaseEntry } from '../../database';
-	import { NodeType } from '../../types';
 
-	import { NODE_ICON_MAPPER, type CriticMarkupNode } from '../../editor/criticmarkup-nodes';
-    import { acceptSuggestionsInFile, rejectSuggestionsInFile } from '../../editor/commands';
+	import {
+		NodeType, NODE_ICON_MAPPER, type CriticMarkupNode,
+		acceptSuggestionsInFile, rejectSuggestionsInFile
+	} from '../../editor/base';
 
 	export let plugin: CommentatorPlugin;
 
