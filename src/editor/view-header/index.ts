@@ -4,9 +4,9 @@ import type CommentatorPlugin from '../../main';
 export const previewModeButton = (plugin: CommentatorPlugin) => new HeaderButton(
 	"preview_mode",
 	[
-		{ icon: 'message-square', tooltip: 'Show all suggestions', text: 'Showing suggestions' },
-		{ icon: 'check', tooltip: 'Preview "accept all"', text: 'Previewing "accept all"' },
-		{ icon: 'cross', tooltip: 'Preview "reject all"', text: 'Previewing "reject all"' },
+		{ icon: 'check', tooltip: 'Current mode: show all suggestions\nClick to preview \'accept all\'', text: 'Showing all suggestions' },
+		{ icon: 'cross', tooltip: 'Current mode: preview \'accept all\'\nClick to preview \'reject all\'', text: 'Previewing "accept all"' },
+		{ icon: 'message-square', tooltip: 'Current mode: preview \'reject all\'\nClick to preview \'show all\'', text: 'Previewing "reject all"' },
 	],
 	plugin.settings.show_editor_buttons_labels,
 	'criticmarkup-suggestion-status',
@@ -16,8 +16,8 @@ export const previewModeButton = (plugin: CommentatorPlugin) => new HeaderButton
 export const suggestionModeButton = (plugin: CommentatorPlugin) => new HeaderButton(
 	"suggest_mode",
 	[
-		{ icon: 'file-edit', tooltip: 'Directly edit document',  text: 'Editing' },
-		{ icon: 'edit', tooltip: 'Mark edits as suggestions', text: 'Suggesting',  },
+		{ icon: 'edit', tooltip: 'Current mode: editing\nClick to suggest', text: 'Editing' },
+		{ icon: 'file-edit', tooltip: 'Current mode: suggesting\nClick to edit', text: 'Suggesting' },
 	],
 	plugin.settings.show_editor_buttons_labels,
 	'criticmarkup-suggestion-status',
