@@ -18,6 +18,8 @@ export const DEFAULT_SETTINGS: PluginSettings = {
 
 	show_editor_buttons_labels: true,
 
+	database_workers: 2,
+
 	post_processor: true,
 	live_preview: true,
 	alternative_cursor_movement: true,

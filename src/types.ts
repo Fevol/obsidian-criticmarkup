@@ -64,6 +64,11 @@ export interface PluginSettings {
 	show_editor_buttons_labels: boolean;
 
 	/**
+	 * Number of workers that are available for database indexing
+	 */
+	database_workers: number;
+
+	/**
 	 * Enable post processor rendering
 	 */
 	post_processor: boolean;

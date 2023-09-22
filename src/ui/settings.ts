@@ -182,6 +182,19 @@ export class CommentatorSettings extends PluginSettingTab {
             .setName("Database Settings")
 
         new Setting(containerEl)
+            .setName("Database workers")
+            .setDesc("The amount of workers to use for database operations, this speeds up vault indexing")
+            .addSlider(slider => slider
+                .setLimits(1, navigator.hardwareConcurrency / 2, 1)
+                .setValue(this.plugin.settings.database_workers)
+                .setDynamicTooltip()
+                .onChange(async (value) => {
+                        this.plugin.settings.database_workers = value;
+                        await this.plugin.saveSettings();
+                    }
+                ));
+
+        new Setting(containerEl)
             .setName("ADVANCED: Re-initialize database")
             .setDesc("If you're getting a database upgrade error, you can use this to re-initialize the database; this will *not* alter your notes in any way")
             .addButton(button => button

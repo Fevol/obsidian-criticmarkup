@@ -51,7 +51,7 @@ export default class CommentatorPlugin extends Plugin {
 		async (file) => {
 			return getNodesInText(await this.app.vault.cachedRead(file as TFile)).nodes;
 		},
-		2,
+		this.settings.database_workers,
 		(data: CriticMarkupNode[]) => {
 			return data.map(node => Object.setPrototypeOf(node, NODE_PROTOTYPE_MAPPER[node.type].prototype));
 		},
