@@ -1,11 +1,11 @@
 import { EditorSelection, EditorState, type Extension, SelectionRange, Transaction } from '@codemirror/state';
-import { type PluginSettings } from '../../types';
+import { type PluginSettings } from '../../../../types';
 
 import {
 	nodeParser,
 	text_insert, text_delete, text_replace, cursor_move,
 	cursorMoved, getEditorRanges, getUserEvents
-} from '../base';
+} from '../../../base';
 
 
 enum OperationType {

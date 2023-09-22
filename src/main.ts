@@ -10,9 +10,8 @@ import {
 	getNodesInText, text_copy
 } from './editor/base';
 
-import { commands, cmenuCommands, nodeCorrecter, bracketMatcher } from './editor/uix';
-import { keybindExtensions } from './editor/suggestion-mode/keybinds';
-import { suggestionMode } from './editor/suggestion-mode/suggestion-mode';
+import { commands, cmenuCommands } from './editor/uix';
+import { nodeCorrecter, bracketMatcher, suggestionMode, keybindExtensions } from './editor/uix/extensions';
 
 import { postProcess, postProcessorRerender, postProcessorUpdate } from './editor/renderers/post-process';
 import { markupRenderer, commentRenderer } from './editor/renderers/live-preview';

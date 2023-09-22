@@ -1,8 +1,7 @@
 import { EditorState } from '@codemirror/state';
 import { EditorView } from '@codemirror/view';
 
-import { suggestionMode } from '../src/editor/suggestion-mode/suggestion-mode';
-import { overridden_keymap } from '../src/editor/suggestion-mode/keybinds';
+import { suggestionMode, overridden_keymap } from '../src/editor/uix/extensions';
 
 import {
 	nodeParser, CriticMarkupNodes, SubstitutionNode,
