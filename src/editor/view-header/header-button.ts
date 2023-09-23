@@ -38,6 +38,8 @@ export class HeaderButton {
 	}
 
 	async updateButtons(new_index?: number) {
+		if (new_index === this.index) return;
+
 		if (new_index) {
 			this.index = new_index;
 		} else {

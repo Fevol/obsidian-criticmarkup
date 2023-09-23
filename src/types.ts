@@ -15,9 +15,9 @@ export interface PluginSettings {
 	 */
 	preview_mode: PreviewMode;
 	/**
-	 * Add a toggle button for quickly toggling between preview modes
+	 * Enable editor suggestion mode
 	 */
-	editor_preview_button: boolean;
+	suggest_mode: boolean;
 
 	/**
 	 * Render a gutter marking locations of nodes in the document
@@ -50,18 +50,27 @@ export interface PluginSettings {
 	clipboard_remove_syntax: boolean;
 
 	/**
-	 * Enable editor suggestion mode
+	 * Add a toggle button for quickly toggling between preview modes in the editor toolbar
 	 */
-	suggest_mode: boolean;
+	editor_preview_button: boolean;
 	/**
-	 * Add a toggle button for quickly toggling suggestion mode on/off
+	 * Add a toggle button for quickly toggling suggestion mode on/off in the editor toolbar
 	 */
 	editor_suggest_button: boolean;
-
 	/**
 	 * Show the labels on the buttons found in the header
 	 */
 	show_editor_buttons_labels: boolean;
+
+	/**
+	 * Add a button for quickly toggling preview mode in the status bar
+	 */
+	status_bar_preview_button: boolean;
+	/**
+	 * Add a button for quickly toggling suggestion mode in the status bar
+	 */
+	status_bar_suggest_button: boolean;
+
 
 	/**
 	 * Number of workers that are available for database indexing

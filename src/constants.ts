@@ -2,7 +2,8 @@ import { type PluginSettings, PreviewMode } from './types';
 
 export const DEFAULT_SETTINGS: PluginSettings = {
 	preview_mode: PreviewMode.ALL,
-	editor_preview_button: true,
+	suggest_mode: false,
+
 	editor_gutter: true,
 
 	editor_styling: false,
@@ -13,10 +14,13 @@ export const DEFAULT_SETTINGS: PluginSettings = {
 	node_correcter: true,
 	clipboard_remove_syntax: true,
 
-	suggest_mode: false,
-	editor_suggest_button: true,
 
+	editor_preview_button: true,
+	editor_suggest_button: true,
 	show_editor_buttons_labels: true,
+
+	status_bar_preview_button: true,
+	status_bar_suggest_button: true,
 
 	database_workers: 2,
 

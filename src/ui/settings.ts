@@ -106,6 +106,28 @@ export class CommentatorSettings extends PluginSettingTab {
 
 
         new Setting(containerEl)
+            .setName("Status bar preview button")
+            .setDesc("Add suggestion preview button to status bar")
+            .addToggle(toggle => toggle.setValue(this.plugin.settings.status_bar_preview_button)
+                .onChange(async (value) => {
+                        this.plugin.settings.status_bar_preview_button = value;
+                        await this.plugin.saveSettings();
+                    }
+                ));
+
+
+        new Setting(containerEl)
+            .setName("Status bar suggestion mode button")
+            .setDesc("Add button to status bar to toggle suggestion mode")
+            .addToggle(toggle => toggle.setValue(this.plugin.settings.status_bar_suggest_button)
+                .onChange(async (value) => {
+                        this.plugin.settings.status_bar_suggest_button = value;
+                        await this.plugin.saveSettings();
+                    }
+                ));
+
+
+        new Setting(containerEl)
             .setName("Remove syntax on copy")
             .setDesc("CriticMarkup syntax will be removed when copying text to clipboard")
             .addToggle(toggle => toggle.setValue(this.plugin.settings.clipboard_remove_syntax)

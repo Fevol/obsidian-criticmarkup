@@ -16,7 +16,8 @@ import { nodeCorrecter, bracketMatcher, suggestionMode, keybindExtensions } from
 import { postProcess, postProcessorRerender, postProcessorUpdate } from './editor/renderers/post-process';
 import { markupRenderer, commentRenderer } from './editor/renderers/live-preview';
 import { criticmarkupGutter, commentGutter } from './editor/renderers/gutters';
-import { type HeaderButton, previewModeButton, suggestionModeButton } from './editor/view-header';
+import { type HeaderButton, previewModeHeaderButton, suggestionModeHeaderButton } from './editor/view-header';
+import { type StatusBarButton, previewModeStatusBarButton, suggestionModeStatusBarButton } from './editor/status-bar';
 
 
 import { CRITICMARKUP_VIEW, CriticMarkupView } from './ui/view';
@@ -36,8 +37,11 @@ export default class CommentatorPlugin extends Plugin {
 	previous_settings: Partial<PluginSettings> = {};
 	changed_settings: Partial<PluginSettings> = {};
 
-	previewModeButton!: HeaderButton;
-	suggestionModeButton!: HeaderButton;
+	previewModeHeaderButton!: HeaderButton;
+	suggestionHeaderModeButton!: HeaderButton;
+
+	previewModeStatusBarButton!: StatusBarButton;
+	suggestionModeStatusBarButton!: StatusBarButton;
 
 	remove_monkeys: (() => void)[] = [];
 
@@ -112,14 +116,26 @@ export default class CommentatorPlugin extends Plugin {
 		this.previous_settings = Object.assign({}, this.settings);
 
 
-		this.previewModeButton = previewModeButton(this);
-		this.suggestionModeButton = suggestionModeButton(this);
+		this.previewModeHeaderButton = previewModeHeaderButton(this);
+		this.suggestionHeaderModeButton = suggestionModeHeaderButton(this);
+
+		this.previewModeStatusBarButton = previewModeStatusBarButton(this);
+		this.suggestionModeStatusBarButton = suggestionModeStatusBarButton(this);
+
 
 		if (this.settings.editor_preview_button)
-			this.previewModeButton.renderButtons();
+			this.previewModeHeaderButton.renderButtons();
 
 		if (this.settings.editor_suggest_button)
-			this.suggestionModeButton.renderButtons();
+			this.suggestionHeaderModeButton.renderButtons();
+
+		if (this.settings.status_bar_preview_button)
+			this.previewModeStatusBarButton.renderButton();
+
+		if (this.settings.status_bar_suggest_button)
+			this.suggestionModeStatusBarButton.renderButton();
+
+
 
 
 		this.addSettingTab(new CommentatorSettings(this.app, this));
@@ -198,8 +214,8 @@ export default class CommentatorPlugin extends Plugin {
 	}
 
 	async onunload() {
-		this.previewModeButton.detachButtons();
-		this.suggestionModeButton.detachButtons();
+		this.previewModeHeaderButton.detachButtons();
+		this.suggestionHeaderModeButton.detachButtons();
 
 		MarkdownPreviewRenderer.unregisterPostProcessor(this.postProcessor);
 
@@ -218,30 +234,43 @@ export default class CommentatorPlugin extends Plugin {
 		this.changed_settings = objectDifference(this.settings, this.previous_settings);
 		this.previous_settings = Object.assign({}, this.settings);
 
-		// Checks if settings are opened or not (prevents feedback loop with setting buttons calling saveSettings)
-		if (this.app.setting.activateTab) {
-			if (this.changed_settings.preview_mode !== undefined)
-				await this.previewModeButton.updateButtons(this.settings.preview_mode);
+		if (this.changed_settings.preview_mode !== undefined) {
+			this.previewModeStatusBarButton.updateButton(this.settings.preview_mode);
+			await this.previewModeHeaderButton.updateButtons(this.settings.preview_mode);
+		}
 
-			if (this.changed_settings.suggest_mode !== undefined)
-				await this.suggestionModeButton.updateButtons(this.settings.suggest_mode ? 1 : 0);
+		if (this.changed_settings.suggest_mode !== undefined) {
+			this.suggestionModeStatusBarButton.updateButton(this.settings.suggest_mode ? 1 : 0);
+			await this.suggestionHeaderModeButton.updateButtons(this.settings.suggest_mode ? 1 : 0);
 		}
 
 		if (this.changed_settings.show_editor_buttons_labels !== undefined) {
-			this.previewModeButton.toggleLabels();
-			this.suggestionModeButton.toggleLabels();
+			this.previewModeHeaderButton.toggleLabels();
+			this.suggestionHeaderModeButton.toggleLabels();
 		}
 
 		if (this.changed_settings.editor_preview_button !== undefined) {
 			this.changed_settings.editor_preview_button ?
-				this.previewModeButton.renderButtons() :
-				this.previewModeButton.detachButtons();
+				this.previewModeHeaderButton.renderButtons() :
+				this.previewModeHeaderButton.detachButtons();
 		}
 
 		if (this.changed_settings.editor_suggest_button !== undefined) {
 			this.changed_settings.editor_suggest_button ?
-				this.suggestionModeButton.renderButtons() :
-				this.suggestionModeButton.detachButtons();
+				this.suggestionHeaderModeButton.renderButtons() :
+				this.suggestionHeaderModeButton.detachButtons();
+		}
+
+		if (this.changed_settings.status_bar_preview_button !== undefined) {
+			this.changed_settings.status_bar_preview_button ?
+				this.previewModeStatusBarButton.renderButton() :
+				this.previewModeStatusBarButton.detachButton();
+		}
+
+		if (this.changed_settings.status_bar_suggest_button !== undefined) {
+			this.changed_settings.status_bar_suggest_button ?
+				this.suggestionModeStatusBarButton.renderButton() :
+				this.suggestionModeStatusBarButton.detachButton();
 		}
 
 		if (this.changed_settings.post_processor !== undefined) {
