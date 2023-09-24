@@ -1,4 +1,4 @@
-import type { Editor, MarkdownView } from 'obsidian';
+import { type Editor, type MarkdownView, Platform } from 'obsidian';
 
 import { type ECommand } from '../../types';
 
@@ -6,9 +6,10 @@ import {
 	CM_NodeTypes, selectionContainsNodes,
 	changeType, acceptSuggestions, rejectSuggestions,
 } from '../base';
+import type CommentatorPlugin from '../../main';
 
 
-const suggestion_commands: ECommand[] = Object.entries(CM_NodeTypes).map(([text, type]) => ({
+export const suggestion_commands: ECommand[] = Object.entries(CM_NodeTypes).map(([text, type]) => ({
 	id: `commentator-toggle-${text.toLowerCase()}`,
 	name: `Mark as ${text}`,
 	icon: text.toLowerCase(),
@@ -18,8 +19,7 @@ const suggestion_commands: ECommand[] = Object.entries(CM_NodeTypes).map(([text,
 	},
 }));
 
-
-export const commands: ECommand[] = [...suggestion_commands,
+export const editor_commands: ECommand[] = [
 	{
 		id: 'commentator-accept-all-suggestions',
 		name: 'Accept all suggestions',
@@ -75,3 +75,55 @@ export const commands: ECommand[] = [...suggestion_commands,
 		},
 	},
 ];
+
+export const application_commmands = (plugin: CommentatorPlugin): ECommand[] => [
+	{
+		id: 'commentator-suggest-mode',
+		name: 'Toggle suggestion mode',
+		icon: 'comment',
+		editor_context: true,
+		regular_callback: async () => {
+			plugin.settings.suggest_mode = !plugin.settings.suggest_mode;
+			await plugin.saveSettings();
+		},
+	},
+	{
+		id: 'commentator-toggle-vim',
+		name: '(DEBUG) Toggle Vim mode',
+		icon: 'comment',
+		regular_callback: async () => {
+			plugin.app.vault.setConfig('vimMode', !plugin.app.vault.getConfig('vimMode'));
+		},
+	},
+	{
+		id: 'commentator-view',
+		name: 'Open CriticMarkup view',
+		icon: 'comment',
+		regular_callback: async () => {
+			await plugin.activateView();
+		},
+	},
+];
+
+
+export function initializeCommands(commands: ECommand[]) {
+	for (const command of commands) {
+		if (Platform.isMobile || command.editor_context) {
+			if (command.regular_callback) {
+				command.editorCallback = command.regular_callback;
+				delete command.regular_callback;
+			} else {
+				command.editorCheckCallback = command.check_callback;
+				delete command.check_callback;
+			}
+		} else {
+			if (command.regular_callback) {
+				command.callback = command.regular_callback;
+				delete command.regular_callback;
+			} else {
+				command.checkCallback = command.check_callback;
+				delete command.check_callback;
+			}
+		}
+	}
+}

@@ -1,4 +1,4 @@
-import { type MarkdownPostProcessor, MarkdownPreviewRenderer, Platform, Plugin, TFile } from 'obsidian';
+import { type MarkdownPostProcessor, MarkdownPreviewRenderer, Plugin, TFile } from 'obsidian';
 
 import { EditorView } from '@codemirror/view';
 import { type Extension } from '@codemirror/state';
@@ -10,7 +10,7 @@ import {
 	getNodesInText, text_copy
 } from './editor/base';
 
-import { commands, cmenuCommands } from './editor/uix';
+import { suggestion_commands, editor_commands, application_commmands, initializeCommands, cmenuCommands } from './editor/uix';
 import { nodeCorrecter, bracketMatcher, suggestionMode, keybindExtensions } from './editor/uix/extensions';
 
 import { postProcess, postProcessorRerender, postProcessorUpdate } from './editor/renderers/post-process';
@@ -106,7 +106,6 @@ export default class CommentatorPlugin extends Plugin {
 
 		if (this.settings.post_processor)
 			postProcessorUpdate();
-
 	}
 
 	async onload() {
@@ -151,55 +150,16 @@ export default class CommentatorPlugin extends Plugin {
 		this.registerEvent(cmenuCommands);
 		// this.registerEvent(file_view_modes);
 
-		commands.push({
-			id: 'commentator-suggest-mode',
-			name: 'Toggle suggestion mode',
-			icon: 'comment',
-			editor_context: true,
-			regular_callback: async () => {
-				this.settings.suggest_mode = !this.settings.suggest_mode;
-				await this.saveSettings();
-			},
-		});
+		const commands = [
+			...suggestion_commands,
+			...editor_commands,
+			...application_commmands(this),
+		];
 
-		commands.push({
-			id: 'commentator-toggle-vim',
-			name: '(DEBUG) Toggle Vim mode',
-			icon: 'comment',
-			regular_callback: async () => {
-				this.app.vault.setConfig('vimMode', !this.app.vault.getConfig('vimMode'));
-			},
-		});
-
-		commands.push({
-			id: 'commentator-view',
-			name: 'Open CriticMarkup view',
-			icon: 'comment',
-			regular_callback: async () => {
-				await this.activateView();
-			},
-		});
-
-		for (const command of commands) {
-			if (Platform.isMobile || command.editor_context) {
-				if (command.regular_callback) {
-					command.editorCallback = command.regular_callback;
-					delete command.regular_callback;
-				} else {
-					command.editorCheckCallback = command.check_callback;
-					delete command.check_callback;
-				}
-			} else {
-				if (command.regular_callback) {
-					command.callback = command.regular_callback;
-					delete command.regular_callback;
-				} else {
-					command.checkCallback = command.check_callback;
-					delete command.check_callback;
-				}
-			}
+		initializeCommands(commands);
+		for (const command of commands)
 			this.addCommand(command);
-		}
+
 
 		this.remove_monkeys.push(around(this.app.plugins, {
 			uninstallPlugin: (oldMethod) => {
