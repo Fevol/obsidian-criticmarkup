@@ -170,11 +170,7 @@ function applySuggestion(tr: Transaction, settings: PluginSettings): Transaction
 			}
 		}
 
-		return tr.startState.update({
-			changes,
-			selection: EditorSelection.create(selections),
-			userEvent: 'ignore',
-		});
+		return tr.startState.update({ changes, selection: EditorSelection.create(selections), });
 	}
 
 	// Handle cursor movements

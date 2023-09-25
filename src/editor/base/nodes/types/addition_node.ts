@@ -2,8 +2,8 @@ import { CM_All_Brackets, NodeType } from '../definitions';
 import { CriticMarkupNode } from '../base-node';
 
 export class AdditionNode extends CriticMarkupNode {
-	constructor(from: number, to: number, text: string) {
-		super(from, to, NodeType.ADDITION, 'Addition', text);
+	constructor(from: number, to: number, text: string, metadata?: number) {
+		super(from, to, NodeType.ADDITION, 'Addition', text, metadata);
 	}
 
 	accept() {

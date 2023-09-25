@@ -1,10 +1,10 @@
 import { EditorSelection, Text } from '@codemirror/state';
 
-import { type CriticMarkupOperation, type EditorChange, type OperationReturn } from './types';
+import { type CriticMarkupEdit, type EditorChange, type OperationReturn } from './types';
 
 import { CriticMarkupNodes, SubstitutionNode, NodeType, CM_All_Brackets } from '../nodes';
 
-export function text_replace(range: CriticMarkupOperation, nodes: CriticMarkupNodes, offset: number, doc: Text): OperationReturn {
+export function text_replace(range: CriticMarkupEdit, nodes: CriticMarkupNodes, offset: number, doc: Text): OperationReturn {
 	const changes: EditorChange[] = [];
 	let cursor_offset = 0;
 	let deletion_start = range.from;

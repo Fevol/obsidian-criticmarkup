@@ -49,7 +49,7 @@ export default class CommentatorPlugin extends Plugin {
 		this,
 		'commentator/cache',
 		'Commentator cache',
-		3,
+		4,
 		'Vault-wide cache for Commentator plugin',
 		() => [],
 		async (file) => {

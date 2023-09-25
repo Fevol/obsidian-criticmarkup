@@ -1,13 +1,13 @@
 import { EditorSelection, EditorState, SelectionRange, Text } from '@codemirror/state';
 
-import { type CriticMarkupOperation, type EditorChange, type OperationReturn } from './types';
+import { type CriticMarkupEdit, type EditorChange, type OperationReturn } from './types';
 import { cursor_move } from './cursor';
 
 import { CriticMarkupNodes, SubstitutionNode, NodeType, CM_All_Brackets } from '../nodes';
 import { findBlockingChar } from '../edit-util';
 
 
-export function text_delete(range: CriticMarkupOperation, nodes: CriticMarkupNodes, offset: number, doc: Text,
+export function text_delete(range: CriticMarkupEdit, nodes: CriticMarkupNodes, offset: number, doc: Text,
 							backwards_delete: boolean, group_delete: boolean, selection_delete: boolean, state: EditorState,
 							keep_selection: boolean = false): OperationReturn {
 	// FIXME: Efficiency: Reduce if statement complexity (redundant if checks, deep nesting) <-> readability

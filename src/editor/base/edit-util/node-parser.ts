@@ -1,7 +1,10 @@
 import { EditorState, StateField } from '@codemirror/state';
-import { type ChangedRange, type Tree, TreeFragment } from '@lezer/common';
+import { type ChangedRange, type SyntaxNode, type Tree, TreeFragment } from '@lezer/common';
 
-import { constructNode, CriticMarkupNode, CriticMarkupNodes } from '../nodes';
+import {
+	CriticMarkupNode, CriticMarkupNodes,
+	AdditionNode, CommentNode, DeletionNode, HighlightNode, SubstitutionNode, NodeType,
+} from '../nodes';
 
 import { criticmarkupLanguage } from '../../parser';
 
@@ -25,37 +28,45 @@ export const nodeParser: StateField<{tree: Tree, fragments: readonly TreeFragmen
 		);
 
 		let fragments = TreeFragment.applyChanges(value.fragments, changed_ranges);
-
 		const text = tr.state.doc.toString();
 		const tree = criticmarkupLanguage.parser.parse(text, fragments);
 		fragments = TreeFragment.addTree(tree, fragments);
 		const nodes = nodesInSelection(tree, text);
 
+
 		return { tree, nodes, fragments }
 	},
 });
 
-export function nodesInSelection(tree: Tree, text: string, start?: number, end?: number) {
+
+function constructFromSyntaxNode(node: SyntaxNode, text: string) {
+	const metadata = node.firstChild?.type.name.startsWith('MDSep') ? node.firstChild!.from : undefined;
+	let middle = undefined;
+	if (node.type.name === 'Substitution') {
+		const child = (metadata ? node.childAfter(2) : node.firstChild);
+		if (!child || child.type.name !== "MSub") return;
+		middle = child.from;
+	}
+
+	return constructNode(node.from, node.to, node.type.name, text.slice(node.from, node.to), middle, metadata);
+}
+
+export function nodesInSelection(tree: Tree, text: string) {
 	const nodes: CriticMarkupNode[] = [];
 
-	tree.iterate({
-		from: start,
-		to: end,
-		enter: (node) => {
-			// FIXME: Add check here whether [node.to - 3, node.to] is in fact a bracket, prevent half-open nodes from actually being considered as nodes
-			if (node.type.name === '⚠')
-				return false;
-			if (node.type.name === 'CriticMarkup' || node.type.name === 'MSub')
-				return;
-			if (node.type.name === 'Substitution') {
-				if (node.node.firstChild?.type.name !== 'MSub')
-					return;
-				nodes.push(constructNode(node.from, node.to, node.type.name, text.slice(node.from, node.to), node.node.firstChild?.from)!);
-			} else {
-				nodes.push(constructNode(node.from, node.to, node.type.name, text.slice(node.from, node.to), node.node.firstChild?.from)!);
-			}
-		},
-	});
+	// Skip CriticMarkup root node
+	const cursor = tree.cursor();
+	if (cursor.next(true)) {
+		do {
+			const node = cursor.node;
+
+			if (node.type.name === "⚠") continue;
+			const new_node = constructFromSyntaxNode(node, text);
+			if (new_node) nodes.push(new_node);
+		} while (cursor.nextSibling())
+
+	}
+
 	return new CriticMarkupNodes(nodes);
 }
 
@@ -66,7 +77,33 @@ export function selectionContainsNodes(state: EditorState) {
 	) : false;
 }
 
-export function getNodesInText(text: string, from?: number, to?: number) {
+export function getNodesInText(text: string) {
 	const tree = criticmarkupLanguage.parser.parse(text);
-	return nodesInSelection(tree, text, from, to);
+	return nodesInSelection(tree, text);
 }
+
+export function constructNode(from: number, to: number, type: string, text: string, middle?: number, metadata?: number) {
+	switch (type) {
+		case 'Addition':
+			return new AdditionNode(from, to, text, metadata);
+		case 'Deletion':
+			return new DeletionNode(from, to, text, metadata);
+		case 'Substitution':
+			return new SubstitutionNode(from, middle!, to, text, metadata);
+		case 'Highlight':
+			return new HighlightNode(from, to, text, metadata);
+		case 'Comment':
+			return new CommentNode(from, to, text, metadata);
+		default:
+			// Will never get called
+			return new AdditionNode(from, to, text, metadata);
+	}
+}
+
+export const NODE_PROTOTYPE_MAPPER = {
+	[NodeType.ADDITION]: AdditionNode,
+	[NodeType.DELETION]: DeletionNode,
+	[NodeType.HIGHLIGHT]: HighlightNode,
+	[NodeType.SUBSTITUTION]: SubstitutionNode,
+	[NodeType.COMMENT]: CommentNode,
+};

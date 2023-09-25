@@ -1,11 +1,11 @@
 import { EditorSelection, SelectionRange } from '@codemirror/state';
 
-import { type CriticMarkupOperation, type EditorChange, type OperationReturn } from './types';
+import { type CriticMarkupEdit, type EditorChange, type OperationReturn } from './types';
 
 import { CriticMarkupNode, CriticMarkupNodes, SubstitutionNode, NodeType } from '../nodes';
 
 
-function insert_new_node(insertion_start: number, offset: number, node_offset: number, range: CriticMarkupOperation, nodes: CriticMarkupNodes, node: CriticMarkupNode, left: boolean) {
+function insert_new_node(insertion_start: number, offset: number, node_offset: number, range: CriticMarkupEdit, nodes: CriticMarkupNodes, node: CriticMarkupNode, left: boolean) {
 	// Check for existence of adjacent node to which text may be added
 	const adjacent_node = nodes.adjacent_to_node(node, left, true);
 	if (adjacent_node && (adjacent_node.type === NodeType.ADDITION || (left && adjacent_node.type === NodeType.SUBSTITUTION))) {
@@ -20,7 +20,7 @@ function insert_new_node(insertion_start: number, offset: number, node_offset: n
 }
 
 
-export function text_insert(range: CriticMarkupOperation, nodes: CriticMarkupNodes, offset: number): OperationReturn {
+export function text_insert(range: CriticMarkupEdit, nodes: CriticMarkupNodes, offset: number): OperationReturn {
 	const node = nodes.at_cursor(range.to);
 	offset += range.offset.added;
 	const changes: EditorChange[] = [];

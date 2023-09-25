@@ -173,19 +173,28 @@
 	word-wrap: break-word;
 }
 
-.criticmarkup-view-node-placeholder {
-	@extend .svelcomlib-skeleton-placeholder;
-	border-radius: var(--radius-l);
+.criticmarkup-view-node-completed {
+	background: var(--background-primary-alt);
+	color: var(--text-muted);
+	border-style: dashed;
 }
 
-.criticmarkup-view-node-placeholder-title {
-	height: var(--size-4-3);
-	margin-bottom: var(--size-4-4);
+.criticmarkup-view-node-author {
+	font-weight: var(--bold-weight);
 }
 
-.criticmarkup-view-node-placeholder-body {
-	height: 10px;
-	margin-bottom: var(--size-4-1);
+.my-custom-markup {
+	color: red;
+	letter-spacing: 0.9px;
+	text-decoration: underline;
+	text-decoration-thickness: 0.5px;
+	text-decoration-style: dotted;
+	font-variant: all-small-caps;
+}
+
+.criticmarkup-view-node-time {
+	font-size: var(--font-smallest);
+	color: var(--text-faint);
 }
 
 .criticmarkup-view-node:hover {
@@ -355,20 +364,12 @@
 // ================================================
 
 
-span.cm-strikethrough:has(.criticmarkup-editing) {
+span.cm-strikethrough:has([data-type="criticmarkup-substitution"]) {
 	text-decoration: unset;
 }
 
-span.cm-strikethrough:has(.criticmarkup-accepted) {
-	text-decoration: unset;
-}
-
-span.cm-highlight:has(.criticmarkup-editing) {
+span.cm-highlight:has([data-type="criticmarkup-highlight"]) {
 	background-color: unset;
-}
-
-.cm-strikethrough:has(.criticmarkup-substitution.criticmarkup-addition) {
-	text-decoration: unset;
 }
 
 //

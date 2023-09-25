@@ -74,7 +74,7 @@ const context = await esbuild.context({
         }),
         inlineWorkerPlugin({
             workerName: "Commentator Indexer",
-            external: ["obsidian"]
+            external: ["obsidian"],
         }),
     ]
 });

@@ -1,6 +1,6 @@
 import { ChangeSet, EditorSelection, SelectionRange, Text, Transaction } from '@codemirror/state';
 
-import { type CriticMarkupOperation } from '../edit-operations/types';
+import { type CriticMarkupChange, type CriticMarkupEdit } from '../edit-operations/types';
 
 
 export function selectionRangeOverlap(selection: EditorSelection, rangeFrom: number, rangeTo: number) {
@@ -11,8 +11,25 @@ export function cursorMoved(tr: Transaction) {
 	return tr.startState.selection.ranges[0].from !== tr.selection!.ranges[0].from || tr.startState.selection.ranges[0].to !== tr.selection!.ranges[0].to;
 }
 
-export function getEditorRanges(changes: ChangeSet, doc: Text): CriticMarkupOperation[] {
-	const changed_ranges: CriticMarkupOperation[] = [];
+export function getEditorOffsets(changes: ChangeSet): CriticMarkupChange[] {
+	const changed_ranges: CriticMarkupChange[] = [];
+	changes.iterChanges((fromA, toA, fromB, toB, inserted) => {
+		changed_ranges.push({
+			from: fromA,
+			to: toA,
+			offset: {
+				removed: toA - fromA,
+				added: toB - fromB,
+			}
+		});
+	});
+
+	return changed_ranges;
+}
+
+
+export function getEditorRanges(changes: ChangeSet, doc: Text): CriticMarkupEdit[] {
+	const changed_ranges: CriticMarkupEdit[] = [];
 	changes.iterChanges((fromA, toA, fromB, toB, inserted) => {
 		let text = '';
 		// @ts-ignore (Inserted always exists when iterating changes)
@@ -39,7 +56,7 @@ export function getEditorRanges(changes: ChangeSet, doc: Text): CriticMarkupOper
 	return changed_ranges;
 }
 
-export function selectionToEditorRange(selection: SelectionRange, text: Text, isDelete = false): CriticMarkupOperation {
+export function selectionToEditorRange(selection: SelectionRange, text: Text, isDelete = false): CriticMarkupEdit {
 	return {
 		from: selection.from,
 		to: selection.to,

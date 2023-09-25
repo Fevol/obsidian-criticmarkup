@@ -270,6 +270,7 @@
 		<div class='criticmarkup-view-container' tabindex='-1' use:clickOutside={".menu"} on:click_outside={onClickOutside} on:keydown={handleKey}>
 			<VirtualList items={flattened_nodes} let:item let:index>
 				<div class='criticmarkup-view-node'
+					 class:criticmarkup-view-node-completed={item.node.done}
 					 class:criticmarkup-view-node-selected={selected_nodes.some(value => value === index)}
 					 on:click={async (e) => {
 							if (e.shiftKey) {
@@ -322,7 +323,20 @@
 					<!-- TODO: Only show path if folder/vault-wide filter is active -->
 					<div class='criticmarkup-view-node-top'>
 						<Icon size={24} icon={NODE_ICON_MAPPER[item.node.type]} />
-						<span class='criticmarkup-view-node-title'>{item.path}</span>
+						<div>
+							<span class='criticmarkup-view-node-title'>{item.path}</span>
+							{#if item.node.author}
+								<div class='criticmarkup-view-node-author'>
+									{item.node.author}
+								</div>
+							{/if}
+
+							{#if item.node.time}
+								<div class='criticmarkup-view-node-time'>
+									{window.moment.unix(item.node.time).format('MMM DD YYYY, HH:mm')}
+								</div>
+							{/if}
+						</div>
 					</div>
 
 					{#key item.node.text}
@@ -331,7 +345,7 @@
 								<span class='criticmarkup-view-node-empty'>This node is empty</span>
 							{:else}
 								{@const parts = item.node.unwrap_parts()}
-								<MarkdownRenderer {plugin} text={parts[0]} source={item.path} />
+								<MarkdownRenderer {plugin} text={parts[0]} source={item.path} class={item.node.style} />
 								{#if item.node.type === NodeType.SUBSTITUTION}
 									<MarkdownRenderer {plugin} text={parts[1]} source={item.path} />
 								{/if}

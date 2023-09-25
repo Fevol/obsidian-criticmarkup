@@ -6,8 +6,8 @@ import { CriticMarkupNode } from '../base-node';
 export class SubstitutionNode extends CriticMarkupNode {
 	num_ignore_chars = 8;
 
-	constructor(from: number, public middle: number, to: number, text: string) {
-		super(from, to, NodeType.SUBSTITUTION, 'Substitution', text);
+	constructor(from: number, public middle: number, to: number, text: string, metadata?: number) {
+		super(from, to, NodeType.SUBSTITUTION, 'Substitution', text, metadata);
 	}
 
 	num_ignored_chars(from: number, to: number): number {
@@ -147,6 +147,7 @@ export class SubstitutionNode extends CriticMarkupNode {
 	apply_offset(offset: number) {
 		super.apply_offset(offset);
 		this.middle += offset;
+		return this;
 	}
 
 	get length() {

@@ -3,7 +3,32 @@ import { type NodeType, type StringNodeType, CM_All_Brackets } from './definitio
 
 export abstract class CriticMarkupNode {
 	num_ignore_chars = 6;
-	protected constructor(public from: number, public to: number, public type: NodeType, public repr: StringNodeType, public text: string) { }
+
+	author: string | null = null;
+	time: number | null = null;
+	done: boolean | null = null;
+	style: string | null = null;
+	color: string | null = null;
+
+	protected constructor(public from: number, public to: number, public type: NodeType, public repr: StringNodeType, public text: string, public metadata?: number) {
+		if (metadata !== undefined) {
+			const metadata_separator = metadata - from;
+			const metadata_text = text.slice(3, metadata_separator);
+			this.text = text.slice(0, 3) + text.slice(metadata_separator + 2);
+			try {
+				// TODO: Determine whether metadata specification should have quotes around keywords
+				//   + Cleaner, shorter
+				//   - Not valid JSON
+				// TODO: JS can be injected here, possible security risk
+				const fields = (0, eval)(`({${metadata_text}})`);
+				this.author = fields.author ?? fields.a;
+				this.time = fields.time ?? fields.t;
+				this.done = fields.done ?? fields.d;
+				this.style = fields.style ?? fields.s;
+				this.color = fields.color ?? fields.c;
+			} catch (e) {}
+		}
+	}
 
 	copy(): CriticMarkupNode {
 		return Object.assign(Object.create(Object.getPrototypeOf(this)), this);
@@ -183,6 +208,7 @@ export abstract class CriticMarkupNode {
 	apply_offset(offset: number) {
 		this.from += offset;
 		this.to += offset;
+		return this;
 	}
 
 

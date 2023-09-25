@@ -7,11 +7,14 @@ export interface CriticMarkupRange {
 	anchor?: number;
 }
 
-export interface CriticMarkupOperation extends CriticMarkupRange {
+export interface CriticMarkupChange extends CriticMarkupRange {
 	offset: {
 		removed: number,
 		added: number,
-	};
+	}
+}
+
+export interface CriticMarkupEdit extends CriticMarkupChange {
 	inserted: string;
 	deleted: string | undefined;
 }
