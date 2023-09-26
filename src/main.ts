@@ -1,7 +1,7 @@
 import { type MarkdownPostProcessor, MarkdownPreviewRenderer, Plugin, TFile } from 'obsidian';
 
 import { EditorView } from '@codemirror/view';
-import { type Extension } from '@codemirror/state';
+import { type EditorState, type Extension } from '@codemirror/state';
 
 import { around } from 'monkey-around';
 
@@ -52,8 +52,9 @@ export default class CommentatorPlugin extends Plugin {
 		4,
 		'Vault-wide cache for Commentator plugin',
 		() => [],
-		async (file) => {
-			return getNodesInText(await this.app.vault.cachedRead(file as TFile)).nodes;
+		async (file, state?: EditorState) => {
+			return state ? state.field(nodeParser).nodes.nodes :
+						   getNodesInText(await this.app.vault.cachedRead(file as TFile)).nodes;
 		},
 		this.settings.database_workers,
 		(data: CriticMarkupNode[]) => {
