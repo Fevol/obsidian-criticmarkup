@@ -4,6 +4,7 @@ import { type EditorState, type RangeSet, Line, RangeSetBuilder, StateField } fr
 import { Component, editorEditorField, MarkdownRenderer } from 'obsidian';
 
 import { CriticMarkupNode, nodeParser, NodeType } from '../../../base';
+import { commentGutter } from './index';
 
 export class CommentMarker extends GutterMarker {
 	comment: HTMLElement | null = null;
@@ -66,7 +67,7 @@ export class CommentMarker extends GutterMarker {
 
 			setTimeout(() => {
 				// @ts-expect-error (Directly accessing function of unexported class)
-				this.view.plugin(commentGutterExtension[1][0][0])!.moveGutter(this);
+				this.view.plugin(commentGutter[1][0][0])!.moveGutter(this);
 				this.view.scrollDOM.scrollTo({ top, behavior: 'smooth'})
 			}, 200);
 
