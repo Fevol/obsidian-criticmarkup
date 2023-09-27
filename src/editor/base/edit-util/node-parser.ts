@@ -6,7 +6,7 @@ import {
 	AdditionNode, CommentNode, DeletionNode, HighlightNode, SubstitutionNode, NodeType,
 } from '../nodes';
 
-import { criticmarkupLanguage } from '../../parser';
+import { criticmarkupLanguage } from '../parser';
 
 export const nodeParser: StateField<{tree: Tree, fragments: readonly TreeFragment[], nodes: CriticMarkupNodes}> = StateField.define({
 	create(state) {
