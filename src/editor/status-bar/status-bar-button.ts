@@ -10,6 +10,22 @@ export class StatusBarButton {
 		this.index = +this.plugin.settings[this.attribute];
 	}
 
+	showMenu(e: MouseEvent) {
+		const menu = new Menu();
+		for (const [index, state] of this.states.entries()) {
+			menu.addItem((item) => {
+				item.setTitle(state.text);
+				item.setIcon(state.icon);
+				item.setChecked(index === this.index);
+				item.onClick(async () => {
+					await this.plugin.setSetting(this.attribute, index);
+				});
+			});
+		}
+		menu.showAtMouseEvent(e);
+	}
+
+
 	renderButton() {
 		const { icon, text } = this.states[this.index];
 
@@ -20,20 +36,9 @@ export class StatusBarButton {
 		this.button.classList.add('mod-clickable');
 		this.button.setAttribute('aria-label', text);
 		this.button.setAttribute('data-tooltip-position', 'top');
-		this.button.addEventListener('click', (e) => {
-			const menu = new Menu();
-			for (const [index, state] of this.states.entries()) {
-				menu.addItem((item) => {
-					item.setTitle(state.text);
-					item.setIcon(state.icon);
-					item.setChecked(index === this.index);
-					item.onClick(async () => {
-						await this.plugin.setSetting(this.attribute, index);
-					});
-				});
-			}
-			menu.showAtMouseEvent(e);
-		});
+		this.button.addEventListener('click', (e) => this.showMenu(e));
+		this.button.addEventListener('contextmenu', (e) => this.showMenu(e));
+
 	}
 
 	updateButton(new_index: number) {
