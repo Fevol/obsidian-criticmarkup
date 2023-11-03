@@ -73,7 +73,7 @@ export const editor_commands: ECommand[] = [
 				changes,
 			}));
 		},
-	},
+	}
 ];
 
 export const application_commmands = (plugin: CommentatorPlugin): ECommand[] => [
@@ -103,9 +103,23 @@ export const application_commmands = (plugin: CommentatorPlugin): ECommand[] => 
 			await plugin.activateView();
 		},
 	},
+	{
+		id: 'commentator-toggle-preview-mode',
+		name: 'Toggle preview mode',
+		icon: 'comment',
+		regular_callback: async () => {
+			plugin.settings.preview_mode = (plugin.settings.preview_mode + 1) % 3;
+			await plugin.saveSettings();
+		},
+	}
 ];
 
 
+/**
+ * Automatically assigns correct callback to commands
+ * @param commands Commands to initialize
+ * @remark This results in non-editor callback commands also being available in the mobile toolbar
+ */
 export function initializeCommands(commands: ECommand[]) {
 	for (const command of commands) {
 		if (Platform.isMobile || command.editor_context) {
