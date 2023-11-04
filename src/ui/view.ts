@@ -1,7 +1,7 @@
 import { ItemView, type Plugin, type ViewStateResult, WorkspaceLeaf } from 'obsidian';
 
 import type {SvelteComponent} from "svelte";
-import ViewPage from "./pages/ViewPage.svelte";
+import { ViewPage } from "./pages/view";
 
 export const CRITICMARKUP_VIEW = "criticmarkup-view";
 

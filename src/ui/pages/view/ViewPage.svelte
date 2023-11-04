@@ -1,17 +1,17 @@
 <script lang='ts'>
-	import type CommentatorPlugin from '../../main';
+	import type CommentatorPlugin from '../../../main';
 
 	import { onDestroy, onMount } from 'svelte';
-	import { MarkdownRenderer, Icon, View, StateButton, NavHeader, Button, Input, VirtualList, clickOutside } from '../components';
+	import { MarkdownRenderer, Icon, View, StateButton, NavHeader, Button, Input, VirtualList, clickOutside } from '../../components';
 
 	import { type TFile, Menu, debounce, prepareSimpleSearch, Notice } from 'obsidian';
 
-	import { type DatabaseEntry } from '../../database';
+	import { type DatabaseEntry } from '../../../database';
 
 	import {
-		NodeType, NODE_ICON_MAPPER, type CriticMarkupNode,
-		acceptSuggestionsInFile, rejectSuggestionsInFile
-	} from '../../editor/base';
+		NodeType, NODE_ICON_MAPPER, type CriticMarkupNode, type CommentNode,
+		acceptSuggestionsInFile, rejectSuggestionsInFile,
+	} from '../../../editor/base';
 
 	export let plugin: CommentatorPlugin;
 
@@ -50,6 +50,7 @@
 	let flattened_nodes: NodeEntry[] = [];
 	let selected_nodes: number[] = [];
 	let anchor_selected_node: number | null = null;
+	let hover_index: number | null = null;
 
 	const node_filters = [
 		{ icon: 'asterisk', tooltip: 'All markup' },
@@ -113,7 +114,9 @@
             return { path, node }
         }));
 
-        if (node_type_filter !== NodeTypeFilter.ALL)
+		flattened_nodes = flattened_nodes.filter(item => item.node.type !== NodeType.COMMENT || (<CommentNode>item.node).reply_depth === 0);
+
+		if (node_type_filter !== NodeTypeFilter.ALL)
             flattened_nodes = flattened_nodes.filter(item => item.node.type === node_type_filter - 1);
 
         if (content_filter !== ContentFilter.ALL)
@@ -270,8 +273,10 @@
 		<div class='criticmarkup-view-container' tabindex='-1' use:clickOutside={".menu"} on:click_outside={onClickOutside} on:keydown={handleKey}>
 			<VirtualList items={flattened_nodes} let:item let:index>
 				<div class='criticmarkup-view-node'
-					 class:criticmarkup-view-node-completed={item.node.done}
+					 class:criticmarkup-view-node-completed={item.node.fields.done}
 					 class:criticmarkup-view-node-selected={selected_nodes.some(value => value === index)}
+					 on:mouseenter={() => hover_index = index}
+					 on:mouseleave={() => hover_index = null}
 					 on:click={async (e) => {
 							if (e.shiftKey) {
 								if (anchor_selected_node) {
@@ -320,22 +325,34 @@
 							menu.showAtMouseEvent(e);
 						}}
 				>
+					{#if hover_index === index}
+						<div style='position: relative'>
+							<div class='criticmarkup-view-suggestion-buttons' >
+								<Button icon='check' tooltip='Accept change' onClick={() => editSelectedNodes(true, index)} />
+								<Button icon='cross' tooltip='Reject change' onClick={() => editSelectedNodes(false, index)} />
+							</div>
+						</div>
+					{/if}
+
+
 					<!-- TODO: Only show path if folder/vault-wide filter is active -->
 					<div class='criticmarkup-view-node-top'>
 						<Icon size={24} icon={NODE_ICON_MAPPER[item.node.type]} />
 						<div>
 							<span class='criticmarkup-view-node-title'>{item.path}</span>
-							{#if item.node.author}
-								<div class='criticmarkup-view-node-author'>
-									{item.node.author}
-								</div>
-							{/if}
+							<div>
+								{#if item.node.fields.author}
+								<span class='criticmarkup-view-node-author'>
+									{item.node.fields.author}
+								</span>
+								{/if}
 
-							{#if item.node.time}
-								<div class='criticmarkup-view-node-time'>
-									{window.moment.unix(item.node.time).format('MMM DD YYYY, HH:mm')}
-								</div>
-							{/if}
+								{#if item.node.fields.time}
+								<span class='criticmarkup-view-node-time'>
+									{window.moment.unix(item.node.fields.time).format('MMM DD YYYY, HH:mm')}
+								</span>
+								{/if}
+							</div>
 						</div>
 					</div>
 
@@ -345,13 +362,35 @@
 								<span class='criticmarkup-view-node-empty'>This node is empty</span>
 							{:else}
 								{@const parts = item.node.unwrap_parts()}
-								<MarkdownRenderer {plugin} text={parts[0]} source={item.path} class={item.node.style} />
+								<MarkdownRenderer {plugin} text={parts[0]} source={item.path} class={item.node.fields.style} />
 								{#if item.node.type === NodeType.SUBSTITUTION}
 									<MarkdownRenderer {plugin} text={parts[1]} source={item.path} />
 								{/if}
 							{/if}
 						</div>
 					{/key}
+
+					{#if item.node.replies.length}
+						{#each item.node.replies as reply}
+							<div class='criticmarkup-view-node-reply'>
+								<div class='criticmarkup-view-node-reply-top'>
+									{#if reply.fields.author}
+										<span class='criticmarkup-view-node-reply-author'>
+											{reply.fields.author}
+										</span>
+									{/if}
+									{#if reply.fields.time}
+										<span class='criticmarkup-view-node-reply-time'>
+											{window.moment.unix(reply.fields.time).format('MMM DD YYYY, HH:mm')}
+										</span>
+									{/if}
+								</div>
+								<div class='criticmarkup-view-node-reply-text'>
+									<MarkdownRenderer {plugin} text={reply.unwrap()} source={item.path} class={reply.fields.style} />
+								</div>
+							</div>
+						{/each}
+					{/if}
 				</div>
 			</VirtualList>
 		</div>

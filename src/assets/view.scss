@@ -86,3 +86,31 @@
 	font-size: var(--font-smallest);
 	color: var(--text-faint);
 }
+
+.criticmarkup-view-suggestion-buttons {
+	// Display in the top right corner
+	position: fixed;
+	right: 0;
+	transform: translateY(-12px) translateX(-16px);
+
+
+	display: flex;
+	align-items: center;
+
+	border: 1px solid var(--background-modifier-border-hover);
+	background-color: var(--background-secondary);
+
+	border-radius: var(--radius-s);
+}
+
+.criticmarkup-view-suggestion-buttons > button {
+	background: unset;
+	box-shadow: unset;
+	border-radius: unset;
+	height: unset;
+	padding: var(--size-4-1);
+}
+
+.criticmarkup-view-suggestion-buttons > button:hover {
+	background-color: var(--background-secondary-alt);
+}
