@@ -1,0 +1,159 @@
+// ================================================
+//           CriticMarkup Editor Styles
+// ================================================
+
+.criticmarkup-editing { }
+
+.criticmarkup-inline { }
+
+.criticmarkup-accepted {}
+
+.criticmarkup-rejected {
+	display: none;
+}
+
+
+// ================================================
+//        CriticMarkup Main Suggestion Styles
+// ================================================
+.criticmarkup-addition {
+	color: var(--addition-color);
+}
+
+.criticmarkup-addition.criticmarkup-has-reply {
+	color: var(--text-on-accent);
+	background-color: var(--addition-color);
+	box-shadow: 0 0 0 2px var(--addition-color);
+	transition: background-color 200ms ease-in-out 0ms;
+
+	&:hover {
+		box-shadow: 0 0 0 2px var(--addition-color-alt);
+		background-color: var(--addition-color-alt);
+	}
+}
+
+
+
+.criticmarkup-deletion {
+	text-decoration: var(--deletion-color) 2px line-through;
+}
+
+.criticmarkup-comment {
+	background-color: var(--comment-color);
+	border-bottom: 2px solid var(--comment-border-color);
+}
+
+.criticmarkup-comment-icon {
+	padding: 0 0 var(--size-4-2) 0;
+}
+
+.criticmarkup-comment-icon:hover {
+	cursor: pointer;
+}
+
+.criticmarkup-comment-icon svg {
+	color: var(--comment-border-color);
+	stroke-width: 4px;
+	transition: stroke-width 150ms ease-in-out;
+}
+
+.criticmarkup-comment-icon:hover svg {
+	stroke-width: 5px;
+}
+
+.criticmarkup-comment-tooltip {
+	max-height: var(--popover-height);
+	max-width: var(--popover-width);
+	overflow-y: scroll;
+
+	position: absolute;
+	z-index: 10000;
+	border: 4px solid var(--comment-border-color);
+
+	// Fancy notes:
+	filter: drop-shadow(4px 4px 0px var(--comment-inverse-color));
+
+	//border: 1px solid var(--background-modifier-border);
+	background-color: var(--background-primary-alt);
+	padding: var(--size-4-2);
+	border-radius: var(--radius-l);
+}
+
+.criticmarkup-comment-tooltip * {
+	margin-block-start: 0.25em;
+	margin-block-end: 0.25em;
+}
+
+.criticmarkup-highlight {
+	background-color: var(--highlight-color);
+}
+
+// ================================================
+//            Editor UIX Elements Styling
+// ================================================
+
+.criticmarkup-suggestion-status {
+	font-size: var(--font-smallest);
+	color: var(--text-faint);
+	margin-right: var(--size-2-1);
+}
+
+
+// ================================================
+// 	           Editor Gutter Styling
+// ================================================
+
+
+
+// ================================================
+//             Markdown-specific Fixes
+// ================================================
+
+
+span.cm-strikethrough:has([data-type="criticmarkup-substitution"]) {
+	text-decoration: unset;
+}
+
+span.cm-highlight:has([data-type="criticmarkup-highlight"]) {
+	background-color: unset;
+}
+
+//
+//.cm-line:has(>.criticmarkup-inline) ~ .cm-line.cm-strikethrough {
+//  text-decoration: unset;
+//  color: var(--color-red);
+//}
+
+
+// ================================================
+//           Markdown-specific Styling
+// ================================================
+
+.criticmarkup-addition .list-bullet::after {
+	background-color: var(--addition-color);
+}
+
+.criticmarkup-addition img {
+	border: 4px solid var(--addition-color);
+	border-radius: 12px;
+}
+
+.criticmarkup-addition hr {
+	border-color: var(--addition-color);
+}
+
+.criticmarkup-addition .callout {
+	border: 4px dashed var(--addition-color);
+}
+.criticmarkup-addition:has(.markdown-embed) {
+	border: 4px dotted var(--addition-color);
+
+	.markdown-embed {
+		border-left: unset;
+	}
+}
+
+.criticmarkup-deletion img {
+	border: 4px solid var(--deletion-color) !important;
+	border-radius: 12px;
+}

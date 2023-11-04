@@ -1,0 +1,53 @@
+.cm-gutters.cm-gutters.cm-gutters.cm-gutters:has(.is-minimal.criticmarkup-comment-gutter) {
+	position: sticky !important;
+}
+
+
+// Removes additional padding to the right of the gutter
+.cm-gutters.cm-gutters:has(>.criticmarkup-comment-gutter) {
+	padding-inline-end: 0;
+}
+
+.criticmarkup-comment-gutter {
+	width: 100%;
+	margin-top: 50px;
+	transition: width 200ms ease-in-out;
+}
+
+.criticmarkup-gutter-comment {
+	width: 100%;
+	color: var(--text-muted);
+	border: 2px solid var(--background-modifier-border);
+	border-radius: var(--radius-l);
+	padding: var(--size-4-2);
+	transition: border-color 200ms ease-in-out 0ms, background-color 200ms ease-in-out 0ms;
+	background-color: var(--background-secondary-alt);
+
+	// Position comments relative to their optical center
+	//transform: translateY(-25%);
+
+	max-height: 150px;
+	overflow-y: scroll;
+	word-wrap: break-word;
+}
+
+.criticmarkup-comment-gutter .cm-gutterElement {
+	transition: margin 200ms ease-in-out;
+}
+
+
+.criticmarkup-gutter-comment * {
+	margin-block-start: 0.25em;
+	margin-block-end: 0.25em;
+}
+
+.criticmarkup-gutter-comment:hover {
+	border: 2px solid var(--interactive-accent);
+	background-color: var(--background-primary-alt);
+}
+
+
+.criticmarkup-gutter-comment:focus {
+	border: 2px solid var(--comment-border-color);
+	background-color: var(--background-primary);
+}

@@ -1,0 +1,88 @@
+
+.criticmarkup-view-container {
+	padding: 0 0 0 var(--size-4-4);
+	height: 95%;
+}
+
+.criticmarkup-view-node {
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-l);
+	background: var(--background-primary);
+	margin: 2px 8px 8px 2px;
+	max-height: 400px;
+	overflow-y: scroll;
+	word-wrap: break-word;
+}
+
+.criticmarkup-view-node-top {
+	display: flex;
+	align-items: center;
+	gap: var(--size-4-2);
+	padding: var(--size-4-2);
+}
+
+.criticmarkup-view-node-text {
+	padding: 0 var(--size-4-1);
+	padding-left: 30px;
+}
+
+.criticmarkup-view-node-completed {
+	background: var(--background-primary-alt);
+	color: var(--text-muted);
+	border-style: dashed;
+}
+
+.criticmarkup-view-node-author {
+	font-size: var(--font-smallest);
+	color: var(--text-faint);
+}
+
+.criticmarkup-view-node-time {
+	font-size: var(--font-smallest);
+	color: var(--text-faint);
+}
+
+.criticmarkup-view-node:hover {
+	box-shadow: unset;
+	outline: 2px dashed var(--interactive-accent-hover);
+}
+
+.criticmarkup-view-node-selected {
+	box-shadow: 0 0 0 2px var(--interactive-accent);
+}
+
+
+.criticmarkup-view-node-icon { }
+
+.criticmarkup-view-node-title {
+	font-variant: all-small-caps;
+	font-weight: var(--bold-weight);
+}
+
+.criticmarkup-view-node-empty {
+	color: var(--text-faint);
+}
+
+
+.criticmarkup-view-node-reply {
+	border-top: 1px dashed var(--background-modifier-border);
+}
+
+.criticmarkup-view-node-reply-top {
+	padding: 0 var(--size-4-1);
+}
+
+.criticmarkup-view-node-reply-text {
+	padding: 0 var(--size-4-1);
+	padding-left: 30px;
+}
+
+.criticmarkup-view-node-reply-author {
+	font-size: var(--font-smallest);
+	color: var(--text-faint);
+}
+
+.criticmarkup-view-node-reply-time {
+	font-size: var(--font-smallest);
+	color: var(--text-faint);
+}
