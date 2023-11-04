@@ -307,6 +307,8 @@ class UpdateContext {
 		const above = Math.max(block.top - this.height, 0);
 		const block_start = block.top < this.height ? this.height : block.top;
 
+		// SOLUTION: ensure ordering of markers of same block (bit inefficient but very easy solution)
+		(markers as CommentMarker[]).sort((a, b) => a.node.from - b.node.from);
 
 		// FIXME: This is very dependant on... well, everything, but at least it kind of works
 		// TODO: Find a more robust manner to determine the height of the block

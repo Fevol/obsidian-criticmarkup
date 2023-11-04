@@ -115,11 +115,6 @@ function createMarkers(state: EditorState) {
 		//
 		// As to why I'm making this entire rant: it took me four hours to figure out
 
-		// Oh yeah, and that doesn't even MENTION the fact that RangeSet is a heap and thus does not keep the
-		// order of the markers, so comments in the same block have no guarantee of appearing in the same error,
-		// so your comment about a reference might instead be added to something else entirely within the same block
-		// ... I should probably make a separate FIXME for that
-
 		let block_from: Line = state.doc.lineAt(node.from);
 		if (overlapping_block && block_from.from <= stop_next_block!) {
 			block_from = previous_block!;
