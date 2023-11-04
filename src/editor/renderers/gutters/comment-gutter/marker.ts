@@ -3,13 +3,13 @@ import { type EditorState, type RangeSet, Line, RangeSetBuilder, StateField } fr
 
 import { Component, editorEditorField, MarkdownRenderer } from 'obsidian';
 
-import { CriticMarkupNode, nodeParser, NodeType } from '../../../base';
+import { type CommentNode, nodeParser, NodeType } from '../../../base';
 import { commentGutter } from './index';
 
 export class CommentMarker extends GutterMarker {
 	comment: HTMLElement | null = null;
 
-	constructor(public node: CriticMarkupNode, public view: EditorView) {
+	constructor(public node: CommentNode, public view: EditorView) {
 		super();
 	}
 
@@ -124,7 +124,7 @@ function createMarkers(state: EditorState) {
 			previous_block = block_from;
 		}
 
-		builder.add(block_from.from, block_from.to - 1, new CommentMarker(node, view));
+		builder.add(block_from.from, block_from.to - 1, new CommentMarker(node as CommentNode, view));
 	}
 
 	return builder.finish();

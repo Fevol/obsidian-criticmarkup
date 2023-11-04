@@ -1,4 +1,6 @@
 import { RangeSet, RangeValue } from '@codemirror/state';
+import { MarkdownView } from 'obsidian';
+import type { EditorViewI } from '../typings/obsidian-ex';
 
 
 
@@ -52,4 +54,13 @@ export function splitIntoEvenChunks<T>(array: T[], chunk_count: number): T[][] {
     for (let i = chunk_count; i > 0; i--)
         result.push(array.splice(0, Math.ceil(array.length / i)));
     return result;
+}
+
+export function iterateAllCMInstances(callback: (cm: EditorViewI) => void) {
+    app.workspace.iterateAllLeaves((leaf) => {
+        // @ts-ignore
+        if (leaf.view instanceof MarkdownView && leaf.view.currentMode.type === "source")
+            // @ts-ignore
+            callback(leaf.view.editor.cm);
+    });
 }

@@ -143,6 +143,19 @@ export class CommentatorSettings extends PluginSettingTab {
             .setName("Rendering Settings")
 
         new Setting(containerEl)
+            .setName("Comment gutter width")
+            .setDesc("How much space comments in the right margin of the editor should take up")
+            .addSlider(slider => slider
+                .setLimits(100, 500, 50)
+                .setValue(this.plugin.settings.comment_gutter_width)
+                .setDynamicTooltip()
+                .onChange(async (value) => {
+                        this.plugin.settings.comment_gutter_width = value;
+                        await this.plugin.saveSettings();
+                    }
+                ));
+
+        new Setting(containerEl)
             .setName("Comment style")
             .setDesc("How comments should be rendered")
             .addDropdown(dropdown => dropdown
@@ -223,6 +236,7 @@ export class CommentatorSettings extends PluginSettingTab {
                 .setButtonText("Re-initialize database")
                 .onClick(async () => {
                     await this.plugin.database.reinitializeDatabase();
+                    console.log("Database re-initialized");
                 }
             ));
     }

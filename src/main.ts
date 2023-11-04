@@ -25,7 +25,7 @@ import { CommentatorSettings } from './ui/settings';
 
 import { Database } from './database';
 
-import { objectDifference } from './util';
+import { iterateAllCMInstances, objectDifference } from './util';
 import { DEFAULT_SETTINGS, REQUIRES_FULL_RELOAD } from './constants';
 import { type PluginSettings } from './types';
 
@@ -75,16 +75,14 @@ export default class CommentatorPlugin extends Plugin {
 		if (this.settings.comment_style === 'block')
 			this.editorExtensions.push(commentGutter);
 
-		if (this.settings.live_preview) {
+		if (this.settings.live_preview)
 			this.editorExtensions.push(markupRenderer(this.settings));
-		}
 
 		// TODO: Rerender gutter on Ctrl+Scroll
 		// TODO: Check performance costs of statefield vs viewport gutter
 		if (this.settings.editor_gutter)
 			this.editorExtensions.push(criticmarkupGutter(this));
 
-		// Performance: ~1ms in stress-test
 		if (this.settings.suggest_mode)
 			this.editorExtensions.push(suggestionMode(this.settings));
 
@@ -145,7 +143,8 @@ export default class CommentatorPlugin extends Plugin {
 		if (this.settings.post_processor) {
 			// TODO: Run postprocessor before any other MD postprocessors
 			this.postProcessor = this.registerMarkdownPostProcessor(async (el, ctx) => postProcess(el, ctx, this.settings), -99999);
-			postProcessorUpdate();
+			// Full postprocessor rerender on enabling the plugin?
+			postProcessorRerender();
 		}
 
 		this.registerEvent(cmenuCommands);
@@ -172,6 +171,15 @@ export default class CommentatorPlugin extends Plugin {
 				};
 			},
 		}));
+
+		// It is not easily possible to inject the width of the gutter when initializing the gutter
+		// Instead, we wait for the gutter is initialized and then set the width
+		app.workspace.onLayoutReady(() => {
+			iterateAllCMInstances(cm => {
+				// @ts-ignore
+				cm.plugin(commentGutter[1][0][0]).setWidth(this.settings.comment_gutter_width);
+			});
+		});
 	}
 
 	async onunload() {
@@ -240,6 +248,13 @@ export default class CommentatorPlugin extends Plugin {
 			else
 				MarkdownPreviewRenderer.unregisterPostProcessor(this.postProcessor);
 			postProcessorRerender();
+		}
+
+		if (this.changed_settings.comment_gutter_width !== undefined) {
+			iterateAllCMInstances(cm => {
+				// @ts-ignore
+				cm.plugin(commentGutter[1][0][0]).setWidth(this.settings.comment_gutter_width);
+			});
 		}
 
 		await this.updateEditorExtension();

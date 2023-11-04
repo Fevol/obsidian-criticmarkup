@@ -29,6 +29,10 @@ type Handlers = { [event: string]: (view: EditorView, line: BlockInfo, event: Ev
 interface GutterConfig {
 	/** An extra CSS class to be added to the wrapper (`cm-gutter`) element. */
 	class?: string
+	/**
+	 * The width of the gutter, can be dynamically adjusted
+	 */
+	width?: number
 	/** Controls whether empty gutter elements should be rendered.
 	 Defaults to false. */
 	renderEmptyElements?: boolean
@@ -52,6 +56,7 @@ interface GutterConfig {
 
 const defaults = {
 	class: '',
+	width: 300,
 	renderEmptyElements: false,
 	elementStyle: '',
 	markers: () => RangeSet.empty,
@@ -108,8 +113,8 @@ const gutterView = ViewPlugin.fromClass(class {
 		this.fixed = !view.state.facet(unfixGutters);
 		if (this.fixed) {
 			// FIXME IE11 fallback, which doesn't support position: sticky,
-			// by using position: relative + event handlers that realign the
-			// gutter (or just force fixed=false on IE11?)
+			// 	by using position: relative + event handlers that realign the
+			// 	gutter (or just force fixed=false on IE11?)
 			this.dom.style.position = 'sticky';
 		}
 
@@ -243,6 +248,11 @@ const gutterView = ViewPlugin.fromClass(class {
 			const element = activeGutter.elements[0];
 			element.dom.style.marginTop = parseInt(element.dom.style.marginTop || '0') - offset + 'px';
 		}
+	}
+
+	// ADDITION: Yes, this is not the cleanest way to do this
+	setWidth(width: number) {
+		this.gutters[0].setWidth(width);
 	}
 
 	destroy() {
@@ -403,6 +413,7 @@ class SingleGutterView {
 		// Initialised dom for the gutter
 		this.dom = document.createElement('div');
 		this.dom.className = 'cm-gutter' + (this.config.class ? ' ' + this.config.class : '');
+		this.setWidth(config.width);
 		for (const prop in config.domEventHandlers) {
 			this.dom.addEventListener(prop, (event: Event) => {
 				let target = event.target as HTMLElement, y;
@@ -424,6 +435,11 @@ class SingleGutterView {
 			this.dom.appendChild(this.spacer.dom);
 			this.spacer.dom.style.cssText += 'visibility: hidden; pointer-events: none';
 		}
+	}
+
+	setWidth(width?: number) {
+		if (width)
+			this.dom.style.width = width + 'px';
 	}
 
 	update(update: ViewUpdate) {

@@ -31,6 +31,13 @@ export interface PluginSettings {
 	 * Hide gutter is no nodes are present (such that editor body is flush with the title)
 	 */
 	hide_empty_gutter: boolean;
+
+
+	/**
+	 * How much space the comment gutter should take up
+	 */
+	comment_gutter_width: number;
+
 	/**
 	 * How comments should be rendered
 	 */
