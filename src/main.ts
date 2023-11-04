@@ -108,6 +108,17 @@ export default class CommentatorPlugin extends Plugin {
 	}
 
 	async onload() {
+		// Note: debug options only accessible via main Obsidian window
+		// @ts-ignore (Assigning to window)
+		window['COMMENTATOR_DEBUG'] = {
+			plugin: this,
+			database: this.database,
+			get nodes() {
+				return app.workspace.activeEditor?.editor?.cm.state.field(nodeParser).nodes.nodes;
+			}
+		}
+
+
 		this.registerView(CRITICMARKUP_VIEW, (leaf) => new CriticMarkupView(leaf, this));
 
 		this.settings = Object.assign({}, this.settings, await this.loadData());
@@ -191,6 +202,9 @@ export default class CommentatorPlugin extends Plugin {
 		for (const monkey of this.remove_monkeys) monkey();
 
 		this.database.unload();
+
+		// @ts-ignore
+		window['COMMENTATOR_DEBUG'] = undefined;
 	}
 
 	async loadSettings() {
