@@ -43,3 +43,11 @@
 	background-color: var(--color-red);
 	color: var(--text-on-accent);
 }
+
+/**
+Determines what to do when gutter contains no contents
+DEFAULT: hidden
+ */
+.cm-gutters.gutter-hidden {
+	display: none;
+}

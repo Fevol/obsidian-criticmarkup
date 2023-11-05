@@ -1,4 +1,4 @@
 import { commentGutter, commentGutterMarkers } from './comment-gutter';
-import { criticmarkupGutter, criticmarkupGutterMarkers } from './suggestion-gutter';
+import { suggestionGutter, suggestionGutterMarkers } from './suggestion-gutter';
 
-export { commentGutter, commentGutterMarkers, criticmarkupGutter, criticmarkupGutterMarkers }
+export { commentGutter, commentGutterMarkers, suggestionGutter, suggestionGutterMarkers }

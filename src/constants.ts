@@ -8,6 +8,9 @@ export const DEFAULT_SETTINGS: PluginSettings = {
 
 	editor_styling: false,
 	hide_empty_gutter: false,
+	hide_empty_suggestion_gutter: false,
+	hide_empty_comment_gutter: false,
+
 	comment_gutter_width: 300,
 	comment_style: "block",
 

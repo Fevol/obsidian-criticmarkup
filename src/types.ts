@@ -32,6 +32,15 @@ export interface PluginSettings {
 	 */
 	hide_empty_gutter: boolean;
 
+	/**
+	 * Hide suggestion gutter if no suggestions are present in the note
+	 */
+	hide_empty_suggestion_gutter: boolean;
+	/**
+	 * Hide comment gutter if no comments are present in the note
+	 */
+	hide_empty_comment_gutter: boolean;
+
 
 	/**
 	 * How much space the comment gutter should take up

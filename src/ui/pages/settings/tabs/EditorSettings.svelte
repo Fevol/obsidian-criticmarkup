@@ -100,10 +100,10 @@
 >
 	<Toggle
 		slot='control'
-		value={plugin.settings.hide_empty_gutter}
+		value={plugin.settings.hide_empty_suggestion_gutter}
 		onChange={() => {
 			// TODO: Split up into two settings
-			plugin.settings.hide_empty_gutter = !plugin.settings.hide_empty_gutter;
+			plugin.settings.hide_empty_suggestion_gutter = !plugin.settings.hide_empty_suggestion_gutter;
 			plugin.saveSettings();
 		}}
 	/>
@@ -164,10 +164,10 @@
 >
 	<Toggle
 		slot='control'
-		value={plugin.settings.hide_empty_gutter}
+		value={plugin.settings.hide_empty_comment_gutter}
 		onChange={() => {
 			// TODO: Split up into two settings
-			plugin.settings.hide_empty_gutter = !plugin.settings.hide_empty_gutter;
+			plugin.settings.hide_empty_comment_gutter = !plugin.settings.hide_empty_comment_gutter;
 			plugin.saveSettings();
 		}}
 	/>

@@ -1,21 +1,27 @@
 import { type MarkdownPostProcessor, MarkdownPreviewRenderer, Plugin, TFile } from 'obsidian';
 
 import { EditorView } from '@codemirror/view';
-import { type EditorState, type Extension } from '@codemirror/state';
+import { Compartment, type EditorState, type Extension, Facet, StateEffectType } from '@codemirror/state';
 
 import { around } from 'monkey-around';
 
 import {
 	nodeParser, type CriticMarkupNode, NODE_PROTOTYPE_MAPPER,
-	getNodesInText, text_copy
+	getNodesInText, text_copy,
 } from './editor/base';
 
-import { suggestion_commands, editor_commands, application_commmands, initializeCommands, cmenuCommands } from './editor/uix';
+import {
+	suggestion_commands,
+	editor_commands,
+	application_commmands,
+	initializeCommands,
+	cmenuCommands,
+} from './editor/uix';
 import { nodeCorrecter, bracketMatcher, suggestionMode, keybindExtensions } from './editor/uix/extensions';
 
 import { postProcess, postProcessorRerender, postProcessorUpdate } from './editor/renderers/post-process';
 import { markupRenderer, commentRenderer } from './editor/renderers/live-preview';
-import { criticmarkupGutter, commentGutter } from './editor/renderers/gutters';
+import { suggestionGutter, commentGutter } from './editor/renderers/gutters';
 import { type HeaderButton, previewModeHeaderButton, suggestionModeHeaderButton } from './editor/view-header';
 import { type StatusBarButton, previewModeStatusBarButton, suggestionModeStatusBarButton } from './editor/status-bar';
 
@@ -28,6 +34,11 @@ import { Database } from './database';
 import { iterateAllCMInstances, objectDifference } from './util';
 import { DEFAULT_SETTINGS, REQUIRES_FULL_RELOAD } from './constants';
 import { type PluginSettings } from './types';
+import {
+	commentGutterWidth, commentGutterWidthEffect, commentGutterWidthState,
+	hideEmptyCommentGutter, hideEmptyCommentGutterEffect, hideEmptyCommentGutterState,
+	hideEmptySuggestionGutter, hideEmptySuggestionGutterEffect, hideEmptySuggestionGutterState,
+} from './editor/settings';
 
 
 export default class CommentatorPlugin extends Plugin {
@@ -45,7 +56,7 @@ export default class CommentatorPlugin extends Plugin {
 
 	remove_monkeys: (() => void)[] = [];
 
-	settings_tab = "general";
+	settings_tab = 'general';
 
 	database: Database<CriticMarkupNode[]> = new Database(
 		this,
@@ -56,7 +67,7 @@ export default class CommentatorPlugin extends Plugin {
 		() => [],
 		async (file, state?: EditorState) => {
 			return state ? state.field(nodeParser).nodes.nodes :
-						   getNodesInText(await this.app.vault.cachedRead(file as TFile)).nodes;
+				getNodesInText(await this.app.vault.cachedRead(file as TFile)).nodes;
 		},
 		this.settings.database_workers,
 		(data: CriticMarkupNode[]) => {
@@ -67,6 +78,8 @@ export default class CommentatorPlugin extends Plugin {
 	postProcessor!: MarkdownPostProcessor;
 
 	loadEditorExtensions() {
+		// REMINDER: .init(() => ...) can be used to initialise a statefield
+
 		this.editorExtensions.length = 0;
 
 		this.editorExtensions.push(keybindExtensions);
@@ -83,7 +96,7 @@ export default class CommentatorPlugin extends Plugin {
 		// TODO: Rerender gutter on Ctrl+Scroll
 		// TODO: Check performance costs of statefield vs viewport gutter
 		if (this.settings.editor_gutter)
-			this.editorExtensions.push(criticmarkupGutter(this));
+			this.editorExtensions.push(suggestionGutter);
 
 		if (this.settings.suggest_mode)
 			this.editorExtensions.push(suggestionMode(this.settings));
@@ -97,6 +110,9 @@ export default class CommentatorPlugin extends Plugin {
 			copy: text_copy.bind(null, this.settings),
 		}));
 
+		this.editorExtensions.push(hideEmptySuggestionGutter.of(hideEmptySuggestionGutterState.of(this.settings.hide_empty_suggestion_gutter)));
+		this.editorExtensions.push(commentGutterWidth.of(commentGutterWidthState.of(this.settings.comment_gutter_width)));
+		this.editorExtensions.push(hideEmptyCommentGutter.of(hideEmptyCommentGutterState.of(this.settings.hide_empty_comment_gutter)));
 	}
 
 	async updateEditorExtension() {
@@ -117,8 +133,8 @@ export default class CommentatorPlugin extends Plugin {
 			database: this.database,
 			get nodes() {
 				return app.workspace.activeEditor?.editor?.cm.state.field(nodeParser).nodes.nodes;
-			}
-		}
+			},
+		};
 
 
 		this.registerView(CRITICMARKUP_VIEW, (leaf) => new CriticMarkupView(leaf, this));
@@ -145,8 +161,6 @@ export default class CommentatorPlugin extends Plugin {
 
 		if (this.settings.status_bar_suggest_button)
 			this.suggestionModeStatusBarButton.renderButton();
-
-
 
 
 		this.addSettingTab(new CommentatorSettings(this.app, this));
@@ -184,15 +198,6 @@ export default class CommentatorPlugin extends Plugin {
 				};
 			},
 		}));
-
-		// It is not easily possible to inject the width of the gutter when initializing the gutter
-		// Instead, we wait for the gutter is initialized and then set the width
-		app.workspace.onLayoutReady(() => {
-			iterateAllCMInstances(cm => {
-				// @ts-ignore
-				cm.plugin(commentGutter[1][0][0]).setWidth(this.settings.comment_gutter_width);
-			});
-		});
 	}
 
 	async onunload() {
@@ -266,15 +271,50 @@ export default class CommentatorPlugin extends Plugin {
 			postProcessorRerender();
 		}
 
-		if (this.changed_settings.comment_gutter_width !== undefined) {
-			iterateAllCMInstances(cm => {
-				// @ts-ignore
-				cm.plugin(commentGutter[1][0][0]).setWidth(this.settings.comment_gutter_width);
-			});
-		}
+		if (this.changed_settings.comment_gutter_width !== undefined)
+			this.sendFacetUpdate(commentGutterWidth, commentGutterWidthState,
+								 commentGutterWidthEffect, this.settings.comment_gutter_width);
+
+		if (this.changed_settings.hide_empty_comment_gutter !== undefined)
+			this.sendFacetUpdate(hideEmptyCommentGutter, hideEmptyCommentGutterState,
+								 hideEmptyCommentGutterEffect, this.settings.hide_empty_comment_gutter);
+
+		if (this.changed_settings.hide_empty_suggestion_gutter !== undefined)
+			this.sendFacetUpdate(hideEmptySuggestionGutter, hideEmptySuggestionGutterState,
+								 hideEmptySuggestionGutterEffect, this.settings.hide_empty_suggestion_gutter);
+
 
 		await this.updateEditorExtension();
 	}
+
+	sendFacetUpdate<T>(compartment: Compartment, facet: Facet<T, T>, effect: StateEffectType<T>, value: T) {
+		/**
+		 * Iterate over all active CodeMirror instances and update both the facet (via state effect of facet),
+		 * 	and the gutter (via custom state effect)
+		 */
+		const stateFacetUpdate = compartment.reconfigure(facet.of(value));
+		const gutterFacetUpdate = effect.of(value);
+		iterateAllCMInstances(cm => {
+			cm.dispatch({ effects: [ gutterFacetUpdate, stateFacetUpdate, ] });
+		});
+
+		/**
+		 * What is this black magic?!
+		 * In short: where the above updates the facet and gutter of *active* CM instances respectively,
+		 * 	the code below updates the facet value of the extension by accessing the compartment instance
+		 * 	and updating the attached extension (in this case, the facet)
+		 * @remark This needs to be done very careful, creating a new compartment will give errors, and
+		 *   defining a new facet on the compartment directly, will create a new facet that is different from
+		 *   the one that is attached to other instances
+		 * @todo A less bodgy solution would be nice
+		 */
+		// @ts-ignore (Accessing compartment directly of an Extension created by compartment)
+		const extensionIndex = this.editorExtensions.findIndex(extension => extension?.compartment === compartment);
+		// @ts-ignore (idem)
+		this.editorExtensions[extensionIndex] = this.editorExtensions[extensionIndex].compartment.of(facet.of(value));
+	}
+
+
 
 	async setSetting<K extends keyof PluginSettings>(key: K, value: PluginSettings[K]) {
 		this.settings[key] = value;

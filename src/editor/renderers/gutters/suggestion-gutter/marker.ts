@@ -25,7 +25,7 @@ export class CriticMarkupMarker extends GutterMarker {
 	}
 }
 
-export const criticmarkupGutterMarkers = ViewPlugin.fromClass(class CriticmarkupGutterMarkers implements PluginValue {
+export const suggestionGutterMarkers = ViewPlugin.fromClass(class suggestionGutterMarkers implements PluginValue {
 	markers: RangeSet<CriticMarkupMarker> = RangeSet.empty;
 
 	constructMarkers(view: EditorView) {

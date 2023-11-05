@@ -1,5 +1,5 @@
 import { CommentMarker, commentGutterMarkers } from './marker';
-import { right_gutter } from './right_gutter';
+import { comment_gutter } from './comment_gutter';
 
 export { CommentMarker, commentGutterMarkers }
 
@@ -7,7 +7,7 @@ export { CommentMarker, commentGutterMarkers }
 // between Markers and Gutters (which is required for calling the moveGutter function)
 export const commentGutter = [
 	commentGutterMarkers,
-	right_gutter({
+	comment_gutter({
 		class: 'criticmarkup-comment-gutter' + (app.vault.getConfig('cssTheme') === "Minimal" ? ' is-minimal' : ''),
 		markers: v => v.state.field(commentGutterMarkers),
 	}),
