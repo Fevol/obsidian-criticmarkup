@@ -49,7 +49,7 @@
 			{ value: PreviewMode.ACCEPT.toString(), text: "Preview 'accept all'" },
 			{ value: PreviewMode.REJECT.toString(), text: "Preview 'reject all'" },
 		]}
-		value={ plugin.settings.preview_mode }
+		value={ plugin.settings.preview_mode.toString() }
 		onChange={ (value) => {
 			preview_mode = value;
 			plugin.settings.preview_mode = value
