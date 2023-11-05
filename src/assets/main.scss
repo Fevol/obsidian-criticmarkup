@@ -1,6 +1,7 @@
 @import "../ui/components/main.scss";
 
 @import "view";
+@import "settings";
 @import "editor";
 
 @import "comment-gutter";
@@ -36,4 +37,9 @@
 	text-decoration-thickness: 0.5px;
 	text-decoration-style: dotted;
 	font-variant: all-small-caps;
+}
+
+.criticmarkup-fail > button {
+	background-color: var(--color-red);
+	color: var(--text-on-accent);
 }

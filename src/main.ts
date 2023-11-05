@@ -45,6 +45,8 @@ export default class CommentatorPlugin extends Plugin {
 
 	remove_monkeys: (() => void)[] = [];
 
+	settings_tab = "general";
+
 	database: Database<CriticMarkupNode[]> = new Database(
 		this,
 		'commentator/cache',
