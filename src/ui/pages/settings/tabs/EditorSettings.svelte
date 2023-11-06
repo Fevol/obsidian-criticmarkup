@@ -109,6 +109,20 @@
 	/>
 </SettingItem>
 
+<SettingItem
+	name='Show style while editing'
+	description='Keep the style of suggestions visible while editing'
+	type='toggle'
+>
+	<Toggle
+		slot='control'
+		value={plugin.settings.editor_styling}
+		onChange={() => {
+			plugin.settings.editor_styling = !plugin.settings.editor_styling;
+			plugin.saveSettings();
+		}}
+	/>
+</SettingItem>
 
 
 <SettingItem
