@@ -51,3 +51,8 @@ DEFAULT: hidden
 .cm-gutters.gutter-hidden {
 	display: none;
 }
+
+.criticmarkup-debug-comment-line {
+	width: 100%;
+	border-bottom: 1px dashed red;
+}

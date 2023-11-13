@@ -46,6 +46,11 @@ export class CommentIconWidget extends WidgetType {
 		this.icon.classList.add('criticmarkup-comment-icon');
 		setIcon(this.icon, 'message-square');
 
+		// DEBUG: Add line under icon to check alignment of comment gutter element with widget
+		// const line = document.createElement('div');
+		// line.classList.add('criticmarkup-debug-comment-line');
+		// this.icon.appendChild(line);
+
 		if (this.is_block) {
 			this.icon.onclick = (e) => {
 				const gutterElements = view.state.field(commentGutterMarkers);
