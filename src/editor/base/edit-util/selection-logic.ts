@@ -1,6 +1,6 @@
 import { ChangeSet, EditorSelection, SelectionRange, Text, Transaction } from '@codemirror/state';
 
-import { type CriticMarkupChange, type CriticMarkupEdit } from '../edit-operations/types';
+import { type EditorOffsetChange, type EditorEditChange } from '../edit-operations';
 
 
 export function isCursor(selection: EditorSelection) {
@@ -15,8 +15,8 @@ export function cursorMoved(tr: Transaction) {
 	return tr.startState.selection.ranges[0].from !== tr.selection!.ranges[0].from || tr.startState.selection.ranges[0].to !== tr.selection!.ranges[0].to;
 }
 
-export function getEditorOffsets(changes: ChangeSet): CriticMarkupChange[] {
-	const changed_ranges: CriticMarkupChange[] = [];
+export function getEditorOffsets(changes: ChangeSet): EditorOffsetChange[] {
+	const changed_ranges: EditorOffsetChange[] = [];
 	changes.iterChanges((fromA, toA, fromB, toB, inserted) => {
 		changed_ranges.push({
 			from: fromA,
@@ -32,8 +32,8 @@ export function getEditorOffsets(changes: ChangeSet): CriticMarkupChange[] {
 }
 
 
-export function getEditorRanges(changes: ChangeSet, doc: Text): CriticMarkupEdit[] {
-	const changed_ranges: CriticMarkupEdit[] = [];
+export function getEditorRanges(changes: ChangeSet, doc: Text): EditorEditChange[] {
+	const changed_ranges: EditorEditChange[] = [];
 	changes.iterChanges((fromA, toA, fromB, toB, inserted) => {
 		let text = '';
 		// @ts-ignore (Inserted always exists when iterating changes)
@@ -60,7 +60,7 @@ export function getEditorRanges(changes: ChangeSet, doc: Text): CriticMarkupEdit
 	return changed_ranges;
 }
 
-export function selectionToEditorRange(selection: SelectionRange, text: Text, isDelete = false): CriticMarkupEdit {
+export function selectionToEditorRange(selection: SelectionRange, text: Text, isDelete = false): EditorEditChange {
 	return {
 		from: selection.from,
 		to: selection.to,

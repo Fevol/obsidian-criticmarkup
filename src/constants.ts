@@ -15,7 +15,7 @@ export const DEFAULT_SETTINGS: PluginSettings = {
 	comment_style: "block",
 
 	tag_completion: true,
-	node_correcter: true,
+	tag_correcter: true,
 	clipboard_remove_syntax: true,
 
 
@@ -44,6 +44,6 @@ export const REQUIRES_FULL_RELOAD: Set<string> = new Set([
 	"comment_style",
 
 	"tag_completion",
-	"node_correcter",
+	"tag_correcter",
 	"suggest_mode",
 ]);

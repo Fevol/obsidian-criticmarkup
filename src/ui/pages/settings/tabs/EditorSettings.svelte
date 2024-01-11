@@ -62,9 +62,9 @@
 >
 	<Toggle
 		slot='control'
-		value={plugin.settings.node_correcter}
+		value={plugin.settings.tag_correcter}
 		onChange={() => {
-			plugin.settings.node_correcter = !plugin.settings.node_correcter;
+			plugin.settings.tag_correcter = !plugin.settings.tag_correcter;
 			plugin.saveSettings();
 		}}
 	/>

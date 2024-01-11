@@ -3,7 +3,7 @@ import { Decoration, type DecorationSet, EditorView } from '@codemirror/view';
 
 import { editorLivePreviewField } from 'obsidian';
 
-import { CommentNode, nodeParser, NodeType } from '../../../base';
+import { CommentRange, rangeParser, SuggestionType } from '../../../base';
 import { type PluginSettings } from '../../../../types';
 
 import { CommentIconWidget } from './widget';
@@ -18,7 +18,7 @@ export const commentRenderer = (settings: PluginSettings) => StateField.define<D
 		const preview_changed = is_livepreview !== tr.startState.field(editorLivePreviewField);
 
 
-		// TODO: oldSet.size is a bit overkill, since notes without any comment nodes will always parse the document?
+		// TODO: oldSet.size is a bit overkill, since notes without any comment ranges will always parse the document?
 		if (!tr.docChanged && !preview_changed && oldSet.size)
 			return oldSet;
 
@@ -27,21 +27,21 @@ export const commentRenderer = (settings: PluginSettings) => StateField.define<D
 
 		const builder = new RangeSetBuilder<Decoration>();
 
-		const nodes = tr.state.field(nodeParser).nodes;
+		const ranges = tr.state.field(rangeParser).ranges;
 
 		if (is_livepreview) {
-			for (const node of nodes.nodes) {
-				if (node.type === NodeType.COMMENT) {
-					if (!(node as CommentNode).reply_depth) {
+			for (const range of ranges.ranges) {
+				if (range.type === SuggestionType.COMMENT) {
+					if (!(range as CommentRange).reply_depth) {
 						builder.add(
-							node.from,
-							node.to,
+							range.from,
+							range.to,
 							Decoration.replace({
-								widget: new CommentIconWidget(node, settings.comment_style === 'block'),
+								widget: new CommentIconWidget(range, settings.comment_style === 'block'),
 							}),
 						);
 					} else {
-						builder.add(node.from, node.to, Decoration.replace({}));
+						builder.add(range.from, range.to, Decoration.replace({}));
 					}
 				}
 			}

@@ -89,13 +89,13 @@ class CommentGutterView extends GutterView {
 	}
 
 	public focusCommentThread(position: number, index: number = -1) {
-		// Find element with node in it
+		// Find element with range in it
 		const element = this.gutters[0].elements.find(
 			element => (element as CommentGutterElement).block!.from <= position && position <= (element as CommentGutterElement).block!.to
 		)
 
 		if (element) {
-			const marker = element.markers.find(marker => (marker as CommentMarker).node.cursor_inside(position))! as CommentMarker;
+			const marker = element.markers.find(marker => (marker as CommentMarker).comment_range.cursor_inside(position))! as CommentMarker;
 			marker.focus_comment(index);
 		}
 	}
@@ -140,7 +140,7 @@ class CommentUpdateContext extends UpdateContext {
 		 * Works by sorting the markers in-place
 		 * @todo Investigate whether the markers can be sorted earlier in the pipeline
  		 */
-		(markers as CommentMarker[]).sort((a, b) => a.node.from - b.node.from);
+		(markers as CommentMarker[]).sort((a, b) => a.comment_range.from - b.comment_range.from);
 
 
 
@@ -173,8 +173,8 @@ class CommentUpdateContext extends UpdateContext {
 		// 		const MAX_HEIGHT = 150;
 		// 		let height = 0;
 		// 		for (const marker of (markers as CommentMarker[])) {
-		// 			const num_end_line = marker.node.text.match(/\n/g)?.length || 0;
-		// 			const comment_length = marker.node.to - marker.node.from - 6 - num_end_line;
+		// 			const num_end_line = marker.range.text.match(/\n/g)?.length || 0;
+		// 			const comment_length = marker.range.to - marker.range.from - 6 - num_end_line;
 		// 			const num_lines = Math.max(1, Math.ceil(comment_length / char_line_length)) + num_end_line;
 		// 			height += Math.min(MAX_HEIGHT, num_lines * line_pixel_height + PADDING + INNER_MARGIN + BORDER_SIZE) + MARGIN_BETWEEN;
 		// 		}

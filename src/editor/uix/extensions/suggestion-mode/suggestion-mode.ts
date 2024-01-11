@@ -2,7 +2,7 @@ import { EditorSelection, EditorState, type Extension, SelectionRange, Transacti
 import { type PluginSettings } from '../../../../types';
 
 import {
-	nodeParser,
+	rangeParser,
 	text_insert, text_delete, text_replace, cursor_move,
 	cursorMoved, getEditorRanges, getUserEvents
 } from '../../../base';
@@ -134,7 +134,7 @@ function applySuggestion(tr: Transaction, settings: PluginSettings): Transaction
 			return tr;
 		}
 
-		const nodes = tr.startState.field(nodeParser).nodes;
+		const ranges = tr.startState.field(rangeParser).ranges;
 		const changes = [];
 		const selections: SelectionRange[] = [];
 
@@ -142,7 +142,7 @@ function applySuggestion(tr: Transaction, settings: PluginSettings): Transaction
 			let offset = 0;
 
 			for (const range of changed_ranges) {
-				const insert_operation = text_insert(range, nodes, offset);
+				const insert_operation = text_insert(range, ranges, offset);
 				changes.push(...insert_operation.changes);
 				selections.push(insert_operation.selection);
 				offset = insert_operation.offset;
@@ -155,7 +155,7 @@ function applySuggestion(tr: Transaction, settings: PluginSettings): Transaction
 
 			let offset = 0;
 			for (const range of changed_ranges) {
-				const delete_operation = text_delete(range, nodes, offset, tr.startState.doc, backwards_delete, group_delete, delete_selection, tr.startState);
+				const delete_operation = text_delete(range, ranges, offset, tr.startState.doc, backwards_delete, group_delete, delete_selection, tr.startState);
 				changes.push(...delete_operation.changes);
 				selections.push(delete_operation.selection);
 				offset = delete_operation.offset;
@@ -163,7 +163,7 @@ function applySuggestion(tr: Transaction, settings: PluginSettings): Transaction
 		} else if (operation_type === OperationType.REPLACEMENT) {
 			let offset = 0;
 			for (const range of changed_ranges) {
-				const replace_operation = text_replace(range, nodes, offset, tr.startState.doc);
+				const replace_operation = text_replace(range, ranges, offset, tr.startState.doc);
 				changes.push(...replace_operation.changes);
 				selections.push(replace_operation.selection);
 				offset = replace_operation.offset;
@@ -180,7 +180,7 @@ function applySuggestion(tr: Transaction, settings: PluginSettings): Transaction
 			return tr;
 
 
-		const nodes = tr.startState.field(nodeParser).nodes;
+		const ranges = tr.startState.field(rangeParser).ranges;
 
 		const backwards_select = userEvents.includes('select.backward');
 		const group_select = userEvents.includes('select.group');
@@ -188,7 +188,7 @@ function applySuggestion(tr: Transaction, settings: PluginSettings): Transaction
 		const selections: SelectionRange[] = [];
 		for (const [idx, range] of tr.selection!.ranges.entries()) {
 			const cursor_operation = cursor_move(range, tr.startState.selection!.ranges[idx],
-				nodes, tr.startState, backwards_select, group_select, is_selection, vim_mode);
+				ranges, tr.startState, backwards_select, group_select, is_selection, vim_mode);
 			selections.push(cursor_operation.selection);
 		}
 

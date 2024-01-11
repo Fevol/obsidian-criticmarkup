@@ -1,10 +1,10 @@
 import { bracketMatcher } from './bracket-matcher';
-import { nodeCorrecter } from './node-correcter';
+import { rangeCorrecter } from './range-correcter';
 import { suggestionMode, keybindExtensions, overridden_keymap } from './suggestion-mode';
 
 export {
 	bracketMatcher,
-	nodeCorrecter,
+	rangeCorrecter,
 	suggestionMode,
 	keybindExtensions,
 	overridden_keymap,

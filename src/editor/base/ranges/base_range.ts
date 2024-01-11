@@ -1,7 +1,7 @@
 import { ChangeSet } from '@codemirror/state';
-import { type NodeType, type StringNodeType, CM_All_Brackets } from './definitions';
+import { type SuggestionType, type StringSuggestionType, CM_All_Brackets } from './definitions';
 import type { EditorChange } from '../edit-operations';
-import { type CommentNode } from './types';
+import { type CommentRange } from './types';
 
 
 const shortHandMapping = {
@@ -21,13 +21,13 @@ export interface MetadataFields {
 	color?: string;
 }
 
-export abstract class CriticMarkupNode {
+export abstract class CriticMarkupRange {
 	num_ignore_chars = 6;
 
 	fields: MetadataFields = {};
-	replies: CommentNode[] = [];
+	replies: CommentRange[] = [];
 
-	protected constructor(public from: number, public to: number, public type: NodeType, public repr: StringNodeType, public text: string, public metadata?: number) {
+	protected constructor(public from: number, public to: number, public type: SuggestionType, public repr: StringSuggestionType, public text: string, public metadata?: number) {
 		if (metadata !== undefined) {
 			const metadata_separator = metadata - from;
 			const metadata_text = text.slice(3, metadata_separator);
@@ -46,11 +46,13 @@ export abstract class CriticMarkupNode {
 					}
 				}
 			} catch (e) {
+				// TODO: Mark as invalid markdown (this can happen when separator @@ exists, but {} is not given
+				this.fields = {};
 			}
 		}
 	}
 
-	get base_node(): CriticMarkupNode {
+	get base_range(): CriticMarkupRange {
 		return this;
 	}
 
@@ -91,7 +93,7 @@ export abstract class CriticMarkupNode {
 	}
 
 	set_metadata(fields: MetadataFields): EditorChange[] {
-		// TODO: Possibly redundant assignment, nodes will automatically get re-constructed with the EditorChange
+		// TODO: Possibly redundant assignment, ranges will automatically get re-constructed with the EditorChange
 		this.fields = fields;
 		if (this.metadata !== undefined) {
 			return [{
@@ -108,23 +110,23 @@ export abstract class CriticMarkupNode {
 		}
 	}
 
-	copy(): CriticMarkupNode {
+	copy(): CriticMarkupRange {
 		return Object.assign(Object.create(Object.getPrototypeOf(this)), this);
 	}
 
-	weak_equals(other: CriticMarkupNode) {
+	weak_equals(other: CriticMarkupRange) {
 		return this.type === other.type && this.from === other.from && this.to === other.to && this.text === other.text;
 	}
 
-	equals(other: CriticMarkupNode) {
+	equals(other: CriticMarkupRange) {
 		return this.type === other.type && this.from === other.from && this.to === other.to && this.full_text === other.full_text;
 	}
 
-	left_adjacent(other: CriticMarkupNode) {
+	left_adjacent(other: CriticMarkupRange) {
 		return this.from === other.to;
 	}
 
-	right_adjacent(other: CriticMarkupNode) {
+	right_adjacent(other: CriticMarkupRange) {
 		return this.to === other.from;
 	}
 
@@ -276,7 +278,7 @@ export abstract class CriticMarkupNode {
 	postprocess(unwrap: boolean = true, livepreview_mode: number = 0, tag: string = 'div', left: boolean | null = null, text?: string) {
 		let str = text ?? this.text;
 		if (!text && unwrap) {
-			// Node is larger than what is actually given (no end bracket found within text)
+			// Range is larger than what is actually given (no end bracket found within text)
 			if (this.to >= str.length && !str.endsWith(CM_All_Brackets[this.type].at(-1)!))
 				str = this.unwrap_bracket(true);
 			/*else if (this.from === 0 && !str.startsWith(CM_All_Brackets[this.type][0]))

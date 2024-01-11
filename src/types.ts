@@ -8,10 +8,10 @@ export enum PreviewMode {
 
 export interface PluginSettings {
 	/**
-	 * Determines how nodes should be visualised in LP/S mode
+	 * Determines how ranges should be visualised in LP/S mode
 	 * - 0: Show all text
-	 * - 1: Visualise 'accept' action (only show regular text and Addition Nodes)
-	 * - 2: Visualise 'reject' action (only show regular text and Deletion Nodes)
+	 * - 1: Visualise 'accept' action (only show regular text and Addition Ranges)
+	 * - 2: Visualise 'reject' action (only show regular text and Deletion Ranges)
 	 */
 	preview_mode: PreviewMode;
 	/**
@@ -20,15 +20,15 @@ export interface PluginSettings {
 	suggest_mode: boolean;
 
 	/**
-	 * Render a gutter marking locations of nodes in the document
+	 * Render a gutter marking locations of ranges in the document
 	 */
 	editor_gutter: boolean;
 	/**
-	 * Keep styling nodes even if cursor is inside it
+	 * Keep styling ranges even if cursor is inside it
 	 */
 	editor_styling: boolean;
 	/**
-	 * Hide gutter is no nodes are present (such that editor body is flush with the title)
+	 * Hide gutter is no ranges are present (such that editor body is flush with the title)
 	 */
 	hide_empty_gutter: boolean;
 
@@ -59,7 +59,7 @@ export interface PluginSettings {
 	/**
 	 * Automatically correct invalid criticmarkup tags
 	 */
-	node_correcter: boolean;
+	tag_correcter: boolean;
 	/**
 	 * Remove CM syntax when copying text to clipboard
 	 */
@@ -103,7 +103,7 @@ export interface PluginSettings {
 	live_preview: boolean;
 
 	/**
-	 * Enable corrected cursor movement near/within nodes
+	 * Enable corrected cursor movement near/within ranges
 	 */
 	alternative_cursor_movement: boolean;
 }

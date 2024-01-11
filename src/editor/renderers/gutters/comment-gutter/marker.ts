@@ -3,37 +3,37 @@ import { type EditorState, type RangeSet, Line, RangeSetBuilder, StateField } fr
 
 import { Component, editorEditorField, MarkdownRenderer, Menu } from 'obsidian';
 
-import { type CommentNode, nodeParser, NodeType } from '../../../base';
+import { type CommentRange, rangeParser, SuggestionType } from '../../../base';
 import { commentGutter } from './index';
 
 export class CommentMarker extends GutterMarker {
 	comment_thread: HTMLElement | null = null;
 	component: Component = new Component();
 
-	constructor(public node: CommentNode, public view: EditorView) {
+	constructor(public comment_range: CommentRange, public view: EditorView) {
 		super();
 	}
 
 	// TODO: I have many gripes with this implementation, though much fewer ideas on how to fix it
-	//    - Comparing hashes of nodes (prevents having to chain together the entire comment thread, but expensive)
+	//    - Comparing hashes of ranges (prevents having to chain together the entire comment thread, but expensive)
 	//    - ...
 	eq(other: CommentMarker) {
-		const base_node = this.node.attached_comment || this.node;
-		const other_base_node = other.node.attached_comment || other.node;
-		return base_node.equals(other_base_node);
+		const base_range = this.comment_range.attached_comment || this.comment_range;
+		const other_base_range = other.comment_range.attached_comment || other.comment_range;
+		return base_range.equals(other_base_range);
 	}
 
-	renderComment(comment: HTMLElement, node: CommentNode, text: string) {
+	renderComment(comment: HTMLElement, range: CommentRange, text: string) {
 		MarkdownRenderer.render(app, text || "&nbsp;", comment, '', this.component);
-		this.renderMetadata(comment, node);
+		this.renderMetadata(comment, range);
 	}
 
-	renderMetadata(comment: HTMLElement, node: CommentNode) {
+	renderMetadata(comment: HTMLElement, range: CommentRange) {
 		const metadataContainer = createSpan({ cls: 'criticmarkup-gutter-comment-metadata' });
 		comment.insertBefore(metadataContainer, comment.firstChild);
 
-		if (node.metadata) {
-			if (node.fields.author) {
+		if (range.metadata) {
+			if (range.fields.author) {
 				const authorLabel = createSpan({
 					cls: 'criticmarkup-gutter-comment-author-label',
 					text: "Author: "
@@ -42,7 +42,7 @@ export class CommentMarker extends GutterMarker {
 
 				const author = createSpan({
 					cls: 'criticmarkup-gutter-comment-author-name',
-					text: node.fields.author
+					text: range.fields.author
 				});
 				metadataContainer.appendChild(author);
 			}
@@ -53,7 +53,7 @@ export class CommentMarker extends GutterMarker {
 		this.comment_thread = createDiv({ cls: 'criticmarkup-gutter-comment-thread' });
 
 		this.comment_thread.onclick = (e) => {
-			const top = this.view.lineBlockAt(this.node.from).top - 100;
+			const top = this.view.lineBlockAt(this.comment_range.from).top - 100;
 
 			setTimeout(() => {
 				// @ts-expect-error (Directly accessing function of unexported class)
@@ -62,11 +62,11 @@ export class CommentMarker extends GutterMarker {
 			}, 200);
 		}
 
-		const comment_nodes_flattened = this.node.attached_comment ?
-			this.node.attached_comment.replies :
-			[this.node, ...this.node.replies];
+		const comment_ranges_flattened = this.comment_range.attached_comment ?
+			this.comment_range.attached_comment.replies :
+			[this.comment_range, ...this.comment_range.replies];
 
-		for (const node of comment_nodes_flattened) {
+		for (const range of comment_ranges_flattened) {
 			const comment = createDiv({ cls: 'criticmarkup-gutter-comment' });
 			comment.contentEditable = 'false';
 
@@ -76,12 +76,12 @@ export class CommentMarker extends GutterMarker {
 					comment.replaceChildren();
 					comment.innerText = "";
 					comment.contentEditable = 'false';
-					this.renderComment(comment, node, text);
+					this.renderComment(comment, range, text);
 				} else {
 					setTimeout(() => this.view.dispatch({
 						changes: {
-							from: node.from + 3,
-							to: node.to - 3,
+							from: range.from + 3,
+							to: range.to - 3,
 							insert: comment!.innerText
 						},
 					}));
@@ -115,9 +115,9 @@ export class CommentMarker extends GutterMarker {
 					item.setTitle("Reply to comment");
 					item.setIcon('reply');
 					item.onClick(() => {
-						const last_reply = this.node.base_node.replies.length ?
-							this.node.base_node.replies[this.node.base_node.replies.length - 1] :
-							this.node.base_node;
+						const last_reply = this.comment_range.base_range.replies.length ?
+							this.comment_range.base_range.replies[this.comment_range.base_range.replies.length - 1] :
+							this.comment_range.base_range;
 
 						this.view.dispatch({
 							changes: {
@@ -129,7 +129,7 @@ export class CommentMarker extends GutterMarker {
 
 						setTimeout(() => {
 							// @ts-expect-error (Directly accessing function of unexported class)
-							this.view.plugin(commentGutter[1][0][0])!.focusCommentThread(this.node.base_node.from + 1);
+							this.view.plugin(commentGutter[1][0][0])!.focusCommentThread(this.comment_range.base_range.from + 1);
 						});
 					});
 				});
@@ -139,8 +139,8 @@ export class CommentMarker extends GutterMarker {
 
 			this.comment_thread.appendChild(comment);
 
-			const text = node.unwrap();
-			this.renderComment(comment, node, text);
+			const text = range.unwrap();
+			this.renderComment(comment, range, text);
 		}
 
 		this.component.load();
@@ -162,18 +162,18 @@ export class CommentMarker extends GutterMarker {
 function createMarkers(state: EditorState) {
 	const builder = new RangeSetBuilder<CommentMarker>();
 	const view = state.field(editorEditorField);
-	const nodes = state.field(nodeParser).nodes;
+	const ranges = state.field(rangeParser).ranges;
 
 	let overlapping_block = false;
 	let previous_block: Line;
 	let stop_next_block = null;
 
-	for (const node of nodes.nodes) {
-		if (node.type !== NodeType.COMMENT || (node as CommentNode).reply_depth) continue;
+	for (const range of ranges.ranges) {
+		if (range.type !== SuggestionType.COMMENT || (range as CommentRange).reply_depth) continue;
 
 		// Mental note to myself: this code exists because the fact that comments
-		// can appear across multiple lines/blocks. However, using `tr.state.doc.lineAt(node.from)` or
-		// `view.lineBlockAt(node.from)` *will* return the line on which it *would* be rendered, as if it isn't
+		// can appear across multiple lines/blocks. However, using `tr.state.doc.lineAt(range.from)` or
+		// `view.lineBlockAt(range.from)` *will* return the line on which it *would* be rendered, as if it isn't
 		// a different block.
 		// However, in right-gutter UpdateContext.line(), the blockInfo *does* consider every line to be part of the block
 		// due to the fact that it grabs from `view.viewportLineBlocks` (because it is then actually rendered?)
@@ -187,16 +187,16 @@ function createMarkers(state: EditorState) {
 		//
 		// As to why I'm making this entire rant: it took me four hours to figure out
 
-		let block_from: Line = state.doc.lineAt(node.from);
+		let block_from: Line = state.doc.lineAt(range.from);
 		if (overlapping_block && block_from.from <= stop_next_block!) {
 			block_from = previous_block!;
 		} else {
-			overlapping_block = node.to > block_from.to;
-			stop_next_block = node.to;
+			overlapping_block = range.to > block_from.to;
+			stop_next_block = range.to;
 			previous_block = block_from;
 		}
 
-		builder.add(block_from.from, block_from.to - 1, new CommentMarker(node as CommentNode, view));
+		builder.add(block_from.from, block_from.to - 1, new CommentMarker(range as CommentRange, view));
 	}
 
 	return builder.finish();

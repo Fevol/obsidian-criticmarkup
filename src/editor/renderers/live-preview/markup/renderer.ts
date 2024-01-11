@@ -3,71 +3,71 @@ import { Decoration, type DecorationSet, EditorView } from '@codemirror/view';
 
 import { editorLivePreviewField } from 'obsidian';
 
-import { CriticMarkupNode, nodeParser, NodeType, SubstitutionNode } from '../../../base';
+import { CriticMarkupRange, rangeParser, SuggestionType, SubstitutionRange } from '../../../base';
 import { type PluginSettings } from '../../../../types';
 
-function hideBracket(decorations: Range<Decoration>[], node: CriticMarkupNode, left: boolean, is_livepreview: boolean) {
+function hideBracket(decorations: Range<Decoration>[], range: CriticMarkupRange, left: boolean, is_livepreview: boolean) {
 	if (!is_livepreview) return;
 	const decoration = Decoration.replace({
 		attributes: { 'data-contents': 'string' },
 	});
 
 	if (left)
-		decorations.push(decoration.range(node.from, node.from + 3));
+		decorations.push(decoration.range(range.from, range.from + 3));
 	else
-		decorations.push(decoration.range(node.to - 3, node.to));
+		decorations.push(decoration.range(range.to - 3, range.to));
 }
 
-function hideMetadata(decorations: Range<Decoration>[], node: CriticMarkupNode) {
-	if (!node.metadata) return;
+function hideMetadata(decorations: Range<Decoration>[], range: CriticMarkupRange) {
+	if (!range.metadata) return;
 
 	decorations.push(
 		Decoration.replace({
 			attributes: { 'data-contents': 'string' },
-		}).range(node.from + 3, node.metadata + 2),
+		}).range(range.from + 3, range.metadata + 2),
 	);
 }
 
-function hideNode(decorations: Range<Decoration>[], node: CriticMarkupNode) {
+function hideRange(decorations: Range<Decoration>[], range: CriticMarkupRange) {
 	decorations.push(
-		Decoration.replace({}).range(node.from, node.to),
+		Decoration.replace({}).range(range.from, range.to),
 	);
 }
 
-function markContents(decorations: Range<Decoration>[], node: CriticMarkupNode, cls: string, left: boolean | null = null, inclusive = false, apply_styling = true) {
+function markContents(decorations: Range<Decoration>[], range: CriticMarkupRange, cls: string, left: boolean | null = null, inclusive = false, apply_styling = true) {
 	const offset = inclusive ? 0 : 3;
 
-	if (node.replies.length)
+	if (range.replies.length)
 		cls += ' criticmarkup-has-reply';
 
 
 	const attributes = {
 		'data-contents': 'string',
-		'data-type': 'criticmarkup-' + node.repr.toLowerCase(),
+		'data-type': 'criticmarkup-' + range.repr.toLowerCase(),
 		'class': cls,
-		'style': apply_styling && node.fields.color ? `background-color: #${node.fields.color};` : '',
+		'style': apply_styling && range.fields.color ? `background-color: #${range.fields.color};` : '',
 	}
 
 	const decoration = Decoration.mark({ attributes });
 
-	if (node.type === NodeType.SUBSTITUTION) {
+	if (range.type === SuggestionType.SUBSTITUTION) {
 		if (left) {
-			if (!node.part_is_empty(true))
-				decorations.push(decoration.range(node.from + offset, (node as SubstitutionNode).middle));
+			if (!range.part_is_empty(true))
+				decorations.push(decoration.range(range.from + offset, (range as SubstitutionRange).middle));
 		} else {
-			if (!node.part_is_empty(false))
-				decorations.push(decoration.range((node as SubstitutionNode).middle + 2, node.to - offset));
+			if (!range.part_is_empty(false))
+				decorations.push(decoration.range((range as SubstitutionRange).middle + 2, range.to - offset));
 		}
-	} else if (!node.empty()) {
-		decorations.push(decoration.range(node.from + offset, node.to - offset));
+	} else if (!range.empty()) {
+		decorations.push(decoration.range(range.from + offset, range.to - offset));
 	}
 }
 
-function hideSyntax(decorations: Range<Decoration>[], node: CriticMarkupNode, style: string = '', is_livepreview: boolean) {
-	hideBracket(decorations, node, true, is_livepreview);
-	hideMetadata(decorations, node);
-	markContents(decorations, node, style);
-	hideBracket(decorations, node, false, is_livepreview);
+function hideSyntax(decorations: Range<Decoration>[], range: CriticMarkupRange, style: string = '', is_livepreview: boolean) {
+	hideBracket(decorations, range, true, is_livepreview);
+	hideMetadata(decorations, range);
+	markContents(decorations, range, style);
+	hideBracket(decorations, range, false, is_livepreview);
 }
 
 /**
@@ -84,61 +84,61 @@ export const markupRenderer = (settings: PluginSettings) => StateField.define<De
 
 	update(oldSet: DecorationSet, tr: Transaction) {
 		const is_livepreview = tr.state.field(editorLivePreviewField);
-		const nodes = tr.state.field(nodeParser).nodes;
+		const ranges = tr.state.field(rangeParser).ranges;
 
 		// const builder = new RangeSetBuilder<Decoration>();
 		const decorations: Range<Decoration>[] = [];
 
-		for (const node of nodes.nodes) {
+		for (const range of ranges.ranges) {
 			if (!settings.preview_mode) {
-				const in_range = tr.selection?.ranges?.some(range => node.partially_in_range(range.from, range.to));
+				const in_range = tr.selection?.ranges?.some(sel_range => range.partially_in_range(sel_range.from, sel_range.to));
 
-				const style = `criticmarkup-editing criticmarkup-inline criticmarkup-${node.repr.toLowerCase()} ` + (node.fields.style || '');
+				const style = `criticmarkup-editing criticmarkup-inline criticmarkup-${range.repr.toLowerCase()} ` + (range.fields.style || '');
 
 				if (!settings.suggest_mode && in_range) {
-					markContents(decorations, node, settings.editor_styling ? style : '', null, true, settings.editor_styling);
-				} else if (node.type === NodeType.SUBSTITUTION) {
-					hideBracket(decorations, node, true, is_livepreview);
-					hideMetadata(decorations, node);
-					markContents(decorations, node, style + ' criticmarkup-deletion', true);
+					markContents(decorations, range, settings.editor_styling ? style : '', null, true, settings.editor_styling);
+				} else if (range.type === SuggestionType.SUBSTITUTION) {
+					hideBracket(decorations, range, true, is_livepreview);
+					hideMetadata(decorations, range);
+					markContents(decorations, range, style + ' criticmarkup-deletion', true);
 					if (is_livepreview) {
 						decorations.push(
 							Decoration.replace({
 								attributes: { 'data-contents': 'string' },
-							}).range((node as SubstitutionNode).middle, (node as SubstitutionNode).middle + 2),
+							}).range((range as SubstitutionRange).middle, (range as SubstitutionRange).middle + 2),
 						);
 					}
-					markContents(decorations, node, style + ' criticmarkup-addition', false);
-					hideBracket(decorations, node, false, is_livepreview);
+					markContents(decorations, range, style + ' criticmarkup-addition', false);
+					hideBracket(decorations, range, false, is_livepreview);
 				} else {
-					hideSyntax(decorations, node, style, is_livepreview);
+					hideSyntax(decorations, range, style, is_livepreview);
 				}
 			} else if (settings.preview_mode === 1) {
-				if (node.type === NodeType.ADDITION) {
-					hideSyntax(decorations, node, 'criticmarkup-accepted', is_livepreview);
-				} else if (node.type === NodeType.DELETION) {
-					hideNode(decorations, node);
-				} else if (node.type === NodeType.SUBSTITUTION) {
-					hideBracket(decorations, node, true, is_livepreview);
-					hideMetadata(decorations, node);
-					markContents(decorations, node, 'criticmarkup-accepted', true);
-					decorations.push(Decoration.replace({}).range((node as SubstitutionNode).middle, node.to));
+				if (range.type === SuggestionType.ADDITION) {
+					hideSyntax(decorations, range, 'criticmarkup-accepted', is_livepreview);
+				} else if (range.type === SuggestionType.DELETION) {
+					hideRange(decorations, range);
+				} else if (range.type === SuggestionType.SUBSTITUTION) {
+					hideBracket(decorations, range, true, is_livepreview);
+					hideMetadata(decorations, range);
+					markContents(decorations, range, 'criticmarkup-accepted', true);
+					decorations.push(Decoration.replace({}).range((range as SubstitutionRange).middle, range.to));
 				} else {
-					hideSyntax(decorations, node, '', is_livepreview);
+					hideSyntax(decorations, range, '', is_livepreview);
 				}
 			} else if (settings.preview_mode === 2) {
-				if (node.type === NodeType.ADDITION) {
-					hideNode(decorations, node);
-				} else if (node.type === NodeType.DELETION) {
-					hideBracket(decorations, node, true, is_livepreview);
-					markContents(decorations, node, 'criticmarkup-accepted');
-					hideBracket(decorations, node, false, is_livepreview);
-				} else if (node.type === NodeType.SUBSTITUTION) {
-					decorations.push(Decoration.replace({}).range(node.from, (node as SubstitutionNode).middle + 2));
-					markContents(decorations, node, 'criticmarkup-accepted', false);
-					hideBracket(decorations, node, false, is_livepreview);
+				if (range.type === SuggestionType.ADDITION) {
+					hideRange(decorations, range);
+				} else if (range.type === SuggestionType.DELETION) {
+					hideBracket(decorations, range, true, is_livepreview);
+					markContents(decorations, range, 'criticmarkup-accepted');
+					hideBracket(decorations, range, false, is_livepreview);
+				} else if (range.type === SuggestionType.SUBSTITUTION) {
+					decorations.push(Decoration.replace({}).range(range.from, (range as SubstitutionRange).middle + 2));
+					markContents(decorations, range, 'criticmarkup-accepted', false);
+					hideBracket(decorations, range, false, is_livepreview);
 				} else {
-					hideSyntax(decorations, node, '', is_livepreview);
+					hideSyntax(decorations, range, '', is_livepreview);
 				}
 			}
 		}

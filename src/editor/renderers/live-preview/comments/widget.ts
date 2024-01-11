@@ -2,7 +2,7 @@ import { EditorView, WidgetType } from '@codemirror/view';
 
 import { Component, MarkdownRenderer, setIcon } from 'obsidian';
 
-import { CriticMarkupNode } from '../../../base';
+import { CriticMarkupRange } from '../../../base';
 import { commentGutterMarkers } from '../../gutters';
 
 export class CommentIconWidget extends WidgetType {
@@ -12,7 +12,7 @@ export class CommentIconWidget extends WidgetType {
 	component: Component;
 	focused = false;
 
-	constructor(public node: CriticMarkupNode, public is_block = false) {
+	constructor(public range: CriticMarkupRange, public is_block = false) {
 		super();
 		this.component = new Component();
 	}
@@ -21,7 +21,7 @@ export class CommentIconWidget extends WidgetType {
 		if (!this.tooltip) {
 			this.tooltip = document.createElement('div');
 			this.tooltip.classList.add('criticmarkup-comment-tooltip');
-			MarkdownRenderer.render(app, this.node.text, this.tooltip, '', this.component);
+			MarkdownRenderer.render(app, this.range.text, this.tooltip, '', this.component);
 			this.component.load();
 			this.icon!.appendChild(this.tooltip);
 
@@ -55,15 +55,15 @@ export class CommentIconWidget extends WidgetType {
 			this.icon.onclick = (e) => {
 				const gutterElements = view.state.field(commentGutterMarkers);
 				e.preventDefault();
-				gutterElements.between(this.node.from, this.node.to, (from, to, widget) => {
-					if (this.node.equals(widget.node)) {
+				gutterElements.between(this.range.from, this.range.to, (from, to, widget) => {
+					if (this.range.equals(widget.comment_range)) {
 						widget.comment_thread!.dispatchEvent(new MouseEvent('dblclick'));
 						return false;
 					}
 				});
 			};
 		} else {
-			if (this.node.length) {
+			if (this.range.length) {
 				this.icon.onmouseenter = () => {
 					this.renderTooltip();
 				};

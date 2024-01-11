@@ -6,8 +6,8 @@ import { Compartment, type EditorState, type Extension, Facet, StateEffectType }
 import { around } from 'monkey-around';
 
 import {
-	nodeParser, type CriticMarkupNode, NODE_PROTOTYPE_MAPPER,
-	getNodesInText, text_copy,
+	rangeParser, type CriticMarkupRange, RANGE_PROTOTYPE_MAPPER,
+	getRangesInText, text_copy,
 } from './editor/base';
 
 import {
@@ -17,7 +17,7 @@ import {
 	initializeCommands,
 	cmenuCommands,
 } from './editor/uix';
-import { nodeCorrecter, bracketMatcher, suggestionMode, keybindExtensions } from './editor/uix/extensions';
+import { rangeCorrecter, bracketMatcher, suggestionMode, keybindExtensions } from './editor/uix/extensions';
 
 import { postProcess, postProcessorRerender, postProcessorUpdate } from './editor/renderers/post-process';
 import { markupRenderer, commentRenderer } from './editor/renderers/live-preview';
@@ -57,7 +57,7 @@ export default class CommentatorPlugin extends Plugin {
 
 	settings_tab = 'general';
 
-	database: Database<CriticMarkupNode[]> = new Database(
+	database: Database<CriticMarkupRange[]> = new Database(
 		this,
 		'commentator/cache',
 		'Commentator cache',
@@ -65,12 +65,12 @@ export default class CommentatorPlugin extends Plugin {
 		'Vault-wide cache for Commentator plugin',
 		() => [],
 		async (file, state?: EditorState) => {
-			return state ? state.field(nodeParser).nodes.nodes :
-				getNodesInText(await this.app.vault.cachedRead(file as TFile)).nodes;
+			return state ? state.field(rangeParser).ranges.ranges :
+				getRangesInText(await this.app.vault.cachedRead(file as TFile)).ranges;
 		},
 		this.settings.database_workers,
-		(data: CriticMarkupNode[]) => {
-			return data.map(node => Object.setPrototypeOf(node, NODE_PROTOTYPE_MAPPER[node.type].prototype));
+		(data: CriticMarkupRange[]) => {
+			return data.map(range => Object.setPrototypeOf(range, RANGE_PROTOTYPE_MAPPER[range.type].prototype));
 		},
 	);
 
@@ -82,7 +82,7 @@ export default class CommentatorPlugin extends Plugin {
 		this.editorExtensions.length = 0;
 
 		this.editorExtensions.push(keybindExtensions);
-		this.editorExtensions.push(nodeParser);
+		this.editorExtensions.push(rangeParser);
 
 		if (this.settings.comment_style === 'icon' || this.settings.comment_style === 'block')
 			this.editorExtensions.push(commentRenderer(this.settings));
@@ -102,8 +102,8 @@ export default class CommentatorPlugin extends Plugin {
 
 		if (this.settings.tag_completion)
 			this.editorExtensions.push(bracketMatcher);
-		if (this.settings.node_correcter)
-			this.editorExtensions.push(nodeCorrecter);
+		if (this.settings.tag_correcter)
+			this.editorExtensions.push(rangeCorrecter);
 
 		this.editorExtensions.push(EditorView.domEventHandlers({
 			copy: text_copy.bind(null, this.settings),
@@ -130,8 +130,8 @@ export default class CommentatorPlugin extends Plugin {
 		window['COMMENTATOR_DEBUG'] = {
 			plugin: this,
 			database: this.database,
-			get nodes() {
-				return app.workspace.activeEditor?.editor?.cm.state.field(nodeParser).nodes.nodes;
+			get ranges() {
+				return app.workspace.activeEditor?.editor?.cm.state.field(rangeParser).ranges.ranges;
 			},
 		};
 

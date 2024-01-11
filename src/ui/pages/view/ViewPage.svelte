@@ -9,14 +9,14 @@
 	import { type DatabaseEntry } from '../../../database';
 
 	import {
-		NodeType, NODE_ICON_MAPPER, type CriticMarkupNode, type CommentNode,
+		SuggestionType, SUGGESTION_ICON_MAPPER, type CriticMarkupRange, type CommentRange,
 		acceptSuggestionsInFile, rejectSuggestionsInFile,
 	} from '../../../editor/base';
 
 	export let plugin: CommentatorPlugin;
 
 
-	enum NodeTypeFilter {
+	enum SuggestionTypeFilter {
 		ALL,
 		ADDITION,
 		DELETION,
@@ -37,22 +37,22 @@
 		EMPTY,
 	}
 
-	type NodeEntry = { path: string, node: CriticMarkupNode }
+	type RangeEntry = { path: string, range: CriticMarkupRange }
 
-	export let node_type_filter: NodeTypeFilter = NodeTypeFilter.ALL;
+	export let range_type_filter: SuggestionTypeFilter = SuggestionTypeFilter.ALL;
 	export let location_filter: LocationFilter = LocationFilter.VAULT;
 	export let content_filter: ContentFilter = ContentFilter.ALL;
 	let search_filter: string = '';
 
-	const file_change_event = plugin.app.workspace.on('active-leaf-change', filterNodes);
+	const file_change_event = plugin.app.workspace.on('active-leaf-change', filterRanges);
 
-	let all_nodes: DatabaseEntry<CriticMarkupNode[]>[] = [];
-	let flattened_nodes: NodeEntry[] = [];
-	let selected_nodes: number[] = [];
-	let anchor_selected_node: number | null = null;
+	let all_ranges: DatabaseEntry<CriticMarkupRange[]>[] = [];
+	let flattened_ranges: RangeEntry[] = [];
+	let selected_ranges: number[] = [];
+	let anchor_selected_range: number | null = null;
 	let hover_index: number | null = null;
 
-	const node_filters = [
+	const range_filters = [
 		{ icon: 'asterisk', tooltip: 'All markup' },
 		{ icon: 'plus-circle', tooltip: 'Addition markup' },
 		{ icon: 'minus-square', tooltip: 'Deletion markup' },
@@ -77,95 +77,95 @@
 	];
 
 	const content_filters = [
-		{ icon: 'maximize', tooltip: "All nodes" },
-		{ icon: 'square', tooltip: "Only nodes with content" },
-		{ icon: 'box-select', tooltip: "Only empty nodes" },
+		{ icon: 'maximize', tooltip: "All suggestions" },
+		{ icon: 'square', tooltip: "Only suggestions with content" },
+		{ icon: 'box-select', tooltip: "Only empty suggestions" },
 	]
 
-	const debouncedUpdate = debounce(filterNodes, 500);
+	const debouncedUpdate = debounce(filterRanges, 500);
 
-	const undo_history: {file_history: Record<string, string>, selected_nodes: number[]}[] = [];
+	const undo_history: {file_history: Record<string, string>, selected_ranges: number[]}[] = [];
 
 	onMount(() => {
-		plugin.database.on("database-update", updateNodes);
-		updateNodes(plugin.database.allEntries()!);
+		plugin.database.on("database-update", updateRanges);
+		updateRanges(plugin.database.allEntries()!);
 	});
 
 	onDestroy(() => {
 		plugin.app.workspace.offref(file_change_event);
 	});
 
-	async function updateNodes(nodes: DatabaseEntry<CriticMarkupNode[]>[]) {
-		all_nodes = nodes;
-		await filterNodes();
+	async function updateRanges(ranges: DatabaseEntry<CriticMarkupRange[]>[]) {
+		all_ranges = ranges;
+		await filterRanges();
 	}
 
 
-	$: node_type_filter, location_filter, content_filter, selected_nodes = [], anchor_selected_node = null, filterNodes();
+	$: range_type_filter, location_filter, content_filter, selected_ranges = [], anchor_selected_range = null, filterRanges();
 
 
 
-	async function filterNodes() {
-		if (!all_nodes) return;
-		let temp = all_nodes!;
+	async function filterRanges() {
+		if (!all_ranges) return;
+		let temp = all_ranges!;
 
 		if (location_filter !== LocationFilter.VAULT) {
 			const active_file = plugin.app.workspace.getActiveFile();
 			if (active_file) {
 				if (location_filter === LocationFilter.FOLDER)
-					temp = all_nodes.filter(([key, _]) => key.startsWith(active_file.parent?.path ?? ''));
+					temp = all_ranges.filter(([key, _]) => key.startsWith(active_file.parent?.path ?? ''));
 				else if (location_filter === LocationFilter.FILE)
-					temp = all_nodes.filter(([key, _]) => key === active_file.path);
+					temp = all_ranges.filter(([key, _]) => key === active_file.path);
 			}
 		}
 
-        flattened_nodes = temp.flatMap(([path, value]) => value.data.map(node => {
-            return { path, node }
+        flattened_ranges = temp.flatMap(([path, value]) => value.data.map(range => {
+            return { path, range }
         }));
 
-		flattened_nodes = flattened_nodes.filter(item => item.node.type !== NodeType.COMMENT || !(item.node as CommentNode).attached_comment);
+		flattened_ranges = flattened_ranges.filter(item => item.range.type !== SuggestionType.COMMENT || !(item.range as CommentRange).attached_comment);
 
-		if (node_type_filter !== NodeTypeFilter.ALL)
-            flattened_nodes = flattened_nodes.filter(item => item.node.type === node_type_filter - 1);
+		if (range_type_filter !== SuggestionTypeFilter.ALL)
+            flattened_ranges = flattened_ranges.filter(item => item.range.type === range_type_filter - 1);
 
         if (content_filter !== ContentFilter.ALL)
-            flattened_nodes = flattened_nodes.filter(item => (content_filter === ContentFilter.CONTENT) !== item.node.empty());
+            flattened_ranges = flattened_ranges.filter(item => (content_filter === ContentFilter.CONTENT) !== item.range.empty());
 
 		if (search_filter.length)
-            flattened_nodes = flattened_nodes.filter(item => prepareSimpleSearch(search_filter)(item.node.text)?.score);
+            flattened_ranges = flattened_ranges.filter(item => prepareSimpleSearch(search_filter)(item.range.text)?.score);
 	}
 
-	async function editSelectedNodes(accept: boolean, entry: number | null) {
-		if (entry != null && !selected_nodes.length) {
-			selected_nodes = [entry];
-			anchor_selected_node = entry;
+	async function editSelectedRanges(accept: boolean, entry: number | null) {
+		if (entry != null && !selected_ranges.length) {
+			selected_ranges = [entry];
+			anchor_selected_range = entry;
 		}
-		const current_nodes = selected_nodes.map(value => flattened_nodes[value]);
+		const current_ranges = selected_ranges.map(value => flattened_ranges[value]);
 
-        const grouped_nodes = current_nodes.reduce((acc: Record<string, CriticMarkupNode[]>, {path, node}) => {
+        const grouped_ranges = current_ranges.reduce((acc: Record<string, CriticMarkupRange[]>, {path, range}) => {
 			if (!acc[path]) acc[path] = [];
-			acc[path].push(node);
+			acc[path].push(range);
 			return acc;
 		}, {});
 
         const editFunction = accept ? acceptSuggestionsInFile : rejectSuggestionsInFile;
 
 		const file_history: Record<string, string> = {};
-		for (const [key, value] of Object.entries(grouped_nodes)) {
+		for (const [key, value] of Object.entries(grouped_ranges)) {
 			const file = plugin.app.vault.getAbstractFileByPath(key);
 			if (!file) continue;
 			file_history[key] = await plugin.app.vault.cachedRead(<TFile>file);
 			await editFunction(<TFile>file, value);
 		}
-		undo_history.push({file_history, selected_nodes});
-		selected_nodes = [];
+		undo_history.push({file_history, selected_ranges});
+		selected_ranges = [];
 	}
 
 	async function handleKey(e: KeyboardEvent) {
 		if (e.key === 'z' && e.ctrlKey && !e.shiftKey && !e.altKey && !e.metaKey) {
 			if (undo_history.length) {
 				const undo_history_entry = undo_history.pop()!;
-				selected_nodes = undo_history_entry.selected_nodes;
+				selected_ranges = undo_history_entry.selected_ranges;
 				for (const [key, value] of Object.entries(undo_history_entry.file_history)) {
 					const file = plugin.app.vault.getAbstractFileByPath(key);
 					if (!file) continue;
@@ -175,18 +175,18 @@
 				new Notice("There is nothing to undo", 4000)
 			}
 		} else if (e.key === 'a' && e.ctrlKey && !e.shiftKey && !e.altKey && !e.metaKey) {
-            selected_nodes = Array.from(flattened_nodes.keys());
-			anchor_selected_node = 0;
+            selected_ranges = Array.from(flattened_ranges.keys());
+			anchor_selected_range = 0;
         } else if (e.key === 'Escape') {
-			selected_nodes = [];
-			anchor_selected_node = null;
+			selected_ranges = [];
+			anchor_selected_range = null;
         }
 	}
 
 
     async function onClickOutside() {
-        selected_nodes = [];
-		anchor_selected_node = null;
+        selected_ranges = [];
+		anchor_selected_range = null;
 	}
 </script>
 
@@ -213,12 +213,12 @@
 						onContextMenu={(e) => {
 							let menu = new Menu();
 
-							node_filters.map((filter, index) => {
+							range_filters.map((filter, index) => {
 								menu.addItem((item) => {
 									item.setTitle(filter.tooltip);
 									item.setIcon(filter.icon);
 									item.onClick(() => {
-										node_type_filter = index;
+										range_type_filter = index;
 									});
 								});
 							});
@@ -226,12 +226,12 @@
 							menu.showAtMouseEvent(e);
 						}}
 						class='clickable-icon nav-action-button'
-						bind:value={node_type_filter}
-						states={node_filters}
+						bind:value={range_type_filter}
+						states={range_filters}
 					/>
 					<Button class='clickable-icon nav-action-button' icon='lasso' tooltip='Select all markup' onClick={() => {
-						selected_nodes = Array.from(flattened_nodes.keys());
-						anchor_selected_node = 0;
+						selected_ranges = Array.from(flattened_ranges.keys());
+						anchor_selected_range = 0;
 					}} />
 					<StateButton
 						onContextMenu={(e) => {
@@ -275,9 +275,9 @@
 					/>
 				</div>
 				<div class='criticmarkup-view-info'>
-					<span>{flattened_nodes.length} {filter_names[node_type_filter]} in the {location_filters[location_filter].tooltip.toLowerCase()}</span>
-					{#if selected_nodes.length}
-						<span> · {selected_nodes.length} selected</span>
+					<span>{flattened_ranges.length} {filter_names[range_type_filter]} in the {location_filters[location_filter].tooltip.toLowerCase()}</span>
+					{#if selected_ranges.length}
+						<span> · {selected_ranges.length} selected</span>
 					{/if}
 				</div>
 			</svelte:fragment>
@@ -286,30 +286,30 @@
 
 	<svelte:fragment slot='view'>
 		<div class='criticmarkup-view-container' tabindex='-1' use:clickOutside={".menu"} on:click_outside={onClickOutside} on:keydown={handleKey}>
-			<VirtualList items={flattened_nodes} let:item let:index>
-				<div class='criticmarkup-view-node'
-					 class:criticmarkup-view-node-completed={item.node.fields.done}
-					 class:criticmarkup-view-node-selected={selected_nodes.some(value => value === index)}
+			<VirtualList items={flattened_ranges} let:item let:index>
+				<div class='criticmarkup-view-range'
+					 class:criticmarkup-view-range-completed={item.range.fields.done}
+					 class:criticmarkup-view-range-selected={selected_ranges.some(value => value === index)}
 					 on:mouseenter={() => hover_index = index}
 					 on:mouseleave={() => hover_index = null}
 					 on:click={async (e) => {
 							if (e.shiftKey) {
-								if (anchor_selected_node) {
-									const start = Math.min(anchor_selected_node, index);
-									const end = Math.max(anchor_selected_node, index);
-									selected_nodes = Array.from({length: end - start + 1}, (_, i) => i + start);
+								if (anchor_selected_range) {
+									const start = Math.min(anchor_selected_range, index);
+									const end = Math.max(anchor_selected_range, index);
+									selected_ranges = Array.from({length: end - start + 1}, (_, i) => i + start);
 								} else {
-									selected_nodes = [index];
-									anchor_selected_node = index;
+									selected_ranges = [index];
+									anchor_selected_range = index;
 								}
 							} else if (e.ctrlKey || e.metaKey) {
-								anchor_selected_node = index;
-								const original_length = selected_nodes.length;
-								selected_nodes = selected_nodes.filter((value) => value !== index);
-								if (selected_nodes.length === original_length)
-									selected_nodes = [...selected_nodes, index];
+								anchor_selected_range = index;
+								const original_length = selected_ranges.length;
+								selected_ranges = selected_ranges.filter((value) => value !== index);
+								if (selected_ranges.length === original_length)
+									selected_ranges = [...selected_ranges, index];
 							} else {
-								selected_nodes = [];
+								selected_ranges = [];
 								const leaves = plugin.app.workspace.getLeavesOfType("markdown");
 								if (!leaves.length) return;
 								const lastActiveLeaf = leaves.reduce((a, b) => (a.activeTime > b.activeTime) ? a : b);
@@ -321,20 +321,20 @@
 								if (file !== view.file)
 									await lastActiveLeaf.openFile(file);
 
-								view.editor.setSelection(view.editor.offsetToPos(item.node.from), view.editor.offsetToPos(item.node.to));
+								view.editor.setSelection(view.editor.offsetToPos(item.range.from), view.editor.offsetToPos(item.range.to));
 							}
 						}}
 					 on:contextmenu={(e) => {
 							const menu = new Menu();
 							menu.addItem((m_item) => {
-								m_item.setTitle("Accept" + (selected_nodes.length ? " selected changes" : " changes"));
+								m_item.setTitle("Accept" + (selected_ranges.length ? " selected changes" : " changes"));
 								m_item.setIcon("check");
-								m_item.onClick(async () => editSelectedNodes(true, index));
+								m_item.onClick(async () => editSelectedRanges(true, index));
 							});
 							menu.addItem((m_item) => {
-								m_item.setTitle("Reject" + (selected_nodes.length ? " selected changes" : " changes"));
+								m_item.setTitle("Reject" + (selected_ranges.length ? " selected changes" : " changes"));
 								m_item.setIcon("cross");
-								m_item.onClick(async () => editSelectedNodes(false, index));
+								m_item.onClick(async () => editSelectedRanges(false, index));
 							});
 
 							menu.showAtMouseEvent(e);
@@ -343,64 +343,64 @@
 					{#if hover_index === index}
 						<div style='position: relative'>
 							<div class='criticmarkup-view-suggestion-buttons' >
-								<Button icon='check' tooltip='Accept change' onClick={() => editSelectedNodes(true, index)} />
-								<Button icon='cross' tooltip='Reject change' onClick={() => editSelectedNodes(false, index)} />
+								<Button icon='check' tooltip='Accept change' onClick={() => editSelectedRanges(true, index)} />
+								<Button icon='cross' tooltip='Reject change' onClick={() => editSelectedRanges(false, index)} />
 							</div>
 						</div>
 					{/if}
 
 
 					<!-- TODO: Only show path if folder/vault-wide filter is active -->
-					<div class='criticmarkup-view-node-top'>
-						<Icon size={24} icon={NODE_ICON_MAPPER[item.node.type]} />
+					<div class='criticmarkup-view-range-top'>
+						<Icon size={24} icon={SUGGESTION_ICON_MAPPER[item.range.type]} />
 						<div>
-							<span class='criticmarkup-view-node-title'>{item.path}</span>
+							<span class='criticmarkup-view-range-title'>{item.path}</span>
 							<div>
-								{#if item.node.fields.author}
-								<span class='criticmarkup-view-node-author'>
-									{item.node.fields.author}
+								{#if item.range.fields.author}
+								<span class='criticmarkup-view-range-author'>
+									{item.range.fields.author}
 								</span>
 								{/if}
 
-								{#if item.node.fields.time}
-								<span class='criticmarkup-view-node-time'>
-									{window.moment.unix(item.node.fields.time).format('MMM DD YYYY, HH:mm')}
+								{#if item.range.fields.time}
+								<span class='criticmarkup-view-range-time'>
+									{window.moment.unix(item.range.fields.time).format('MMM DD YYYY, HH:mm')}
 								</span>
 								{/if}
 							</div>
 						</div>
 					</div>
 
-					{#key item.node.text}
-						<div class='criticmarkup-view-node-text'>
-							{#if item.node.empty()}
-								<span class='criticmarkup-view-node-empty'>This node is empty</span>
+					{#key item.range.text}
+						<div class='criticmarkup-view-range-text'>
+							{#if item.range.empty()}
+								<span class='criticmarkup-view-range-empty'>This range is empty</span>
 							{:else}
-								{@const parts = item.node.unwrap_parts()}
-								<MarkdownRenderer {plugin} text={parts[0]} source={item.path} class={item.node.fields.style} />
-								{#if item.node.type === NodeType.SUBSTITUTION}
+								{@const parts = item.range.unwrap_parts()}
+								<MarkdownRenderer {plugin} text={parts[0]} source={item.path} class={item.range.fields.style} />
+								{#if item.range.type === SuggestionType.SUBSTITUTION}
 									<MarkdownRenderer {plugin} text={parts[1]} source={item.path} />
 								{/if}
 							{/if}
 						</div>
 					{/key}
 
-					{#if item.node.replies.length}
-						{#each item.node.replies as reply}
-							<div class='criticmarkup-view-node-reply'>
-								<div class='criticmarkup-view-node-reply-top'>
+					{#if item.range.replies.length}
+						{#each item.range.replies as reply}
+							<div class='criticmarkup-view-range-reply'>
+								<div class='criticmarkup-view-range-reply-top'>
 									{#if reply.fields.author}
-										<span class='criticmarkup-view-node-reply-author'>
+										<span class='criticmarkup-view-range-reply-author'>
 											{reply.fields.author}
 										</span>
 									{/if}
 									{#if reply.fields.time}
-										<span class='criticmarkup-view-node-reply-time'>
+										<span class='criticmarkup-view-range-reply-time'>
 											{window.moment.unix(reply.fields.time).format('MMM DD YYYY, HH:mm')}
 										</span>
 									{/if}
 								</div>
-								<div class='criticmarkup-view-node-reply-text'>
+								<div class='criticmarkup-view-range-reply-text'>
 									<MarkdownRenderer {plugin} text={reply.unwrap()} source={item.path} class={reply.fields.style} />
 								</div>
 							</div>

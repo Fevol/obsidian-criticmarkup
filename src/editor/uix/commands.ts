@@ -3,14 +3,14 @@ import { type Editor, type MarkdownView, Platform } from 'obsidian';
 import { type ECommand } from '../../types';
 
 import {
-	CM_NodeTypes, selectionContainsNodes,
+	CM_SuggestionTypes, selectionContainsRanges,
 	changeType, acceptSuggestions, rejectSuggestions,
 } from '../base';
 import type CommentatorPlugin from '../../main';
 import { commentGutter } from '../renderers/gutters';
 
 
-export const suggestion_commands: ECommand[] = Object.entries(CM_NodeTypes).map(([text, type]) => ({
+export const suggestion_commands: ECommand[] = Object.entries(CM_SuggestionTypes).map(([text, type]) => ({
 	id: `commentator-toggle-${text.toLowerCase()}`,
 	name: `Mark as ${text}`,
 	icon: text.toLowerCase(),
@@ -27,7 +27,7 @@ export const editor_commands: ECommand[] = [
 		icon: 'check-check',
 		editor_context: true,
 		regular_callback: (editor: Editor, _) => {
-			// TODO: Add warning is #nodes > 100 ('Are you sure you want to accept all suggestions?')
+			// TODO: Add warning is #ranges > 100 ('Are you sure you want to accept all suggestions?')
 			editor.cm.dispatch(editor.cm.state.update({
 				changes: acceptSuggestions(editor.cm.state),
 			}));
@@ -49,9 +49,9 @@ export const editor_commands: ECommand[] = [
 		icon: 'check',
 		editor_context: true,
 		check_callback: (checking: boolean, editor: Editor, _) => {
-			const contains_node = selectionContainsNodes(editor.cm.state);
-			if (checking || !contains_node)
-				return contains_node;
+			const contains_range = selectionContainsRanges(editor.cm.state);
+			if (checking || !contains_range)
+				return contains_range;
 			const selections = editor.cm.state.selection.ranges;
 			const changes = selections.map(selection => acceptSuggestions(editor.cm.state, selection.from, selection.to));
 			editor.cm.dispatch(editor.cm.state.update({
@@ -65,9 +65,9 @@ export const editor_commands: ECommand[] = [
 		icon: 'cross',
 		editor_context: true,
 		check_callback: (checking: boolean, editor: Editor, _) => {
-			const contains_node = selectionContainsNodes(editor.cm.state);
-			if (checking || !contains_node)
-				return contains_node;
+			const contains_range = selectionContainsRanges(editor.cm.state);
+			if (checking || !contains_range)
+				return contains_range;
 			const selections = editor.cm.state.selection.ranges;
 			const changes = selections.map(selection => rejectSuggestions(editor.cm.state, selection.from, selection.to));
 			editor.cm.dispatch(editor.cm.state.update({

@@ -1,20 +1,20 @@
 import { SelectionRange } from '@codemirror/state';
 
-export interface CriticMarkupRange {
+export interface EditorRange {
 	from: number;
 	to: number;
 	head?: number;
 	anchor?: number;
 }
 
-export interface CriticMarkupChange extends CriticMarkupRange {
+export interface EditorOffsetChange extends EditorRange {
 	offset: {
 		removed: number,
 		added: number,
 	}
 }
 
-export interface CriticMarkupEdit extends CriticMarkupChange {
+export interface EditorEditChange extends EditorOffsetChange {
 	inserted: string;
 	deleted: string | undefined;
 }

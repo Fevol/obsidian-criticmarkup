@@ -1,25 +1,25 @@
 import { type ChangeSpec, EditorSelection, EditorState } from '@codemirror/state';
 
-import { nodeParser, NodeType } from '../../base';
+import { rangeParser, SuggestionType } from '../../base';
 
 /**
- * Removes initial whitespaces and double newlines from nodes that would otherwise result in markup being applied
- * to text that is not part of the node (due to CM shenanigans)
+ * Removes initial whitespaces and double newlines from ranges that would otherwise result in markup being applied
+ * to text that is not part of the range (due to CM shenanigans)
  */
-export const nodeCorrecter = EditorState.transactionFilter.of(tr => {
+export const rangeCorrecter = EditorState.transactionFilter.of(tr => {
 	if (tr.isUserEvent('select')) {
 		const previous_selection = tr.startState.selection.main, current_selection = tr.selection!.main;
 
 		if (current_selection.anchor === current_selection.head) {
-			const nodes = tr.startState.field(nodeParser).nodes;
+			const ranges = tr.startState.field(rangeParser).ranges;
 
-			const start_node = nodes.at_cursor(previous_selection.head);
-			const end_node = nodes.at_cursor(current_selection.head);
+			const start_range = ranges.at_cursor(previous_selection.head);
+			const end_range = ranges.at_cursor(current_selection.head);
 
-			// Execute only if the cursor is moved outside a particular node
-			if (start_node && start_node !== end_node &&
-				(start_node.type === NodeType.SUBSTITUTION || start_node.type === NodeType.HIGHLIGHT)) {
-				let new_text = start_node.unwrap();
+			// Execute only if the cursor is moved outside a particular range
+			if (start_range && start_range !== end_range &&
+				(start_range.type === SuggestionType.SUBSTITUTION || start_range.type === SuggestionType.HIGHLIGHT)) {
+				let new_text = start_range.unwrap();
 				let changed = false;
 
 				let removed_characters = 0;
@@ -39,8 +39,8 @@ export const nodeCorrecter = EditorState.transactionFilter.of(tr => {
 
 				if (changed) {
 					const changes: ChangeSpec[] = [{
-						from: start_node.from + 3,
-						to: start_node.to - 3,
+						from: start_range.from + 3,
+						to: start_range.to - 3,
 						insert: new_text,
 					}];
 					return {

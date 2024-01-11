@@ -1,5 +1,5 @@
 import type { EventRef } from 'obsidian';
-import { acceptSuggestions, isCursor, nodeParser, rejectSuggestions, selectionContainsNodes } from '../base';
+import { acceptSuggestions, isCursor, rangeParser, rejectSuggestions, selectionContainsRanges } from '../base';
 import { commentGutter } from '../renderers/gutters';
 
 export const cmenuCommands: EventRef =
@@ -25,7 +25,7 @@ export const cmenuCommands: EventRef =
 				});
 		});
 
-		if (selectionContainsNodes(editor.cm.state)) {
+		if (selectionContainsRanges(editor.cm.state)) {
 			menu.addItem((item) => {
 				item.setTitle('Accept changes')
 					.setIcon('check')
@@ -53,7 +53,7 @@ export const cmenuCommands: EventRef =
 			});
 
 			if (isCursor(editor.cm.state.selection)) {
-				const node = editor.cm.state.field(nodeParser).nodes.at_cursor(editor.cm.state.selection.ranges[0].head)!;
+				const range = editor.cm.state.field(rangeParser).ranges.at_cursor(editor.cm.state.selection.ranges[0].head)!;
 
 				menu.addItem((item) => {
 					const submenu = item.setTitle('Set metadata')
@@ -66,7 +66,7 @@ export const cmenuCommands: EventRef =
 							.setIcon('lucide-user')
 							.onClick(() => {
 								editor.cm.dispatch(editor.cm.state.update({
-									changes: node.add_metadata('author', 'ITS A ME!')
+									changes: range.add_metadata('author', 'ITS A ME!')
 								}));
 							});
 					});
@@ -75,7 +75,7 @@ export const cmenuCommands: EventRef =
 							.setIcon('lucide-calendar')
 							.onClick(() => {
 								editor.cm.dispatch(editor.cm.state.update({
-									changes: node.add_metadata('time', Date.now() / 1000)
+									changes: range.add_metadata('time', Date.now() / 1000)
 								}));
 							});
 					});
@@ -84,7 +84,7 @@ export const cmenuCommands: EventRef =
 							.setIcon('lucide-check')
 							.onClick(() => {
 								editor.cm.dispatch(editor.cm.state.update({
-									changes: node.add_metadata('done', true)
+									changes: range.add_metadata('done', true)
 								}));
 							});
 					});

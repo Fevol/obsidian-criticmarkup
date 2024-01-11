@@ -1,13 +1,13 @@
 import { ChangeSet } from '@codemirror/state';
 
-import { CM_All_Brackets, NodeType } from '../definitions';
-import { CriticMarkupNode } from '../base-node';
+import { CM_All_Brackets, SuggestionType } from '../definitions';
+import { CriticMarkupRange } from '../base_range';
 
-export class SubstitutionNode extends CriticMarkupNode {
+export class SubstitutionRange extends CriticMarkupRange {
 	num_ignore_chars = 8;
 
 	constructor(from: number, public middle: number, to: number, text: string, metadata?: number) {
-		super(from, to, NodeType.SUBSTITUTION, 'Substitution', text, metadata);
+		super(from, to, SuggestionType.SUBSTITUTION, 'Substitution', text, metadata);
 	}
 
 	num_ignored_chars(from: number, to: number): number {
@@ -107,10 +107,10 @@ export class SubstitutionNode extends CriticMarkupNode {
 		let str = text ?? this.text;
 		let parts: string[] = [str];
 		if (!text && unwrap) {
-			// Node is larger than what is actually given (no end bracket found within text)
-			if (this.to >= str.length && !str.endsWith(CM_All_Brackets[NodeType.SUBSTITUTION][2]))
+			// Range is larger than what is actually given (no end bracket found within text)
+			if (this.to >= str.length && !str.endsWith(CM_All_Brackets[SuggestionType.SUBSTITUTION][2]))
 				parts = this.unwrap_parts_bracket(true);
-			else if (this.from <= 0 && !str.startsWith(CM_All_Brackets[NodeType.SUBSTITUTION][0]))
+			else if (this.from <= 0 && !str.startsWith(CM_All_Brackets[SuggestionType.SUBSTITUTION][0]))
 				parts = this.unwrap_parts_bracket(false);
 			else
 				parts = this.unwrap_parts();
