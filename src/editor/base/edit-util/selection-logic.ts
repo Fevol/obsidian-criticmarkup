@@ -3,6 +3,10 @@ import { ChangeSet, EditorSelection, SelectionRange, Text, Transaction } from '@
 import { type CriticMarkupChange, type CriticMarkupEdit } from '../edit-operations/types';
 
 
+export function isCursor(selection: EditorSelection) {
+	return selection.ranges.length === 1 && selection.ranges[0].anchor === selection.ranges[0].head;
+}
+
 export function selectionRangeOverlap(selection: EditorSelection, rangeFrom: number, rangeTo: number) {
 	return selection.ranges.some(range => range.from <= rangeTo && range.to >= rangeFrom);
 }

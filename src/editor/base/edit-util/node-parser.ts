@@ -54,17 +54,28 @@ function constructFromSyntaxNode(node: SyntaxNode, text: string) {
 export function nodesInSelection(tree: Tree, text: string) {
 	const nodes: CriticMarkupNode[] = [];
 
+	let previous_regular_node: CriticMarkupNode | undefined = undefined;
+	let previous_node: CriticMarkupNode | undefined = undefined;
+
 	// Skip CriticMarkup root node
 	const cursor = tree.cursor();
 	if (cursor.next(true)) {
 		do {
 			const node = cursor.node;
-
 			if (node.type.name === "⚠") continue;
 			const new_node = constructFromSyntaxNode(node, text);
-			if (new_node) nodes.push(new_node);
+			let is_reply = false;
+			if (new_node) {
+				if (new_node.type === NodeType.COMMENT && previous_node && previous_node.right_adjacent(new_node)) {
+					(new_node as CommentNode).attach_to_node(previous_regular_node!)
+					is_reply = true;
+				}
+				nodes.push(new_node);
+				if (!is_reply)
+					previous_regular_node = new_node;
+				previous_node = new_node;
+			}
 		} while (cursor.nextSibling())
-
 	}
 
 	return new CriticMarkupNodes(nodes);

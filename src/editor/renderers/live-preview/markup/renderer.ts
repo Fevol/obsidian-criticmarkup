@@ -3,7 +3,7 @@ import { Decoration, type DecorationSet, EditorView } from '@codemirror/view';
 
 import { editorLivePreviewField } from 'obsidian';
 
-import { nodeParser, CriticMarkupNode, SubstitutionNode, NodeType } from '../../../base';
+import { CriticMarkupNode, nodeParser, NodeType, SubstitutionNode } from '../../../base';
 import { type PluginSettings } from '../../../../types';
 
 function hideBracket(decorations: Range<Decoration>[], node: CriticMarkupNode, left: boolean, is_livepreview: boolean) {
@@ -36,11 +36,17 @@ function hideNode(decorations: Range<Decoration>[], node: CriticMarkupNode) {
 
 function markContents(decorations: Range<Decoration>[], node: CriticMarkupNode, cls: string, left: boolean | null = null, inclusive = false, apply_styling = true) {
 	const offset = inclusive ? 0 : 3;
+
+	if (node.replies.length)
+		cls += ' criticmarkup-has-reply';
+
+
 	const attributes = {
 		'data-contents': 'string',
 		'data-type': 'criticmarkup-' + node.repr.toLowerCase(),
 		'class': cls,
-	};
+		'style': apply_styling && node.fields.color ? `background-color: #${node.fields.color};` : '',
+	}
 
 	const decoration = Decoration.mark({ attributes });
 
@@ -52,8 +58,9 @@ function markContents(decorations: Range<Decoration>[], node: CriticMarkupNode, 
 			if (!node.part_is_empty(false))
 				decorations.push(decoration.range((node as SubstitutionNode).middle + 2, node.to - offset));
 		}
-	} else if (!node.empty())
+	} else if (!node.empty()) {
 		decorations.push(decoration.range(node.from + offset, node.to - offset));
+	}
 }
 
 function hideSyntax(decorations: Range<Decoration>[], node: CriticMarkupNode, style: string = '', is_livepreview: boolean) {
@@ -86,7 +93,7 @@ export const markupRenderer = (settings: PluginSettings) => StateField.define<De
 			if (!settings.preview_mode) {
 				const in_range = tr.selection?.ranges?.some(range => node.partially_in_range(range.from, range.to));
 
-				const style = `criticmarkup-editing criticmarkup-inline criticmarkup-${node.repr.toLowerCase()} ` + '';
+				const style = `criticmarkup-editing criticmarkup-inline criticmarkup-${node.repr.toLowerCase()} ` + (node.fields.style || '');
 
 				if (!settings.suggest_mode && in_range) {
 					markContents(decorations, node, settings.editor_styling ? style : '', null, true, settings.editor_styling);

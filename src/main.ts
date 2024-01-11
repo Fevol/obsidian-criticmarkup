@@ -40,7 +40,6 @@ import {
 	hideEmptySuggestionGutter, hideEmptySuggestionGutterEffect, hideEmptySuggestionGutterState,
 } from './editor/settings';
 
-
 export default class CommentatorPlugin extends Plugin {
 	private editorExtensions: Extension[] = [];
 

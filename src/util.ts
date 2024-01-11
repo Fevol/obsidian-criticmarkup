@@ -1,6 +1,6 @@
 import { RangeSet, RangeValue } from '@codemirror/state';
 import { MarkdownView } from 'obsidian';
-import type { EditorViewI } from '../typings/obsidian-ex';
+import { type EditorView } from '@codemirror/view';
 
 
 
@@ -56,7 +56,7 @@ export function splitIntoEvenChunks<T>(array: T[], chunk_count: number): T[][] {
     return result;
 }
 
-export function iterateAllCMInstances(callback: (cm: EditorViewI) => void) {
+export function iterateAllCMInstances(callback: (cm: EditorView) => void) {
     app.workspace.iterateAllLeaves((leaf) => {
         // @ts-ignore
         if (leaf.view instanceof MarkdownView && leaf.view.currentMode.type === "source")

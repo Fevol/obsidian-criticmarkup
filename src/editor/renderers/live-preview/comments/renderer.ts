@@ -3,7 +3,7 @@ import { Decoration, type DecorationSet, EditorView } from '@codemirror/view';
 
 import { editorLivePreviewField } from 'obsidian';
 
-import { nodeParser, NodeType } from '../../../base';
+import { CommentNode, nodeParser, NodeType } from '../../../base';
 import { type PluginSettings } from '../../../../types';
 
 import { CommentIconWidget } from './widget';
@@ -32,13 +32,17 @@ export const commentRenderer = (settings: PluginSettings) => StateField.define<D
 		if (is_livepreview) {
 			for (const node of nodes.nodes) {
 				if (node.type === NodeType.COMMENT) {
-					builder.add(
-						node.from,
-						node.to,
-						Decoration.replace({
-							widget: new CommentIconWidget(node, settings.comment_style === 'block'),
-						}),
-					);
+					if (!(node as CommentNode).reply_depth) {
+						builder.add(
+							node.from,
+							node.to,
+							Decoration.replace({
+								widget: new CommentIconWidget(node, settings.comment_style === 'block'),
+							}),
+						);
+					} else {
+						builder.add(node.from, node.to, Decoration.replace({}));
+					}
 				}
 			}
 		}

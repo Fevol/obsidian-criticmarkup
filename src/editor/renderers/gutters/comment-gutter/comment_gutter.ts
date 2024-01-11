@@ -22,8 +22,6 @@ import {
 } from '../base';
 
 
-const MARGIN_BETWEEN = 5;
-
 const unfixGutters = Facet.define<boolean, boolean>({
 	combine: values => values.some(x => x),
 });
@@ -90,6 +88,17 @@ class CommentGutterView extends GutterView {
 		}
 	}
 
+	public focusCommentThread(position: number, index: number = -1) {
+		// Find element with node in it
+		const element = this.gutters[0].elements.find(
+			element => (element as CommentGutterElement).block!.from <= position && position <= (element as CommentGutterElement).block!.to
+		)
+
+		if (element) {
+			const marker = element.markers.find(marker => (marker as CommentMarker).node.cursor_inside(position))! as CommentMarker;
+			marker.focus_comment(index);
+		}
+	}
 }
 
 const commentGutterView = createGutterViewPlugin(CommentGutterView);

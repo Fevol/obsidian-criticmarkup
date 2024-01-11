@@ -1,71 +1,58 @@
 import { EditorView, GutterMarker } from '@codemirror/view';
 import { type EditorState, type RangeSet, Line, RangeSetBuilder, StateField } from '@codemirror/state';
 
-import { Component, editorEditorField, MarkdownRenderer } from 'obsidian';
+import { Component, editorEditorField, MarkdownRenderer, Menu } from 'obsidian';
 
 import { type CommentNode, nodeParser, NodeType } from '../../../base';
 import { commentGutter } from './index';
 
 export class CommentMarker extends GutterMarker {
-	comment: HTMLElement | null = null;
+	comment_thread: HTMLElement | null = null;
+	component: Component = new Component();
 
 	constructor(public node: CommentNode, public view: EditorView) {
 		super();
 	}
 
+	// TODO: I have many gripes with this implementation, though much fewer ideas on how to fix it
+	//    - Comparing hashes of nodes (prevents having to chain together the entire comment thread, but expensive)
+	//    - ...
 	eq(other: CommentMarker) {
-		return this.node.equals(other.node);
+		const base_node = this.node.attached_comment || this.node;
+		const other_base_node = other.node.attached_comment || other.node;
+		return base_node.equals(other_base_node);
+	}
+
+	renderComment(comment: HTMLElement, node: CommentNode, text: string) {
+		MarkdownRenderer.render(app, text || "&nbsp;", comment, '', this.component);
+		this.renderMetadata(comment, node);
+	}
+
+	renderMetadata(comment: HTMLElement, node: CommentNode) {
+		const metadataContainer = createSpan({ cls: 'criticmarkup-gutter-comment-metadata' });
+		comment.insertBefore(metadataContainer, comment.firstChild);
+
+		if (node.metadata) {
+			if (node.fields.author) {
+				const authorLabel = createSpan({
+					cls: 'criticmarkup-gutter-comment-author-label',
+					text: "Author: "
+				});
+				metadataContainer.appendChild(authorLabel);
+
+				const author = createSpan({
+					cls: 'criticmarkup-gutter-comment-author-name',
+					text: node.fields.author
+				});
+				metadataContainer.appendChild(author);
+			}
+		}
 	}
 
 	toDOM() {
-		const class_list = '';
+		this.comment_thread = createDiv({ cls: 'criticmarkup-gutter-comment-thread' });
 
-		this.comment = createDiv({ cls: class_list });
-		this.comment.contentEditable = 'false';
-
-		const component = new Component();
-		this.comment.classList.add('criticmarkup-gutter-comment');
-
-		const text = this.node.unwrap();
-		MarkdownRenderer.render(app, text || "&nbsp;", this.comment, '', component);
-
-		this.comment.onblur = () => {
-			// Only actually apply changes if the comment has changed
-			if (this.comment!.innerText === text) {
-				this.comment!.replaceChildren();
-				this.comment!.innerText = "";
-				this.comment!.contentEditable = 'false';
-				MarkdownRenderer.render(app, text || "&nbsp;", this.comment!, '', component);
-			} else {
-				setTimeout(() => this.view.dispatch({
-					changes: {
-						from: this.node.from + 3,
-						to: this.node.to - 3,
-						insert: this.comment!.innerText
-					},
-				}));
-			}
-		}
-
-		this.comment.onkeyup = (e) => {
-			if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-				this.comment!.blur();
-			} else if (e.key === 'Escape') {
-				this.comment!.innerText = text;
-				this.comment!.blur();
-			}
-		}
-
-		this.comment.ondblclick = (e) => {
-			e.stopPropagation();
-
-			this.comment!.contentEditable = 'true';
-			this.comment!.replaceChildren();
-			this.comment!.innerText = text;
-			this.comment!.focus();
-		}
-
-		this.comment.onclick = (e) => {
+		this.comment_thread.onclick = (e) => {
 			const top = this.view.lineBlockAt(this.node.from).top - 100;
 
 			setTimeout(() => {
@@ -73,17 +60,102 @@ export class CommentMarker extends GutterMarker {
 				this.view.plugin(commentGutter[1][0][0])!.moveGutter(this);
 				this.view.scrollDOM.scrollTo({ top, behavior: 'smooth'})
 			}, 200);
-
 		}
 
+		const comment_nodes_flattened = this.node.attached_comment ?
+			this.node.attached_comment.replies :
+			[this.node, ...this.node.replies];
 
-		component.load();
+		for (const node of comment_nodes_flattened) {
+			const comment = createDiv({ cls: 'criticmarkup-gutter-comment' });
+			comment.contentEditable = 'false';
 
-		return this.comment;
+			comment.onblur = () => {
+				// Only actually apply changes if the comment has changed
+				if (comment.innerText === text) {
+					comment.replaceChildren();
+					comment.innerText = "";
+					comment.contentEditable = 'false';
+					this.renderComment(comment, node, text);
+				} else {
+					setTimeout(() => this.view.dispatch({
+						changes: {
+							from: node.from + 3,
+							to: node.to - 3,
+							insert: comment!.innerText
+						},
+					}));
+				}
+			}
+
+			comment.onkeyup = (e) => {
+				if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+					comment!.blur();
+				} else if (e.key === 'Escape') {
+					comment!.innerText = text;
+					comment!.blur();
+				}
+			}
+
+			comment.ondblclick = (e) => {
+				e.stopPropagation();
+
+				comment.contentEditable = 'true';
+				comment.replaceChildren();
+				comment.innerText = text;
+				comment.focus();
+			}
+
+			comment.oncontextmenu = (e) => {
+				e.preventDefault();
+				e.stopPropagation();
+
+				const menu = new Menu();
+				menu.addItem((item) => {
+					item.setTitle("Reply to comment");
+					item.setIcon('reply');
+					item.onClick(() => {
+						const last_reply = this.node.base_node.replies.length ?
+							this.node.base_node.replies[this.node.base_node.replies.length - 1] :
+							this.node.base_node;
+
+						this.view.dispatch({
+							changes: {
+								from: last_reply.to,
+								to: last_reply.to,
+								insert: "{>><<}"
+							},
+						});
+
+						setTimeout(() => {
+							// @ts-expect-error (Directly accessing function of unexported class)
+							this.view.plugin(commentGutter[1][0][0])!.focusCommentThread(this.node.base_node.from + 1);
+						});
+					});
+				});
+
+				menu.showAtPosition(e);
+			}
+
+			this.comment_thread.appendChild(comment);
+
+			const text = node.unwrap();
+			this.renderComment(comment, node, text);
+		}
+
+		this.component.load();
+
+		return this.comment_thread;
 	}
 
 	focus() {
-		this.comment!.focus();
+		this.comment_thread!.focus();
+	}
+
+	focus_comment(index: number = -1) {
+		if (index === -1)
+			index = this.comment_thread!.children.length - 1;
+		this.comment_thread!.children.item(index)!.dispatchEvent(new MouseEvent('dblclick'));
 	}
 }
 
@@ -97,7 +169,7 @@ function createMarkers(state: EditorState) {
 	let stop_next_block = null;
 
 	for (const node of nodes.nodes) {
-		if (node.type !== NodeType.COMMENT) continue;
+		if (node.type !== NodeType.COMMENT || (node as CommentNode).reply_depth) continue;
 
 		// Mental note to myself: this code exists because the fact that comments
 		// can appear across multiple lines/blocks. However, using `tr.state.doc.lineAt(node.from)` or
