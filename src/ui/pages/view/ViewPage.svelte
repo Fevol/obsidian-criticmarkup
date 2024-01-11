@@ -61,6 +61,15 @@
 		{ icon: 'message-square', tooltip: 'Comment markup' },
 	];
 
+	const filter_names = [
+		"suggestions",
+		"insertions",
+		"deletions",
+		"replacements",
+		"highlights",
+		"comments",
+	]
+
 	const location_filters = [
 		{ icon: 'vault', tooltip: 'Entire vault' },
 		{ icon: 'folder-closed', tooltip: 'Current folder' },
@@ -114,7 +123,7 @@
             return { path, node }
         }));
 
-		flattened_nodes = flattened_nodes.filter(item => item.node.type !== NodeType.COMMENT || (<CommentNode>item.node).reply_depth === 0);
+		flattened_nodes = flattened_nodes.filter(item => item.node.type !== NodeType.COMMENT || !(item.node as CommentNode).attached_comment);
 
 		if (node_type_filter !== NodeTypeFilter.ALL)
             flattened_nodes = flattened_nodes.filter(item => item.node.type === node_type_filter - 1);
@@ -264,6 +273,12 @@
                         bind:value={content_filter}
                         states={content_filters}
 					/>
+				</div>
+				<div class='criticmarkup-view-info'>
+					<span>{flattened_nodes.length} {filter_names[node_type_filter]} in the {location_filters[location_filter].tooltip.toLowerCase()}</span>
+					{#if selected_nodes.length}
+						<span> · {selected_nodes.length} selected</span>
+					{/if}
 				</div>
 			</svelte:fragment>
 		</NavHeader>

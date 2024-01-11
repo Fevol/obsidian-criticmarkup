@@ -114,3 +114,8 @@
 .criticmarkup-view-suggestion-buttons > button:hover {
 	background-color: var(--background-secondary-alt);
 }
+
+.criticmarkup-view-info {
+	color: var(--text-muted);
+	font-size: var(--font-smallest);
+}
