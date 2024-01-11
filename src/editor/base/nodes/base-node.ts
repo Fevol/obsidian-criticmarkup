@@ -1,14 +1,31 @@
 import { ChangeSet } from '@codemirror/state';
 import { type NodeType, type StringNodeType, CM_All_Brackets } from './definitions';
+import type { EditorChange } from '../edit-operations';
+import { type CommentNode } from './types';
+
+
+const shortHandMapping = {
+	'a': 'author',
+	't': 'time',
+	'd': 'done',
+	's': 'style',
+	'c': 'color',
+};
+
+
+export interface MetadataFields {
+	author?: string;
+	time?: number;
+	done?: boolean;
+	style?: string;
+	color?: string;
+}
 
 export abstract class CriticMarkupNode {
 	num_ignore_chars = 6;
 
-	author: string | null = null;
-	time: number | null = null;
-	done: boolean | null = null;
-	style: string | null = null;
-	color: string | null = null;
+	fields: MetadataFields = {};
+	replies: CommentNode[] = [];
 
 	protected constructor(public from: number, public to: number, public type: NodeType, public repr: StringNodeType, public text: string, public metadata?: number) {
 		if (metadata !== undefined) {
@@ -20,13 +37,74 @@ export abstract class CriticMarkupNode {
 				//   + Cleaner, shorter
 				//   - Not valid JSON
 				// TODO: JS can be injected here, possible security risk
-				const fields = (0, eval)(`({${metadata_text}})`);
-				this.author = fields.author ?? fields.a;
-				this.time = fields.time ?? fields.t;
-				this.done = fields.done ?? fields.d;
-				this.style = fields.style ?? fields.s;
-				this.color = fields.color ?? fields.c;
-			} catch (e) {}
+				this.fields = JSON.parse(`{${metadata_text}}`);
+				for (const key in this.fields) {
+					if (key in shortHandMapping) {
+						// @ts-ignore (This is a pain to type, the ts-ignore is 100% worth it)
+						this.fields[shortHandMapping[key]] = this.fields[key];
+						delete this.fields[key as keyof typeof this.fields];
+					}
+				}
+			} catch (e) {
+			}
+		}
+	}
+
+	get base_node(): CriticMarkupNode {
+		return this;
+	}
+
+	get length() {
+		return this.to - this.from - 6;
+	}
+
+	get full_text() {
+		return this.text + this.replies.map(reply => reply.text).join('');
+	}
+
+	remove_metadata(): EditorChange[] {
+		if (!this.metadata) return [];
+		return [{
+			from: this.from + 3,
+			to: this.metadata + 2,
+			insert: '',
+		}];
+	}
+
+	delete_metadata(key: string): EditorChange[] {
+		if (key in shortHandMapping) key = shortHandMapping[key as keyof typeof shortHandMapping];
+
+		if (key in this.fields) {
+			delete this.fields[key as keyof typeof this.fields];
+			if (Object.keys(this.fields).length === 0) {
+				this.remove_metadata();
+			} else {
+				this.set_metadata(this.fields);
+			}
+		}
+		return [];
+	}
+
+	add_metadata(key: string, value: any): EditorChange[] {
+		this.fields[key as keyof typeof this.fields] = value;
+		return this.set_metadata(this.fields);
+	}
+
+	set_metadata(fields: MetadataFields): EditorChange[] {
+		// TODO: Possibly redundant assignment, nodes will automatically get re-constructed with the EditorChange
+		this.fields = fields;
+		if (this.metadata !== undefined) {
+			return [{
+				from: this.from + 3,
+				to: this.metadata,
+				insert: JSON.stringify(fields).slice(1, -1),
+			}];
+		} else {
+			return [{
+				from: this.from + 3,
+				to: this.from + 3,
+				insert: `${JSON.stringify(fields)}`.slice(1, -1) + '@@',
+			}];
 		}
 	}
 
@@ -34,8 +112,20 @@ export abstract class CriticMarkupNode {
 		return Object.assign(Object.create(Object.getPrototypeOf(this)), this);
 	}
 
+	weak_equals(other: CriticMarkupNode) {
+		return this.type === other.type && this.from === other.from && this.to === other.to && this.text === other.text;
+	}
+
 	equals(other: CriticMarkupNode) {
-		return this.type === other.type && this.text === other.text;
+		return this.type === other.type && this.from === other.from && this.to === other.to && this.full_text === other.full_text;
+	}
+
+	left_adjacent(other: CriticMarkupNode) {
+		return this.from === other.to;
+	}
+
+	right_adjacent(other: CriticMarkupNode) {
+		return this.to === other.from;
 	}
 
 	num_ignored_chars(from: number, to: number): number {
@@ -105,21 +195,20 @@ export abstract class CriticMarkupNode {
 		return this.from === cursor || this.to === cursor;
 	}
 
-	// TODO: Remove additional condition params if they're not used
-	cursor_inside(cursor: number) {
-		return this.from + 3 < cursor && this.to - 3 > cursor;
-	}
-
-	cursor_outside(cursor: number, left: boolean) {
-		return left ? cursor <= this.from : cursor >= this.to;
-	}
-
 	range_infront(start: number, end: number) {
 		return this.to < start;
 	}
 
 	range_behind(start: number, end: number) {
-		return end < this.from
+		return end < this.from;
+	}
+
+	cursor_inside(cursor: number) {
+		return this.from <= cursor && cursor <= this.to;
+	}
+
+	cursor_outside(cursor: number, left: boolean) {
+		return left ? cursor <= this.from : cursor >= this.to;
 	}
 
 	cursor_infront(cursor: number, left: boolean, strict = false) {
@@ -184,8 +273,7 @@ export abstract class CriticMarkupNode {
 			|| this.touches_right_bracket(cursor, outside_loose, inside_loose);
 	}
 
-
-	postprocess(unwrap: boolean = true, livepreview_mode: number = 0, tag: string = "div", left: boolean | null = null, text?: string) {
+	postprocess(unwrap: boolean = true, livepreview_mode: number = 0, tag: string = 'div', left: boolean | null = null, text?: string) {
 		let str = text ?? this.text;
 		if (!text && unwrap) {
 			// Node is larger than what is actually given (no end bracket found within text)
@@ -209,10 +297,5 @@ export abstract class CriticMarkupNode {
 		this.from += offset;
 		this.to += offset;
 		return this;
-	}
-
-
-	get length() {
-		return this.to - this.from - 6;
 	}
 }
