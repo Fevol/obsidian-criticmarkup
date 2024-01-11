@@ -7,6 +7,7 @@ import {
 	changeType, acceptSuggestions, rejectSuggestions,
 } from '../base';
 import type CommentatorPlugin from '../../main';
+import { commentGutter } from '../renderers/gutters';
 
 
 export const suggestion_commands: ECommand[] = Object.entries(CM_NodeTypes).map(([text, type]) => ({
@@ -73,6 +74,26 @@ export const editor_commands: ECommand[] = [
 				changes,
 			}));
 		},
+	},
+	{
+		id: 'commentator-comment',
+		name: 'Add comment',
+		icon: 'message-square',
+		editor_context: true,
+		regular_callback: (editor: Editor, view: MarkdownView) => {
+			const cursor = editor.cm.state.selection.main.from;
+			editor.cm.dispatch(editor.cm.state.update({
+				changes: [{
+					from: cursor,
+					to: cursor,
+					insert: '{>><<}',
+				}],
+			}));
+			setTimeout(() => {
+				// @ts-expect-error (Directly accessing function of unexported class)
+				editor.cm.plugin(commentGutter[1][0][0])!.focusCommentThread(cursor + 1);
+			});
+		}
 	}
 ];
 
