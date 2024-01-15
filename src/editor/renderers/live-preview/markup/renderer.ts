@@ -1,10 +1,10 @@
-import { type Extension, Range, StateField, Transaction } from '@codemirror/state';
-import { Decoration, type DecorationSet, EditorView } from '@codemirror/view';
+import {type Extension, Range, StateField, Transaction} from '@codemirror/state';
+import {Decoration, type DecorationSet, EditorView} from '@codemirror/view';
 
-import { editorLivePreviewField } from 'obsidian';
+import {editorLivePreviewField} from 'obsidian';
 
-import { CriticMarkupRange, rangeParser, SuggestionType, SubstitutionRange } from '../../../base';
-import { type PluginSettings } from '../../../../types';
+import {CriticMarkupRange, rangeParser, SubstitutionRange, SuggestionType} from '../../../base';
+import {type PluginSettings, PreviewMode} from '../../../../types';
 
 function hideBracket(decorations: Range<Decoration>[], range: CriticMarkupRange, left: boolean, is_livepreview: boolean) {
 	if (!is_livepreview) return;
@@ -18,8 +18,8 @@ function hideBracket(decorations: Range<Decoration>[], range: CriticMarkupRange,
 		decorations.push(decoration.range(range.to - 3, range.to));
 }
 
-function hideMetadata(decorations: Range<Decoration>[], range: CriticMarkupRange) {
-	if (!range.metadata) return;
+function hideMetadata(decorations: Range<Decoration>[], range: CriticMarkupRange, is_livepreview: boolean = false) {
+	if (!range.metadata || !is_livepreview) return;
 
 	decorations.push(
 		Decoration.replace({
@@ -65,7 +65,7 @@ function markContents(decorations: Range<Decoration>[], range: CriticMarkupRange
 
 function hideSyntax(decorations: Range<Decoration>[], range: CriticMarkupRange, style: string = '', is_livepreview: boolean) {
 	hideBracket(decorations, range, true, is_livepreview);
-	hideMetadata(decorations, range);
+	hideMetadata(decorations, range, is_livepreview);
 	markContents(decorations, range, style);
 	hideBracket(decorations, range, false, is_livepreview);
 }
@@ -90,7 +90,7 @@ export const markupRenderer = (settings: PluginSettings) => StateField.define<De
 		const decorations: Range<Decoration>[] = [];
 
 		for (const range of ranges.ranges) {
-			if (!settings.preview_mode) {
+			if (settings.preview_mode === PreviewMode.ALL) {
 				const in_range = tr.selection?.ranges?.some(sel_range => range.partially_in_range(sel_range.from, sel_range.to));
 
 				const style = `criticmarkup-editing criticmarkup-inline criticmarkup-${range.repr.toLowerCase()} ` + (range.fields.style || '');
@@ -113,7 +113,7 @@ export const markupRenderer = (settings: PluginSettings) => StateField.define<De
 				} else {
 					hideSyntax(decorations, range, style, is_livepreview);
 				}
-			} else if (settings.preview_mode === 1) {
+			} else if (settings.preview_mode === PreviewMode.ACCEPT) {
 				if (range.type === SuggestionType.ADDITION) {
 					hideSyntax(decorations, range, 'criticmarkup-accepted', is_livepreview);
 				} else if (range.type === SuggestionType.DELETION) {
@@ -126,7 +126,7 @@ export const markupRenderer = (settings: PluginSettings) => StateField.define<De
 				} else {
 					hideSyntax(decorations, range, '', is_livepreview);
 				}
-			} else if (settings.preview_mode === 2) {
+			} else if (settings.preview_mode === PreviewMode.REJECT) {
 				if (range.type === SuggestionType.ADDITION) {
 					hideRange(decorations, range);
 				} else if (range.type === SuggestionType.DELETION) {
