@@ -51,3 +51,34 @@ export const SUGGESTION_ICON_MAPPER = {
 	[SuggestionType.HIGHLIGHT]: 'highlighter',
 	[SuggestionType.COMMENT]: 'message-square',
 };
+
+/**
+ * How to move through a suggestion range when moving the cursor
+ */
+export enum RANGE_CURSOR_MOVEMENT_OPTION {
+	// Treat all characters as normal
+	UNCHANGED,
+
+	// Ignores all bracket characters, but NOT metadata
+	IGNORE_BRACKET,
+
+	// Ignores all bracket characters AND metadata
+	IGNORE_METADATA,
+
+	// Ignores the entire suggestion range
+	IGNORE_COMPLETELY,
+}
+
+/**
+ * How to move through a range when moving through a bracket
+ */
+export enum RANGE_BRACKET_MOVEMENT_OPTION {
+	// Move as normal (move through a bracket)
+	UNCHANGED,
+
+	// When *leaving* a bracket, stay inside the range if cursor cannot move anymore
+	STAY_INSIDE,
+
+	// When *reaching* a bracket, stay outside, even if cursor can move further
+	STAY_OUTSIDE,
+}

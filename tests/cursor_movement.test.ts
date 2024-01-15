@@ -1,7 +1,7 @@
 import { EditorState } from '@codemirror/state';
 import { EditorView } from '@codemirror/view';
 
-import { suggestionMode, overridden_keymap } from '../src/editor/uix/extensions';
+import { suggestionMode } from '../src/editor/uix/extensions';
 
 import {
 	rangeParser, CriticMarkupRanges, SubstitutionRange,
@@ -39,6 +39,14 @@ global.app = <Partial<App>>{
 };
 
 const movement_directions = ['ArrowLeft', 'ArrowRight', 'Mod-ArrowLeft', 'Mod-ArrowRight'];
+
+const keyboard_events: KeyboardEvent[] = [
+	new KeyboardEvent('keydown', { key: 'ArrowLeft' }),
+	new KeyboardEvent('keydown', { key: 'ArrowRight' }),
+	new KeyboardEvent('keydown', { key: 'ArrowLeft', ctrlKey: true }),
+	new KeyboardEvent('keydown', { key: 'ArrowRight', ctrlKey: true }),
+];
+
 
 function visualize_cursor_location(text: string, position: number) {
 	return text.substring(0, position) + '░' + text.substring(position);
@@ -82,7 +90,7 @@ function character_mapper(ranges: CriticMarkupRanges, positions: number[], left:
 		const range = ranges.at_cursor(position);
 
 		if (range) {
-			if (position === range.to && ranges.adjacent_to_range(range, !left, true)?.from) {
+			if (position === range.to && ranges.adjacent_range(range, !left, true)?.from) {
 				mapping.push(-1);
 			} else if (range.touches_left_bracket(position, true, !left)) {
 				if (left && position === range.from + 3) {
@@ -162,7 +170,7 @@ for (let test_case of test_cases) {
 				} else {
 					mapping = [...position_numbers];
 				}
-				console.log(visualize_mapping(test_case, mapping) + (left ? ' (⟵)' : ' (⟶)'));
+				// console.log(visualize_mapping(test_case, mapping) + (left ? ' (⟵)' : ' (⟶)'));
 
 				for (const cursor of position_numbers) {
 					test(visualize_cursor_movement(test_case, cursor, findBlockingChar(cursor, !left, view.state)[0]), () => {
@@ -180,15 +188,16 @@ for (let test_case of test_cases) {
 
 						actual_view.dispatch({ selection: { anchor: actual_cursor, head: actual_cursor } });
 
-						// Run key input and dispatch a transaction
-						const action = overridden_keymap.find(x => x.key === movement_directions[direction])!;
-						action.run(view);
-						action.run(actual_view);
+						const event = keyboard_events[direction];
+						view.dom.dispatchEvent(event);
+						actual_view.dom.dispatchEvent(event);
 
-						const new_cursor = mapping[view.state.selection.main.head];
-						const new_actual_cursor = actual_view.state.selection.main.head;
+						setTimeout(() => {
+							const new_cursor = mapping[view.state.selection.main.head];
+							const new_actual_cursor = actual_view.state.selection.main.head;
 
-						expect(new_cursor).toBe(new_actual_cursor);
+							expect(new_cursor).toBe(new_actual_cursor);
+						}, 0);
 					});
 				}
 			});

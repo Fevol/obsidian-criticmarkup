@@ -1,11 +1,22 @@
-import { EditorSelection, EditorState, type Extension, SelectionRange, Transaction } from '@codemirror/state';
-import { type PluginSettings } from '../../../../types';
+import {EditorSelection, EditorState, type Extension, SelectionRange, Transaction} from '@codemirror/state';
+import {type PluginSettings} from '../../../../types';
 
 import {
+	cursorMoved,
+	getEditorRanges,
+	getUserEvents, is_forward_movement,
+	RANGE_BRACKET_MOVEMENT_OPTION,
+	RANGE_CURSOR_MOVEMENT_OPTION,
 	rangeParser,
-	text_insert, text_delete, text_replace, cursor_move,
-	cursorMoved, getEditorRanges, getUserEvents
+	SuggestionType,
+	text_delete,
+	text_insert,
+	text_replace
 } from '../../../base';
+
+
+import {cursor_move} from "../../../base/suggestion-handler/movement";
+import {editorKeypressStateField} from "../keypress-catcher";
 
 
 enum OperationType {
@@ -179,16 +190,63 @@ function applySuggestion(tr: Transaction, settings: PluginSettings): Transaction
 		if (userEvents.includes('select.pointer'))
 			return tr;
 
+		// TODO: Verify that this can never, ever not be zero
+		const keyPress = tr.startState.field(editorKeypressStateField);
+
+		let backwards_select = userEvents.includes('select.backward');
+		let group_select = userEvents.includes('select.group');
+		let is_selection = userEvents.includes('select.extend');
+		if (!vim_mode && keyPress) {
+			// Check if key is pointer left or right
+			if (keyPress.key === 'ArrowLeft')
+				backwards_select = true;
+			else if (keyPress.key === 'ArrowRight')
+				backwards_select = false;
+			else {
+				backwards_select = !is_forward_movement(tr.startState.selection, tr.selection!)
+
+			}
+
+
+			is_selection = keyPress.shiftKey;
+			group_select = keyPress.ctrlKey || keyPress.metaKey;
+		}
+
 
 		const ranges = tr.startState.field(rangeParser).ranges;
 
-		const backwards_select = userEvents.includes('select.backward');
-		const group_select = userEvents.includes('select.group');
-		const is_selection = userEvents.includes('select.extend');
+
 		const selections: SelectionRange[] = [];
 		for (const [idx, range] of tr.selection!.ranges.entries()) {
-			const cursor_operation = cursor_move(range, tr.startState.selection!.ranges[idx],
-				ranges, tr.startState, backwards_select, group_select, is_selection, vim_mode);
+			const cursor_operation = cursor_move(
+				tr.startState.selection!.ranges[idx],
+				range,
+
+				ranges,
+
+				!backwards_select,
+				group_select,
+				is_selection,
+				vim_mode,
+
+				tr.startState,
+
+				{
+					[SuggestionType.ADDITION]: RANGE_CURSOR_MOVEMENT_OPTION.IGNORE_METADATA,
+					[SuggestionType.DELETION]: RANGE_CURSOR_MOVEMENT_OPTION.IGNORE_METADATA,
+					[SuggestionType.SUBSTITUTION]: RANGE_CURSOR_MOVEMENT_OPTION.IGNORE_METADATA,
+					[SuggestionType.HIGHLIGHT]: RANGE_CURSOR_MOVEMENT_OPTION.IGNORE_METADATA,
+					[SuggestionType.COMMENT]: RANGE_CURSOR_MOVEMENT_OPTION.IGNORE_METADATA,
+				},
+				{
+					[SuggestionType.ADDITION]: RANGE_BRACKET_MOVEMENT_OPTION.STAY_INSIDE,
+					[SuggestionType.DELETION]: RANGE_BRACKET_MOVEMENT_OPTION.STAY_INSIDE,
+					[SuggestionType.SUBSTITUTION]: RANGE_BRACKET_MOVEMENT_OPTION.STAY_INSIDE,
+					[SuggestionType.HIGHLIGHT]: RANGE_BRACKET_MOVEMENT_OPTION.STAY_INSIDE,
+					[SuggestionType.COMMENT]: RANGE_BRACKET_MOVEMENT_OPTION.STAY_INSIDE,
+				},
+			)
+
 			selections.push(cursor_operation.selection);
 		}
 

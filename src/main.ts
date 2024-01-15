@@ -1,7 +1,7 @@
 import { type MarkdownPostProcessor, MarkdownPreviewRenderer, Plugin, TFile } from 'obsidian';
 
 import { EditorView } from '@codemirror/view';
-import { Compartment, type EditorState, type Extension, Facet, StateEffectType } from '@codemirror/state';
+import { Compartment, type EditorState, type Extension, Facet, Prec, StateEffectType } from '@codemirror/state';
 
 import { around } from 'monkey-around';
 
@@ -17,7 +17,7 @@ import {
 	initializeCommands,
 	cmenuCommands,
 } from './editor/uix';
-import { rangeCorrecter, bracketMatcher, suggestionMode, keybindExtensions } from './editor/uix/extensions';
+import { rangeCorrecter, bracketMatcher, suggestionMode, editorKeypressStateField, editorKeypressCatcher } from './editor/uix/extensions';
 
 import { postProcess, postProcessorRerender, postProcessorUpdate } from './editor/renderers/post-process';
 import { markupRenderer, commentRenderer } from './editor/renderers/live-preview';
@@ -81,7 +81,12 @@ export default class CommentatorPlugin extends Plugin {
 
 		this.editorExtensions.length = 0;
 
-		this.editorExtensions.push(keybindExtensions);
+
+		this.editorExtensions.push(Prec.highest([
+			editorKeypressStateField,
+			editorKeypressCatcher,
+		]));
+
 		this.editorExtensions.push(rangeParser);
 
 		if (this.settings.comment_style === 'icon' || this.settings.comment_style === 'block')

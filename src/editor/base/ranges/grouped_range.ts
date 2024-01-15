@@ -79,20 +79,28 @@ export class CriticMarkupRanges {
 		return this.ranges.find(range => left ? range.to === cursor : range.from === cursor);
 	}
 
-	adjacent_to_cursor(cursor: number, left: boolean, loose = false, strict = false) {
+
+	/**
+	 * Get the range that is (not directly) adjacent to the cursor in given direction
+	 * @param cursor - Cursor position in the document
+	 * @param left - Whether to look left or right of the cursor
+	 * @param loose - Whether to include ranges that are partially adjacent to the cursor
+	 * @param include_edge - Whether to include the edges of the range
+	 */
+	range_adjacent_to_cursor(cursor: number, left: boolean, loose = false, include_edge = false) {
 		const ranges = (left ? this.ranges.slice().reverse() : this.ranges);
-		if (strict)
+		if (include_edge)
 			return ranges.find(range => left ? ((loose ? range.from : range.to) < cursor) : (cursor < (loose ? range.to : range.from)));
 		return ranges.find(range => left ? ((loose ? range.from : range.to) <= cursor) : (cursor <= (loose ? range.to : range.from)));
 	}
 
-	adjacent_to_range(range: CriticMarkupRange, left: boolean, directly_adjacent = false) {
+	adjacent_range(range: CriticMarkupRange, left: boolean, directly_adjacent = false) {
 		const range_idx = this.ranges.findIndex(n => n === range);
 		if (range_idx === -1)
-			return null;
+			return undefined;
 		const adjacent = left ? this.ranges[range_idx - 1] : this.ranges[range_idx + 1];
 		if (!adjacent)
-			return null;
+			return undefined;
 
 		if (directly_adjacent) {
 			if (left ? adjacent.to === range.from : range.to === adjacent.from)
@@ -100,7 +108,7 @@ export class CriticMarkupRanges {
 		} else {
 			return adjacent;
 		}
-		return null;
+		return undefined;
 	}
 
 	ranges_in_range(start: number, end: number, partial = true) {

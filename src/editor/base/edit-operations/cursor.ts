@@ -1,9 +1,9 @@
-import { CharCategory, EditorSelection, EditorState } from '@codemirror/state';
+import {CharCategory, EditorSelection, EditorState} from '@codemirror/state';
 
-import { type EditorRange } from './types';
+import {type EditorRange} from './types';
 
-import { CriticMarkupRange, CriticMarkupRanges, SubstitutionRange } from '../ranges';
-import { findBlockingChar, getCharCategory } from '../edit-util';
+import {CriticMarkupRange, CriticMarkupRanges, SubstitutionRange} from '../ranges';
+import {findBlockingChar, getCharCategory} from '../edit-util';
 
 // To the poor soul who comes across this code, I hope you have more luck wrapping your head around cursor logic than I had
 // I sincerely, sincerely hope that I don't ever have to touch this godforsaken, demonic, cursed and all-around evil code ever again.
@@ -15,9 +15,9 @@ import { findBlockingChar, getCharCategory } from '../edit-util';
 function encountered_character(head: number, ranges: CriticMarkupRanges, backwards_select: boolean, state: EditorState, cat_before: null | CharCategory = null): number {
 	let cat_during = null;
 	const original_head = head;
-	[head, cat_during] = findBlockingChar(head, !backwards_select, state, cat_before === 1 || cat_before === null, cat_before);
+	[head, cat_during] = findBlockingChar(head, !backwards_select, state, cat_before === CharCategory.Space || cat_before === null, cat_before);
 
-	let range = ranges.adjacent_to_cursor(original_head, backwards_select);
+	let range = ranges.range_adjacent_to_cursor(original_head, backwards_select);
 	if (!range || !(backwards_select ? head <= range.to : head >= range.from))
 		return head;
 
@@ -35,14 +35,14 @@ function encountered_character(head: number, ranges: CriticMarkupRanges, backwar
 	while (range?.empty()) {
 		new_range_front = !backwards_select ? range.from : range.to;
 		new_range_back = !backwards_select ? range.to : range.from;
-		range = ranges.adjacent_to_range(range, backwards_select, true)!;
+		range = ranges.adjacent_range(range, backwards_select, true)!;
 	}
 
 	cat_during = getCharCategory(new_range_front - offset, state, backwards_select);
 
 	if (!range) {
 		const cat_after = getCharCategory(new_range_back, state, backwards_select);
-		if ((cat_during !== null && cat_during !== 1) && cat_during !== cat_after)
+		if ((cat_during !== null && cat_during !== CharCategory.Space) && cat_during !== cat_after)
 			return new_range_back;
 		return encountered_character(new_range_back, ranges, backwards_select, state, cat_during);
 	}
@@ -91,7 +91,7 @@ function encountered_range(head: number, range: CriticMarkupRange, ranges: Criti
 			} else {
 				const separator_front = (<SubstitutionRange>range).middle + (!backwards_select ? 2 : 0);
 				const cat_after_bracket = getCharCategory(separator_front, state, backwards_select);
-				if (!((cat_during !== null && cat_during !== 1) && cat_during !== cat_after_bracket))
+				if (!((cat_during !== null && cat_during !== CharCategory.Space) && cat_during !== cat_after_bracket))
 					head = findBlockingChar(separator_front, !backwards_select, state, cat_before === 1 || cat_before === null, cat_before)[0];
 			}
 		}
@@ -105,17 +105,17 @@ function encountered_range(head: number, range: CriticMarkupRange, ranges: Criti
 
 	}
 
-	let adjacent_range = ranges.adjacent_to_range(range, backwards_select, true);
+	let adjacent_range = ranges.adjacent_range(range, backwards_select, true);
 	let new_range_back = range_back;
 	while (adjacent_range?.empty()) {
 		new_range_back = !backwards_select ? adjacent_range.to : adjacent_range.from;
-		adjacent_range = ranges.adjacent_to_range(adjacent_range, backwards_select, true)!;
+		adjacent_range = ranges.adjacent_range(adjacent_range, backwards_select, true)!;
 	}
 
 
 	if (!adjacent_range) {
 		const cat_after = getCharCategory(new_range_back, state, backwards_select);
-		if ((cat_during !== null && cat_during !== 1) && cat_during !== cat_after)
+		if ((cat_during !== null && cat_during !== CharCategory.Space) && cat_during !== cat_after)
 			return range_back - 3 * offset;
 		return encountered_character(new_range_back, ranges, backwards_select, state, cat_during);
 	} else {
@@ -131,7 +131,7 @@ function encountered_range(head: number, range: CriticMarkupRange, ranges: Criti
 export function cursor_move(range: EditorRange, original_range: EditorRange, ranges: CriticMarkupRanges, state: EditorState,
 							backwards_select: boolean, group_select: boolean, is_selection: boolean, block_cursor = false) {
 	let head = range.head!, anchor = range.anchor!;
-	let cur_range = ranges.adjacent_to_cursor(original_range.head!, backwards_select, true, !group_select);
+	let cur_range = ranges.range_adjacent_to_cursor(original_range.head!, backwards_select, true, !group_select);
 
 	// Logic should ONLY execute when cursor passes a range in some way
 	// FIXME: logic should execute ONLY when cursor passes a BRACKET
@@ -162,11 +162,11 @@ export function cursor_move(range: EditorRange, original_range: EditorRange, ran
 
 				// If at the end of a range, immediately move to the next range
 				if (cur_range.touches_bracket(regular_cursor, backwards_select, true, true))
-					cur_range = ranges.adjacent_to_range(cur_range, backwards_select, true)!;
+					cur_range = ranges.adjacent_range(cur_range, backwards_select, true)!;
 
 				while (cur_range?.empty()) {
 					last_range = cur_range;
-					cur_range = ranges.adjacent_to_range(cur_range, backwards_select, true)!;
+					cur_range = ranges.adjacent_range(cur_range, backwards_select, true)!;
 				}
 
 				if (cur_range)

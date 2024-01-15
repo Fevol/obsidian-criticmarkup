@@ -1,4 +1,4 @@
-import { Transaction } from '@codemirror/state';
+import {type EditorSelection, Transaction} from '@codemirror/state';
 
 import { getEditorRanges } from './selection-logic';
 import { CriticMarkupRange, CriticMarkupRanges } from '../ranges';
@@ -37,4 +37,9 @@ export function applyToText(text: string, fn: (range: CriticMarkupRange, text: s
 		last_range = range.to;
 	}
 	return output + text.slice(last_range);
+}
+
+
+export function is_forward_movement(prev_selection: EditorSelection, next_selection: EditorSelection) {
+	return prev_selection.main.head < next_selection.main.head;
 }

@@ -1,6 +1,6 @@
 import { ChangeSet } from '@codemirror/state';
 
-import { CM_All_Brackets, SuggestionType } from '../definitions';
+import {CM_All_Brackets, RANGE_CURSOR_MOVEMENT_OPTION, SuggestionType} from '../definitions';
 import { CriticMarkupRange } from '../base_range';
 
 export class SubstitutionRange extends CriticMarkupRange {
@@ -83,6 +83,32 @@ export class SubstitutionRange extends CriticMarkupRange {
 				cursor = this.middle + 2;
 			if (this.touches_right_bracket(cursor, false, true))
 				cursor = this.to;
+		}
+		return cursor;
+	}
+
+
+
+	cursor_pass_syntax(cursor: number, right: boolean, movement: RANGE_CURSOR_MOVEMENT_OPTION) {
+		if (movement == RANGE_CURSOR_MOVEMENT_OPTION.UNCHANGED || !this.cursor_inside(cursor)) { /* No action */ }
+		else if (movement == RANGE_CURSOR_MOVEMENT_OPTION.IGNORE_COMPLETELY)
+			cursor = right ? this.to : this.from;
+		else {
+			if (right) {
+				if (this.touches_left_bracket(cursor, true, false, movement == RANGE_CURSOR_MOVEMENT_OPTION.IGNORE_METADATA))
+					cursor = this.metadata ?? this.from + 3;
+				if (this.touches_separator(cursor, false, true))
+					cursor = this.middle + 2;
+				if (this.touches_right_bracket(cursor, false, true))
+					cursor = this.to;
+			} else {
+				if (this.touches_right_bracket(cursor, true, false))
+					cursor = this.to - 3;
+				if (this.touches_separator(cursor, false, true))
+					cursor = this.middle;
+				if (this.touches_left_bracket(cursor, false, true, movement == RANGE_CURSOR_MOVEMENT_OPTION.IGNORE_METADATA))
+					cursor = this.from;
+			}
 		}
 		return cursor;
 	}

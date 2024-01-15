@@ -7,7 +7,7 @@ import { CriticMarkupRange, CriticMarkupRanges, SubstitutionRange, SuggestionTyp
 
 function insert_new_range(insertion_start: number, offset: number, range_offset: number, cur_range: EditorEditChange, ranges: CriticMarkupRanges, range: CriticMarkupRange, left: boolean) {
 	// Check for existence of adjacent range to which text may be added
-	const adjacent_range = ranges.adjacent_to_range(range, left, true);
+	const adjacent_range = ranges.adjacent_range(range, left, true);
 	if (adjacent_range && (adjacent_range.type === SuggestionType.ADDITION || (left && adjacent_range.type === SuggestionType.SUBSTITUTION))) {
 		insertion_start = left ? adjacent_range.to - 3 : adjacent_range.from + 3;
 	} else {

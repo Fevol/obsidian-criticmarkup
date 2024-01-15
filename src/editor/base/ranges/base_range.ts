@@ -1,7 +1,7 @@
-import { ChangeSet } from '@codemirror/state';
-import { type SuggestionType, type StringSuggestionType, CM_All_Brackets } from './definitions';
-import type { EditorChange } from '../edit-operations';
-import { type CommentRange } from './types';
+import {ChangeSet} from '@codemirror/state';
+import {CM_All_Brackets, RANGE_CURSOR_MOVEMENT_OPTION, type StringSuggestionType, type SuggestionType} from './definitions';
+import type {EditorChange} from '../edit-operations';
+import {type CommentRange} from './types';
 
 
 const shortHandMapping = {
@@ -225,6 +225,16 @@ export abstract class CriticMarkupRange {
 		return left ? cursor >= this.from + 3 : cursor <= this.to - 3;
 	}
 
+	cursor_before_range(cursor: number) {
+		return cursor < this.from;
+	}
+
+	cursor_after_range(cursor: number) {
+		return cursor > this.to;
+	}
+
+
+
 	cursor_move_outside(cursor: number, left: boolean): number {
 		if (left) {
 			if (this.touches_right_bracket(cursor, true, false))
@@ -252,9 +262,30 @@ export abstract class CriticMarkupRange {
 		return cursor;
 	}
 
+	cursor_pass_syntax(cursor: number, right: boolean, movement: RANGE_CURSOR_MOVEMENT_OPTION) {
+		if (movement == RANGE_CURSOR_MOVEMENT_OPTION.UNCHANGED || !this.cursor_inside(cursor)) { /* No action */ }
+		else if (movement == RANGE_CURSOR_MOVEMENT_OPTION.IGNORE_COMPLETELY)
+			cursor = right ? this.to : this.from;
+		else {
+			if (right) {
+				if (this.touches_left_bracket(cursor, true, false, movement == RANGE_CURSOR_MOVEMENT_OPTION.IGNORE_METADATA))
+					cursor = (movement === RANGE_CURSOR_MOVEMENT_OPTION.IGNORE_METADATA && this.metadata) ? this.metadata + 2 : this.from + 3;
+				if (this.touches_right_bracket(cursor, false, true))
+					cursor = this.to;
+			} else {
+				if (this.touches_right_bracket(cursor, true, false))
+					cursor = this.to - 3;
+				if (this.touches_left_bracket(cursor, false, true, movement == RANGE_CURSOR_MOVEMENT_OPTION.IGNORE_METADATA))
+					cursor = this.from;
+			}
+		}
+		return cursor;
+	}
 
-	touches_left_bracket(cursor: number, outside_loose = false, inside_loose = false) {
-		return cursor + (outside_loose ? 0 : 1) >= this.from && cursor + (inside_loose ? 0 : 1) <= this.from + 3;
+
+	touches_left_bracket(cursor: number, outside_loose = false, inside_loose = false, include_metadata = false) {
+		return cursor + (outside_loose ? 0 : 1) >= this.from &&
+			   cursor + (inside_loose ? 0 : 1) <= ((include_metadata && this.metadata) ? this.metadata + 2 : this.from + 3);
 	}
 
 	touches_separator(cursor: number, left_loose = false, right_loose = false) {
@@ -299,5 +330,15 @@ export abstract class CriticMarkupRange {
 		this.from += offset;
 		this.to += offset;
 		return this;
+	}
+
+	/**
+	 * Returns whether the character at the given cursor position is a syntax character
+	 * @param cursor
+	 */
+	is_syntax_char(cursor: number) {
+		return (this.from <= cursor && cursor <= this.from + 3) ||
+			   (this.to - 3 <= cursor && cursor <= this.to) ||
+			   (this.metadata !== undefined && this.metadata <= cursor && cursor <= this.metadata + 2);
 	}
 }
