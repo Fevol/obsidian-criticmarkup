@@ -1,7 +1,8 @@
 import {ChangeSet} from '@codemirror/state';
-import {CM_All_Brackets, RANGE_CURSOR_MOVEMENT_OPTION, type StringSuggestionType, type SuggestionType} from './definitions';
+import {CM_All_Brackets, type StringSuggestionType, type SuggestionType} from './definitions';
 import type {EditorChange} from '../edit-operations';
 import {type CommentRange} from './types';
+import {RANGE_CURSOR_MOVEMENT_OPTION} from "../../../types";
 
 
 const shortHandMapping = {

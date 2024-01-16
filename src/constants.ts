@@ -1,4 +1,5 @@
-import { type PluginSettings, PreviewMode } from './types';
+import {type PluginSettings, PreviewMode, RANGE_BRACKET_MOVEMENT_OPTION, RANGE_CURSOR_MOVEMENT_OPTION} from './types';
+import {SuggestionType} from "./editor/base";
 
 export const DEFAULT_SETTINGS: PluginSettings = {
 	preview_mode: PreviewMode.ALL,
@@ -31,6 +32,23 @@ export const DEFAULT_SETTINGS: PluginSettings = {
 	post_processor: true,
 	live_preview: true,
 	alternative_cursor_movement: true,
+
+	suggestion_mode_cursor_movement: {
+		cursor_movement: {
+			[SuggestionType.ADDITION]: RANGE_CURSOR_MOVEMENT_OPTION.IGNORE_METADATA,
+			[SuggestionType.DELETION]: RANGE_CURSOR_MOVEMENT_OPTION.IGNORE_METADATA,
+			[SuggestionType.SUBSTITUTION]: RANGE_CURSOR_MOVEMENT_OPTION.IGNORE_METADATA,
+			[SuggestionType.HIGHLIGHT]: RANGE_CURSOR_MOVEMENT_OPTION.IGNORE_METADATA,
+			[SuggestionType.COMMENT]: RANGE_CURSOR_MOVEMENT_OPTION.IGNORE_METADATA,
+		},
+		bracket_movement: {
+			[SuggestionType.ADDITION]: RANGE_BRACKET_MOVEMENT_OPTION.STAY_INSIDE,
+			[SuggestionType.DELETION]: RANGE_BRACKET_MOVEMENT_OPTION.STAY_INSIDE,
+			[SuggestionType.SUBSTITUTION]: RANGE_BRACKET_MOVEMENT_OPTION.STAY_INSIDE,
+			[SuggestionType.HIGHLIGHT]: RANGE_BRACKET_MOVEMENT_OPTION.STAY_INSIDE,
+			[SuggestionType.COMMENT]: RANGE_BRACKET_MOVEMENT_OPTION.STAY_INSIDE,
+		},
+	}
 };
 
 

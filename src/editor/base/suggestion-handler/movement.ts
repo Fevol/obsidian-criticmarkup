@@ -2,23 +2,15 @@ import type {EditorRange} from "../edit-operations";
 import {
     CriticMarkupRange,
     CriticMarkupRanges,
-    RANGE_BRACKET_MOVEMENT_OPTION,
-    RANGE_CURSOR_MOVEMENT_OPTION,
-    SuggestionType
 } from "../ranges";
 import {CharCategory, EditorSelection, type EditorState} from "@codemirror/state";
 import {findBlockingChar, getCharCategory} from "../edit-util";
-
-
-type RangeCursorMovementOptionsMap = {
-    [key in SuggestionType]: RANGE_CURSOR_MOVEMENT_OPTION
-}
-
-type RangeBracketMovementOptionsMap = {
-    [key in SuggestionType]: RANGE_BRACKET_MOVEMENT_OPTION
-}
-
-
+import {
+    RANGE_BRACKET_MOVEMENT_OPTION,
+    RANGE_CURSOR_MOVEMENT_OPTION,
+    RangeBracketMovementOptionsMap,
+    RangeCursorMovementOptionsMap
+} from "../../../types";
 
 function cat_ignore_ws(cat: CharCategory | null) {
     return cat === CharCategory.Space || cat === null;

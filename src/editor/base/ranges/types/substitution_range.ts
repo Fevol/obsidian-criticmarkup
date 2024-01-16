@@ -1,7 +1,8 @@
 import { ChangeSet } from '@codemirror/state';
 
-import {CM_All_Brackets, RANGE_CURSOR_MOVEMENT_OPTION, SuggestionType} from '../definitions';
+import {CM_All_Brackets, SuggestionType} from '../definitions';
 import { CriticMarkupRange } from '../base_range';
+import {RANGE_CURSOR_MOVEMENT_OPTION} from "../../../../types";
 
 export class SubstitutionRange extends CriticMarkupRange {
 	num_ignore_chars = 8;

@@ -5,10 +5,7 @@ import {
 	cursorMoved,
 	getEditorRanges,
 	getUserEvents, is_forward_movement,
-	RANGE_BRACKET_MOVEMENT_OPTION,
-	RANGE_CURSOR_MOVEMENT_OPTION,
 	rangeParser,
-	SuggestionType,
 	text_delete,
 	text_insert,
 	text_replace
@@ -217,34 +214,13 @@ function applySuggestion(tr: Transaction, settings: PluginSettings): Transaction
 
 
 		const selections: SelectionRange[] = [];
+		// TODO: cursor_move is 2x slower compared to previous system, main slowdowns are presumably:
+		//    1. Constant looping over all ranges to find range at index
+		//    2. Use of string enums (probably)
 		for (const [idx, range] of tr.selection!.ranges.entries()) {
-			const cursor_operation = cursor_move(
-				tr.startState.selection!.ranges[idx],
-				range,
-
-				ranges,
-
-				!backwards_select,
-				group_select,
-				is_selection,
-				vim_mode,
-
-				tr.startState,
-
-				{
-					[SuggestionType.ADDITION]: RANGE_CURSOR_MOVEMENT_OPTION.IGNORE_METADATA,
-					[SuggestionType.DELETION]: RANGE_CURSOR_MOVEMENT_OPTION.IGNORE_METADATA,
-					[SuggestionType.SUBSTITUTION]: RANGE_CURSOR_MOVEMENT_OPTION.IGNORE_METADATA,
-					[SuggestionType.HIGHLIGHT]: RANGE_CURSOR_MOVEMENT_OPTION.IGNORE_METADATA,
-					[SuggestionType.COMMENT]: RANGE_CURSOR_MOVEMENT_OPTION.IGNORE_METADATA,
-				},
-				{
-					[SuggestionType.ADDITION]: RANGE_BRACKET_MOVEMENT_OPTION.STAY_INSIDE,
-					[SuggestionType.DELETION]: RANGE_BRACKET_MOVEMENT_OPTION.STAY_INSIDE,
-					[SuggestionType.SUBSTITUTION]: RANGE_BRACKET_MOVEMENT_OPTION.STAY_INSIDE,
-					[SuggestionType.HIGHLIGHT]: RANGE_BRACKET_MOVEMENT_OPTION.STAY_INSIDE,
-					[SuggestionType.COMMENT]: RANGE_BRACKET_MOVEMENT_OPTION.STAY_INSIDE,
-				},
+			const cursor_operation = cursor_move(tr.startState.selection!.ranges[idx],
+				range, ranges, !backwards_select, group_select, is_selection, vim_mode, tr.startState,
+				settings.suggestion_mode_cursor_movement.cursor_movement, settings.suggestion_mode_cursor_movement.bracket_movement,
 			)
 
 			selections.push(cursor_operation.selection);

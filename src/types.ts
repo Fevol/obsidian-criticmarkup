@@ -1,9 +1,50 @@
 import type { Command } from 'obsidian';
+import {SuggestionType} from "./editor/base";
 
 export enum PreviewMode {
 	ALL = 0,
 	ACCEPT = 1,
 	REJECT = 2,
+}
+
+/**
+ * How to move through a suggestion range when moving the cursor
+ */
+export enum RANGE_CURSOR_MOVEMENT_OPTION {
+	// Treat all characters as normal
+	UNCHANGED = "unchanged",
+
+	// Ignores all bracket characters, but NOT metadata
+	IGNORE_BRACKET = "ignore_bracket",
+
+	// Ignores all bracket characters AND metadata
+	IGNORE_METADATA = "ignore_metadata",
+
+	// Ignores the entire suggestion range
+	IGNORE_COMPLETELY = "ignore_completely",
+}
+
+/**
+ * How to move through a range when moving through a bracket
+ */
+export enum RANGE_BRACKET_MOVEMENT_OPTION {
+	// Move as normal (move through a bracket)
+	UNCHANGED = "unchanged",
+
+	// When *leaving* a bracket, stay inside the range if cursor cannot move anymore
+	STAY_INSIDE = "stay_inside",
+
+	// When *reaching* a bracket, stay outside, even if cursor can move further
+	STAY_OUTSIDE = "stay_outside",
+}
+
+
+export type RangeCursorMovementOptionsMap = {
+	[key in SuggestionType]: RANGE_CURSOR_MOVEMENT_OPTION
+}
+
+export type RangeBracketMovementOptionsMap = {
+	[key in SuggestionType]: RANGE_BRACKET_MOVEMENT_OPTION
 }
 
 export interface PluginSettings {
@@ -106,6 +147,20 @@ export interface PluginSettings {
 	 * Enable corrected cursor movement near/within ranges
 	 */
 	alternative_cursor_movement: boolean;
+
+	/**
+	 * Cursor movement options for ranges when in suggestion mode
+	 */
+	suggestion_mode_cursor_movement: {
+		/**
+		 * Options for cursor movement within a suggestion range
+		 */
+		cursor_movement: RangeCursorMovementOptionsMap;
+		/**
+		 *  Options for cursor movement between two suggestion ranges
+		 */
+		bracket_movement: RangeBracketMovementOptionsMap;
+	}
 }
 
 /**
