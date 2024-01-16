@@ -13,7 +13,7 @@ import {
 
 
 import {cursor_move} from "../../../base/suggestion-handler/movement";
-import {editorKeypressStateField} from "../keypress-catcher";
+import {latest_keypress} from "../keypress-catcher";
 
 
 enum OperationType {
@@ -187,26 +187,19 @@ function applySuggestion(tr: Transaction, settings: PluginSettings): Transaction
 		if (userEvents.includes('select.pointer'))
 			return tr;
 
-		// TODO: Verify that this can never, ever not be zero
-		const keyPress = tr.startState.field(editorKeypressStateField);
-
 		let backwards_select = userEvents.includes('select.backward');
 		let group_select = userEvents.includes('select.group');
 		let is_selection = userEvents.includes('select.extend');
-		if (!vim_mode && keyPress) {
-			// Check if key is pointer left or right
-			if (keyPress.key === 'ArrowLeft')
+		if (!vim_mode && latest_keypress) {
+			if (latest_keypress.key === 'ArrowLeft')
 				backwards_select = true;
-			else if (keyPress.key === 'ArrowRight')
+			else if (latest_keypress.key === 'ArrowRight')
 				backwards_select = false;
-			else {
-				backwards_select = !is_forward_movement(tr.startState.selection, tr.selection!)
+			else
+				backwards_select = !is_forward_movement(tr.startState.selection, tr.selection!);
 
-			}
-
-
-			is_selection = keyPress.shiftKey;
-			group_select = keyPress.ctrlKey || keyPress.metaKey;
+			is_selection = latest_keypress.shiftKey;
+			group_select = latest_keypress.ctrlKey || latest_keypress.metaKey;
 		}
 
 

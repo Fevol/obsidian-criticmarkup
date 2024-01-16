@@ -17,7 +17,7 @@ import {
 	initializeCommands,
 	cmenuCommands,
 } from './editor/uix';
-import { rangeCorrecter, bracketMatcher, suggestionMode, editorKeypressStateField, editorKeypressCatcher } from './editor/uix/extensions';
+import { rangeCorrecter, bracketMatcher, suggestionMode, editorKeypressCatcher } from './editor/uix/extensions';
 
 import { postProcess, postProcessorRerender, postProcessorUpdate } from './editor/renderers/post-process';
 import { markupRenderer, commentRenderer } from './editor/renderers/live-preview';
@@ -82,11 +82,7 @@ export default class CommentatorPlugin extends Plugin {
 		this.editorExtensions.length = 0;
 
 
-		this.editorExtensions.push(Prec.highest([
-			editorKeypressStateField,
-			editorKeypressCatcher,
-		]));
-
+		this.editorExtensions.push(Prec.highest(editorKeypressCatcher));
 		this.editorExtensions.push(rangeParser);
 
 		if (this.settings.comment_style === 'icon' || this.settings.comment_style === 'block')

@@ -83,6 +83,8 @@ export const markupRenderer = (settings: PluginSettings) => StateField.define<De
 	},
 
 	update(oldSet: DecorationSet, tr: Transaction) {
+		if (!tr.docChanged && oldSet.size && tr.state.field(editorLivePreviewField) === tr.startState.field(editorLivePreviewField)) return oldSet;
+
 		const is_livepreview = tr.state.field(editorLivePreviewField);
 		const ranges = tr.state.field(rangeParser).ranges;
 
