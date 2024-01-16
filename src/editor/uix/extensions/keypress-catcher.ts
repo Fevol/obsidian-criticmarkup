@@ -1,6 +1,7 @@
 import {type EditorState, StateEffect, StateField} from "@codemirror/state";
 import {EditorView} from "@codemirror/view";
 
+// TODO: Find better alternative for fetching the latest keypress (and prevent effect update)
 const editorKeypressEffect = StateEffect.define<KeyboardEvent>();
 
 export const editorKeypressStateField = StateField.define<KeyboardEvent | null>({

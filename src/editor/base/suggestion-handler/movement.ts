@@ -22,7 +22,7 @@ function cat_different(old_cat: CharCategory | null, new_cat: CharCategory | nul
 
 
 function cursor_advance_through_syntax(cursor_head: number, move_forwards: boolean, ranges: CriticMarkupRanges, movement_options: RangeCursorMovementOptionsMap): [number, CriticMarkupRange | undefined] {
-    let range = ranges.range_adjacent_to_cursor(cursor_head, !move_forwards, true, false);
+    let range = ranges.range_adjacent_to_cursor(cursor_head, !move_forwards, true, true);
     let cursor_changed = true;
     while (cursor_changed && range) {
         const old_cursor_head = cursor_head;

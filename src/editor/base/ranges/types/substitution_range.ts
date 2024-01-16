@@ -65,7 +65,7 @@ export class SubstitutionRange extends CriticMarkupRange {
 	}
 
 	touches_separator(cursor: number, left_loose = false, right_loose = false) {
-		return cursor + (left_loose ? 0 : 1) >= this.middle && cursor - (right_loose ? 0 : 1) <= this.middle + 2;
+		return cursor + (left_loose ? 1 : 0) >= this.middle && cursor - (right_loose ? 0 : 1) <= this.middle + 2;
 	}
 
 	cursor_move_outside(cursor: number, left: boolean) {
