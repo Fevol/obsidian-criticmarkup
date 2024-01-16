@@ -44,7 +44,6 @@
 				type='heading'
 				depth={2}
 		/>
-<!--		SuggestionType enum -->
 		{#each Object.keys(suggestion_ranges) as type}
 			<SettingItem
 					name={suggestion_ranges[type].tooltip}
@@ -57,6 +56,29 @@
 						options={cursor_movement_options}
 						onChange={(value) => {
 							plugin.settings.suggestion_mode_cursor_movement.cursor_movement[type] = value;
+							plugin.saveSettings();
+						}}
+				/>
+			</SettingItem>
+		{/each}
+
+		<SettingItem
+				name='Bracket movement'
+				type='heading'
+				depth={2}
+		/>
+		{#each Object.keys(suggestion_ranges) as type}
+			<SettingItem
+					name={suggestion_ranges[type].tooltip}
+					type='dropdown'
+					depth={2}
+			>
+				<Dropdown
+						slot='control'
+						value={plugin.settings.suggestion_mode_cursor_movement.bracket_movement[type]}
+						options={bracket_movement_options}
+						onChange={(value) => {
+							plugin.settings.suggestion_mode_cursor_movement.bracket_movement[type] = value;
 							plugin.saveSettings();
 						}}
 				/>

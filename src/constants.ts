@@ -64,4 +64,5 @@ export const REQUIRES_FULL_RELOAD: Set<string> = new Set([
 	"tag_completion",
 	"tag_correcter",
 	"suggest_mode",
+	"suggestion_mode_cursor_movement",
 ]);
