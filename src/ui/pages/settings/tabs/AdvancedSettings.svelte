@@ -14,14 +14,14 @@
 	};
 
 	const cursor_movement_options = [
-		{ value: "unchanged", text: 'Unchanged' },
-		{ value: "ignore_bracket", text: 'Skip syntax brackets' },
-		{ value: "ignore_metadata", text: 'Skip syntax brackets and metadata' },
-		{ value: "ignore_completely", text: 'Skip entire suggestion' },
+		{ value: "unchanged", text: 'Regular movement' },
+		{ value: "ignore_bracket", text: 'Skip brackets' },
+		{ value: "ignore_metadata", text: 'Skip brackets and metadata' },
+		{ value: "ignore_completely", text: 'Skip completely' },
 	];
 
 	const bracket_movement_options = [
-		{ value: "unchanged", text: 'Unchanged' },
+		{ value: "unchanged", text: 'Regular movement' },
 		{ value: "stay_inside", text: 'Keep cursor within range' },
 		{ value: "stay_outside", text: 'Treat range as word group' },
 	];
