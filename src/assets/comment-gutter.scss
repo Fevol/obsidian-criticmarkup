@@ -5,6 +5,8 @@
 // Removes additional padding to the right of the gutter
 .cm-gutters.cm-gutters:has(>.criticmarkup-comment-gutter) {
 	padding-inline-end: 0;
+	margin-inline-end: 0;
+	margin-inline-start: 24px;
 }
 
 .criticmarkup-comment-gutter {
