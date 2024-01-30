@@ -1,5 +1,5 @@
 import {ChangeSet} from '@codemirror/state';
-import {CM_All_Brackets, type StringSuggestionType, type SuggestionType} from './definitions';
+import {CM_All_Brackets, type STRING_SUGGESTION_TYPE, type SuggestionType} from './definitions';
 import type {EditorChange} from '../edit-operations';
 import {type CommentRange} from './types';
 import {RANGE_CURSOR_MOVEMENT_OPTION} from "../../../types";
@@ -20,6 +20,7 @@ export interface MetadataFields {
 	done?: boolean;
 	style?: string;
 	color?: string;
+	[prop: string]: any;
 }
 
 export abstract class CriticMarkupRange {
@@ -28,7 +29,7 @@ export abstract class CriticMarkupRange {
 	fields: MetadataFields = {};
 	replies: CommentRange[] = [];
 
-	protected constructor(public from: number, public to: number, public type: SuggestionType, public repr: StringSuggestionType, public text: string, public metadata?: number) {
+	protected constructor(public from: number, public to: number, public type: SuggestionType, public repr: STRING_SUGGESTION_TYPE, public text: string, public metadata?: number) {
 		if (metadata !== undefined) {
 			const metadata_separator = metadata - from;
 			const metadata_text = text.slice(3, metadata_separator);
@@ -38,7 +39,8 @@ export abstract class CriticMarkupRange {
 				//   + Cleaner, shorter
 				//   - Not valid JSON
 				// TODO: JS can be injected here, possible security risk
-				this.fields = JSON.parse(`{${metadata_text}}`);
+				// this.fields = JSON.parse(`{${metadata_text}}`);
+				this.fields = JSON.parse(metadata_text);
 				for (const key in this.fields) {
 					if (key in shortHandMapping) {
 						// @ts-ignore (This is a pain to type, the ts-ignore is 100% worth it)
@@ -235,8 +237,15 @@ export abstract class CriticMarkupRange {
 	}
 
 
+	cursor_move_outside(cursor: number, include_metadata = false) {
+		if (this.touches_right_bracket(cursor, false, true))
+			return this.to;
+		if (this.touches_left_bracket(cursor, false, true, include_metadata))
+			return this.from;
+		return cursor;
+	}
 
-	cursor_move_outside(cursor: number, left: boolean): number {
+	cursor_move_outside_dir(cursor: number, left: boolean): number {
 		if (left) {
 			if (this.touches_right_bracket(cursor, true, false))
 				cursor = this.to - 3;
@@ -252,34 +261,37 @@ export abstract class CriticMarkupRange {
 		return cursor;
 	}
 
-	cursor_move_inside(cursor: number, left: boolean) {
-		if (left) {
+	/**
+	 * Moves a cursor inside the first non-syntax/metadata if it is either outside the range, or inside syntax
+	 * @param cursor Cursor to move
+	 * @param skip_metadata Whether to skip metadata
+	 * @remark Cursor will jump to range regardless whether it is adjacent to the range or not
+	 */
+	cursor_move_inside(cursor: number, skip_metadata = false) {
+		return Math.min(Math.max((skip_metadata && this.metadata) ? this.metadata + 2 : this.from + 3, cursor), this.to - 3);
+	}
+
+	cursor_pass_syntax(cursor: number, right: boolean) {
+		if (right) {
 			if (this.touches_left_bracket(cursor, true, false))
 				cursor = this.from + 3;
+			if (this.touches_right_bracket(cursor, false, true))
+				cursor = this.to;
 		} else {
 			if (this.touches_right_bracket(cursor, true, false))
 				cursor = this.to - 3;
+			if (this.touches_left_bracket(cursor, false, true))
+				cursor = this.from;
 		}
 		return cursor;
 	}
 
-	cursor_pass_syntax(cursor: number, right: boolean, movement: RANGE_CURSOR_MOVEMENT_OPTION) {
+	cursor_move_through(cursor: number, right: boolean, movement: RANGE_CURSOR_MOVEMENT_OPTION) {
 		if (movement == RANGE_CURSOR_MOVEMENT_OPTION.UNCHANGED || !this.cursor_inside(cursor)) { /* No action */ }
 		else if (movement == RANGE_CURSOR_MOVEMENT_OPTION.IGNORE_COMPLETELY)
 			cursor = right ? this.to : this.from;
-		else {
-			if (right) {
-				if (this.touches_left_bracket(cursor, true, false, movement == RANGE_CURSOR_MOVEMENT_OPTION.IGNORE_METADATA))
-					cursor = (movement === RANGE_CURSOR_MOVEMENT_OPTION.IGNORE_METADATA && this.metadata) ? this.metadata + 2 : this.from + 3;
-				if (this.touches_right_bracket(cursor, false, true))
-					cursor = this.to;
-			} else {
-				if (this.touches_right_bracket(cursor, true, false))
-					cursor = this.to - 3;
-				if (this.touches_left_bracket(cursor, false, true, movement == RANGE_CURSOR_MOVEMENT_OPTION.IGNORE_METADATA))
-					cursor = this.from;
-			}
-		}
+		else
+			cursor = this.cursor_pass_syntax(cursor, right);
 		return cursor;
 	}
 
@@ -341,5 +353,13 @@ export abstract class CriticMarkupRange {
 		return (this.from <= cursor && cursor <= this.from + 3) ||
 			   (this.to - 3 <= cursor && cursor <= this.to) ||
 			   (this.metadata !== undefined && this.metadata <= cursor && cursor <= this.metadata + 2);
+	}
+
+	/**
+	 * Get the required characters to fix a range when splitting a range at given cursor position
+	 * @param cursor Cursor position to split at
+	 */
+	split_range(cursor: number): [string, string] {
+		return [this.text.slice(-3), this.text.slice(0, 3) + JSON.stringify(this.fields) + '@@'];
 	}
 }

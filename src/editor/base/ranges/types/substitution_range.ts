@@ -11,6 +11,14 @@ export class SubstitutionRange extends CriticMarkupRange {
 		super(from, to, SuggestionType.SUBSTITUTION, 'Substitution', text, metadata);
 	}
 
+	get length() {
+		return this.to - this.from - 8;
+	}
+
+	get char_middle() {
+		return this.middle - this.from;
+	}
+
 	num_ignored_chars(from: number, to: number): number {
 		if (to <= this.from || from >= this.to)
 			return 0;
@@ -68,7 +76,7 @@ export class SubstitutionRange extends CriticMarkupRange {
 		return cursor + (left_loose ? 1 : 0) >= this.middle && cursor - (right_loose ? 0 : 1) <= this.middle + 2;
 	}
 
-	cursor_move_outside(cursor: number, left: boolean) {
+	cursor_move_outside_dir(cursor: number, left: boolean) {
 		if (left) {
 			if (this.touches_right_bracket(cursor, true, false))
 				cursor = this.to - 3;
@@ -89,27 +97,21 @@ export class SubstitutionRange extends CriticMarkupRange {
 	}
 
 
-
-	cursor_pass_syntax(cursor: number, right: boolean, movement: RANGE_CURSOR_MOVEMENT_OPTION) {
-		if (movement == RANGE_CURSOR_MOVEMENT_OPTION.UNCHANGED || !this.cursor_inside(cursor)) { /* No action */ }
-		else if (movement == RANGE_CURSOR_MOVEMENT_OPTION.IGNORE_COMPLETELY)
-			cursor = right ? this.to : this.from;
-		else {
-			if (right) {
-				if (this.touches_left_bracket(cursor, true, false, movement == RANGE_CURSOR_MOVEMENT_OPTION.IGNORE_METADATA))
-					cursor = this.metadata ?? this.from + 3;
-				if (this.touches_separator(cursor, false, true))
-					cursor = this.middle + 2;
-				if (this.touches_right_bracket(cursor, false, true))
-					cursor = this.to;
-			} else {
-				if (this.touches_right_bracket(cursor, true, false))
-					cursor = this.to - 3;
-				if (this.touches_separator(cursor, false, true))
-					cursor = this.middle;
-				if (this.touches_left_bracket(cursor, false, true, movement == RANGE_CURSOR_MOVEMENT_OPTION.IGNORE_METADATA))
-					cursor = this.from;
-			}
+	cursor_pass_syntax(cursor: number, right: boolean): number {
+		if (right) {
+			if (this.touches_left_bracket(cursor, true, false))
+				cursor = this.from + 3;
+			if (this.touches_separator(cursor, false, true))
+				cursor = this.middle + 2;
+			if (this.touches_right_bracket(cursor, false, true))
+				cursor = this.to;
+		} else {
+			if (this.touches_right_bracket(cursor, true, false))
+				cursor = this.to - 3;
+			if (this.touches_separator(cursor, false, true))
+				cursor = this.middle;
+			if (this.touches_left_bracket(cursor, false, true))
+				cursor = this.from;
 		}
 		return cursor;
 	}
@@ -177,11 +179,19 @@ export class SubstitutionRange extends CriticMarkupRange {
 		return this;
 	}
 
-	get length() {
-		return this.to - this.from - 8;
+	split_range(cursor: number): [string, string] {
+		const range = super.split_range(cursor);
+		if (cursor <= this.middle)
+			range[0] = CM_All_Brackets.substitution[1] + range[0];
+		else
+			range[1] = range[1] + CM_All_Brackets.substitution[2];
+		return range;
 	}
 
-	get char_middle() {
-		return this.middle - this.from;
+	cursor_move_inside(cursor: number, skip_metadata = false) {
+		cursor = super.cursor_move_inside(cursor, skip_metadata);
+		if (cursor == this.middle + 1)
+			cursor = this.middle + 2;
+		return cursor;
 	}
 }

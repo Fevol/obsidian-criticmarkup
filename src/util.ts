@@ -3,13 +3,16 @@ import { MarkdownView } from 'obsidian';
 import { type EditorView } from '@codemirror/view';
 
 
-
 export function objectDifference<T>(new_obj: T, old_obj: T): Partial<T> {
     const diff: Partial<typeof new_obj> = {};
     for (const key in new_obj)
         if (new_obj[key] !== old_obj[key])
             diff[key] = new_obj[key];
     return diff;
+}
+
+export function objectIntersection(o1: object, o2: object) {
+    return Object.keys(o1).filter({}.hasOwnProperty.bind(o2));
 }
 
 export function indexOfRegex(string: string, regex: RegExp, fromIndex?: number) {

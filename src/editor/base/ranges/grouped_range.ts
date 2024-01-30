@@ -75,8 +75,8 @@ export class CriticMarkupRanges {
 			return this.ranges.find(range => cursor <= range.from);
 	}
 
-	directly_adjacent_to_cursor(cursor: number, left: boolean) {
-		return this.ranges.find(range => left ? range.to === cursor : range.from === cursor);
+	range_directly_adjacent_to_cursor(cursor: number, left: boolean) {
+		return (left ? this.ranges.slice().reverse() : this.ranges).find(range => range.cursor_inside(cursor));
 	}
 
 
@@ -93,6 +93,15 @@ export class CriticMarkupRanges {
 			return ranges.find(range => left ? ((loose ? range.from : range.to) < cursor) : (cursor < (loose ? range.to : range.from)));
 		return ranges.find(range => left ? ((loose ? range.from : range.to) <= cursor) : (cursor <= (loose ? range.to : range.from)));
 	}
+
+	/**
+	 * Get the ranges that are directly adjacent to the cursor in both left and right direction
+	 * @param cursor
+	 */
+	ranges_directly_adjacent_to_cursor(cursor: number): [CriticMarkupRange | undefined, CriticMarkupRange | undefined] {
+		return [this.range_directly_adjacent_to_cursor(cursor, true), this.range_directly_adjacent_to_cursor(cursor, false)];
+	}
+
 
 	adjacent_range(range: CriticMarkupRange, left: boolean, directly_adjacent = false) {
 		const range_idx = this.ranges.findIndex(n => n === range);
@@ -179,8 +188,8 @@ export class CriticMarkupRanges {
 			back_range = ranges.at(-1)!;
 
 
-		const new_from = front_range ? front_range.cursor_move_outside(from, true) : from;
-		const new_to = back_range ? back_range.cursor_move_outside(to, false) : to;
+		const new_from = front_range ? front_range.cursor_move_outside_dir(from, true) : from;
+		const new_to = back_range ? back_range.cursor_move_outside_dir(to, false) : to;
 		if (new_from !== from || from === front_range?.from) front_range = undefined;
 		if (new_to !== to || to === back_range?.to) back_range = undefined;
 

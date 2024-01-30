@@ -1,5 +1,6 @@
 import {type PluginSettings, PreviewMode, RANGE_BRACKET_MOVEMENT_OPTION, RANGE_CURSOR_MOVEMENT_OPTION} from './types';
 import {SuggestionType} from "./editor/base";
+import {INSERT_OPTION} from "./editor/base/suggestion-handler/insert";
 
 export const DEFAULT_SETTINGS: PluginSettings = {
 	preview_mode: PreviewMode.ALL,
@@ -18,7 +19,7 @@ export const DEFAULT_SETTINGS: PluginSettings = {
 	tag_completion: true,
 	tag_correcter: true,
 	clipboard_remove_syntax: true,
-
+	edit_info: true,
 
 	editor_preview_button: true,
 	editor_suggest_button: true,
@@ -33,7 +34,7 @@ export const DEFAULT_SETTINGS: PluginSettings = {
 	live_preview: true,
 	alternative_cursor_movement: true,
 
-	suggestion_mode_cursor_movement: {
+	suggestion_mode_operations: {
 		cursor_movement: {
 			[SuggestionType.ADDITION]: RANGE_CURSOR_MOVEMENT_OPTION.IGNORE_METADATA,
 			[SuggestionType.DELETION]: RANGE_CURSOR_MOVEMENT_OPTION.IGNORE_METADATA,
@@ -48,6 +49,14 @@ export const DEFAULT_SETTINGS: PluginSettings = {
 			[SuggestionType.HIGHLIGHT]: RANGE_BRACKET_MOVEMENT_OPTION.STAY_INSIDE,
 			[SuggestionType.COMMENT]: RANGE_BRACKET_MOVEMENT_OPTION.STAY_INSIDE,
 		},
+		insert_text: {
+			"": INSERT_OPTION.REGULAR,
+			[SuggestionType.ADDITION]: INSERT_OPTION.REGULAR,
+			[SuggestionType.DELETION]: INSERT_OPTION.REGULAR,
+			[SuggestionType.SUBSTITUTION]: INSERT_OPTION.REGULAR,
+			[SuggestionType.COMMENT]: INSERT_OPTION.MOVE_OUTSIDE,
+			[SuggestionType.HIGHLIGHT]: INSERT_OPTION.REGULAR,
+		}
 	}
 };
 

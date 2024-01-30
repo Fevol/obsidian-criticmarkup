@@ -1,5 +1,6 @@
 import type { Command } from 'obsidian';
 import {SuggestionType} from "./editor/base";
+import {InsertOptionsMap} from "./editor/base/suggestion-handler/insert";
 
 export enum PreviewMode {
 	ALL = 0,
@@ -105,6 +106,10 @@ export interface PluginSettings {
 	 * Remove CM syntax when copying text to clipboard
 	 */
 	clipboard_remove_syntax: boolean;
+	/**
+	 * Give a warning when a transaction is being filtered out due to editing logic
+	 */
+	edit_info: boolean;
 
 	/**
 	 * Add a toggle button for quickly toggling between preview modes in the editor toolbar
@@ -151,7 +156,7 @@ export interface PluginSettings {
 	/**
 	 * Cursor movement options for ranges when in suggestion mode
 	 */
-	suggestion_mode_cursor_movement: {
+	suggestion_mode_operations: {
 		/**
 		 * Options for cursor movement within a suggestion range
 		 */
@@ -160,7 +165,11 @@ export interface PluginSettings {
 		 *  Options for cursor movement between two suggestion ranges
 		 */
 		bracket_movement: RangeBracketMovementOptionsMap;
-	}
+		/**
+		 * Options for inserting text when cursor is inside a suggestion range
+		 */
+		insert_text: InsertOptionsMap;
+	},
 }
 
 /**

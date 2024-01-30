@@ -1,4 +1,5 @@
 import { SelectionRange } from '@codemirror/state';
+import {CriticMarkupRange, METADATA_TYPE, RangeType, SuggestionType} from "../ranges";
 
 export interface EditorRange {
 	from: number;
@@ -26,7 +27,8 @@ export interface EditorChange {
 }
 
 export interface OperationReturn {
-	changes: EditorChange[];
-	selection: SelectionRange;
-	offset: number;
+	changes?: EditorChange[];
+	selection?: SelectionRange;
+	offset?: number;
+	debug?: { range?: CriticMarkupRange, metadata_type?: METADATA_TYPE };
 }

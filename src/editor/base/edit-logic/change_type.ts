@@ -86,9 +86,9 @@ export function changeType(editor: Editor, view: MarkdownView, type: SuggestionT
 
 	for (const sel of editor.cm.state.selection.ranges) {
 		const { changes, selection, offset } = fn(text, sel, type, ranges);
-		editor_changes.push(...changes);
-		selections.push(selection);
-		current_offset = offset;
+		editor_changes.push(...changes!);
+		selections.push(selection!);
+		current_offset = offset!;
 	}
 
 	editor.cm.dispatch(editor.cm.state.update({

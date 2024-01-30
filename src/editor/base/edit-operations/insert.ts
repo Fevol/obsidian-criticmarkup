@@ -33,23 +33,23 @@ export function text_insert(cur_range: EditorEditChange, ranges: CriticMarkupRan
 		range_offset -= 3;
 	} else {
 		if (range.type === SuggestionType.SUBSTITUTION) {
-			if (range.touches_left_bracket(range.to, true, true)) {
+			if (range.touches_left_bracket(cur_range.to, true, true)) {
 				({ insertion_start, offset, range_offset } = insert_new_range(insertion_start, offset, range_offset, cur_range, ranges, range, true));
-			} else if (range.touches_separator(range.to, false, true)) {
+			} else if (range.touches_separator(cur_range.to, false, true)) {
 				insertion_start = (<SubstitutionRange>range).middle;
-			} else if (range.touches_right_bracket(range.to)) {
+			} else if (range.touches_right_bracket(cur_range.to)) {
 				insertion_start = range.to - 3;
 			}
 		} else if (range.type === SuggestionType.ADDITION) {
-			if (range.touches_left_bracket(range.from)) {
+			if (range.touches_left_bracket(cur_range.from)) {
 				insertion_start = range.from + 3;
-			} else if (range.touches_right_bracket(range.to)) {
+			} else if (range.touches_right_bracket(cur_range.to)) {
 				insertion_start = range.to - 3;
 			}
 		} else {
-			if (range.touches_left_bracket(range.from)) {
+			if (range.touches_left_bracket(cur_range.from)) {
 				({ insertion_start, offset, range_offset } = insert_new_range(insertion_start, offset, range_offset, cur_range, ranges, range, true));
-			} else if (range.touches_right_bracket(range.to)) {
+			} else if (range.touches_right_bracket(cur_range.to)) {
 				({ insertion_start, offset, range_offset } = insert_new_range(insertion_start, offset, range_offset, cur_range, ranges, range, false));
 			}
 		}

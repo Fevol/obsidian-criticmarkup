@@ -59,7 +59,7 @@ export function text_delete(range: EditorEditChange, ranges: CriticMarkupRanges,
 		// Move deletion range to account for critic markup deletions
 		if (left_range) {
 			if (deletion_start !== left_range.to)
-				deletion_start = left_range.cursor_move_outside(deletion_start, left_range.type !== SuggestionType.DELETION);
+				deletion_start = left_range.cursor_move_outside_dir(deletion_start, left_range.type !== SuggestionType.DELETION);
 
 			if (deletion_start === left_range.from) {
 				const left_adjacent_range = ranges.adjacent_range(left_range, true, true);
@@ -90,7 +90,7 @@ export function text_delete(range: EditorEditChange, ranges: CriticMarkupRanges,
 
 		if (right_range) {
 			if (deletion_end !== right_range.from)
-				deletion_end = right_range.cursor_move_outside(deletion_end, right_range.type === SuggestionType.DELETION);
+				deletion_end = right_range.cursor_move_outside_dir(deletion_end, right_range.type === SuggestionType.DELETION);
 
 			if (deletion_end === right_range.to) {
 				const right_adjacent_range = ranges.adjacent_range(right_range, false, true);

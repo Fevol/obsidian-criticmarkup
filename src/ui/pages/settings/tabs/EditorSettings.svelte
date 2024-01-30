@@ -70,6 +70,23 @@
 	/>
 </SettingItem>
 
+
+<SettingItem
+	name="Edit Info"
+	description="Display a warning when editing a suggestion is not allowed due to editing rules"
+	type='toggle'
+>
+	<Toggle
+		slot='control'
+		value={plugin.settings.edit_info}
+		onChange={() => {
+			plugin.settings.edit_info = !plugin.settings.edit_info;
+			plugin.saveSettings();
+		}}
+	/>
+</SettingItem>
+
+
 <SettingItem
 	name='Suggestion Rendering'
 	type='heading'

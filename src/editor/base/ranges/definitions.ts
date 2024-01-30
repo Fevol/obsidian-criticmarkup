@@ -2,7 +2,10 @@ type EnumDictionary<T extends string | symbol | number, U> = {
 	[K in T]: U;
 };
 
-export type StringSuggestionType = 'Addition' | 'Deletion' | 'Substitution' | 'Highlight' | 'Comment';
+export type STRING_SUGGESTION_TYPE = 'Addition' | 'Deletion' | 'Substitution' | 'Highlight' | 'Comment';
+
+export type METADATA_TYPE = "author" | "date" | "completed" | "urgency" | "style";
+
 
 // FIXME: Changed to string types, but beyond ideal --- far too much bloat
 export enum SuggestionType {
@@ -12,6 +15,9 @@ export enum SuggestionType {
 	HIGHLIGHT = "highlight",
 	COMMENT	= "comment",
 }
+
+export type RangeType = SuggestionType | "";
+
 
 export const CM_SuggestionTypes: EnumDictionary<string, SuggestionType> = {
 	'Addition': SuggestionType.ADDITION,

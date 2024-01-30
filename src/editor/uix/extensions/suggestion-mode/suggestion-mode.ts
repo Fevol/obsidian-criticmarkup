@@ -4,16 +4,23 @@ import {type PluginSettings} from '../../../../types';
 import {
 	cursorMoved,
 	getEditorRanges,
-	getUserEvents, is_forward_movement,
+	getUserEvents,
+	is_forward_movement, MetadataFields,
 	rangeParser,
+	SuggestionType,
 	text_delete,
-	text_insert,
 	text_replace
 } from '../../../base';
 
 
 import {cursor_move} from "../../../base/suggestion-handler/movement";
+import {
+	METADATA_MERGE_OPTION,
+	MetadataDifferenceOptions,
+	text_insert
+} from "../../../base/suggestion-handler/insert";
 import {latest_keypress} from "../keypress-catcher";
+import {Notice} from "obsidian";
 
 
 enum OperationType {
@@ -29,65 +36,62 @@ const vim_action_resolver = {
 	},
 };
 
-// }
-// { keys: 'h', motion: 'moveByCharacters',
-// { keys: 'l', motion: 'moveByCharacters',
-// { keys: 'j', motion: 'moveByLines',
-// { keys: 'k', motion: 'moveByLines',
-// { keys: 'H', motion: 'moveToTopLine',
-// { keys: 'M', motion: 'moveToMiddleLine',
-// { keys: 'L', motion: 'moveToBottomLine',
-// { keys: 'gj', motion: 'moveByDisplayLines',
-// { keys: 'gk', motion: 'moveByDisplayLines',
-// { keys: 'w', motion: 'moveByWords',
-// { keys: 'W', motion: 'moveByWords',
-// { keys: 'e', motion: 'moveByWords',
-// { keys: 'E', motion: 'moveByWords',
-// { keys: 'b', motion: 'moveByWords',
-// { keys: 'B', motion: 'moveByWords',
-// { keys: 'ge', motion: 'moveByWords',
-// { keys: 'gE', motion: 'moveByWords',
-// { keys: '{', motion: 'moveByParagraph',
-// { keys: '}', motion: 'moveByParagraph',
-// { keys: '(', motion: 'moveBySentence',
-// { keys: ')', motion: 'moveBySentence',
-// { keys: '<C-f>', motion: 'moveByPage',
-// { keys: '<C-b>', motion: 'moveByPage',
-// { keys: '<C-d>', motion: 'moveByScroll',
-// { keys: '<C-u>', motion: 'moveByScroll',
-// { keys: 'gg', motion: 'moveToLineOrEdgeOfDocument',
-// { keys: 'G', motion: 'moveToLineOrEdgeOfDocument',
-// {keys: "g$", type: "motion", motion: "moveToEndOfDisplayLine"},
-// {keys: "g^", type: "motion", motion: "moveToStartOfDisplayLine"},
-// {keys: "g0", type: "motion", motion: "moveToStartOfDisplayLine"},
-// { keys: '0', motion: 'moveToStartOfLine' },
-// { keys: '^', motion: 'moveToFirstNonWhiteSpaceCharacter' },
-// { keys: '+', motion: 'moveByLines',
-// { keys: '-', motion: 'moveByLines',
-// { keys: '_', motion: 'moveByLines',
-// { keys: '$', motion: 'moveToEol',
-// { keys: '%', motion: 'moveToMatchedSymbol',
-// { keys: 'f<character>', motion: 'moveToCharacter',
-// { keys: 'F<character>', motion: 'moveToCharacter',
-// { keys: 't<character>', motion: 'moveTillCharacter',
-// { keys: 'T<character>', motion: 'moveTillCharacter',
-// { keys: ';', motion: 'repeatLastCharacterSearch',
-// { keys: ',', motion: 'repeatLastCharacterSearch',
-// { keys: '\'<character>', motion: 'goToMark',
-// { keys: '`<character>', motion: 'goToMark',
-// { keys: ']`', motion: 'jumpToMark',
-// { keys: '[`', motion: 'jumpToMark',
-// { keys: ']\'', motion: 'jumpToMark',
-// { keys: '[\'', motion: 'jumpToMark',
-// { keys: ']<character>', motion: 'moveToSymbol',
-// { keys: '[<character>', motion: 'moveToSymbol',
-// { keys: '|', motion: 'moveToColumn'},
-// { keys: 'o', motion: 'moveToOtherHighlightedEnd', context:'visual'},
-// { keys: 'O', motion: 'moveToOtherHighlightedEnd',
-//
-//
+// TODO: Actions to verify:
+// 	{ keys: 'h', motion: 'moveByCharacters',
+// 	{ keys: 'l', motion: 'moveByCharacters',
+// 	{ keys: 'j', motion: 'moveByLines',
+// 	{ keys: 'k', motion: 'moveByLines',
+// 	{ keys: 'H', motion: 'moveToTopLine',
+// 	{ keys: 'M', motion: 'moveToMiddleLine',
+// 	{ keys: 'L', motion: 'moveToBottomLine',
+// 	{ keys: 'gj', motion: 'moveByDisplayLines',
+// 	{ keys: 'gk', motion: 'moveByDisplayLines',
+// 	{ keys: 'w', motion: 'moveByWords',
+// 	{ keys: 'W', motion: 'moveByWords',
+// 	{ keys: 'e', motion: 'moveByWords',
+// 	{ keys: 'E', motion: 'moveByWords',
+// 	{ keys: 'b', motion: 'moveByWords',
+// 	{ keys: 'B', motion: 'moveByWords',
+// 	{ keys: 'ge', motion: 'moveByWords',
+// 	{ keys: 'gE', motion: 'moveByWords',
+// 	{ keys: '{', motion: 'moveByParagraph',
+// 	{ keys: '}', motion: 'moveByParagraph',
+// 	{ keys: '(', motion: 'moveBySentence',
+// 	{ keys: ')', motion: 'moveBySentence',
+// 	{ keys: '<C-f>', motion: 'moveByPage',
+// 	{ keys: '<C-b>', motion: 'moveByPage',
+// 	{ keys: '<C-d>', motion: 'moveByScroll',
+// 	{ keys: '<C-u>', motion: 'moveByScroll',
+// 	{ keys: 'gg', motion: 'moveToLineOrEdgeOfDocument',
+// 	{ keys: 'G', motion: 'moveToLineOrEdgeOfDocument',
+// 	{ keys: "g$", type: "motion", motion: "moveToEndOfDisplayLine"},
+// 	{ keys: "g^", type: "motion", motion: "moveToStartOfDisplayLine"},
+// 	{ keys: "g0", type: "motion", motion: "moveToStartOfDisplayLine"},
+// 	{ keys: '0', motion: 'moveToStartOfLine' },
+// 	{ keys: '^', motion: 'moveToFirstNonWhiteSpaceCharacter' },
+// 	{ keys: '+', motion: 'moveByLines',
+// 	{ keys: '-', motion: 'moveByLines',
+// 	{ keys: '_', motion: 'moveByLines',
+// 	{ keys: '$', motion: 'moveToEol',
+// 	{ keys: '%', motion: 'moveToMatchedSymbol',
+// 	{ keys: 'f<character>', motion: 'moveToCharacter',
+// 	{ keys: 'F<character>', motion: 'moveToCharacter',
+// 	{ keys: 't<character>', motion: 'moveTillCharacter',
+// 	{ keys: 'T<character>', motion: 'moveTillCharacter',
+// 	{ keys: ';', motion: 'repeatLastCharacterSearch',
+// 	{ keys: ',', motion: 'repeatLastCharacterSearch',
+// 	{ keys: '\'<character>', motion: 'goToMark',
+// 	{ keys: '`<character>', motion: 'goToMark',
+// 	{ keys: ']`', motion: 'jumpToMark',
+// 	{ keys: '[`', motion: 'jumpToMark',
+// 	{ keys: ']\'', motion: 'jumpToMark',
+// 	{ keys: '[\'', motion: 'jumpToMark',
+// 	{ keys: ']<character>', motion: 'moveToSymbol',
+// 	{ keys: '[<character>', motion: 'moveToSymbol',
+// 	{ keys: '|', motion: 'moveToColumn'},
+// 	{ keys: 'o', motion: 'moveToOtherHighlightedEnd', context:'visual'},
+// 	{ keys: 'O', motion: 'moveToOtherHighlightedEnd',
 // 	'moveToLineOrEdgeOfDocument':
-// }
 
 
 function isUserEvent(event: string, events: string[]): boolean {
@@ -146,14 +150,50 @@ function applySuggestion(tr: Transaction, settings: PluginSettings): Transaction
 		const changes = [];
 		const selections: SelectionRange[] = [];
 
+
+		const metadatamergeoptions: MetadataDifferenceOptions = {
+			"author": METADATA_MERGE_OPTION.MOVE_OUTSIDE,
+			"date": METADATA_MERGE_OPTION.NEW,
+			"completed": METADATA_MERGE_OPTION.NEW,
+			"urgency": METADATA_MERGE_OPTION.NEW,
+			"style": METADATA_MERGE_OPTION.NEW,
+		}
+
+		let metadata: MetadataFields | undefined = {
+			// "author": "Fevol",
+		}
+
+		let edit_info;
+
+		if (Object.keys(metadata).length === 0)
+			metadata = undefined;
+
 		if (operation_type === OperationType.INSERTION) {
 			let offset = 0;
 
 			for (const range of changed_ranges) {
-				const insert_operation = text_insert(range, ranges, offset);
-				changes.push(...insert_operation.changes);
-				selections.push(insert_operation.selection);
-				offset = insert_operation.offset;
+				// TODO: Sequential updates of same range (possible issues: multiple metadata inserts, multiple splits, ...)
+				// 	Solutions:
+				//		- Sequentially update the state with each editorchange (easiest)
+				//		- Update ranges object with new changed/new ranges
+				const insert_operation = text_insert(range, ranges, offset, SuggestionType.ADDITION,
+					settings.suggestion_mode_operations.insert_text, metadata, metadatamergeoptions);
+				if (insert_operation.debug) {
+					if (insert_operation.debug.range) {
+						const type = insert_operation.debug.metadata_type !== undefined ? 'metadata' : 'range';
+						edit_info = `Skipping insert into range '${insert_operation.debug.range.text}' due to ${type} being of incompatible ${type}-type '${insert_operation.debug.metadata_type ?? insert_operation.debug.range.type}'`;
+					} else {
+						edit_info = `Cannot insert into regular text in this mode`;
+					}
+				} else {
+					changes.push(...insert_operation.changes!);
+					selections.push(insert_operation.selection!);
+					offset = insert_operation.offset!;
+				}
+				// const insert_operation = text_insert(range, ranges, offset);
+				// changes.push(...insert_operation.changes);
+				// selections.push(insert_operation.selection);
+				// offset = insert_operation.offset;
 			}
 		} else if (operation_type === OperationType.DELETION) {
 			const userEvents = getUserEvents(tr);
@@ -164,21 +204,25 @@ function applySuggestion(tr: Transaction, settings: PluginSettings): Transaction
 			let offset = 0;
 			for (const range of changed_ranges) {
 				const delete_operation = text_delete(range, ranges, offset, tr.startState.doc, backwards_delete, group_delete, delete_selection, tr.startState);
-				changes.push(...delete_operation.changes);
-				selections.push(delete_operation.selection);
-				offset = delete_operation.offset;
+				changes.push(...delete_operation.changes!);
+				selections.push(delete_operation.selection!);
+				offset = delete_operation.offset!;
 			}
 		} else if (operation_type === OperationType.REPLACEMENT) {
 			let offset = 0;
 			for (const range of changed_ranges) {
 				const replace_operation = text_replace(range, ranges, offset, tr.startState.doc);
-				changes.push(...replace_operation.changes);
-				selections.push(replace_operation.selection);
-				offset = replace_operation.offset;
+				changes.push(...replace_operation.changes!);
+				selections.push(replace_operation.selection!);
+				offset = replace_operation.offset!;
 			}
 		}
 
-		return tr.startState.update({ changes, selection: EditorSelection.create(selections), });
+		if (changes.length)
+			return tr.startState.update({ changes, selection: EditorSelection.create(selections), });
+		if (settings.edit_info && edit_info)
+			new Notice(edit_info);
+		return tr.startState.update({})
 	}
 
 	// Handle cursor movements
@@ -213,7 +257,7 @@ function applySuggestion(tr: Transaction, settings: PluginSettings): Transaction
 		for (const [idx, range] of tr.selection!.ranges.entries()) {
 			const cursor_operation = cursor_move(tr.startState.selection!.ranges[idx],
 				range, ranges, !backwards_select, group_select, is_selection, vim_mode, tr.startState,
-				settings.suggestion_mode_cursor_movement.cursor_movement, settings.suggestion_mode_cursor_movement.bracket_movement,
+				settings.suggestion_mode_operations.cursor_movement, settings.suggestion_mode_operations.bracket_movement,
 			)
 
 			selections.push(cursor_operation.selection);

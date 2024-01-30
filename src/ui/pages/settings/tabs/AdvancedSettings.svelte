@@ -1,7 +1,8 @@
 <script lang='ts'>
-	import {SettingItem, Dropdown, Toggle} from '../../../components';
+	import {Dropdown, SettingItem, Toggle} from '../../../components';
 
 	import type CommentatorPlugin from '../../../../main';
+	import {INSERT_OPTION} from "../../../../editor/base/suggestion-handler/insert";
 
 	export let plugin: CommentatorPlugin;
 
@@ -12,6 +13,11 @@
 		"highlight": {icon: 'highlighter', tooltip: 'Highlights'},
 		"comment": {icon: 'message-square', tooltip: 'Comments'},
 	};
+
+	const all_ranges = {
+		"": {icon: 'star', tooltip: 'Regular'},
+		...suggestion_ranges,
+	}
 
 	const cursor_movement_options = [
 		{ value: "unchanged", text: 'Regular movement' },
@@ -24,6 +30,13 @@
 		{ value: "unchanged", text: 'Regular movement' },
 		{ value: "stay_inside", text: 'Keep cursor within range' },
 		{ value: "stay_outside", text: 'Treat range as word group' },
+	];
+
+	const insert_options = [
+		{ value: INSERT_OPTION.REGULAR, text: 'Insert as normal' },
+		{ value: INSERT_OPTION.MOVE_OUTSIDE, text: 'Insert outside range' },
+		{ value: INSERT_OPTION.SPLIT, text: 'Split range' },
+		{ value: INSERT_OPTION.SKIP, text: 'Skip inserting in range' },
 	];
 
 </script>
@@ -52,10 +65,10 @@
 			>
 				<Dropdown
 						slot='control'
-						value={plugin.settings.suggestion_mode_cursor_movement.cursor_movement[type]}
+						value={plugin.settings.suggestion_mode_operations.cursor_movement[type]}
 						options={cursor_movement_options}
 						onChange={(value) => {
-							plugin.settings.suggestion_mode_cursor_movement.cursor_movement[type] = value;
+							plugin.settings.suggestion_mode_operations.cursor_movement[type] = value;
 							plugin.saveSettings();
 						}}
 				/>
@@ -75,10 +88,34 @@
 			>
 				<Dropdown
 						slot='control'
-						value={plugin.settings.suggestion_mode_cursor_movement.bracket_movement[type]}
+						value={plugin.settings.suggestion_mode_operations.bracket_movement[type]}
 						options={bracket_movement_options}
 						onChange={(value) => {
-							plugin.settings.suggestion_mode_cursor_movement.bracket_movement[type] = value;
+							plugin.settings.suggestion_mode_operations.bracket_movement[type] = value;
+							plugin.saveSettings();
+						}}
+				/>
+			</SettingItem>
+		{/each}
+
+
+		<SettingItem
+				name='Insertion settings'
+				type='heading'
+				depth={2}
+		/>
+		{#each Object.keys(all_ranges) as type}
+			<SettingItem
+					name={all_ranges[type].tooltip}
+					type='dropdown'
+					depth={2}
+			>
+				<Dropdown
+						slot='control'
+						value={plugin.settings.suggestion_mode_operations.insert_text[type]}
+						options={insert_options}
+						onChange={(value) => {
+							plugin.settings.suggestion_mode_operations.insert_text[type] = value;
 							plugin.saveSettings();
 						}}
 				/>
