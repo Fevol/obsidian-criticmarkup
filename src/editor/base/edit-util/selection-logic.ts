@@ -32,8 +32,9 @@ export function getEditorOffsets(changes: ChangeSet): EditorOffsetChange[] {
 }
 
 
-export function getEditorRanges(changes: ChangeSet, doc: Text): EditorEditChange[] {
+export function getEditorRanges(selection: EditorSelection, changes: ChangeSet, doc: Text): EditorEditChange[] {
 	const changed_ranges: EditorEditChange[] = [];
+	let i = 0;
 	changes.iterChanges((fromA, toA, fromB, toB, inserted) => {
 		let text = '';
 		// @ts-ignore (Inserted always exists when iterating changes)
@@ -48,14 +49,19 @@ export function getEditorRanges(changes: ChangeSet, doc: Text): EditorEditChange
 		changed_ranges.push({
 			from: fromA,
 			to: toA,
+			head: fromA === fromB ? toA : fromA,
 			offset: {
 				removed: toA - fromA,
 				added: toB - fromB,
 			},
 			inserted: text,
 			deleted: toA - fromA ? doc.sliceString(fromA, toA) : '',
+			selection: selection.ranges[i].anchor !== selection.ranges[i].head,
 		});
+
+		i++;
 	});
+
 
 	return changed_ranges;
 }

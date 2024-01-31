@@ -8,7 +8,6 @@ import {
 	is_forward_movement, MetadataFields,
 	rangeParser,
 	SuggestionType,
-	text_delete,
 	text_replace
 } from '../../../base';
 
@@ -19,8 +18,15 @@ import {
 	MetadataDifferenceOptions,
 	text_insert
 } from "../../../base/suggestion-handler/insert";
+import {
+	DELETE_OPTION,
+	text_delete
+} from "../../../base/suggestion-handler/delete";
+
 import {latest_keypress} from "../keypress-catcher";
 import {Notice} from "obsidian";
+import {types} from "sass";
+import Boolean = types.Boolean;
 
 
 enum OperationType {
@@ -105,6 +111,7 @@ export const suggestionMode = (settings: PluginSettings): Extension => EditorSta
 
 // TODO: Functionality: Double click mouse should also floodfill (problem: no specific userevent attached)
 // TODO: Logic: Inserting/Replacing in Deletion - Result in Substitution or added text in Deletion?
+// TODO: Logic: Ranges should be considered individually by action
 function applySuggestion(tr: Transaction, settings: PluginSettings): Transaction {
 	const userEvents = getUserEvents(tr);
 	const vim_mode = app.workspace.activeEditor?.editor?.cm.cm !== undefined;
@@ -120,8 +127,7 @@ function applySuggestion(tr: Transaction, settings: PluginSettings): Transaction
 
 	// Handle edit operations
 	if (tr.docChanged) {
-		const changed_ranges = getEditorRanges(tr.changes, tr.startState.doc);
-
+		const changed_ranges = getEditorRanges(tr.startState.selection, tr.changes, tr.startState.doc);
 
 		const is_recognized_edit_operation = tr.isUserEvent('input') || tr.isUserEvent('paste') || tr.isUserEvent('delete');
 
@@ -197,16 +203,29 @@ function applySuggestion(tr: Transaction, settings: PluginSettings): Transaction
 			}
 		} else if (operation_type === OperationType.DELETION) {
 			const userEvents = getUserEvents(tr);
-			const backwards_delete = userEvents.includes('delete.backward') || userEvents.includes('delete.selection.backward');
-			const group_delete = userEvents.includes('delete.group');
-			const delete_selection = userEvents.includes('delete.selection');
+			const backwards_delete = latest_keypress?.key === "Backspace";
+			const group_delete = latest_keypress?.ctrlKey!;
+
+			const delete_options = {
+				[SuggestionType.ADDITION]: DELETE_OPTION.REGULAR,
+				[SuggestionType.DELETION]: DELETE_OPTION.REGULAR,
+				[SuggestionType.SUBSTITUTION]: DELETE_OPTION.REGULAR,
+				[SuggestionType.HIGHLIGHT]: DELETE_OPTION.REGULAR,
+				[SuggestionType.COMMENT]: DELETE_OPTION.REGULAR,
+			}
+
+
 
 			let offset = 0;
 			for (const range of changed_ranges) {
-				const delete_operation = text_delete(range, ranges, offset, tr.startState.doc, backwards_delete, group_delete, delete_selection, tr.startState);
-				changes.push(...delete_operation.changes!);
-				selections.push(delete_operation.selection!);
-				offset = delete_operation.offset!;
+				const delete_operation = text_delete(range, ranges, offset, backwards_delete, group_delete, tr.startState,
+					SuggestionType.DELETION, delete_options, settings.suggestion_mode_operations.cursor_movement, settings.suggestion_mode_operations.bracket_movement,
+					metadata, metadatamergeoptions);
+
+				// const delete_operation = text_delete(range, ranges, offset, tr.startState.doc, backwards_delete, group_delete, delete_selection, tr.startState);
+				// changes.push(...delete_operation.changes!);
+				// selections.push(delete_operation.selection!);
+				// offset = delete_operation.offset!;
 			}
 		} else if (operation_type === OperationType.REPLACEMENT) {
 			let offset = 0;

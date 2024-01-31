@@ -10,7 +10,7 @@ function compareChanges(previous: CriticMarkupRanges, current: CriticMarkupRange
 	const removed: CriticMarkupRange[] = [];
 	const added: CriticMarkupRange[] = [];
 
-	const changes = getEditorRanges(tr.changes, tr.startState.doc);
+	const changes = getEditorRanges(tr.startState.selection, tr.changes, tr.startState.doc);
 	let offset = 0;
 
 	for (const change of changes) {

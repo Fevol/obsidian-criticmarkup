@@ -40,13 +40,9 @@ export enum RANGE_BRACKET_MOVEMENT_OPTION {
 }
 
 
-export type RangeCursorMovementOptionsMap = {
-	[key in SuggestionType]: RANGE_CURSOR_MOVEMENT_OPTION
-}
+export type CursorOptionsMap = Record<SuggestionType, RANGE_CURSOR_MOVEMENT_OPTION>
 
-export type RangeBracketMovementOptionsMap = {
-	[key in SuggestionType]: RANGE_BRACKET_MOVEMENT_OPTION
-}
+export type BracketOptionsMap = Record<SuggestionType, RANGE_BRACKET_MOVEMENT_OPTION>
 
 export interface PluginSettings {
 	/**
@@ -160,11 +156,11 @@ export interface PluginSettings {
 		/**
 		 * Options for cursor movement within a suggestion range
 		 */
-		cursor_movement: RangeCursorMovementOptionsMap;
+		cursor_movement: CursorOptionsMap;
 		/**
 		 *  Options for cursor movement between two suggestion ranges
 		 */
-		bracket_movement: RangeBracketMovementOptionsMap;
+		bracket_movement: BracketOptionsMap;
 		/**
 		 * Options for inserting text when cursor is inside a suggestion range
 		 */

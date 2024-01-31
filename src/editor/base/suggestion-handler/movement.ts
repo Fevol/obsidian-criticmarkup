@@ -8,8 +8,8 @@ import {findBlockingChar, getCharCategory} from "../edit-util";
 import {
     RANGE_BRACKET_MOVEMENT_OPTION,
     RANGE_CURSOR_MOVEMENT_OPTION,
-    RangeBracketMovementOptionsMap,
-    RangeCursorMovementOptionsMap
+    BracketOptionsMap,
+    CursorOptionsMap
 } from "../../../types";
 
 function cat_ignore_ws(cat: CharCategory | null) {
@@ -56,7 +56,7 @@ function find_range_cursor(cursor_head: number, ranges: CriticMarkupRanges, rang
  * @param movement_options - Options for cursor movement through suggestion ranges
  * @param bracket_options - Options for cursor movement between different suggestion ranges
  */
-function cursor_advance_through_syntax(cursor_head: number, move_forwards: boolean, ranges: CriticMarkupRanges, range: CriticMarkupRange | undefined, movement_options: RangeCursorMovementOptionsMap, bracket_options: RangeBracketMovementOptionsMap | null): [number, CriticMarkupRange | undefined] {
+function cursor_advance_through_syntax(cursor_head: number, move_forwards: boolean, ranges: CriticMarkupRanges, range: CriticMarkupRange | undefined, movement_options: CursorOptionsMap, bracket_options: BracketOptionsMap | null): [number, CriticMarkupRange | undefined] {
     if (!range)
         range = ranges.range_adjacent_to_cursor(cursor_head, !move_forwards, true, true);
     else
@@ -79,6 +79,84 @@ function cursor_advance_through_syntax(cursor_head: number, move_forwards: boole
 }
 
 
+
+
+/**
+ *
+ * @param old_head - Original cursor head
+ * @param new_head - Cursor head after *regular* cursor movement
+ * @param ranges - All suggestion ranges in the document
+ * @param move_forwards - Whether the cursor movement is forwards or backwards
+ * @param by_word_group - Whether to move by word group (ctrl/alt + arrow keys)
+ * @param is_selection - Whether to extend the selection of the original range
+ * @param is_block_cursor - Whether cursor is considered as a block cursor (vim mode)
+ * @param state - Editor state
+ * @param movement_options - Options for cursor movement through suggestion ranges
+ * @param bracket_options - Options for cursor movement through brackets
+ */
+export function advance_cursor_head(old_head: number, new_head: number, ranges: CriticMarkupRanges,
+                                    move_forwards: boolean, by_word_group: boolean, is_block_cursor = false,
+                                    state: EditorState, movement_options: CursorOptionsMap, bracket_options: BracketOptionsMap,
+): number {
+
+    // NOTE: The reason why both old and new cursor head are used, is because it is not simple to both:
+    //  - Recreate the entire movement action palette within this function and apply on original range (e.g. move to beginning of note, ...)
+    //          -> Use new cursor head to have a starting point
+    //  - Verify that none of the ranges the cursor passes through with the original movement are blocking using only the new cursor range
+    //          -> Move from old head to verify that none of the ranges are blocking
+
+    let suggestion_range = ranges.range_adjacent_to_cursor(old_head, !move_forwards, true, !by_word_group);
+
+    // If no range exists in movement direction OR cursor has not passed a range OR movement through range is set to be the same,
+    // then just return the new range as-is without additional processing
+    if (!suggestion_range ||
+        (move_forwards ? suggestion_range.cursor_before_range(new_head) : suggestion_range.cursor_after_range(new_head)) ||
+        movement_options[suggestion_range.type] === RANGE_CURSOR_MOVEMENT_OPTION.UNCHANGED) {
+        return new_head;
+    }
+
+    // Check if difference in movement is only one character (single character movement)
+    if (!by_word_group && Math.abs(old_head - new_head) === 1) {
+        [new_head, suggestion_range] = cursor_advance_through_syntax(old_head, move_forwards, ranges, suggestion_range, movement_options, bracket_options);
+        new_head = new_head + (move_forwards ? 1 : -1);
+    } else if (!by_word_group) {
+        [new_head, suggestion_range] = cursor_advance_through_syntax(new_head, move_forwards, ranges, suggestion_range, movement_options, bracket_options);
+    } else {
+        let previous_reg_char = cursor_advance_through_syntax(new_head, !move_forwards, ranges, suggestion_range, movement_options, null)[0];
+        let previous_cat = null,
+            current_cat = (previous_reg_char === old_head) ? null : getCharCategory(previous_reg_char, state, move_forwards);
+        let next_cursor_head = new_head;
+
+        while (!cat_different(previous_cat, current_cat)) {
+            new_head = next_cursor_head;
+            previous_cat = current_cat;
+            [new_head, suggestion_range] = cursor_advance_through_syntax(new_head, move_forwards, ranges, suggestion_range, movement_options, bracket_options);
+            next_cursor_head = findBlockingChar(new_head, move_forwards, state, cat_ignore_ws(previous_cat), previous_cat)[0];
+            if (next_cursor_head === new_head)
+                break;
+            previous_reg_char = cursor_advance_through_syntax(next_cursor_head, !move_forwards, ranges, suggestion_range, movement_options, null)[0];
+            current_cat = getCharCategory(previous_reg_char, state, move_forwards);
+        }
+    }
+
+    // Post-processing step: move cursor back to inside range if necessary
+    if (suggestion_range && !(new_head === 0 || new_head === state.doc.length)) {
+        const range_back = move_forwards ? suggestion_range.to : suggestion_range.from;
+        const offset = move_forwards ? 1 : -1;
+        if (new_head === range_back) {
+            if (bracket_options[suggestion_range.type] === RANGE_BRACKET_MOVEMENT_OPTION.STAY_INSIDE)
+                new_head = range_back - 3 * offset;
+        } else if (suggestion_range.touches_bracket(new_head, move_forwards, false, true)) {
+            new_head = move_forwards ? suggestion_range.from : suggestion_range.to;
+        }
+    }
+
+    // Sanity check: clamp cursor to document length
+    return Math.clamp(new_head, 0, state.doc.length);
+}
+
+
+
 /**
  *
  * @param old_cursor_range - Original cursor range
@@ -93,62 +171,13 @@ function cursor_advance_through_syntax(cursor_head: number, move_forwards: boole
  * @param bracket_options - Options for cursor movement through brackets
  */
 export function cursor_move(old_cursor_range: EditorRange, new_cursor_range: EditorRange, ranges: CriticMarkupRanges,
-    move_forwards: boolean, by_word_group: boolean, is_selection: boolean, is_block_cursor = false,
-    state: EditorState, movement_options: RangeCursorMovementOptionsMap, bracket_options: RangeBracketMovementOptionsMap,
+                            move_forwards: boolean, by_word_group: boolean, is_selection: boolean, is_block_cursor = false,
+                            state: EditorState, movement_options: CursorOptionsMap, bracket_options: BracketOptionsMap,
 ) {
+    const cursor_head = advance_cursor_head(old_cursor_range.head!, new_cursor_range.head!, ranges, move_forwards,
+        by_word_group, is_block_cursor, state, movement_options, bracket_options);
+    let cursor_anchor = old_cursor_range.anchor!;
 
-    let cursor_head = new_cursor_range.head!;
-    let cursor_anchor = new_cursor_range.anchor!;
-
-    let suggestion_range = ranges.range_adjacent_to_cursor(old_cursor_range.head!, !move_forwards, true, !by_word_group);
-    // If no range exists in movement direction OR cursor has not passed a range OR movement through range is set to be the same,
-    // then just return the new range as-is without additional processing
-    if (!suggestion_range ||
-        (move_forwards ? suggestion_range.cursor_before_range(cursor_head) : suggestion_range.cursor_after_range(cursor_head)) ||
-        movement_options[suggestion_range.type] === RANGE_CURSOR_MOVEMENT_OPTION.UNCHANGED) {
-        return {selection: EditorSelection.range(cursor_anchor, cursor_head)};
-    }
-
-    // Check if difference in movement is only one character (single character movement)
-    if (!by_word_group && Math.abs(old_cursor_range.head! - new_cursor_range.head!) === 1) {
-        [cursor_head, suggestion_range] = cursor_advance_through_syntax(old_cursor_range.head!, move_forwards, ranges, suggestion_range, movement_options, bracket_options);
-        cursor_head = cursor_head + (move_forwards ? 1 : -1);
-    } else if (!by_word_group) {
-        [cursor_head, suggestion_range] = cursor_advance_through_syntax(cursor_head, move_forwards, ranges, suggestion_range, movement_options, bracket_options);
-    } else {
-        let previous_reg_char = cursor_advance_through_syntax(cursor_head, !move_forwards, ranges, suggestion_range, movement_options, null)[0];
-        let previous_cat = null,
-            current_cat = (previous_reg_char === old_cursor_range.head!) ? null : getCharCategory(previous_reg_char, state, move_forwards);
-        let next_cursor_head = cursor_head;
-
-        while (!cat_different(previous_cat, current_cat)) {
-            cursor_head = next_cursor_head;
-            previous_cat = current_cat;
-            [cursor_head, suggestion_range] = cursor_advance_through_syntax(cursor_head, move_forwards, ranges, suggestion_range, movement_options, bracket_options);
-            next_cursor_head = findBlockingChar(cursor_head, move_forwards, state, cat_ignore_ws(previous_cat), previous_cat)[0];
-            if (next_cursor_head === cursor_head)
-                break;
-            previous_reg_char = cursor_advance_through_syntax(next_cursor_head, !move_forwards, ranges, suggestion_range, movement_options, null)[0];
-            current_cat = getCharCategory(previous_reg_char, state, move_forwards);
-        }
-    }
-
-    // Post-processing step: move cursor back to inside range if necessary
-    if (suggestion_range && !(cursor_head === 0 || cursor_head === state.doc.length)) {
-        const range_back = move_forwards ? suggestion_range.to : suggestion_range.from;
-        const offset = move_forwards ? 1 : -1;
-        if (cursor_head === range_back) {
-            if (bracket_options[suggestion_range.type] === RANGE_BRACKET_MOVEMENT_OPTION.STAY_INSIDE)
-                cursor_head = range_back - 3 * offset;
-        } else if (suggestion_range.touches_bracket(cursor_head, move_forwards, false, true)) {
-            cursor_head = move_forwards ? suggestion_range.from : suggestion_range.to;
-        }
-    }
-
-    // Sanity check: clamp cursor to document length
-    cursor_head = Math.clamp(cursor_head, 0, state.doc.length);
-
-    // If the cursor is not a selection, then the cursor anchor should be moved to the cursor head
     if (!is_selection)
         cursor_anchor = cursor_head;
 

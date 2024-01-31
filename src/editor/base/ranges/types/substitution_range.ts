@@ -97,10 +97,10 @@ export class SubstitutionRange extends CriticMarkupRange {
 	}
 
 
-	cursor_pass_syntax(cursor: number, right: boolean): number {
+	cursor_pass_syntax(cursor: number, right: boolean, skip_metadata: boolean = false): number {
 		if (right) {
-			if (this.touches_left_bracket(cursor, true, false))
-				cursor = this.from + 3;
+			if (this.touches_left_bracket(cursor, true, false, skip_metadata))
+				cursor = (skip_metadata && this.metadata) ? (this.metadata! + 2) : (this.from + 3);
 			if (this.touches_separator(cursor, false, true))
 				cursor = this.middle + 2;
 			if (this.touches_right_bracket(cursor, false, true))
@@ -110,7 +110,7 @@ export class SubstitutionRange extends CriticMarkupRange {
 				cursor = this.to - 3;
 			if (this.touches_separator(cursor, false, true))
 				cursor = this.middle;
-			if (this.touches_left_bracket(cursor, false, true))
+			if (this.touches_left_bracket(cursor, false, true, skip_metadata))
 				cursor = this.from;
 		}
 		return cursor;

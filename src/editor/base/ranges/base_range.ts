@@ -271,16 +271,16 @@ export abstract class CriticMarkupRange {
 		return Math.min(Math.max((skip_metadata && this.metadata) ? this.metadata + 2 : this.from + 3, cursor), this.to - 3);
 	}
 
-	cursor_pass_syntax(cursor: number, right: boolean) {
+	cursor_pass_syntax(cursor: number, right: boolean, skip_metadata: boolean = false) {
 		if (right) {
-			if (this.touches_left_bracket(cursor, true, false))
-				cursor = this.from + 3;
-			if (this.touches_right_bracket(cursor, false, true))
+			if (this.touches_left_bracket(cursor, true, false, skip_metadata)) {
+				cursor = (skip_metadata && this.metadata) ? (this.metadata! + 2) : (this.from + 3);
+			} if (this.touches_right_bracket(cursor, false, true))
 				cursor = this.to;
 		} else {
 			if (this.touches_right_bracket(cursor, true, false))
 				cursor = this.to - 3;
-			if (this.touches_left_bracket(cursor, false, true))
+			if (this.touches_left_bracket(cursor, false, true, skip_metadata))
 				cursor = this.from;
 		}
 		return cursor;
@@ -291,7 +291,7 @@ export abstract class CriticMarkupRange {
 		else if (movement == RANGE_CURSOR_MOVEMENT_OPTION.IGNORE_COMPLETELY)
 			cursor = right ? this.to : this.from;
 		else
-			cursor = this.cursor_pass_syntax(cursor, right);
+			cursor = this.cursor_pass_syntax(cursor, right, movement == RANGE_CURSOR_MOVEMENT_OPTION.IGNORE_METADATA);
 		return cursor;
 	}
 

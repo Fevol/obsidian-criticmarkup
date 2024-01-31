@@ -44,9 +44,7 @@ export type MetadataDifferenceOptions = {
 }
 
 // Extend InsertOptionsMap with undefined: INSERT_OPTION
-export type InsertOptionsMap = {
-    [key in RangeType]: INSERT_OPTION;
-}
+export type InsertOptionsMap = Record<SuggestionType | "", INSERT_OPTION>;
 
 
 
@@ -63,15 +61,15 @@ function construct_markup(range_type: SuggestionType | undefined, metadata: Meta
 function determine_insert_action(range: CriticMarkupRange,
                                  insert_actions: InsertOptionsMap,
                                  metadata_fields?: MetadataFields, metadata_merge?: MetadataDifferenceOptions):
-    {insert_action?: INSERT_OPTION,  range_type?: RangeType, metadata_action?: INSERT_OPTION, metadata_type?: METADATA_TYPE, merged_metadata?: MetadataFields} {
+    {insert_action?: INSERT_OPTION,  metadata_type?: METADATA_TYPE, merged_metadata?: MetadataFields} {
 
     const insert_action = insert_actions[range.type];
     if (insert_action === INSERT_OPTION.SKIP) {
-        return { insert_action: INSERT_OPTION.SKIP, range_type: range.type };
+        return { insert_action: INSERT_OPTION.SKIP };
     } else if (insert_action === INSERT_OPTION.MOVE_OUTSIDE) {
-        return { insert_action: INSERT_OPTION.MOVE_OUTSIDE, range_type: range.type };
+        return { insert_action: INSERT_OPTION.MOVE_OUTSIDE };
     } else if (insert_action === INSERT_OPTION.SPLIT) {
-        return { insert_action: INSERT_OPTION.SPLIT, range_type: range.type };
+        return { insert_action: INSERT_OPTION.SPLIT };
     }
 
 
@@ -83,11 +81,11 @@ function determine_insert_action(range: CriticMarkupRange,
         if (metadata_fields![key] !== range.fields[key]) {
             const action: METADATA_MERGE_OPTION = metadata_merge![key as keyof typeof metadata_merge];
             if (action === METADATA_MERGE_OPTION.SKIP) {
-                return { metadata_action: INSERT_OPTION.SKIP, metadata_type: key as METADATA_TYPE };
+                return { insert_action: INSERT_OPTION.SKIP, metadata_type: key as METADATA_TYPE };
             } else if (action === METADATA_MERGE_OPTION.SPLIT) {
-                return { metadata_action: INSERT_OPTION.SPLIT, metadata_type: key as METADATA_TYPE };
+                return { insert_action: INSERT_OPTION.SPLIT, metadata_type: key as METADATA_TYPE };
             } else if (action === METADATA_MERGE_OPTION.MOVE_OUTSIDE) {
-                return { metadata_action: INSERT_OPTION.MOVE_OUTSIDE, metadata_type: key as METADATA_TYPE };
+                return { insert_action: INSERT_OPTION.MOVE_OUTSIDE, metadata_type: key as METADATA_TYPE };
             } else if (action === METADATA_MERGE_OPTION.OLD) {
                 merged_metadata[key] = range.fields[key];
             }
@@ -107,20 +105,20 @@ export function text_insert(cursor_range: EditorEditChange, ranges: CriticMarkup
     let range = ranges.range_directly_adjacent_to_cursor(cursor_range.to, false);
     let adj_range: CriticMarkupRange | undefined = undefined;
     let cursor_head = cursor_range.to;
-    let action: INSERT_OPTION | undefined = undefined;
+    let insert_action: INSERT_OPTION | undefined = undefined;
 
     let metadata = metadata_fields;
     if (range) {
-        let {insert_action, range_type, metadata_action, metadata_type, merged_metadata} =
+        let {insert_action, metadata_type, merged_metadata} =
             determine_insert_action(range, insert_options, metadata_fields, metadata_merge);
 
         const move_left_bracket = range.touches_left_bracket(cursor_head, false, true, true);
-        const move_right_bracket = range.touches_right_bracket(cursor_head) || insert_action === INSERT_OPTION.MOVE_OUTSIDE || metadata_action === INSERT_OPTION.MOVE_OUTSIDE;
+        const move_right_bracket = range.touches_right_bracket(cursor_head) || insert_action === INSERT_OPTION.MOVE_OUTSIDE;
         if (move_left_bracket || move_right_bracket) {
             adj_range = ranges.adjacent_range(range, move_left_bracket, true);
             // NOTE: Does not cover case `{++++}{--░--}{====}`
             if (adj_range) {
-                const {insert_action: insert_action_2, range_type: range_type_2, metadata_action: metadata_action_2, metadata_type: metadata_type_2, merged_metadata: merged_metadata_2} =
+                const {insert_action: insert_action_2, metadata_type: metadata_type_2, merged_metadata: merged_metadata_2} =
                     determine_insert_action(adj_range, insert_options, metadata_fields, metadata_merge);
 
                 // GOAL: Check if switching to the adjacent range is beneficial
@@ -129,33 +127,30 @@ export function text_insert(cursor_range: EditorEditChange, ranges: CriticMarkup
                 if (insert_action_2 === INSERT_OPTION.REGULAR && insert_action !== INSERT_OPTION.REGULAR) {
                     range = adj_range;
                     insert_action = insert_action_2;
-                    range_type = range_type_2;
-                    metadata_action = metadata_action_2;
                     metadata_type = metadata_type_2;
                     merged_metadata = merged_metadata_2;
                 }
             }
         }
 
-        action = insert_action ?? metadata_action;
         metadata = merged_metadata ?? metadata;
 
         // STEP 1: Handle cursor movement
-        if (action === INSERT_OPTION.SKIP) {
+        if (insert_action === INSERT_OPTION.SKIP) {
             return { debug: { range, metadata_type } };
         }
 
-        if (action === INSERT_OPTION.MOVE_OUTSIDE) {
+        if (insert_action === INSERT_OPTION.MOVE_OUTSIDE) {
             if (!range.touches_left_bracket(cursor_head, false, true, true))
                 cursor_head = range.to;
             else
                 cursor_head = range.from;
             range = undefined;
         } else {
-            if (action === INSERT_OPTION.SPLIT) {
+            if (insert_action === INSERT_OPTION.SPLIT) {
                 cursor_head = range.cursor_move_outside(cursor_head, true);
                 if (cursor_head === range.from || cursor_head === range.to) {
-                    action = INSERT_OPTION.REGULAR;
+                    insert_action = INSERT_OPTION.REGULAR;
                     range = undefined;
                 } else
                     cursor_head = range.cursor_move_inside(cursor_head, true);
@@ -164,8 +159,8 @@ export function text_insert(cursor_range: EditorEditChange, ranges: CriticMarkup
             }
         }
     } else {
-        action = insert_options[""];
-        if (action === INSERT_OPTION.SKIP)
+        insert_action = insert_options[""];
+        if (insert_action === INSERT_OPTION.SKIP)
             return { debug: {} };
     }
 
@@ -179,7 +174,7 @@ export function text_insert(cursor_range: EditorEditChange, ranges: CriticMarkup
         changes.push({ from: cursor_head, to: cursor_head, insert: text });
         cursor_offset = -3;
     } else {
-        if (action === INSERT_OPTION.SPLIT) {
+        if (insert_action === INSERT_OPTION.SPLIT) {
             // Split range or just insert into range (update metadata)
             const split_range = range.split_range(cursor_head);
             console.log(split_range);

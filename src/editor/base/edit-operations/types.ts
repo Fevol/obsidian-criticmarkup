@@ -6,6 +6,7 @@ export interface EditorRange {
 	to: number;
 	head?: number;
 	anchor?: number;
+	selection?: boolean;
 }
 
 export interface EditorOffsetChange extends EditorRange {

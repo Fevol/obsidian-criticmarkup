@@ -81,7 +81,6 @@ export default class CommentatorPlugin extends Plugin {
 
 		this.editorExtensions.length = 0;
 
-		// TODO: Check if app.lastEvent would work too!
 		this.editorExtensions.push(Prec.highest(editorKeypressCatcher));
 		this.editorExtensions.push(rangeParser);
 
