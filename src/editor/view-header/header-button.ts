@@ -12,7 +12,7 @@ export class HeaderButton {
 
 	constructor(private attribute: keyof typeof plugin.settings, private states: { icon: string, tooltip: string, text: string }[],
 				private has_label: boolean, private cls: string, private plugin: CommentatorPlugin) {
-		this.index = + this.plugin.settings[this.attribute];
+		this.index = + this.plugin.settings[this.attribute]!;
 	}
 
 	renderButtons() {

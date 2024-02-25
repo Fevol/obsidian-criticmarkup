@@ -1,6 +1,6 @@
 import { ChangeSet, EditorSelection, SelectionRange, Text, Transaction } from '@codemirror/state';
 
-import { type EditorOffsetChange, type EditorEditChange } from '../edit-operations';
+import { type EditorOffsetChange, type EditorEditChange } from '../edit-handler';
 
 
 export function isCursor(selection: EditorSelection) {

@@ -1,4 +1,4 @@
-import type {EditorRange} from "../edit-operations";
+import type {EditorRange} from "./types";
 import {
     CriticMarkupRange,
     CriticMarkupRanges,

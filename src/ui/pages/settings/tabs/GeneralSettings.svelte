@@ -59,6 +59,25 @@
 </SettingItem>
 
 
+<SettingItem
+	name='Include Metadata Extension'
+	type='dropdown'
+	notices={[
+		{ type: 'info', text: 'Allow inclusion of metadata for suggestions, such as authorship, time, etc.' },
+		{ type: 'warning', text: 'Suggestion metadata is *not* part of the official CriticMarkup standard, and the metadata will not be processed/rendered correctly in other editors' },
+	]}
+>
+	<Toggle
+		slot='control'
+		value={ plugin.settings.enable_metadata }
+		onChange={ (value) => {
+			plugin.settings.enable_metadata = value
+			plugin.saveSettings();
+		}}
+	/>
+</SettingItem>
+
+
 
 
 <SettingItem

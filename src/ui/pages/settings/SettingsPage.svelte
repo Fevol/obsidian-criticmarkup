@@ -5,7 +5,7 @@
 
 
 	import { Icon } from '../../components';
-	import { GeneralSettings, EditorSettings, InterfaceSettings, AdvancedSettings } from './tabs';
+	import { GeneralSettings, EditorSettings, InterfaceSettings, AdvancedSettings, MetadataSettings } from './tabs';
 
 	export let plugin: CommentatorPlugin;
 
@@ -13,9 +13,8 @@
 		{id: "general", name: "General", icon: "settings"},
 		{id: "editor", name: "Editor", icon: "pencil"},
 		{id: "interface", name: "Interface", icon: "layout"},
-		{id: "advanced", name: "Advanced", icon: "shield-alert"}
-		// {id: "style", name: "Style", icon: "palette"},
-		// {id: "suggestions", name: "Suggestions", icon: "file-edit"}
+		{id: "advanced", name: "Advanced", icon: "shield-alert"},
+		{id: "metadata", name: "Metadata", icon: "tags"}
 	];
 	let tab_idx = tabs.findIndex(tab => tab.id === plugin.settings_tab);
 	let tab_id = tabs[tab_idx].id;
@@ -30,6 +29,8 @@
 				return AdvancedSettings;
 			case "interface":
 				return InterfaceSettings;
+			case "metadata":
+				return MetadataSettings;
 		}
 	}
 

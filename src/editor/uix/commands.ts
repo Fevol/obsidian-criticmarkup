@@ -1,22 +1,22 @@
 import { type Editor, type MarkdownView, Platform } from 'obsidian';
 
-import { type ECommand } from '../../types';
+import {type ECommand, PluginSettings} from '../../types';
 
 import {
 	CM_SuggestionTypes, selectionContainsRanges,
-	changeType, acceptSuggestions, rejectSuggestions,
+	acceptSuggestions, rejectSuggestions, mark_editor_ranges,
 } from '../base';
 import type CommentatorPlugin from '../../main';
 import { commentGutter } from '../renderers/gutters';
 
 
-export const suggestion_commands: ECommand[] = Object.entries(CM_SuggestionTypes).map(([text, type]) => ({
+export const suggestion_commands: (settings: PluginSettings) => ECommand[] = (settings) => Object.entries(CM_SuggestionTypes).map(([text, type]) => ({
 	id: `commentator-toggle-${text.toLowerCase()}`,
 	name: `Mark as ${text}`,
 	icon: text.toLowerCase(),
 	editor_context: true,
 	regular_callback: (editor: Editor, view: MarkdownView) => {
-		changeType(editor, view, type);
+		mark_editor_ranges(editor, type, settings)
 	},
 }));
 
@@ -130,6 +130,15 @@ export const application_commmands = (plugin: CommentatorPlugin): ECommand[] => 
 		icon: 'comment',
 		regular_callback: async () => {
 			plugin.settings.preview_mode = (plugin.settings.preview_mode + 1) % 3;
+			await plugin.saveSettings();
+		},
+	},
+	{
+		id: 'commentator-toggle-alt',
+		name: 'Toggle alternative editing mode',
+		icon: 'comment',
+		regular_callback: async () => {
+			plugin.settings.edit_ranges = !plugin.settings.edit_ranges;
 			await plugin.saveSettings();
 		},
 	}

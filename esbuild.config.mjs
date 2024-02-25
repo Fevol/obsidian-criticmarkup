@@ -65,7 +65,7 @@ const context = await esbuild.context({
     plugins: [
         sassPlugin(),
         esbuildSvelte({
-            compilerOptions: {css: "injected"},
+            compilerOptions: {css: "injected", hydratable: false},
             preprocess: sveltePreprocess(),
             filterWarnings: (warning) => {
                 // Remove accessibility warnings (base Obsidian ignores these guidelines too)

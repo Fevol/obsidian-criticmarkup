@@ -1,13 +1,11 @@
-import {EditorEditChange, OperationReturn} from "../edit-operations";
-import {CriticMarkupRanges, MetadataFields, SuggestionType} from "../ranges";
+import {EditorEditChange, OperationReturn}  from "./types";
+import {CriticMarkupRanges, MetadataFields} from "../ranges";
 import {EditorSelection, EditorState} from "@codemirror/state";
-import {MetadataDifferenceOptions} from "./insert";
-import {mark_ranges} from "./base";
+import {mark_ranges, MarkType} from "../edit-logic";
 
 export function text_replace(cursor_range: EditorEditChange, ranges: CriticMarkupRanges, offset: number,
-                            backwards_delete: boolean, group_delete: boolean, state: EditorState,
-                            replace_type: SuggestionType,
-                            metadata_fields?: MetadataFields, metadata_merge?: MetadataDifferenceOptions):
+                            backwards_delete: boolean, state: EditorState,
+                            replace_type: MarkType, metadata_fields?: MetadataFields):
     OperationReturn {
     const operations = mark_ranges(ranges, state.doc, cursor_range.from, cursor_range.to, cursor_range.inserted, replace_type, metadata_fields);
 

@@ -1,6 +1,5 @@
 import type { Command } from 'obsidian';
 import {SuggestionType} from "./editor/base";
-import {InsertOptionsMap} from "./editor/base/suggestion-handler/insert";
 
 export enum PreviewMode {
 	ALL = 0,
@@ -148,6 +147,31 @@ export interface PluginSettings {
 	 * Enable corrected cursor movement near/within ranges
 	 */
 	alternative_cursor_movement: boolean;
+	/**
+	 * Enable corrected edits in regular mode
+	 * @remark Prevent breaking up brackets, allows deletion within additions, etc.
+	 */
+	edit_ranges: boolean;
+
+
+	/**
+	 * Whether metadata extensions should be enabled
+	 */
+	enable_metadata: boolean;
+	/**
+	 * Whether authorship metadata should be considered
+	 */
+	enable_author: boolean;
+	/**
+	 * Whether timestamps metadata should be added
+	 */
+	enable_timestamp: boolean;
+
+	/**
+	 * Include authorship metadata
+	 */
+	author?: string;
+
 
 	/**
 	 * Cursor movement options for ranges when in suggestion mode
@@ -161,10 +185,6 @@ export interface PluginSettings {
 		 *  Options for cursor movement between two suggestion ranges
 		 */
 		bracket_movement: BracketOptionsMap;
-		/**
-		 * Options for inserting text when cursor is inside a suggestion range
-		 */
-		insert_text: InsertOptionsMap;
 	},
 }
 

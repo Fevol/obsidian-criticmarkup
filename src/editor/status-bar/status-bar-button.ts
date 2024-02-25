@@ -7,7 +7,7 @@ export class StatusBarButton {
 
 	constructor(private attribute: keyof typeof plugin.settings, private states: { icon: string, text: string }[],
 				private plugin: CommentatorPlugin) {
-		this.index = +this.plugin.settings[this.attribute];
+		this.index = +this.plugin.settings[this.attribute]!;
 	}
 
 	showMenu(e: MouseEvent) {

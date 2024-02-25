@@ -7,7 +7,11 @@ import {
     SuggestionType
 } from "../ranges";
 import {Text} from "@codemirror/state";
-import {EditorChange} from "../edit-operations";
+import {EditorChange} from "../edit-handler";
+import {Editor} from "obsidian";
+import {rangeParser} from "../edit-util";
+import {PluginSettings} from "../../../types";
+import {generate_metadata} from "../edit-util/metadata";
 
 
 export enum MarkAction {
@@ -18,8 +22,17 @@ export enum MarkAction {
 export type MarkType = SuggestionType | MarkAction;
 
 
-function can_merge(cursor: number, range?: CriticMarkupRange, type?: SuggestionType, metadata_fields?: MetadataFields, left = false): SuggestionType | undefined {
-    if (!range || !type)
+function compatible_range(range: CriticMarkupRange, type: MarkType, metadata_fields?: MetadataFields) {
+    if (type === MarkAction.REGULAR || type === MarkAction.CLEAR)
+        return true;
+    if ((range.type === SuggestionType.COMMENT || range.type === SuggestionType.HIGHLIGHT) && range.type !== type)
+        return false;
+    return true;
+}
+
+
+function mergeable_range(cursor: number, range?: CriticMarkupRange, type?: SuggestionType, metadata_fields?: MetadataFields, left = false): SuggestionType | undefined {
+    if (!range || !type || !compatible_range(range, type, metadata_fields))
         return undefined;
 
     // Range cannot be merged if it is already fully included in range
@@ -79,7 +92,7 @@ function mark_range(ranges: CriticMarkupRanges, text: Text, from: number, to: nu
                 from = left_range.from;
             } else if (!left_range.touches_right_bracket(from, false, true)) {
                 if (left_range.type === SuggestionType.SUBSTITUTION && (left_range as SubstitutionRange).contains_separator(from, to)) {
-                    const contents = left_range.unwrap_slice(0, from - left_range.from);
+                    const contents = left_range.unwrap_slice(0, from);
                     affixes[0] = create_range("", contents, ["", ""], left_range.fields, SuggestionType.DELETION);
                     from = left_range.from;
                 } else {
@@ -98,7 +111,7 @@ function mark_range(ranges: CriticMarkupRanges, text: Text, from: number, to: nu
             } else if (!right_range.touches_left_bracket(to, false, true, true)) {
                 // TODO: Downgrade range to addition/deletion if past bracket
                 if (right_range.type === SuggestionType.SUBSTITUTION && (right_range as SubstitutionRange).contains_separator(from, to)) {
-                    const contents = right_range.unwrap_slice(to - right_range.from, Infinity);
+                    const contents = right_range.unwrap_slice(to, Infinity);
                     affixes[1] = create_range(contents, "", ["", ""], right_range.fields, SuggestionType.ADDITION);
                     to = right_range.to;
                 } else {
@@ -114,12 +127,12 @@ function mark_range(ranges: CriticMarkupRanges, text: Text, from: number, to: nu
         return {from, to: from, insert: ""};
     } else if (type === MarkAction.REGULAR) {
         if (left_range !== undefined && left_range === right_range) {
-            const contents = from === to ? "" : left_range.unwrap_slice(from - left_range.from, to - left_range.from);
+            const contents = from === to ? "" : left_range.unwrap_slice(from, to);
             if (contents) {
                 from = left_range.cursor_move_inside(from, true);
                 to = left_range.cursor_move_inside(to, false);
                 if (left_range.type === SuggestionType.SUBSTITUTION) {
-                    const [left_text, right_text] = (left_range as SubstitutionRange).unwrap_slice_parts_inverted(from - left_range.from, to - left_range.from);
+                    const [left_text, right_text] = (left_range as SubstitutionRange).unwrap_slice_parts_inverted(from, to);
                     from = left_range.from;
                     to = left_range.to;
                     inserted = create_suggestion(right_text, left_text + inserted, left_range.fields);
@@ -136,7 +149,8 @@ function mark_range(ranges: CriticMarkupRanges, text: Text, from: number, to: nu
                 //      Inconsistent with addition behaviour, where it is ALWAYS added into the nearest range
                 split_left_range();
                 split_right_range();
-                return {from, to, insert: affixes[0] + inserted + affixes[1]};
+                // return {from, to, insert: affixes[0] + inserted + affixes[1]};
+                return {from, to, insert: affixes[0] + affixes[1] + inserted};
             } else {
                 // TODO: Either insert to left range, right range, or in between the ranges, or closest range to cursor
                 const range = left_range || right_range;
@@ -152,7 +166,7 @@ function mark_range(ranges: CriticMarkupRanges, text: Text, from: number, to: nu
     } else {
         // NOTE: Special code for handling operations within substitution ranges
         if (left_range !== undefined && left_range === right_range && left_range.type === SuggestionType.SUBSTITUTION) {
-            let contents = left_range.unwrap_slice(from - left_range.from, to - left_range.from);
+            let contents = left_range.unwrap_slice(from, to);
             const right = (left_range as SubstitutionRange).contains_separator(from, to) ? null : from > (left_range as SubstitutionRange).middle + 2;
             const should_split = (right && contents) || (right === false && inserted);
             if (!should_split) {
@@ -163,8 +177,8 @@ function mark_range(ranges: CriticMarkupRanges, text: Text, from: number, to: nu
                     contents = parts[0];
                     inserted = parts[1].slice(0, insert_point) + inserted + parts[1].slice(insert_point);
                 } else if (type === SuggestionType.SUBSTITUTION || right === null) {
-                    contents = left_range.unwrap_slice(0, to - left_range.from);
-                    inserted = inserted + left_range.unwrap_slice(to - left_range.from, Infinity);
+                    contents = left_range.unwrap_slice(0, to);
+                    inserted = inserted + left_range.unwrap_slice(to, Infinity);
                 } else {
                     return {from, to: from, insert: ""};
                 }
@@ -176,9 +190,9 @@ function mark_range(ranges: CriticMarkupRanges, text: Text, from: number, to: nu
             } else {
                 let split = "";
                 if (!right) {
-                    contents = left_range.unwrap_slice(0, to - left_range.from);
+                    contents = left_range.unwrap_slice(0, to);
                     split = create_suggestion(inserted, contents, left_range.fields);
-                    const parts = (left_range as SubstitutionRange).unwrap_slice_parts_inverted(0, to - left_range.from);
+                    const parts = (left_range as SubstitutionRange).unwrap_slice_parts_inverted(0, to);
                     split += create_suggestion(parts[1], parts[0], left_range.fields);
                 } else {
                     const parts = left_range.unwrap_parts();
@@ -194,36 +208,38 @@ function mark_range(ranges: CriticMarkupRanges, text: Text, from: number, to: nu
             }
         } else {
             let contents = from === to ? "" : ranges.unwrap_in_range(text, from, to, in_range.ranges).output;
-            // Might be redundant (especially if operation occurs often)
             if (!contents) {
                 if (type === SuggestionType.SUBSTITUTION)
                     type = SuggestionType.ADDITION;
                 else if (type === SuggestionType.DELETION)
                     return {from, to: from, insert: ""};
             }
-            if (!inserted) {
-                if (type === SuggestionType.SUBSTITUTION)
-                    type = SuggestionType.DELETION;
-                else if (type === SuggestionType.ADDITION)
-                    return {from, to: from, insert: ""};
-            }
+            // TODO: Check necessity of this part (mutually exclusive with the mark_editor_ranges function)
+            //      Marking as addition should always mark all text in range as addition, regardless of whether inserted text is provided
+            //      <> Sometimes inserted is empty in substitution (empty clipboard), so it should downgrade to deletion
+            // if (!inserted) {
+            //     if (type === SuggestionType.SUBSTITUTION)
+            //         type = SuggestionType.DELETION;
+            //     else if (type === SuggestionType.ADDITION)
+            //         return {from, to: from, insert: ""};
+            // }
 
-            const left_merge_type = can_merge(from, left_range, type, metadata_fields, true);
+            const left_merge_type = mergeable_range(from, left_range, type, metadata_fields, true);
             if (left_merge_type) {
-                contents = left_range!.unwrap_slice(0, from - left_range!.from) + contents;
+                contents = left_range!.unwrap_slice(0, from) + contents;
                 from = left_range!.from;
             } else {
                 split_left_range();
             }
 
-            const right_merge_type = can_merge(to, right_range, type, metadata_fields, false);
+            const right_merge_type = mergeable_range(to, right_range, type, metadata_fields, false);
             if (right_merge_type) {
                 if (right_range!.type === SuggestionType.SUBSTITUTION) {
-                    const parts = (right_range as SubstitutionRange).unwrap_slice_parts_inverted(from - right_range!.from, to - right_range!.from);
+                    const parts = (right_range as SubstitutionRange).unwrap_slice_parts_inverted(from, to);
                     inserted = inserted + parts[1];
                     contents += parts[0];
                 } else {
-                    inserted += right_range!.unwrap_slice(to - right_range!.from, Infinity);
+                    inserted += right_range!.unwrap_slice(to, Infinity);
                 }
                 to = right_range!.to;
             } else {
@@ -237,6 +253,7 @@ function mark_range(ranges: CriticMarkupRanges, text: Text, from: number, to: nu
         }
     }
 }
+
 
 export function mark_ranges(ranges: CriticMarkupRanges, text: Text, from: number, to: number, inserted: string, type: MarkType, metadata_fields?: MetadataFields, force = false): EditorChange[] {
 
@@ -259,8 +276,9 @@ export function mark_ranges(ranges: CriticMarkupRanges, text: Text, from: number
             // Possible reasons:
             //   1. Incompatible marking type (e.g. you don't want comments to be marked as deletion, no matter what)
             //   2. Metadata difference (author is different)
+            // TODO: Specify behaviour for not merging
 
-            if (false) { /* IF INCOMPATIBLE */
+            if (!compatible_range(range, type, metadata_fields)) {
                 if (last_range_start < range.from) {
                     const edit = mark_range(ranges, text, last_range_start, range.from, "", type, metadata_fields);
                     if (edit) range_operations.push(edit!);
@@ -269,8 +287,23 @@ export function mark_ranges(ranges: CriticMarkupRanges, text: Text, from: number
             }
         }
     }
+    if (last_range_start > to)
+        to = last_range_start;
+
     const edit = mark_range(ranges, text, last_range_start, to, inserted, type, metadata_fields);
     if (edit) range_operations.push(edit);
 
     return range_operations;
+}
+
+
+export function mark_editor_ranges(editor: Editor, type: MarkType, settings: PluginSettings) {
+    const ranges = editor.cm.state.field(rangeParser).ranges;
+
+    const selections = editor.cm.state.selection.ranges;
+    for (const selection of selections) {
+        editor.cm.dispatch(editor.cm.state.update({
+            changes: mark_ranges(ranges, editor.cm.state.doc, selection.from, selection.to, "", type, generate_metadata(settings)),
+        }));
+    }
 }

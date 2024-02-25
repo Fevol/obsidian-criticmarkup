@@ -5,24 +5,17 @@ import {
 	cursorMoved,
 	getEditorRanges,
 	getUserEvents,
-	is_forward_movement, MetadataFields,
+	is_forward_movement,
 	rangeParser,
 	SuggestionType,
 } from '../../../base';
 
-
-import {cursor_move} from "../../../base/suggestion-handler/movement";
-import {
-	METADATA_MERGE_OPTION,
-	MetadataDifferenceOptions,
-	text_insert
-} from "../../../base/suggestion-handler/insert";
-import { text_delete } from "../../../base/suggestion-handler/delete";
+import { cursor_move, text_insert, text_delete, text_replace } from "../../../base/edit-handler";
+import {MarkAction} from "../../../base";
 
 import {latest_keypress} from "../keypress-catcher";
 import {Notice} from "obsidian";
-import {MarkAction} from "../../../base/suggestion-handler/base";
-import {text_replace} from "../../../base/suggestion-handler/replace";
+import {generate_metadata} from "../../../base/edit-util/metadata";
 
 
 enum OperationType {
@@ -153,24 +146,10 @@ function applySuggestion(tr: Transaction, settings: PluginSettings): Transaction
 		const selections: SelectionRange[] = [];
 
 
-		const metadatamergeoptions: MetadataDifferenceOptions = {
-			"author": METADATA_MERGE_OPTION.MOVE_OUTSIDE,
-			"date": METADATA_MERGE_OPTION.NEW,
-			"completed": METADATA_MERGE_OPTION.NEW,
-			"urgency": METADATA_MERGE_OPTION.NEW,
-			"style": METADATA_MERGE_OPTION.NEW,
-		}
-
-		let metadata: MetadataFields | undefined = {
-			// "author": "Fevol",
-		}
+		const metadata = generate_metadata(settings);
 
 		let edit_info;
-
-		if (Object.keys(metadata).length === 0)
-			metadata = undefined;
-
-		const alt_mode = false;
+		const alt_mode = settings.edit_ranges ? MarkAction.REGULAR : undefined;
 
 		if (operation_type === OperationType.INSERTION) {
 			let offset = 0;
@@ -180,7 +159,7 @@ function applySuggestion(tr: Transaction, settings: PluginSettings): Transaction
 				// 	Solutions:
 				//		- Sequentially update the state with each editorchange (easiest)
 				//		- Update ranges object with new changed/new ranges
-				const insert_operation = text_insert(range, ranges, offset, tr.startState, alt_mode ? MarkAction.REGULAR : SuggestionType.ADDITION, metadata);
+				const insert_operation = text_insert(range, ranges, offset, tr.startState, alt_mode ?? SuggestionType.ADDITION, metadata);
 				// TODO: Insert text WITHOUT SPLITTING: get range type under cursor and pass as insert type
 
 
@@ -206,8 +185,8 @@ function applySuggestion(tr: Transaction, settings: PluginSettings): Transaction
 			for (const range of changed_ranges) {
 				// TODO: Delete text WITHOUT MARKING: pass MarkAction.REMOVE as delete type
 				const delete_operation = text_delete(range, ranges, offset, backwards_delete, group_delete, tr.startState,
-					alt_mode ? MarkAction.REGULAR : SuggestionType.DELETION, settings.suggestion_mode_operations.cursor_movement, settings.suggestion_mode_operations.bracket_movement,
-					metadata, metadatamergeoptions);
+					alt_mode ?? SuggestionType.DELETION, settings.suggestion_mode_operations.cursor_movement, settings.suggestion_mode_operations.bracket_movement,
+					metadata);
 
 				// const delete_operation = text_delete(range, ranges, offset, tr.startState.doc, backwards_delete, group_delete, delete_selection, tr.startState);
 				changes.push(...delete_operation.changes!);
@@ -219,8 +198,8 @@ function applySuggestion(tr: Transaction, settings: PluginSettings): Transaction
 
 			let offset = 0;
 			for (const range of changed_ranges) {
-				const replace_operation = text_replace(range, ranges, offset, backwards_delete, false, tr.startState,
-					SuggestionType.SUBSTITUTION, metadata, metadatamergeoptions);
+				const replace_operation = text_replace(range, ranges, offset, backwards_delete, tr.startState,
+					alt_mode ?? SuggestionType.SUBSTITUTION, metadata);
 				changes.push(...replace_operation.changes!);
 				selections.push(replace_operation.selection!);
 				offset = replace_operation.offset!;

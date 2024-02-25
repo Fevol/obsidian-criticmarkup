@@ -2,7 +2,6 @@
 	import {Dropdown, SettingItem, Toggle} from '../../../components';
 
 	import type CommentatorPlugin from '../../../../main';
-	import {INSERT_OPTION} from "../../../../editor/base/suggestion-handler/insert";
 
 	export let plugin: CommentatorPlugin;
 
@@ -31,14 +30,6 @@
 		{ value: "stay_inside", text: 'Keep cursor within range' },
 		{ value: "stay_outside", text: 'Treat range as word group' },
 	];
-
-	const insert_options = [
-		{ value: INSERT_OPTION.REGULAR, text: 'Insert as normal' },
-		{ value: INSERT_OPTION.MOVE_OUTSIDE, text: 'Insert outside range' },
-		{ value: INSERT_OPTION.SPLIT, text: 'Split range' },
-		{ value: INSERT_OPTION.SKIP, text: 'Skip inserting in range' },
-	];
-
 </script>
 
 <SettingItem
@@ -97,31 +88,6 @@
 				/>
 			</SettingItem>
 		{/each}
-
-
-		<SettingItem
-				name='Insertion settings'
-				type='heading'
-				depth={2}
-		/>
-		{#each Object.keys(all_ranges) as type}
-			<SettingItem
-					name={all_ranges[type].tooltip}
-					type='dropdown'
-					depth={2}
-			>
-				<Dropdown
-						slot='control'
-						value={plugin.settings.suggestion_mode_operations.insert_text[type]}
-						options={insert_options}
-						onChange={(value) => {
-							plugin.settings.suggestion_mode_operations.insert_text[type] = value;
-							plugin.saveSettings();
-						}}
-				/>
-			</SettingItem>
-		{/each}
-
 
 <SettingItem
 	name='Suggestion mode cursor movement'

@@ -1,16 +1,14 @@
-import {CriticMarkupRanges, MetadataFields, SuggestionType} from "../ranges";
-import {MetadataDifferenceOptions} from "./insert";
-import {type EditorEditChange, OperationReturn} from "../edit-operations";
+import {CriticMarkupRanges, MetadataFields} from "../ranges";
+import {type EditorEditChange, OperationReturn} from "./types";
 import {EditorSelection, EditorState} from "@codemirror/state";
 import {BracketOptionsMap, CursorOptionsMap} from "../../../types";
-import {advance_cursor_head} from "./movement";
-import {mark_ranges, MarkType} from "./base";
+import {advance_cursor_head} from "./cursor";
+import {mark_ranges, MarkType} from "../edit-logic";
 
 export function text_delete(cursor_range: EditorEditChange, ranges: CriticMarkupRanges, offset: number,
                             backwards_delete: boolean, group_delete: boolean, state: EditorState,
                             delete_type: MarkType, cursor_options: CursorOptionsMap,
-                            bracket_options: BracketOptionsMap,
-                            metadata_fields?: MetadataFields, metadata_merge?: MetadataDifferenceOptions):
+                            bracket_options: BracketOptionsMap, metadata_fields?: MetadataFields):
     OperationReturn {
     let cursor_from = cursor_range.from;
     let cursor_to = cursor_range.to;

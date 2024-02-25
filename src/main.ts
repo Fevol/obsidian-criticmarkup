@@ -177,7 +177,7 @@ export default class CommentatorPlugin extends Plugin {
 		// this.registerEvent(file_view_modes);
 
 		const commands = [
-			...suggestion_commands,
+			...suggestion_commands(this.settings),
 			...editor_commands,
 			...application_commmands(this),
 		];
