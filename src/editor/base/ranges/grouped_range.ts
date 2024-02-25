@@ -178,7 +178,7 @@ export class CriticMarkupRanges {
 		for (const range of ranges) {
 			if (prev_range !== -1)
 				output += str.slice(prev_range, range.from);
-			output += range.unwrap_slice(Math.max(0, from - range.from), to - range.from);
+			output += range.unwrap_slice(Math.max(0, from), to);
 			prev_range = range.to;
 		}
 

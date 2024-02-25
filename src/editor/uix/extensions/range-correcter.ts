@@ -7,6 +7,11 @@ import { rangeParser, SuggestionType } from '../../base';
  * to text that is not part of the range (due to CM shenanigans)
  */
 export const rangeCorrecter = EditorState.transactionFilter.of(tr => {
+	// FIXME: Breaks in following case
+	// 	In ad{~~{"author":"Fevol","time":1708879304}@@dition to document files, metadata is used for:
+	//
+	// 	- videos~>audio~~}
+	// 	- audio files
 	if (tr.isUserEvent('select')) {
 		const previous_selection = tr.startState.selection.main, current_selection = tr.selection!.main;
 

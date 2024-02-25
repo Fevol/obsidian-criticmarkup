@@ -1,6 +1,6 @@
 import {ChangeSet} from '@codemirror/state';
 import {CM_All_Brackets, type STRING_SUGGESTION_TYPE, type SuggestionType} from './definitions';
-import type {EditorChange} from '../edit-operations';
+import type {EditorChange} from '../edit-handler';
 import {type CommentRange} from './types';
 import {RANGE_CURSOR_MOVEMENT_OPTION} from "../../../types";
 
@@ -65,6 +65,10 @@ export abstract class CriticMarkupRange {
 
 	get full_text() {
 		return this.text + this.replies.map(reply => reply.text).join('');
+	}
+
+	get node_front() {
+		return this.metadata ? this.metadata - 1 : this.from;
 	}
 
 	remove_metadata(): EditorChange[] {
@@ -160,6 +164,11 @@ export abstract class CriticMarkupRange {
 	}
 
 	unwrap_slice(from: number, to: number) {
+		const front = this.metadata ?? this.from;
+		from -= front;
+		to -= front;
+		if (to <= 0 || from === to) return '';
+
 		return this.text.slice(Math.max(3, from), Math.min(this.text.length - 3, to));
 	}
 

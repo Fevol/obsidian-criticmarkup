@@ -16,7 +16,7 @@ export class SubstitutionRange extends CriticMarkupRange {
 	}
 
 	get char_middle() {
-		return this.middle - this.from;
+		return this.middle - this.node_front;
 	}
 
 	num_ignored_chars(from: number, to: number): number {
@@ -75,6 +75,11 @@ export class SubstitutionRange extends CriticMarkupRange {
 	}
 
 	unwrap_slice(from: number, to: number) {
+		const front = this.metadata ?? this.from;
+		from -= front;
+		to -= front;
+		if (to <= 0 || from === to) return '';
+
 		if (from >= this.char_middle)
 			return this.text.slice(Math.max(this.char_middle + 2, from), Math.min(this.text.length - 3, to));
 		if (to <= this.char_middle)

@@ -13,7 +13,7 @@ export const rangeParser: StateField<{tree: Tree, fragments: readonly TreeFragme
 		const text = state.doc.toString();
 		const tree = criticmarkupLanguage.parser.parse(text);
 		const fragments = TreeFragment.addTree(tree);
-		const ranges = rangesInSelection(tree, text);
+		const ranges = rangesInText(tree, text);
 
 		return { tree, ranges, fragments }
 	},
@@ -31,7 +31,7 @@ export const rangeParser: StateField<{tree: Tree, fragments: readonly TreeFragme
 		const text = tr.state.doc.toString();
 		const tree = criticmarkupLanguage.parser.parse(text, fragments);
 		fragments = TreeFragment.addTree(tree, fragments);
-		const ranges = rangesInSelection(tree, text);
+		const ranges = rangesInText(tree, text);
 
 
 		return { tree, ranges, fragments }
@@ -43,7 +43,7 @@ function constructRangeFromSyntaxNode(range: SyntaxNode, text: string) {
 	const metadata = range.firstChild?.type.name.startsWith('MDSep') ? range.firstChild!.from : undefined;
 	let middle = undefined;
 	if (range.type.name === 'Substitution') {
-		const child = (metadata ? range.childAfter(2) : range.firstChild);
+		const child = (metadata ? range.firstChild?.nextSibling : range.firstChild);
 		if (!child || child.type.name !== "MSub") return;
 		middle = child.from;
 	}
@@ -51,7 +51,7 @@ function constructRangeFromSyntaxNode(range: SyntaxNode, text: string) {
 	return constructRange(range.from, range.to, range.type.name, text.slice(range.from, range.to), middle, metadata);
 }
 
-export function rangesInSelection(tree: Tree, text: string) {
+export function rangesInText(tree: Tree, text: string) {
 	const ranges: CriticMarkupRange[] = [];
 
 	let previous_regular_range: CriticMarkupRange | undefined = undefined;
@@ -90,7 +90,7 @@ export function selectionContainsRanges(state: EditorState) {
 
 export function getRangesInText(text: string) {
 	const tree = criticmarkupLanguage.parser.parse(text);
-	return rangesInSelection(tree, text);
+	return rangesInText(tree, text);
 }
 
 export function constructRange(from: number, to: number, type: string, text: string, middle?: number, metadata?: number) {
