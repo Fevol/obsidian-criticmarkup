@@ -18,30 +18,42 @@ under `Extensions > Plugin Advanced > Commentator`, you can report bugs there, o
 
 ### Parser
 - [X] Parsing of CriticMarkup syntax (see [CriticMarkup parser library](https://github.com/Fevol/criticmarkup-parser/))
-- [ ] Parsing of annotations and extended syntax (see **Syntax**)
+- [X] Parsing of annotations and extended syntax (see **Syntax**)
+- [ ] Improving resilience to invalid markup
 
 ### UIX
+#### Commands
 - [X] Mark selection as `Insertion`/`Deletion`/...
 - [X] Accepting/Rejecting all changes in document
   - [X] Via command palette (entire document/selection)
   - [X] Via context menu (selection)
   - [X] Via gutter markings (line)
+
+
+#### Extensions
 - [X] Auto-close critic-markup brackets when typing
 - [ ] Automatically correct invalid markup
 - [ ] Automatically simplify dangling and (partially) empty markup
+
+
+#### Suggestion View
 - [X] Vault-wide index of all suggestions and comments
   - [X] Automatically create/re-synchronize on vault opening
-  - [X] Stays up-to-date with changes in vault
+  - [X] Keep up-to-date with immediate changes in vault
 - [X] Custom view for viewing suggestions and comments over entire vault
+  - [X] Metadata rendering
   - [ ] Filter by recency
   - [ ] Filter by author (see also custom syntax)
-  - [ ] Performance improvements
-  - [ ] UIX/Scrolling improvements
+  - [X] Performance improvements
+  - [X] UIX/Scrolling improvements
   - [X] Accept/Close selection of suggestions and comments
+
+#### Editor
 - [X] Preview of `Accept/Reject` commands in editor
 - [X] Toggling suggestion mode on/off in editor
 - [ ] Toggling comment mode on/off in editor
 - [ ] Integration of toggles for suggestion mode, preview and comment mode with other community plugins
+- [ ] Specify suggestion/comment-only mode in frontmatter (based on authorship)
 
 ### Rendering
 - [X] Rendering of markup in Live Preview
@@ -51,22 +63,20 @@ under `Extensions > Plugin Advanced > Commentator`, you can report bugs there, o
   - [X] On hover in document
 
 ### Syntax
-- [ ] Extend CriticMarkup syntax to allow for authorship and timestamp annotation
-- [ ] Extend `Comment` markup to support comment threads
+- [X] Extend CriticMarkup syntax to allow for authorship and timestamp annotation
+- [X] Extend `Comment` markup to support comment threads
 - [ ] Allow custom highlight colours for `Highlight` markup
 
 
 ### Suggestion Mode
 
-- [X] Marking **insertion** actions as `{++insertion++}`
-- [X] Marking **deletion** actions as `{--deletion--}`
-- [X] Marking **replacement** actions as `{~~deletion~>insertion~~}`
-- [X] Smooth cursor movement through markup
-  - [ ] Support different options for cursor movement (always stop when markup encountered, ...)
+- [X] Converting edit operations into appropriate markings
+- [ ] Correct cursor placement through edit and cursor operations
+  - [X] Support different options for cursor movement (always stop when markup encountered, ...)
   - [ ] Full Vim Support 
 - [ ] Toggle sequential CM state updating for improved multi-cursor support when inserting/deleting
 
 ### Comment Mode
 - [ ] Add comments to selection
-- [ ] Smooth cursor movement through markup
+- [X] Smooth cursor movement through markup
 
