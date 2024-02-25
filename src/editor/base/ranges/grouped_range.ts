@@ -2,7 +2,7 @@ import { type ChangeSet, Text } from '@codemirror/state';
 
 import { type CriticMarkupRange } from './base_range';
 
-// TODO: Convert this into a B+ tree for efficient range retrieval?
+// TODO: Convert this into a segment tree for efficient retrieval
 // TODO: This tree should be incrementally maintained as document updates occur, rather than being constructed whenever I require all ranges
 // TODO: For efficiency reasons, use reversed for loops instead of .slice().reverse().find()
 export class CriticMarkupRanges {
@@ -76,7 +76,7 @@ export class CriticMarkupRanges {
 	}
 
 	range_directly_adjacent_to_cursor(cursor: number, left: boolean) {
-		return (left ? this.ranges.slice().reverse() : this.ranges).find(range => range.cursor_inside(cursor));
+		return (left ? this.ranges : this.ranges.slice().reverse()).find(range => range.cursor_inside(cursor));
 	}
 
 

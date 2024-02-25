@@ -186,7 +186,6 @@ export default class CommentatorPlugin extends Plugin {
 		for (const command of commands)
 			this.addCommand(command);
 
-
 		this.remove_monkeys.push(around(this.app.plugins, {
 			uninstallPlugin: (oldMethod) => {
 				return async (id: string) => {
@@ -323,7 +322,7 @@ export default class CommentatorPlugin extends Plugin {
 	async activateView() {
 		this.app.workspace.detachLeavesOfType(CRITICMARKUP_VIEW);
 
-		await this.app.workspace.getRightLeaf(false).setViewState({
+		await this.app.workspace.getRightLeaf(false)!.setViewState({
 			type: CRITICMARKUP_VIEW,
 			active: true,
 		});

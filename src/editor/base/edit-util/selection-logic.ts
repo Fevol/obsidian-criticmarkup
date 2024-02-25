@@ -49,7 +49,7 @@ export function getEditorRanges(selection: EditorSelection, changes: ChangeSet, 
 		changed_ranges.push({
 			from: fromA,
 			to: toA,
-			head: fromA === fromB ? toA : fromA,
+			anchor: selection.ranges[i].anchor,
 			offset: {
 				removed: toA - fromA,
 				added: toB - fromB,
@@ -59,7 +59,10 @@ export function getEditorRanges(selection: EditorSelection, changes: ChangeSet, 
 			selection: selection.ranges[i].anchor !== selection.ranges[i].head,
 		});
 
-		i++;
+		// All user-edits map changes one-to-one with selections, commands can have multiple selections per change
+		// TODO: Check implications
+		if (i < selection.ranges.length - 1)
+			i++;
 	});
 
 

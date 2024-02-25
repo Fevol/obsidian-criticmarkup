@@ -360,6 +360,6 @@ export abstract class CriticMarkupRange {
 	 * @param cursor Cursor position to split at
 	 */
 	split_range(cursor: number): [string, string] {
-		return [this.text.slice(-3), this.text.slice(0, 3) + JSON.stringify(this.fields) + '@@'];
+		return [this.text.slice(-3), this.text.slice(0, 3) + (this.metadata ? JSON.stringify(this.fields) + '@@' : '')];
 	}
 }

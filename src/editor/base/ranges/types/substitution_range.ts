@@ -40,6 +40,26 @@ export class SubstitutionRange extends CriticMarkupRange {
 		];
 	}
 
+	unwrap_slice_parts_inverted(from: number, to: number) {
+		from = Math.max(0, from);
+
+		if (to <= 0) return this.unwrap_parts();
+		if (to <= this.char_middle)
+			return [
+				this.text.slice(3, from) + this.text.slice(to, this.char_middle),
+				this.text.slice(this.char_middle + 2, -3),
+			];
+		if (from >= this.char_middle + 2)
+			return [
+				this.text.slice(3, this.char_middle),
+				this.text.slice(this.char_middle + 2, from) + this.text.slice(to, -3),
+			];
+		return [
+			this.text.slice(3, from),
+			this.text.slice(to, -3),
+		];
+	}
+
 	unwrap_parts_bracket(left: boolean, offset = 0) {
 		if (left) {
 			return [
@@ -74,6 +94,10 @@ export class SubstitutionRange extends CriticMarkupRange {
 
 	touches_separator(cursor: number, left_loose = false, right_loose = false) {
 		return cursor + (left_loose ? 1 : 0) >= this.middle && cursor - (right_loose ? 0 : 1) <= this.middle + 2;
+	}
+
+	contains_separator(from: number, to: number) {
+		return from <= this.middle + 2 && to >= this.middle;
 	}
 
 	cursor_move_outside_dir(cursor: number, left: boolean) {
@@ -184,7 +208,7 @@ export class SubstitutionRange extends CriticMarkupRange {
 		if (cursor <= this.middle)
 			range[0] = CM_All_Brackets.substitution[1] + range[0];
 		else
-			range[1] = range[1] + CM_All_Brackets.substitution[2];
+			range[1] = range[1] + CM_All_Brackets.substitution[1];
 		return range;
 	}
 

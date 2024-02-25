@@ -8,7 +8,6 @@ import {
 	is_forward_movement, MetadataFields,
 	rangeParser,
 	SuggestionType,
-	text_replace
 } from '../../../base';
 
 
@@ -18,15 +17,12 @@ import {
 	MetadataDifferenceOptions,
 	text_insert
 } from "../../../base/suggestion-handler/insert";
-import {
-	DELETE_OPTION,
-	text_delete
-} from "../../../base/suggestion-handler/delete";
+import { text_delete } from "../../../base/suggestion-handler/delete";
 
 import {latest_keypress} from "../keypress-catcher";
 import {Notice} from "obsidian";
-import {types} from "sass";
-import Boolean = types.Boolean;
+import {MarkAction} from "../../../base/suggestion-handler/base";
+import {text_replace} from "../../../base/suggestion-handler/replace";
 
 
 enum OperationType {
@@ -174,6 +170,8 @@ function applySuggestion(tr: Transaction, settings: PluginSettings): Transaction
 		if (Object.keys(metadata).length === 0)
 			metadata = undefined;
 
+		const alt_mode = false;
+
 		if (operation_type === OperationType.INSERTION) {
 			let offset = 0;
 
@@ -182,8 +180,11 @@ function applySuggestion(tr: Transaction, settings: PluginSettings): Transaction
 				// 	Solutions:
 				//		- Sequentially update the state with each editorchange (easiest)
 				//		- Update ranges object with new changed/new ranges
-				const insert_operation = text_insert(range, ranges, offset, SuggestionType.ADDITION,
-					settings.suggestion_mode_operations.insert_text, metadata, metadatamergeoptions);
+				const insert_operation = text_insert(range, ranges, offset, tr.startState, alt_mode ? MarkAction.REGULAR : SuggestionType.ADDITION, metadata);
+				// TODO: Insert text WITHOUT SPLITTING: get range type under cursor and pass as insert type
+
+
+
 				if (insert_operation.debug) {
 					if (insert_operation.debug.range) {
 						const type = insert_operation.debug.metadata_type !== undefined ? 'metadata' : 'range';
@@ -196,41 +197,30 @@ function applySuggestion(tr: Transaction, settings: PluginSettings): Transaction
 					selections.push(insert_operation.selection!);
 					offset = insert_operation.offset!;
 				}
-				// const insert_operation = text_insert(range, ranges, offset);
-				// changes.push(...insert_operation.changes);
-				// selections.push(insert_operation.selection);
-				// offset = insert_operation.offset;
 			}
 		} else if (operation_type === OperationType.DELETION) {
-			const userEvents = getUserEvents(tr);
 			const backwards_delete = latest_keypress?.key === "Backspace";
 			const group_delete = latest_keypress?.ctrlKey!;
 
-			const delete_options = {
-				[SuggestionType.ADDITION]: DELETE_OPTION.REGULAR,
-				[SuggestionType.DELETION]: DELETE_OPTION.REGULAR,
-				[SuggestionType.SUBSTITUTION]: DELETE_OPTION.REGULAR,
-				[SuggestionType.HIGHLIGHT]: DELETE_OPTION.REGULAR,
-				[SuggestionType.COMMENT]: DELETE_OPTION.REGULAR,
-			}
-
-
-
 			let offset = 0;
 			for (const range of changed_ranges) {
+				// TODO: Delete text WITHOUT MARKING: pass MarkAction.REMOVE as delete type
 				const delete_operation = text_delete(range, ranges, offset, backwards_delete, group_delete, tr.startState,
-					SuggestionType.DELETION, delete_options, settings.suggestion_mode_operations.cursor_movement, settings.suggestion_mode_operations.bracket_movement,
+					alt_mode ? MarkAction.REGULAR : SuggestionType.DELETION, settings.suggestion_mode_operations.cursor_movement, settings.suggestion_mode_operations.bracket_movement,
 					metadata, metadatamergeoptions);
 
 				// const delete_operation = text_delete(range, ranges, offset, tr.startState.doc, backwards_delete, group_delete, delete_selection, tr.startState);
-				// changes.push(...delete_operation.changes!);
-				// selections.push(delete_operation.selection!);
-				// offset = delete_operation.offset!;
+				changes.push(...delete_operation.changes!);
+				selections.push(delete_operation.selection!);
+				offset = delete_operation.offset!;
 			}
 		} else if (operation_type === OperationType.REPLACEMENT) {
+			const backwards_delete = latest_keypress?.key === "Backspace";
+
 			let offset = 0;
 			for (const range of changed_ranges) {
-				const replace_operation = text_replace(range, ranges, offset, tr.startState.doc);
+				const replace_operation = text_replace(range, ranges, offset, backwards_delete, false, tr.startState,
+					SuggestionType.SUBSTITUTION, metadata, metadatamergeoptions);
 				changes.push(...replace_operation.changes!);
 				selections.push(replace_operation.selection!);
 				offset = replace_operation.offset!;
