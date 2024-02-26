@@ -16,7 +16,13 @@ export class SubstitutionRange extends CriticMarkupRange {
 	}
 
 	get char_middle() {
-		return this.middle - this.node_front;
+		return this.middle - this.range_front;
+	}
+
+	range_type(from: number, to: number) {
+		return to <= this.middle + 2 ? SuggestionType.DELETION :
+			   from >= this.middle ? SuggestionType.ADDITION :
+				   					SuggestionType.SUBSTITUTION;
 	}
 
 	num_ignored_chars(from: number, to: number): number {
@@ -39,8 +45,25 @@ export class SubstitutionRange extends CriticMarkupRange {
 			this.text.slice(this.char_middle + 2, -3),
 		];
 	}
+	unwrap_slice_parts(from: number, to: number): [string, string] {
+		from -= this.range_front;
+		to -= this.range_front;
+		if (to <= 0 || from === to) return ['', ''];
+
+		if (to <= this.char_middle)
+			return [this.text.slice(3, to), this.text.slice(this.char_middle + 2, -3)];
+		if (from >= this.char_middle + 2)
+			return [this.text.slice(3, this.char_middle), this.text.slice(from, -3)];
+		return [
+			this.text.slice(0, from),
+			this.text.slice(to, -3),
+		]
+	}
 
 	unwrap_slice_parts_inverted(from: number, to: number) {
+		from -= this.range_front;
+		to -= this.range_front;
+
 		from = Math.max(0, from);
 
 		if (to <= 0) return this.unwrap_parts();
@@ -75,9 +98,8 @@ export class SubstitutionRange extends CriticMarkupRange {
 	}
 
 	unwrap_slice(from: number, to: number) {
-		const front = this.metadata ?? this.from;
-		from -= front;
-		to -= front;
+		from -= this.range_front;
+		to -= this.range_front;
 		if (to <= 0 || from === to) return '';
 
 		if (from >= this.char_middle)

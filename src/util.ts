@@ -11,8 +11,24 @@ export function objectDifference<T>(new_obj: T, old_obj: T): Partial<T> {
     return diff;
 }
 
-export function objectIntersection(o1: object, o2: object) {
+export function objectIntersection(o1: object, o2: object): string[] {
     return Object.keys(o1).filter({}.hasOwnProperty.bind(o2));
+}
+
+export function arrayIntersection<T, U extends T>(arr1: T[], arr2: U[]): (T | U)[] {
+    return arr1.filter(x => arr2.includes(x as U));
+}
+
+// TODO: Specify overlap behavior of T and U (extends is not sufficient)
+export function arrayDifference<T, U extends T>(arr1: T[], arr2: U[]): T[] {
+    return arr1.filter(x => !arr2.includes(x as U));
+}
+
+export function arraySymmetricDifference<T, U extends T>(arr1: T[], ...arrs: U[][]): (T | U)[] {
+    return arrs.reduce((acc, arr) => [
+        ...arrayDifference(acc, arr),
+        ...arrayDifference(arr, acc as U[]),
+    ], arr1);
 }
 
 export function indexOfRegex(string: string, regex: RegExp, fromIndex?: number) {

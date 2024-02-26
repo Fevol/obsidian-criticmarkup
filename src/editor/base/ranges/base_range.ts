@@ -67,8 +67,12 @@ export abstract class CriticMarkupRange {
 		return this.text + this.replies.map(reply => reply.text).join('');
 	}
 
-	get node_front() {
+	get range_front() {
 		return this.metadata ? this.metadata - 1 : this.from;
+	}
+
+	range_type(from: number, to: number): SuggestionType {
+		return this.type;
 	}
 
 	remove_metadata(): EditorChange[] {
@@ -164,9 +168,8 @@ export abstract class CriticMarkupRange {
 	}
 
 	unwrap_slice(from: number, to: number) {
-		const front = this.metadata ?? this.from;
-		from -= front;
-		to -= front;
+		from -= this.range_front;
+		to -= this.range_front;
 		if (to <= 0 || from === to) return '';
 
 		return this.text.slice(Math.max(3, from), Math.min(this.text.length - 3, to));
