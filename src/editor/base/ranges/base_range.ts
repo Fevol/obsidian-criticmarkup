@@ -362,6 +362,8 @@ export abstract class CriticMarkupRange {
 	apply_offset(offset: number) {
 		this.from += offset;
 		this.to += offset;
+		if (this.metadata !== undefined) this.metadata += offset;
+
 		return this;
 	}
 

@@ -16,6 +16,7 @@
   "license": "MIT",
   "devDependencies": {
     "@codemirror/language": "git://github.com/lishid/cm-language.git#main",
+    "@flatten-js/interval-tree": "^1.1.2",
     "@lezer/generator": "^1.6.0",
     "@lezer/lr": "^1.3.14",
     "@tsconfig/svelte": "^5.0.2",
@@ -51,6 +52,6 @@
     "typescript": "^5.3.3"
   },
   "dependencies": {
-      "@types/obsidian-typings": "file:typings"
+    "@types/obsidian-typings": "file:typings"
   }
 }

@@ -1,15 +1,38 @@
 import { type ChangeSet, Text } from '@codemirror/state';
-
 import { type CriticMarkupRange } from './base_range';
+import IntervalTree, {Node} from "@flatten-js/interval-tree";
 
-// TODO: Convert this into a segment tree for efficient retrieval
-// TODO: This tree should be incrementally maintained as document updates occur, rather than being constructed whenever I require all ranges
-// TODO: For efficiency reasons, use reversed for loops instead of .slice().reverse().find()
+
+IntervalTree.prototype.tree_search_nearest_backward = function <T>(node: Node<T>, search_node: Node<any>): Node<T> | null {
+	let best;
+	let curr = node;
+	while (curr && curr !== this.nil_node) {
+		if (!curr.less_than(search_node)) {
+			if (curr.intersect(search_node)) {
+				best = curr;
+				curr = curr.right;
+			} else {
+				curr = curr.left;
+			}
+		} else {
+			if (!best || !curr.less_than(best)) best = curr;
+			curr = curr.right;
+		}
+	}
+	return best || null;
+
+}
+
+
 export class CriticMarkupRanges {
 	ranges: CriticMarkupRange[];
+	tree: IntervalTree<CriticMarkupRange>;
 
 	constructor(ranges: CriticMarkupRange[]) {
 		this.ranges = ranges;
+		this.tree = new IntervalTree();
+		for (const range of ranges)
+			this.tree.insert([range.from, range.to], range);
 	}
 
 	empty() {
@@ -23,62 +46,14 @@ export class CriticMarkupRanges {
 	}
 
 	// Right breaks ties if cursor between two ranges, defaults to the left range
-	at_cursor(cursor: number, strict = false, right = false) {
-		return right ? this.ranges.slice().reverse().find(range => range.encloses(cursor, strict))
-			: this.ranges.find(range => range.encloses(cursor, strict));
+	at_cursor(cursor: number, right = false): CriticMarkupRange | undefined {
+		const search = this.tree.search([cursor, cursor]);
+		return search.length ? (right && search.length > 1) ? search[1] : search[0] : undefined;
 	}
 
-	between_cursor(cursor_start: number, cursor_end: number, left: boolean, loose = false) {
-		const ranges = [];
-		if (!left) {
-			const first_range = this.ranges.findIndex(range => range.from >= cursor_start);
-			for (let i = first_range; i < this.ranges.length; i++) {
-				const range = this.ranges[i];
-				if (loose ? range.from > cursor_end : range.from >= cursor_end)
-					break;
-				ranges.push(range);
-			}
-		} else {
-			const last_range = this.ranges.reverse().slice().findIndex(range => range.to <= cursor_start);
-			for (let i = last_range; i >= 0; i--) {
-				const range = this.ranges[i];
-				if (loose ? range.to < cursor_end : range.to <= cursor_end)
-					break;
-				ranges.push(range);
-			}
-		}
-		return ranges;
+	contains_range(from: number, to: number): boolean {
+		return this.tree.intersect_any([from, to]);
 	}
-
-	contains_range(from: number, to: number) {
-		return this.ranges.some(range => range.partially_in_range(from, to));
-	}
-
-	range_passes_range(from: number, to: number, left: boolean) {
-		if (left)
-			return this.ranges.slice().reverse().find(range => (from >= range.to && range.to >= to) || (from > range.from && range.from >= to));
-		else
-			return this.ranges.find(range => (from <= range.from && range.from <= to) || (from < range.to && range.to <= to));
-	}
-
-	between_two_ranges(cursor: number) {
-		// Might be a bit more efficient, but only used for a test case a.t.m.
-		const left_range = this.at_cursor(cursor, false, true);
-		const right_range = this.at_cursor(cursor, false, false);
-		return left_range && right_range && left_range.to === right_range.from;
-	}
-
-	near_cursor(cursor: number, left: boolean) {
-		if (left)
-			return this.ranges.slice().reverse().find(range => range.to <= cursor);
-		else
-			return this.ranges.find(range => cursor <= range.from);
-	}
-
-	range_directly_adjacent_to_cursor(cursor: number, left: boolean) {
-		return (left ? this.ranges : this.ranges.slice().reverse()).find(range => range.cursor_inside(cursor));
-	}
-
 
 	/**
 	 * Get the range that is (not directly) adjacent to the cursor in given direction
@@ -88,20 +63,16 @@ export class CriticMarkupRanges {
 	 * @param include_edge - Whether to include the edges of the range
 	 */
 	range_adjacent_to_cursor(cursor: number, left: boolean, loose = false, include_edge = false) {
+		// Array-based version is consistently faster than tree-based version (only exception: stresstest on end of note)
+		// const node = (left ? this.tree.tree_search_nearest_backward(this.tree.root!, new Node([cursor, cursor])) :
+		// 												this.tree.tree_search_nearest_forward(this.tree.root!, new Node([cursor, cursor])))?.item.value;
+
 		const ranges = (left ? this.ranges.slice().reverse() : this.ranges);
 		if (include_edge)
 			return ranges.find(range => left ? ((loose ? range.from : range.to) < cursor) : (cursor < (loose ? range.to : range.from)));
-		return ranges.find(range => left ? ((loose ? range.from : range.to) <= cursor) : (cursor <= (loose ? range.to : range.from)));
+		else
+			return ranges.find(range => left ? ((loose ? range.from : range.to) <= cursor) : (cursor <= (loose ? range.to : range.from)));
 	}
-
-	/**
-	 * Get the ranges that are directly adjacent to the cursor in both left and right direction
-	 * @param cursor
-	 */
-	ranges_directly_adjacent_to_cursor(cursor: number): [CriticMarkupRange | undefined, CriticMarkupRange | undefined] {
-		return [this.range_directly_adjacent_to_cursor(cursor, true), this.range_directly_adjacent_to_cursor(cursor, false)];
-	}
-
 
 	adjacent_range(range: CriticMarkupRange, left: boolean, directly_adjacent = false) {
 		const range_idx = this.ranges.findIndex(n => n === range);
@@ -120,70 +91,36 @@ export class CriticMarkupRanges {
 		return undefined;
 	}
 
-	ranges_in_range(start: number, end: number, partial = true) {
-		if (partial)
-			return this.ranges.filter(range => range.partially_in_range(start, end));
-		return this.ranges.filter(range => range.fully_in_range(start, end));
-	}
-
-	filter_range(start: number, end: number, partial = true) {
-		return new CriticMarkupRanges(this.ranges_in_range(start, end, partial));
-	}
-
-	get_sibling(range: CriticMarkupRange, left: boolean) {
-		const index = this.ranges.indexOf(range);
-		if (left)
-			return this.ranges[index - 1];
-		return this.ranges[index + 1];
-	}
-
-	num_ignored_chars_range(start: number, to: number, ranges: CriticMarkupRange[] | null = null) {
-		if (!ranges)
-			ranges = this.ranges_in_range(start, to, true);
-		if (!ranges.length) return 0;
-		let left_range: CriticMarkupRange | undefined, right_range: CriticMarkupRange | undefined;
-		if (ranges[0].encloses(start))
-			left_range = ranges.shift();
-		if (ranges[ranges.length - 1]?.encloses(to))
-			right_range = ranges.pop();
-
-		return {
-			num_ignored_chars: ranges.reduce((acc, range) => acc + range.num_ignore_chars, 0),
-			left_range, right_range,
-		};
-
-
+	ranges_in_range(start: number, end: number) {
+		return this.tree.search([start, end]) as CriticMarkupRange[];
 	}
 
 	unwrap_in_range(doc: Text, from = 0, to = doc.length, ranges: CriticMarkupRange[] | null = null):
 		{output: string, from: number, to: number, front_range?: CriticMarkupRange, back_range?: CriticMarkupRange} {
-		const str = doc.toString();
-
-		const string_in_range = str.slice(from, to);
 		let front_range: undefined | CriticMarkupRange, back_range: undefined | CriticMarkupRange;
 
 		if (!ranges)
-			ranges = this.ranges_in_range(from, to, true);
+			ranges = this.ranges_in_range(from, to);
 
 		if (ranges.length === 0)
-			return { output: string_in_range, from, to };
+			return { output: doc.sliceString(from, to), from, to };
 
 		let output = '';
 		if (from < ranges[0].from)
-			output += str.slice(from, ranges[0].from);
+			output += doc.sliceString(from, ranges[0].from);
 		else
 			front_range = ranges[0];
 
 		let prev_range = -1;
 		for (const range of ranges) {
 			if (prev_range !== -1)
-				output += str.slice(prev_range, range.from);
+				output += doc.sliceString(prev_range, range.from);
 			output += range.unwrap_slice(Math.max(0, from), to);
 			prev_range = range.to;
 		}
 
 		if (to >= ranges.at(-1)!.to)
-			output += str.slice(ranges.at(-1)!.to, to);
+			output += doc.sliceString(ranges.at(-1)!.to, to);
 		else
 			back_range = ranges.at(-1)!;
 

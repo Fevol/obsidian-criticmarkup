@@ -27,7 +27,9 @@ export async function postProcess(el: HTMLElement, ctx: MarkdownPostProcessorCon
 			start_char = !lines.lineStart ? 0 : endlines[lines.lineStart - 1] + 1;
 			end_char = endlines[lines.lineEnd] ?? lines.text.length;
 
-			ranges_in_range = all_ranges.ranges_in_range(start_char, end_char, true);
+			// TODO: Compare with converting to IntervalTree and getting range (probably slower)
+			// ranges_in_range = all_ranges.ranges_in_range(start_char, end_char, true);
+			ranges_in_range = all_ranges.filter(range => range.partially_in_range(start_char!, end_char!));
 
 			if (!ranges_in_range.length) return;
 
@@ -39,7 +41,9 @@ export async function postProcess(el: HTMLElement, ctx: MarkdownPostProcessorCon
 				if (range.type === SuggestionType.SUBSTITUTION) {
 					// Determines whether range belongs to the left or right part of the substitution
 					if (range.part_encloses_range(start_char, end_char, true) && (in_range = true, left = true)) {
+						/* ... */
 					} else if (range.part_encloses_range(start_char, end_char, false) && (in_range = true, left = false)) {
+						/* ... */
 					}
 				} else {
 					in_range = range.encloses_range(start_char, end_char);
@@ -86,7 +90,7 @@ export async function postProcess(el: HTMLElement, ctx: MarkdownPostProcessorCon
 
 	// Part of the block is one or more CriticMarkup ranges
 
-	const element_ranges = getRangesInText(element_contents).ranges;
+	const element_ranges = getRangesInText(element_contents);
 
 	// If markup exists in heading or similar, the text might get duplicated into a data-... field
 	// Fix: if two duplicate ranges adjacent to each other, remove the former

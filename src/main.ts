@@ -65,8 +65,7 @@ export default class CommentatorPlugin extends Plugin {
 		'Vault-wide cache for Commentator plugin',
 		() => [],
 		async (file, state?: EditorState) => {
-			return state ? state.field(rangeParser).ranges.ranges :
-				getRangesInText(await this.app.vault.cachedRead(file as TFile)).ranges;
+			return state ? state.field(rangeParser).ranges.ranges : getRangesInText(await this.app.vault.cachedRead(file as TFile));
 		},
 		this.settings.database_workers,
 		(data: CriticMarkupRange[]) => {
@@ -133,6 +132,9 @@ export default class CommentatorPlugin extends Plugin {
 			get ranges() {
 				return app.workspace.activeEditor?.editor?.cm.state.field(rangeParser).ranges.ranges;
 			},
+			get ranges_tree() {
+				return app.workspace.activeEditor?.editor?.cm.state.field(rangeParser).ranges.tree;
+			}
 		};
 
 

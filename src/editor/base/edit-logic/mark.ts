@@ -153,10 +153,10 @@ export function create_range(inserted: string, deleted: string, affixes: [string
 }
 
 function mark_range(ranges: CriticMarkupRanges, text: Text, from: number, to: number, inserted: string, type: MarkType, metadata_fields?: MetadataFields): EditorChange | undefined {
-    const in_range = ranges.filter_range(from, to, true);
+    const in_range = ranges.ranges_in_range(from, to);
 
-    const left_range = in_range.range_directly_adjacent_to_cursor(from, true);
-    const right_range = in_range.range_directly_adjacent_to_cursor(to, false);
+    const left_range = ranges.at_cursor(from, true);
+    const right_range = ranges.at_cursor(to, false);
     const affixes: [string, string] = ["", ""];
 
     function split_left_range(force = false) {
@@ -218,7 +218,7 @@ function mark_range(ranges: CriticMarkupRanges, text: Text, from: number, to: nu
                 return {from: cursor, to: cursor, insert: inserted}
             }
         } else {
-            const contents = from === to ? "" : ranges.unwrap_in_range(text, from, to, in_range.ranges).output;
+            const contents = from === to ? "" : ranges.unwrap_in_range(text, from, to, in_range).output;
             if (contents) {
                 // TODO: Inserted always marked as regular (should this be the case, is this the user intention?)
                 //      Inconsistent with addition behaviour, where it is ALWAYS added into the nearest range
@@ -238,7 +238,7 @@ function mark_range(ranges: CriticMarkupRanges, text: Text, from: number, to: nu
     else if (type === MarkAction.CLEAR) {
         split_left_range();
         split_right_range();
-        const contents = from === to ? "" : ranges.unwrap_in_range(text, from, to, in_range.ranges).output;
+        const contents = from === to ? "" : ranges.unwrap_in_range(text, from, to, in_range).output;
         return {from, to, insert: affixes[0] + contents + affixes[1]};
     }
 
@@ -286,7 +286,7 @@ function mark_range(ranges: CriticMarkupRanges, text: Text, from: number, to: nu
                 return {from: left_range.from, to: left_range.to, insert: create_suggestion(inserted, contents, merge_result.merged_metadata)};
             }
         } else {
-            let contents = from === to ? "" : ranges.unwrap_in_range(text, from, to, in_range.ranges).output;
+            let contents = from === to ? "" : ranges.unwrap_in_range(text, from, to, in_range).output;
             if (!contents) {
                 if (type === SuggestionType.SUBSTITUTION)
                     type = SuggestionType.ADDITION;
@@ -349,6 +349,9 @@ export function mark_ranges(ranges: CriticMarkupRanges, text: Text, from: number
     const in_range = ranges.filter_range(from, to, true);
     const left_range = in_range.ranges.at(0);
     const right_range = in_range.ranges.at(-1);
+    const in_range = ranges.ranges_in_range(from, to);
+    const left_range = in_range.at(0);
+    const right_range = in_range.at(-1);
 
     if (left_range?.touches_left_bracket(from, true, true, true))
         from = left_range.from;
@@ -360,7 +363,7 @@ export function mark_ranges(ranges: CriticMarkupRanges, text: Text, from: number
     const range_operations: EditorChange[] = [];
 
     if (!force) {
-        for (const range of in_range.ranges) {
+        for (const range of in_range) {
             if (should_ignore_range(range, type, metadata_fields, METADATA_INCOMPATIBILITY)) {
                 if (last_range_start < range.from) {
                     const adj_type = type === SuggestionType.SUBSTITUTION ? SuggestionType.DELETION : type;
