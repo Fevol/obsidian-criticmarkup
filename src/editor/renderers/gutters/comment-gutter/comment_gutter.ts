@@ -28,7 +28,7 @@ const unfixGutters = Facet.define<boolean, boolean>({
 
 const activeGutters = Facet.define<Required<GutterConfig>>();
 
-class CommentGutterView extends GutterView {
+export class CommentGutterView extends GutterView {
 	constructor(view: EditorView) {
 		super(view, unfixGutters, activeGutters);
 	}
@@ -95,7 +95,11 @@ class CommentGutterView extends GutterView {
 		)
 
 		if (element) {
-			const marker = element.markers.find(marker => (marker as CommentMarker).comment_range.cursor_inside(position))! as CommentMarker;
+			const marker = element.markers.find(marker => {
+				return position >= (marker as CommentMarker).comment_range.from && position <= (marker as CommentMarker).comment_range.full_range_back
+			}) as CommentMarker | undefined;
+			if (!marker) return;
+
 			marker.focus_comment(index);
 		}
 	}

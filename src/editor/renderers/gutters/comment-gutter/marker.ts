@@ -56,15 +56,12 @@ export class CommentMarker extends GutterMarker {
 			const top = this.view.lineBlockAt(this.comment_range.from).top - 100;
 
 			setTimeout(() => {
-				// @ts-expect-error (Directly accessing function of unexported class)
 				this.view.plugin(commentGutter[1][0][0])!.moveGutter(this);
 				this.view.scrollDOM.scrollTo({ top, behavior: 'smooth'})
 			}, 200);
 		}
 
-		const comment_ranges_flattened = this.comment_range.attached_comment ?
-			this.comment_range.attached_comment.replies :
-			[this.comment_range, ...this.comment_range.replies];
+		const comment_ranges_flattened = this.comment_range.thread;
 
 		for (const range of comment_ranges_flattened) {
 			const comment = createDiv({ cls: 'criticmarkup-gutter-comment' });
@@ -115,21 +112,17 @@ export class CommentMarker extends GutterMarker {
 					item.setTitle("Reply to comment");
 					item.setIcon('reply');
 					item.onClick(() => {
-						const last_reply = this.comment_range.base_range.replies.length ?
-							this.comment_range.base_range.replies[this.comment_range.base_range.replies.length - 1] :
-							this.comment_range.base_range;
-
+						const cursor = this.comment_range.full_range_back;
 						this.view.dispatch({
 							changes: {
-								from: last_reply.to,
-								to: last_reply.to,
+								from: cursor,
+								to: cursor,
 								insert: "{>><<}"
 							},
 						});
 
 						setTimeout(() => {
-							// @ts-expect-error (Directly accessing function of unexported class)
-							this.view.plugin(commentGutter[1][0][0])!.focusCommentThread(this.comment_range.base_range.from + 1);
+							this.view.plugin(commentGutter[1][0][0])!.focusCommentThread(cursor + 1);
 						});
 					});
 				});

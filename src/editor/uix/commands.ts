@@ -90,7 +90,6 @@ export const editor_commands: ECommand[] = [
 				}],
 			}));
 			setTimeout(() => {
-				// @ts-expect-error (Directly accessing function of unexported class)
 				editor.cm.plugin(commentGutter[1][0][0])!.focusCommentThread(cursor + 1);
 			});
 		}

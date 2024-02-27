@@ -59,6 +59,10 @@ export abstract class CriticMarkupRange {
 		return this;
 	}
 
+	get thread(): CommentRange[] {
+		return this.replies;
+	}
+
 	get length() {
 		return this.to - this.from - 6;
 	}
@@ -69,6 +73,10 @@ export abstract class CriticMarkupRange {
 
 	get range_front() {
 		return this.metadata ? this.metadata - 1 : this.from;
+	}
+
+	get full_range_back(): number {
+		return this.thread.length ? this.thread[this.thread.length - 1].to : this.to;
 	}
 
 	range_type(from: number, to: number): SuggestionType {

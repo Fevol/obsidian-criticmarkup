@@ -87,7 +87,7 @@ export default class CommentatorPlugin extends Plugin {
 		if (this.settings.comment_style === 'icon' || this.settings.comment_style === 'block')
 			this.editorExtensions.push(commentRenderer(this.settings));
 		if (this.settings.comment_style === 'block')
-			this.editorExtensions.push(commentGutter);
+			this.editorExtensions.push(commentGutter as Extension[]);
 
 		if (this.settings.live_preview)
 			this.editorExtensions.push(markupRenderer(this.settings));

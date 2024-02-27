@@ -1,31 +1,35 @@
-import type { EventRef } from 'obsidian';
-import { acceptSuggestions, isCursor, rangeParser, rejectSuggestions, selectionContainsRanges } from '../base';
-import { commentGutter } from '../renderers/gutters';
+import type {EventRef} from 'obsidian';
+import {acceptSuggestions, isCursor, rangeParser, rejectSuggestions} from '../base';
+import {commentGutter} from '../renderers/gutters';
 
 export const cmenuCommands: EventRef =
 	app.workspace.on('editor-menu', (menu, editor) => {
+		const ranges = editor.cm.state.field(rangeParser).ranges;
 		menu.addItem((item) => {
 			item.setTitle("Add comment")
 				.setIcon('message-square')
 				.setSection('criticmarkup')
 				.onClick(() => {
-					// TODO: Replace by dedicated function for checking if selection etc
-					const cursor = editor.cm.state.selection.main.from;
+					let cursor = editor.cm.state.selection.main.head;
+					const range = ranges.at_cursor(cursor);
+					if (range)
+						cursor = range.full_range_back;
 					editor.cm.dispatch(editor.cm.state.update({
 						changes: {
 							from: cursor,
 							to: cursor,
-							insert: "{>><<}"
+							insert: '{>><<}',
 						},
 					}));
-					setTimeout(() => {
-						// @ts-expect-error (Directly accessing function of unexported class)
-						editor.cm.plugin(commentGutter[1][0][0])!.focusCommentThread(cursor + 1);
-					});
+					if (editor.cm.plugin(commentGutter[1][0][0])) {
+						setTimeout(() => {
+							editor.cm.plugin(commentGutter[1][0][0])!.focusCommentThread(cursor + 1);
+						});
+					}
 				});
 		});
 
-		if (selectionContainsRanges(editor.cm.state)) {
+		if (ranges.contains_range(editor.cm.state.selection.main.from, editor.cm.state.selection.main.to)) {
 			menu.addItem((item) => {
 				item.setTitle('Accept changes')
 					.setIcon('check')

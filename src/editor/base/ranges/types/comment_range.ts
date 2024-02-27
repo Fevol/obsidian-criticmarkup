@@ -9,6 +9,10 @@ export class CommentRange extends CriticMarkupRange {
 		return this.attached_comment || this;
 	}
 
+	get thread(): CommentRange[] {
+		return this.attached_comment ? this.attached_comment.replies : [this, ...this.replies];
+	}
+
 	attach_to_range(range: CriticMarkupRange) {
 		range.replies.push(this);
 		this.reply_depth = range.replies.length - (range.type === SuggestionType.COMMENT ? 0 : 1);
