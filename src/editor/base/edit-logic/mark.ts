@@ -345,10 +345,6 @@ function mark_range(ranges: CriticMarkupRanges, text: Text, from: number, to: nu
 
 
 export function mark_ranges(ranges: CriticMarkupRanges, text: Text, from: number, to: number, inserted: string, type: MarkType, metadata_fields?: MetadataFields, force = false): EditorChange[] {
-
-    const in_range = ranges.filter_range(from, to, true);
-    const left_range = in_range.ranges.at(0);
-    const right_range = in_range.ranges.at(-1);
     const in_range = ranges.ranges_in_range(from, to);
     const left_range = in_range.at(0);
     const right_range = in_range.at(-1);
