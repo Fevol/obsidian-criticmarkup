@@ -8,15 +8,24 @@
 </script>
 
 <SettingItem
-        name='Added metadata'
-        type='heading'
-/>
+        name='Add Metadata'
+        type='toggle'
+>
+    <Toggle
+        slot='control'
+        value={plugin.settings.enable_metadata}
+        onChange={(value) => {
+            plugin.settings.enable_metadata = value;
+            plugin.saveSettings();
+        }}
+    />
+</SettingItem>
+
+
 
 <SettingItem
         name='Enable Authorship'
-        notices={[
-		{ type: 'info', text: "Enable rendering and processing of author metadata" },
-	]}
+        description="Enable rendering and processing of author metadata"
         type='toggle'
 >
     <Toggle
@@ -63,9 +72,7 @@
 
 <SettingItem
         name='Enable Timestamp'
-        notices={[
-            { type: 'info', text: "Enable rendering and processing of timestamp metadata" },
-         ]}
+        description="Enable rendering and processing of timestamp metadata"
         type='toggle'
 >
     <Toggle
@@ -97,9 +104,7 @@
 
 <SettingItem
         name='Enable Completed'
-        notices={[
-            { type: 'info', text: "Enable rendering and processing of completed metadata" },
-         ]}
+        description="Enable rendering and processing of completed metadata"
         type='toggle'
 >
     <Toggle
@@ -131,9 +136,7 @@
 
 <SettingItem
         name='Enable Style'
-        notices={[
-            { type: 'info', text: "Enable applying style metadata to suggestions and comments" },
-         ]}
+        description="Enable rendering and processing of style metadata"
         type='toggle'
 >
     <Toggle
@@ -165,9 +168,7 @@
 
 <SettingItem
         name='Enable Color'
-        notices={[
-            { type: 'info', text: "Enable applying color metadata to suggestions and comments" },
-         ]}
+        description="Enable rendering and processing of color metadata"
         type='toggle'
 >
     <Toggle

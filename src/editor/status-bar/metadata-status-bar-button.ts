@@ -46,23 +46,23 @@ export class MetadataStatusBarButton {
 		menu.addItem((item) => {
 			item.setTitle('Add metadata');
 			item.setIcon('tags');
-			item.setChecked(this.plugin.settings.enable_metadata);
+			item.setChecked(this.plugin.settings.add_metadata);
 			item.onClick(async () => {
-				await this.plugin.setSetting('enable_metadata', !this.plugin.settings.enable_metadata);
-				item.setChecked(this.plugin.settings.enable_metadata);
+				await this.plugin.setSetting('add_metadata', !this.plugin.settings.add_metadata);
+				item.setChecked(this.plugin.settings.add_metadata);
 				menu.items.slice(1).forEach((item) => {
-					item.setDisabled(!this.plugin.settings.enable_metadata);
+					item.setDisabled(!this.plugin.settings.add_metadata);
 				});
 			});
 		});
 
 		for (const {icon, text, attribute} of this.metadata_settings_toggles) {
-			const setting = `enable_${attribute}_metadata` as keyof typeof this.plugin.settings;
+			const setting = `add_${attribute}_metadata` as keyof typeof this.plugin.settings;
 			menu.addItem((item) => {
 				item.setTitle(text);
 				item.setIcon(icon);
 				item.setChecked(this.plugin.settings[setting] as boolean);
-				item.setDisabled(!this.plugin.settings.enable_metadata);
+				item.setDisabled(!this.plugin.settings.add_metadata);
 				item.onClick(async () => {
 					await this.plugin.setSetting(setting, !this.plugin.settings[setting]);
 					// FIXME: After calling .setChecked(false) once, the icon will not show up again when calling .setChecked(true)
