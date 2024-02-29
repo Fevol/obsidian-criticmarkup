@@ -6,8 +6,9 @@ export class StatusBarButton {
 	index: number = 0;
 
 	constructor(private attribute: keyof typeof plugin.settings, private states: { icon: string, text: string }[],
-				private plugin: CommentatorPlugin) {
+				private plugin: CommentatorPlugin, render = false) {
 		this.index = +this.plugin.settings[this.attribute]!;
+		this.setRendering(render);
 	}
 
 	showMenu(e: MouseEvent) {
@@ -25,6 +26,22 @@ export class StatusBarButton {
 		menu.showAtMouseEvent(e);
 	}
 
+	setRendering(render?: boolean) {
+		if (render === undefined || render === !!this.button) return;
+
+		render ? this.renderButton() : this.detachButton();
+	}
+
+	updateButton(new_index?: number) {
+		if (new_index === undefined || new_index === this.index) return;
+
+		this.index = new_index;
+		if (!this.button) return;
+
+		const { icon, text } = this.states[this.index];
+		setIcon(this.button, icon);
+		this.button.setAttribute('aria-label', text);
+	}
 
 	renderButton() {
 		const { icon, text } = this.states[this.index];
@@ -39,17 +56,6 @@ export class StatusBarButton {
 		this.button.addEventListener('click', (e) => this.showMenu(e));
 		this.button.addEventListener('contextmenu', (e) => this.showMenu(e));
 
-	}
-
-	updateButton(new_index: number) {
-		if (new_index === this.index) return;
-
-		this.index = new_index;
-		if (!this.button) return;
-
-		const { icon, text } = this.states[this.index];
-		setIcon(this.button, icon);
-		this.button.setAttribute('aria-label', text);
 	}
 
 	detachButton() {

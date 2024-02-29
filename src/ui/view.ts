@@ -1,4 +1,4 @@
-import { ItemView, type Plugin, type ViewStateResult, WorkspaceLeaf } from 'obsidian';
+import {ItemView, type Plugin, type ViewStateResult, WorkspaceLeaf} from 'obsidian';
 
 import type {SvelteComponent} from "svelte";
 import { ViewPage } from "./pages/view";

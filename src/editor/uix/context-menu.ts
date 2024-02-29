@@ -61,7 +61,7 @@ export const cmenuCommands: EventRef =
 
 				menu.addItem((item) => {
 					const submenu = item.setTitle('Set metadata')
-						.setIcon('lucide-text')
+						.setIcon('tags')
 						.setSection('criticmarkup')
 						.setSubmenu();
 

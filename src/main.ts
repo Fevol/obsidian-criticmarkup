@@ -1,4 +1,4 @@
-import { type MarkdownPostProcessor, MarkdownPreviewRenderer, Plugin, TFile } from 'obsidian';
+import {getIconIds, type MarkdownPostProcessor, MarkdownPreviewRenderer, Plugin, TFile} from 'obsidian';
 
 import { EditorView } from '@codemirror/view';
 import { Compartment, type EditorState, type Extension, Facet, Prec, StateEffectType } from '@codemirror/state';
@@ -23,7 +23,12 @@ import { postProcess, postProcessorRerender, postProcessorUpdate } from './edito
 import { markupRenderer, commentRenderer } from './editor/renderers/live-preview';
 import { suggestionGutter, commentGutter } from './editor/renderers/gutters';
 import { type HeaderButton, previewModeHeaderButton, suggestionModeHeaderButton } from './editor/view-header';
-import { type StatusBarButton, previewModeStatusBarButton, suggestionModeStatusBarButton } from './editor/status-bar';
+import {
+	type StatusBarButton, type MetadataStatusBarButton,
+	previewModeStatusBarButton,
+	suggestionModeStatusBarButton,
+	metadataStatusBarButton
+} from './editor/status-bar';
 
 
 import { CRITICMARKUP_VIEW, CriticMarkupView } from './ui/view';
@@ -52,6 +57,7 @@ export default class CommentatorPlugin extends Plugin {
 
 	previewModeStatusBarButton!: StatusBarButton;
 	suggestionModeStatusBarButton!: StatusBarButton;
+	metadataStatusBarButton!: MetadataStatusBarButton;
 
 	remove_monkeys: (() => void)[] = [];
 
@@ -144,25 +150,12 @@ export default class CommentatorPlugin extends Plugin {
 		this.previous_settings = Object.assign({}, this.settings);
 
 
-		this.previewModeHeaderButton = previewModeHeaderButton(this);
-		this.suggestionHeaderModeButton = suggestionModeHeaderButton(this);
+		this.previewModeHeaderButton = previewModeHeaderButton(this, this.settings.editor_preview_button);
+		this.suggestionHeaderModeButton = suggestionModeHeaderButton(this, this.settings.editor_suggest_button);
 
-		this.previewModeStatusBarButton = previewModeStatusBarButton(this);
-		this.suggestionModeStatusBarButton = suggestionModeStatusBarButton(this);
-
-
-		if (this.settings.editor_preview_button)
-			this.previewModeHeaderButton.renderButtons();
-
-		if (this.settings.editor_suggest_button)
-			this.suggestionHeaderModeButton.renderButtons();
-
-		if (this.settings.status_bar_preview_button)
-			this.previewModeStatusBarButton.renderButton();
-
-		if (this.settings.status_bar_suggest_button)
-			this.suggestionModeStatusBarButton.renderButton();
-
+		this.previewModeStatusBarButton = previewModeStatusBarButton(this, this.settings.status_bar_preview_button);
+		this.suggestionModeStatusBarButton = suggestionModeStatusBarButton(this, this.settings.status_bar_suggest_button);
+		this.metadataStatusBarButton = metadataStatusBarButton(this, this.settings.status_bar_metadata_button);
 
 		this.addSettingTab(new CommentatorSettings(this.app, this));
 		this.loadEditorExtensions();
@@ -224,44 +217,22 @@ export default class CommentatorPlugin extends Plugin {
 		this.changed_settings = objectDifference(this.settings, this.previous_settings);
 		this.previous_settings = Object.assign({}, this.settings);
 
-		if (this.changed_settings.preview_mode !== undefined) {
-			this.previewModeStatusBarButton.updateButton(this.settings.preview_mode);
-			await this.previewModeHeaderButton.updateButtons(this.settings.preview_mode);
-		}
+		this.previewModeStatusBarButton.updateButton(this.changed_settings.preview_mode);
+		await this.previewModeHeaderButton.updateButtons(this.changed_settings.preview_mode);
 
-		if (this.changed_settings.suggest_mode !== undefined) {
-			this.suggestionModeStatusBarButton.updateButton(this.settings.suggest_mode ? 1 : 0);
-			await this.suggestionHeaderModeButton.updateButtons(this.settings.suggest_mode ? 1 : 0);
-		}
+		this.suggestionModeStatusBarButton.updateButton(this.changed_settings.suggest_mode as unknown as number | undefined);
+		await this.suggestionHeaderModeButton.updateButtons(this.changed_settings.suggest_mode as unknown as number | undefined);
 
-		if (this.changed_settings.show_editor_buttons_labels !== undefined) {
-			this.previewModeHeaderButton.toggleLabels();
-			this.suggestionHeaderModeButton.toggleLabels();
-		}
+		this.previewModeHeaderButton.setLabelRendering(this.changed_settings.show_editor_buttons_labels);
+		this.suggestionHeaderModeButton.setLabelRendering(this.changed_settings.show_editor_buttons_labels);
 
-		if (this.changed_settings.editor_preview_button !== undefined) {
-			this.changed_settings.editor_preview_button ?
-				this.previewModeHeaderButton.renderButtons() :
-				this.previewModeHeaderButton.detachButtons();
-		}
+		this.previewModeHeaderButton.setRendering(this.changed_settings.editor_preview_button);
+		this.suggestionHeaderModeButton.setRendering(this.changed_settings.editor_suggest_button);
 
-		if (this.changed_settings.editor_suggest_button !== undefined) {
-			this.changed_settings.editor_suggest_button ?
-				this.suggestionHeaderModeButton.renderButtons() :
-				this.suggestionHeaderModeButton.detachButtons();
-		}
+		this.previewModeStatusBarButton.setRendering(this.changed_settings.status_bar_preview_button);
+		this.suggestionModeStatusBarButton.setRendering(this.changed_settings.status_bar_suggest_button);
+		this.metadataStatusBarButton.setRendering(this.changed_settings.status_bar_metadata_button);
 
-		if (this.changed_settings.status_bar_preview_button !== undefined) {
-			this.changed_settings.status_bar_preview_button ?
-				this.previewModeStatusBarButton.renderButton() :
-				this.previewModeStatusBarButton.detachButton();
-		}
-
-		if (this.changed_settings.status_bar_suggest_button !== undefined) {
-			this.changed_settings.status_bar_suggest_button ?
-				this.suggestionModeStatusBarButton.renderButton() :
-				this.suggestionModeStatusBarButton.detachButton();
-		}
 
 		if (this.changed_settings.post_processor !== undefined) {
 			if (this.changed_settings.post_processor)

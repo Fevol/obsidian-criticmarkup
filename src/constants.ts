@@ -26,6 +26,7 @@ export const DEFAULT_SETTINGS: PluginSettings = {
 
 	status_bar_preview_button: true,
 	status_bar_suggest_button: true,
+	status_bar_metadata_button: true,
 
 	database_workers: 2,
 
@@ -36,8 +37,18 @@ export const DEFAULT_SETTINGS: PluginSettings = {
 
 
 	enable_metadata: false,
-	enable_author: false,
-	enable_timestamp: false,
+	enable_author_metadata: false,
+	enable_timestamp_metadata: false,
+	enable_completed_metadata: false,
+	enable_style_metadata: false,
+	enable_color_metadata: false,
+
+	add_metadata: false,
+	add_author_metadata: false,
+	add_timestamp_metadata: false,
+	add_completed_metadata: false,
+	add_style_metadata: false,
+	add_color_metadata: false,
 
 	author: "",
 

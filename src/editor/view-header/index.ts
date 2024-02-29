@@ -1,7 +1,7 @@
 import { HeaderButton } from './header-button';
 import type CommentatorPlugin from '../../main';
 
-export const previewModeHeaderButton = (plugin: CommentatorPlugin) => new HeaderButton(
+export const previewModeHeaderButton = (plugin: CommentatorPlugin, render: boolean) => new HeaderButton(
 	"preview_mode",
 	[
 		{ icon: 'check', tooltip: 'Current mode: show all suggestions\nClick to preview \'accept all\'', text: 'Showing all suggestions' },
@@ -10,10 +10,11 @@ export const previewModeHeaderButton = (plugin: CommentatorPlugin) => new Header
 	],
 	plugin.settings.show_editor_buttons_labels,
 	'criticmarkup-suggestion-status',
-	plugin
+	plugin,
+	render
 );
 
-export const suggestionModeHeaderButton = (plugin: CommentatorPlugin) => new HeaderButton(
+export const suggestionModeHeaderButton = (plugin: CommentatorPlugin, render: boolean) => new HeaderButton(
 	"suggest_mode",
 	[
 		{ icon: 'edit', tooltip: 'Current mode: editing\nClick to suggest', text: 'Editing' },
@@ -21,7 +22,8 @@ export const suggestionModeHeaderButton = (plugin: CommentatorPlugin) => new Hea
 	],
 	plugin.settings.show_editor_buttons_labels,
 	'criticmarkup-suggestion-status',
-	plugin
+	plugin,
+	render
 );
 
 export { HeaderButton }

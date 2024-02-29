@@ -127,7 +127,8 @@ export interface PluginSettings {
 	 * Add a button for quickly toggling suggestion mode in the status bar
 	 */
 	status_bar_suggest_button: boolean;
-
+	/** Add a button for quickly toggling metadata in the status bar */
+	status_bar_metadata_button: boolean;
 
 	/**
 	 * Number of workers that are available for database indexing
@@ -159,13 +160,50 @@ export interface PluginSettings {
 	 */
 	enable_metadata: boolean;
 	/**
-	 * Whether authorship metadata should be considered
+	 * Whether authorship metadata should be enabled
 	 */
-	enable_author: boolean;
+	enable_author_metadata: boolean;
 	/**
-	 * Whether timestamps metadata should be added
+	 * Whether timestamps metadata should be enabled
 	 */
-	enable_timestamp: boolean;
+	enable_timestamp_metadata: boolean
+	/**
+	 * Whether completed metadata should be enabled
+	 */
+	enable_completed_metadata: boolean;
+	/**
+	 * Whether style metadata should be enabled
+	 */
+	enable_style_metadata: boolean;
+	/**
+	 * Whether color metadata should be enabled
+	 */
+	enable_color_metadata: boolean;
+
+	/**
+	 * Whether metadata should be added to new ranges
+	 */
+	add_metadata: boolean;
+	/**
+	 * Whether authorship metadata should be added to new ranges
+	 */
+	add_author_metadata: boolean;
+	/**
+	 * Whether timestamps metadata should be added to new ranges
+	 */
+	add_timestamp_metadata: boolean
+	/**
+	 * Whether completed metadata should be added to new ranges
+	 */
+	add_completed_metadata: boolean;
+	/**
+	 * Whether style metadata should be added to new ranges
+	 */
+	add_style_metadata: boolean;
+	/**
+	 * Whether color metadata should be added to new ranges
+	 */
+	add_color_metadata: boolean;
 
 	/**
 	 * Include authorship metadata
