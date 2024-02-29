@@ -27,6 +27,11 @@ export interface EditorChange {
 	insert: string;
 }
 
+export interface EditorSuggestion extends EditorChange {
+	start: number;
+	end: number;
+}
+
 export interface OperationReturn {
 	changes?: EditorChange[];
 	selection?: SelectionRange;

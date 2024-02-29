@@ -71,6 +71,10 @@ export abstract class CriticMarkupRange {
 		return this.text + this.replies.map(reply => reply.text).join('');
 	}
 
+	get range_start() {
+		return this.metadata ? this.metadata + 2 : this.from + 3;
+	}
+
 	get range_front() {
 		return this.metadata ? this.metadata - 1 : this.from;
 	}

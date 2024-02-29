@@ -194,11 +194,9 @@ function applySuggestion(tr: Transaction, settings: PluginSettings): Transaction
 				offset = delete_operation.offset!;
 			}
 		} else if (operation_type === OperationType.REPLACEMENT) {
-			const backwards_delete = latest_keypress?.key === "Backspace";
-
 			let offset = 0;
 			for (const range of changed_ranges) {
-				const replace_operation = text_replace(range, ranges, offset, backwards_delete, tr.startState,
+				const replace_operation = text_replace(range, ranges, offset, tr.startState,
 					alt_mode ?? SuggestionType.SUBSTITUTION, metadata);
 				changes.push(...replace_operation.changes!);
 				selections.push(replace_operation.selection!);

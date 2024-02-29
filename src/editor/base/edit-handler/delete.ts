@@ -24,12 +24,9 @@ export function text_delete(cursor_range: EditorEditChange, ranges: CriticMarkup
     }
 
     const operations = mark_ranges(ranges, state.doc, cursor_from, cursor_to, "", delete_type, metadata_fields);
-
-    offset += operations.reduce((acc, op) => acc + op.insert.length - (op.to - op.from), 0);
-
     return {
-        selection: EditorSelection.cursor(backwards_delete ? cursor_from : cursor_to + offset),
+        selection: EditorSelection.cursor((backwards_delete ? operations[0].start : operations[operations.length - 1].end) + offset),
         changes: operations,
-        offset,
+        offset: offset + operations.reduce((acc, op) => acc + op.insert.length - (op.to - op.from), 0),
     }
 }
