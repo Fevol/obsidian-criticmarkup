@@ -11,7 +11,7 @@ import { commentGutter } from '../renderers/gutters';
 
 
 export const suggestion_commands: (settings: PluginSettings) => ECommand[] = (settings) => Object.entries(CM_SuggestionTypes).map(([text, type]) => ({
-	id: `commentator-toggle-${text.toLowerCase()}`,
+	id: `toggle-${text.toLowerCase()}`,
 	name: `Mark as ${text}`,
 	icon: text.toLowerCase(),
 	editor_context: true,
@@ -22,7 +22,7 @@ export const suggestion_commands: (settings: PluginSettings) => ECommand[] = (se
 
 export const editor_commands: ECommand[] = [
 	{
-		id: 'commentator-accept-all-suggestions',
+		id: 'accept-all-suggestions',
 		name: 'Accept all suggestions',
 		icon: 'check-check',
 		editor_context: true,
@@ -33,7 +33,7 @@ export const editor_commands: ECommand[] = [
 			}));
 		},
 	}, {
-		id: 'commentator-reject-all-suggestions',
+		id: 'reject-all-suggestions',
 		name: 'Reject all suggestions',
 		icon: 'cross',
 		editor_context: true,
@@ -44,7 +44,7 @@ export const editor_commands: ECommand[] = [
 		},
 	},
 	{
-		id: 'commentator-accept-selected-suggestions',
+		id: 'accept-selected-suggestions',
 		name: 'Accept suggestions in selection',
 		icon: 'check',
 		editor_context: true,
@@ -60,7 +60,7 @@ export const editor_commands: ECommand[] = [
 		},
 	},
 	{
-		id: 'commentator-reject-selected-suggestions',
+		id: 'reject-selected-suggestions',
 		name: 'Reject suggestions in selection',
 		icon: 'cross',
 		editor_context: true,
@@ -76,7 +76,7 @@ export const editor_commands: ECommand[] = [
 		},
 	},
 	{
-		id: 'commentator-comment',
+		id: 'comment',
 		name: 'Add comment',
 		icon: 'message-square',
 		editor_context: true,
@@ -98,7 +98,7 @@ export const editor_commands: ECommand[] = [
 
 export const application_commmands = (plugin: CommentatorPlugin): ECommand[] => [
 	{
-		id: 'commentator-suggest-mode',
+		id: 'suggest-mode',
 		name: 'Toggle suggestion mode',
 		icon: 'comment',
 		editor_context: true,
@@ -108,7 +108,7 @@ export const application_commmands = (plugin: CommentatorPlugin): ECommand[] => 
 		},
 	},
 	{
-		id: 'commentator-toggle-vim',
+		id: 'toggle-vim',
 		name: '(DEBUG) Toggle Vim mode',
 		icon: 'comment',
 		regular_callback: async () => {
@@ -116,7 +116,7 @@ export const application_commmands = (plugin: CommentatorPlugin): ECommand[] => 
 		},
 	},
 	{
-		id: 'commentator-view',
+		id: 'view',
 		name: 'Open CriticMarkup view',
 		icon: 'comment',
 		regular_callback: async () => {
@@ -124,7 +124,7 @@ export const application_commmands = (plugin: CommentatorPlugin): ECommand[] => 
 		},
 	},
 	{
-		id: 'commentator-toggle-preview-mode',
+		id: 'toggle-preview-mode',
 		name: 'Toggle preview mode',
 		icon: 'comment',
 		regular_callback: async () => {
@@ -133,7 +133,7 @@ export const application_commmands = (plugin: CommentatorPlugin): ECommand[] => 
 		},
 	},
 	{
-		id: 'commentator-toggle-alt',
+		id: 'toggle-alt',
 		name: 'Toggle alternative editing mode',
 		icon: 'comment',
 		regular_callback: async () => {
