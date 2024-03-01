@@ -35,6 +35,10 @@ declare module '@codemirror/view' {
 	interface BlockInfo {
 		widget?: WidgetType;
 	}
+
+	interface WidgetType {
+		lang?: string;
+	}
 }
 
 

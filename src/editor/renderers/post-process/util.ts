@@ -1,4 +1,5 @@
 import { MarkdownView } from 'obsidian';
+import {EditorSelection} from "@codemirror/state";
 
 
 export function codeBlockPostProcessorUpdate(language: string) {
@@ -7,12 +8,10 @@ export function codeBlockPostProcessorUpdate(language: string) {
 		if (view.editor.cm) {
 			const widgets = view.editor.cm.viewportLineBlocks.filter((block) => block.widget && block.widget.lang === language);
 			const original_selection = view.editor.cm.state.selection;
-			for (const block of widgets) {
-				view.editor.cm.dispatch({
-					selection: {anchor: block.from, head: block.to},
-					scrollIntoView: false,
-				})
-			}
+			view.editor.cm.dispatch({
+				selection: EditorSelection.create(widgets.map((block) => EditorSelection.range(block.from, block.to))),
+				scrollIntoView: false,
+			})
 			view.editor.cm.dispatch({
 				selection: original_selection,
 				scrollIntoView: false,
