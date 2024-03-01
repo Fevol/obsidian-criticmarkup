@@ -1,4 +1,4 @@
-import {getIconIds, type MarkdownPostProcessor, MarkdownPreviewRenderer, Plugin, TFile} from 'obsidian';
+import {type MarkdownPostProcessor, MarkdownPreviewRenderer, Plugin, TFile} from 'obsidian';
 
 import { EditorView } from '@codemirror/view';
 import { Compartment, type EditorState, type Extension, Facet, Prec, StateEffectType } from '@codemirror/state';

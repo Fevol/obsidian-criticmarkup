@@ -36,16 +36,6 @@ export function getEditorRanges(selection: EditorSelection, changes: ChangeSet, 
 	const changed_ranges: EditorEditChange[] = [];
 	let i = 0;
 	changes.iterChanges((fromA, toA, fromB, toB, inserted) => {
-		let text = '';
-		// @ts-ignore (Inserted always exists when iterating changes)
-		if (inserted.text.length === 1 && inserted.text[0] === '')
-			text += '';
-		else {
-			// @ts-ignore (text exists on Text in inserted)
-			const change_text = inserted.text.join('');
-			text += change_text.length ? change_text : '\n';
-		}
-
 		changed_ranges.push({
 			from: fromA,
 			to: toA,
@@ -54,7 +44,7 @@ export function getEditorRanges(selection: EditorSelection, changes: ChangeSet, 
 				removed: toA - fromA,
 				added: toB - fromB,
 			},
-			inserted: text,
+			inserted: inserted.toString(),
 			deleted: toA - fromA ? doc.sliceString(fromA, toA) : '',
 			selection: selection.ranges[i].anchor !== selection.ranges[i].head,
 		});

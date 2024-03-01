@@ -140,10 +140,11 @@ function applySuggestion(tr: Transaction, settings: PluginSettings): Transaction
 			type = alt_mode ?? type;
 
 			const edits = mark_ranges(ranges, tr.startState.doc, editor_change.from, editor_change.to, editor_change.inserted, type, metadata);
+			const added_offset = edits.slice(0, -1).reduce((acc, op) => acc - (op.to - op.from) + op.insert.length, 0);
 			if (edits) {
 				changes.push(edits);
-				selections.push(EditorSelection.cursor((backwards_delete ? edits[0].start : edits[edits.length - 1].end) + offset));
-				offset += edits.reduce((acc, op) => acc + op.insert.length - (op.to - op.from), 0);
+				selections.push(EditorSelection.cursor((backwards_delete ? edits[0].start : edits[edits.length - 1].end + added_offset) + offset));
+				offset += added_offset - (edits[edits.length - 1].to - edits[edits.length - 1].from) + edits[edits.length - 1].insert.length
 			}
 		}
 
@@ -155,7 +156,7 @@ function applySuggestion(tr: Transaction, settings: PluginSettings): Transaction
 	// CASE 2: Handle cursor movements
 	else if (isUserEvent('select', userEvents) && cursorMoved(tr) && settings.alternative_cursor_movement /*&& tr.startState.field(editorLivePreviewField)*/) {
 		// NOTE: Pointer/Mouse selection does not need any further processing (allows for debugging)
-		if (userEvents.includes('select.pointer'))
+		if (userEvents.includes('select.pointer') || (latest_keypress && (latest_keypress.key === "a" && (latest_keypress.ctrlKey || latest_keypress.metaKey))))
 			return tr;
 
 		let backwards_select = userEvents.includes('select.backward');

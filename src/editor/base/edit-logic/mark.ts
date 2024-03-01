@@ -311,6 +311,7 @@ function mark_range(ranges: CriticMarkupRanges, text: Text, from: number, to: nu
                     to = left_range.to;
                 } else if (merge_result.type === SuggestionType.DELETION) {
                     // CASE 3: Deleting in the deletion-part (left) of the substitution
+                    end_offset = to - from;
                     to = from;
                     insert = "";
                 } else {
@@ -328,6 +329,7 @@ function mark_range(ranges: CriticMarkupRanges, text: Text, from: number, to: nu
                         deleted = left_range.unwrap_slice(from, to);
                         end_offset = deleted.length;
                         insert = inserted + left_range.unwrap_slice(to, Infinity);
+                        if (!inserted.length) end_offset -= 2;
                         split_left_range();
                         ({insert, start_offset, end_offset} = create_range(insert, deleted, affixes, merge_result.merged_metadata, merge_result.type, start_offset, end_offset));
                         to = left_range.to;
@@ -338,7 +340,7 @@ function mark_range(ranges: CriticMarkupRanges, text: Text, from: number, to: nu
                         start_offset = from - left_range.range_start;
                         end_offset = char_middle + (parts[0].length - from + left_range.range_start);
                         insert = inserted + parts[1].slice(char_middle);
-                        // FIXME: If resulting range is still substitution, end - 2 to ensure cursor is before the separator bracket
+                        if (insert.length && !inserted.length) end_offset -= 2;
                         ({insert, start_offset, end_offset} = create_suggestion(insert, deleted, merge_result.merged_metadata, start_offset, end_offset));
                         from = left_range.from;
                         to = left_range.to;
