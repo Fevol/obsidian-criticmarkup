@@ -45,11 +45,11 @@ export class HeaderButton {
 		}
 	}
 
-	async updateButtons(new_index?: number) {
-		if (new_index === undefined || new_index === this.index) return;
+	async updateButtons(new_index?: number | boolean) {
+		if (new_index === undefined || +new_index === this.index) return;
 
 		if (new_index) {
-			this.index = new_index;
+			this.index = +new_index;
 		} else {
 			this.index = (this.index + 1) % this.states.length;
 			await this.plugin.setSetting(this.attribute, this.index)

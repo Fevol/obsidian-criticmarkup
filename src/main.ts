@@ -220,8 +220,8 @@ export default class CommentatorPlugin extends Plugin {
 		this.previewModeStatusBarButton.updateButton(this.changed_settings.preview_mode);
 		await this.previewModeHeaderButton.updateButtons(this.changed_settings.preview_mode);
 
-		this.suggestionModeStatusBarButton.updateButton(this.changed_settings.suggest_mode as unknown as number | undefined);
-		await this.suggestionHeaderModeButton.updateButtons(this.changed_settings.suggest_mode as unknown as number | undefined);
+		this.suggestionModeStatusBarButton.updateButton((this.changed_settings.suggest_mode));
+		await this.suggestionHeaderModeButton.updateButtons(this.changed_settings.suggest_mode);
 
 		this.previewModeHeaderButton.setLabelRendering(this.changed_settings.show_editor_buttons_labels);
 		this.suggestionHeaderModeButton.setLabelRendering(this.changed_settings.show_editor_buttons_labels);

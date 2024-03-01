@@ -32,10 +32,10 @@ export class StatusBarButton {
 		render ? this.renderButton() : this.detachButton();
 	}
 
-	updateButton(new_index?: number) {
-		if (new_index === undefined || new_index === this.index) return;
+	updateButton(new_index?: number | boolean) {
+		if (new_index === undefined || +new_index === this.index) return;
 
-		this.index = new_index;
+		this.index = +new_index;
 		if (!this.button) return;
 
 		const { icon, text } = this.states[this.index];
