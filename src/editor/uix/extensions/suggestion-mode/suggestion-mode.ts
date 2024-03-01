@@ -2,28 +2,20 @@ import {EditorSelection, EditorState, type Extension, SelectionRange, Transactio
 import {type PluginSettings} from '../../../../types';
 
 import {
+	cursor_move_range,
 	cursorMoved,
 	getEditorRanges,
 	getUserEvents,
-	is_forward_movement,
+	is_forward_movement, mark_ranges, MarkType,
 	rangeParser,
 	SuggestionType,
+	cursor_move,
+	MarkAction,
+	generate_metadata
 } from '../../../base';
 
-import { cursor_move, text_insert, text_delete, text_replace } from "../../../base/edit-handler";
-import {MarkAction} from "../../../base";
-
 import {latest_keypress} from "../keypress-catcher";
-import {Notice} from "obsidian";
-import {generate_metadata} from "../../../base/edit-util/metadata";
 
-
-enum OperationType {
-	INSERTION,
-	DELETION,
-	REPLACEMENT,
-	SELECTION,
-}
 
 const vim_action_resolver = {
 	'moveByCharacters': {
@@ -94,18 +86,15 @@ function isUserEvent(event: string, events: string[]): boolean {
 }
 
 
-// FIXME: Ask somebody whether this is the cleanest/most efficient way to access settings inside of the extension
 export const suggestionMode = (settings: PluginSettings): Extension => EditorState.transactionFilter.of(tr => applySuggestion(tr, settings));
 
 
 // TODO: Functionality: Double click mouse should also floodfill (problem: no specific userevent attached)
-// TODO: Logic: Inserting/Replacing in Deletion - Result in Substitution or added text in Deletion?
-// TODO: Logic: Ranges should be considered individually by action
 function applySuggestion(tr: Transaction, settings: PluginSettings): Transaction {
 	const userEvents = getUserEvents(tr);
 	const vim_mode = app.workspace.activeEditor?.editor?.cm.cm !== undefined;
 
-	// Resolves used vim cursor movements since they do not receive user event annotations
+	// TODO: Resolve used vim cursor movements since they do not receive user event annotations
 	if (!tr.docChanged && tr.selection && vim_mode) {
 		if (cursorMoved(tr))
 			userEvents.push(tr.startState.selection.ranges[0].from < tr.selection!.ranges[0].from ? 'select.forward' : 'select.backward');
@@ -114,7 +103,7 @@ function applySuggestion(tr: Transaction, settings: PluginSettings): Transaction
 	}
 
 
-	// Handle edit operations
+	// CASE 1: Handle edit operations
 	if (tr.docChanged) {
 		const changed_ranges = getEditorRanges(tr.startState.selection, tr.changes, tr.startState.doc);
 
@@ -128,19 +117,6 @@ function applySuggestion(tr: Transaction, settings: PluginSettings): Transaction
 		if (!is_recognized_edit_operation)
 			return tr;
 
-
-		let operation_type: OperationType;
-		if (changed_ranges[0].offset.added && changed_ranges[0].offset.removed)
-			operation_type = OperationType.REPLACEMENT;
-		else if (changed_ranges[0].offset.added)
-			operation_type = OperationType.INSERTION;
-		else if (changed_ranges[0].offset.removed)
-			operation_type = OperationType.DELETION;
-		else {
-			console.error('No operation type could be determined');
-			return tr;
-		}
-
 		const ranges = tr.startState.field(rangeParser).ranges;
 		const changes = [];
 		const selections: SelectionRange[] = [];
@@ -148,72 +124,37 @@ function applySuggestion(tr: Transaction, settings: PluginSettings): Transaction
 
 		const metadata = generate_metadata(settings);
 
-		let edit_info;
 		const alt_mode = settings.edit_ranges ? MarkAction.REGULAR : undefined;
 
-		if (operation_type === OperationType.INSERTION) {
-			let offset = 0;
-
-			for (const range of changed_ranges) {
-				// TODO: Sequential updates of same range (possible issues: multiple metadata inserts, multiple splits, ...)
-				// 	Solutions:
-				//		- Sequentially update the state with each editorchange (easiest)
-				//		- Update ranges object with new changed/new ranges
-				const insert_operation = text_insert(range, ranges, offset, tr.startState, alt_mode ?? SuggestionType.ADDITION, metadata);
-				// TODO: Insert text WITHOUT SPLITTING: get range type under cursor and pass as insert type
-
-
-
-				if (insert_operation.debug) {
-					if (insert_operation.debug.range) {
-						const type = insert_operation.debug.metadata_type !== undefined ? 'metadata' : 'range';
-						edit_info = `Skipping insert into range '${insert_operation.debug.range.text}' due to ${type} being of incompatible ${type}-type '${insert_operation.debug.metadata_type ?? insert_operation.debug.range.type}'`;
-					} else {
-						edit_info = `Cannot insert into regular text in this mode`;
-					}
-				} else {
-					changes.push(...insert_operation.changes!);
-					selections.push(insert_operation.selection!);
-					offset = insert_operation.offset!;
-				}
+		const backwards_delete = latest_keypress?.key === "Backspace";
+		const group_delete = latest_keypress?.ctrlKey!;
+		let offset = 0;
+		// TODO: Consider each editor_change separately to avoid issues where you try to re-insert into a now updated range
+		//        (Or: update ranges with editor_change to reflect the new state)
+		for (let editor_change of changed_ranges) {
+			let type: MarkType = editor_change.deleted ? (editor_change.inserted ? SuggestionType.SUBSTITUTION : SuggestionType.DELETION) : SuggestionType.ADDITION;
+			if (type === SuggestionType.DELETION) {
+				editor_change = cursor_move_range(editor_change, ranges, backwards_delete, group_delete, tr.startState,
+					settings.suggestion_mode_operations.cursor_movement, settings.suggestion_mode_operations.bracket_movement);
 			}
-		} else if (operation_type === OperationType.DELETION) {
-			const backwards_delete = latest_keypress?.key === "Backspace";
-			const group_delete = latest_keypress?.ctrlKey!;
+			type = alt_mode ?? type;
 
-			let offset = 0;
-			for (const range of changed_ranges) {
-				// TODO: Delete text WITHOUT MARKING: pass MarkAction.REMOVE as delete type
-				const delete_operation = text_delete(range, ranges, offset, backwards_delete, group_delete, tr.startState,
-					alt_mode ?? SuggestionType.DELETION, settings.suggestion_mode_operations.cursor_movement, settings.suggestion_mode_operations.bracket_movement,
-					metadata);
-
-				// const delete_operation = text_delete(range, ranges, offset, tr.startState.doc, backwards_delete, group_delete, delete_selection, tr.startState);
-				changes.push(...delete_operation.changes!);
-				selections.push(delete_operation.selection!);
-				offset = delete_operation.offset!;
-			}
-		} else if (operation_type === OperationType.REPLACEMENT) {
-			let offset = 0;
-			for (const range of changed_ranges) {
-				const replace_operation = text_replace(range, ranges, offset, tr.startState,
-					alt_mode ?? SuggestionType.SUBSTITUTION, metadata);
-				changes.push(...replace_operation.changes!);
-				selections.push(replace_operation.selection!);
-				offset = replace_operation.offset!;
+			const edits = mark_ranges(ranges, tr.startState.doc, editor_change.from, editor_change.to, editor_change.inserted, type, metadata);
+			if (edits) {
+				changes.push(edits);
+				selections.push(EditorSelection.cursor((backwards_delete ? edits[0].start : edits[edits.length - 1].end) + offset));
+				offset += edits.reduce((acc, op) => acc + op.insert.length - (op.to - op.from), 0);
 			}
 		}
 
 		if (changes.length)
 			return tr.startState.update({ changes, selection: EditorSelection.create(selections), });
-		if (settings.edit_info && edit_info)
-			new Notice(edit_info);
 		return tr.startState.update({})
 	}
 
-	// Handle cursor movements
+	// CASE 2: Handle cursor movements
 	else if (isUserEvent('select', userEvents) && cursorMoved(tr) && settings.alternative_cursor_movement /*&& tr.startState.field(editorLivePreviewField)*/) {
-		// Pointer/Mouse selection does not need any further processing
+		// NOTE: Pointer/Mouse selection does not need any further processing (allows for debugging)
 		if (userEvents.includes('select.pointer'))
 			return tr;
 
@@ -237,9 +178,6 @@ function applySuggestion(tr: Transaction, settings: PluginSettings): Transaction
 
 
 		const selections: SelectionRange[] = [];
-		// TODO: cursor_move is 2x slower compared to previous system, main slowdowns are presumably:
-		//    1. Constant looping over all ranges to find range at index
-		//    2. Use of string enums (probably)
 		for (const [idx, range] of tr.selection!.ranges.entries()) {
 			const cursor_operation = cursor_move(tr.startState.selection!.ranges[idx],
 				range, ranges, !backwards_select, group_select, is_selection, vim_mode, tr.startState,

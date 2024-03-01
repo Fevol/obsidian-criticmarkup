@@ -183,3 +183,19 @@ export function cursor_move(old_cursor_range: EditorRange, new_cursor_range: Edi
 
     return {selection: EditorSelection.range(cursor_anchor, cursor_head)};
 }
+
+
+export function cursor_move_range<T extends EditorRange>(cursor_range: T, ranges: CriticMarkupRanges, backwards_delete: boolean,
+                                  group_delete: boolean, state: EditorState, movement_options: CursorOptionsMap, bracket_options: BracketOptionsMap): T {
+    if (!cursor_range.selection) {
+        const cursor_anchor = cursor_range.anchor!;
+        let cursor_head = backwards_delete ? cursor_range.from : cursor_range.to;
+        cursor_head = advance_cursor_head(cursor_anchor, cursor_head, ranges, !backwards_delete, group_delete,
+            false, state, movement_options, bracket_options);
+        if (backwards_delete)
+            cursor_range.from = cursor_head;
+        else
+            cursor_range.to = cursor_head;
+    }
+    return cursor_range;
+}
