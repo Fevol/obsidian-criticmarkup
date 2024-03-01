@@ -1,5 +1,27 @@
 import { MarkdownView } from 'obsidian';
 
+
+export function codeBlockPostProcessorUpdate(language: string) {
+	for (const leaf of app.workspace.getLeavesOfType("markdown")) {
+		const view = <MarkdownView>leaf.view;
+		if (view.editor.cm) {
+			const widgets = view.editor.cm.viewportLineBlocks.filter((block) => block.widget && block.widget.lang === language);
+			const original_selection = view.editor.cm.state.selection;
+			for (const block of widgets) {
+				view.editor.cm.dispatch({
+					selection: {anchor: block.from, head: block.to},
+					scrollIntoView: false,
+				})
+			}
+			view.editor.cm.dispatch({
+				selection: original_selection,
+				scrollIntoView: false,
+			})
+		}
+	}
+}
+
+
 export function postProcessorUpdate() {
 	// Credits to depose/dp0z/@Profile8647 for finding this code
 	for (const leaf of app.workspace.getLeavesOfType("markdown")) {
