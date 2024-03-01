@@ -50,6 +50,11 @@ export type BracketOptionsMap = Record<SuggestionType, RANGE_BRACKET_MOVEMENT_OP
 
 export interface PluginSettings {
 	/**
+	 * String to store the version of the plugin settings (used for migrations)
+	 */
+	version: string;
+
+	/**
 	 * Determines how ranges should be visualised in LP/S mode
 	 * - 0: Show all text
 	 * - 1: Visualise 'accept' action (only show regular text and Addition Ranges)
@@ -60,6 +65,11 @@ export interface PluginSettings {
 	 * Enable editor suggestion mode
 	 */
 	suggest_mode: SuggestMode;
+	/**
+	 * Enable corrected edits in regular editing mode
+	 * @remark Prevent breaking up brackets, allows deletion within additions, generally avoid creation of broken syntax
+	 */
+	edit_mode: boolean;
 
 	/**
 	 * Render a gutter marking locations of ranges in the document
@@ -153,11 +163,6 @@ export interface PluginSettings {
 	 * Enable corrected cursor movement near/within ranges
 	 */
 	alternative_cursor_movement: boolean;
-	/**
-	 * Enable corrected edits in regular mode
-	 * @remark Prevent breaking up brackets, allows deletion within additions, etc.
-	 */
-	edit_ranges: boolean;
 
 
 	/**

@@ -19,8 +19,11 @@
 
 
 <SettingItem
-	name='Enable Suggestion Mode'
-	description='Toggle suggestion mode'
+	name='Toggle Suggestion Mode'
+	description='When enabled, any text deleted or inserted will be marked as a suggestion'
+	notices={[
+		{ type: 'info', text: "Enable insertion of metadata in the <i>'Include Metadata Extension'</i> setting" },
+	]}
 	type='toggle'
 >
 	<Toggle
@@ -28,6 +31,21 @@
 		value={ plugin.settings.suggest_mode }
 		onChange={ (value) => {
 			plugin.settings.suggest_mode = + value
+			plugin.saveSettings();
+		}}
+	/>
+</SettingItem>
+
+<SettingItem
+	name='Toggle Alternative Edit Mode'
+	description='When enabled and in regular editing mode, prevents inserts/deletes from creating malformed suggestions'
+	type='toggle'
+>
+	<Toggle
+		slot='control'
+		value={ plugin.settings.edit_mode }
+		onChange={ (value) => {
+			plugin.settings.edit_mode = value
 			plugin.saveSettings();
 		}}
 	/>

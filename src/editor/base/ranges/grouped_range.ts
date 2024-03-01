@@ -95,6 +95,15 @@ export class CriticMarkupRanges {
 		return this.tree.search([start, end]) as CriticMarkupRange[];
 	}
 
+	// ranges_fully_in_range(start: number, end: number) {
+	// 	const ranges = this.ranges_in_range(start, end);
+	// 	if (ranges[ranges.length - 1]?.touches_left_bracket(start, false, true, true))
+	// 		ranges.pop();
+	// 	if (ranges[0]?.touches_right_bracket(end, false, true))
+	// 		ranges.shift();
+	// 	return ranges;
+	// }
+
 	unwrap_in_range(doc: Text, from = 0, to = doc.length, ranges: CriticMarkupRange[] | null = null):
 		{output: string, from: number, to: number, front_range?: CriticMarkupRange, back_range?: CriticMarkupRange} {
 		let front_range: undefined | CriticMarkupRange, back_range: undefined | CriticMarkupRange;

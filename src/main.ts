@@ -1,4 +1,4 @@
-import {type MarkdownPostProcessor, MarkdownPreviewRenderer, Plugin, TFile} from 'obsidian';
+import {type MarkdownPostProcessor, MarkdownPreviewRenderer, Notice, Plugin, TFile} from 'obsidian';
 
 import { EditorView } from '@codemirror/view';
 import { Compartment, type EditorState, type Extension, Facet, Prec, StateEffectType } from '@codemirror/state';
@@ -17,7 +17,7 @@ import {
 	initializeCommands,
 	cmenuCommands,
 } from './editor/uix';
-import { rangeCorrecter, bracketMatcher, suggestionMode, editorKeypressCatcher } from './editor/uix/extensions';
+import { rangeCorrecter, bracketMatcher, suggestionMode, editMode, editorKeypressCatcher } from './editor/uix/extensions';
 
 import { postProcess, postProcessorRerender, postProcessorUpdate } from './editor/renderers/post-process';
 import { markupRenderer, commentRenderer } from './editor/renderers/live-preview';
@@ -104,6 +104,8 @@ export default class CommentatorPlugin extends Plugin {
 
 		if (this.settings.suggest_mode)
 			this.editorExtensions.push(suggestionMode(this.settings));
+		else if (this.settings.edit_mode)
+			this.editorExtensions.push(editMode(this.settings));
 
 		if (this.settings.tag_completion)
 			this.editorExtensions.push(bracketMatcher);
@@ -136,18 +138,37 @@ export default class CommentatorPlugin extends Plugin {
 			plugin: this,
 			database: this.database,
 			get ranges() {
-				return app.workspace.activeEditor?.editor?.cm.state.field(rangeParser).ranges.ranges;
+				return this.app.workspace.activeEditor?.editor?.cm.state.field(rangeParser).ranges.ranges;
 			},
-			get ranges_tree() {
-				return app.workspace.activeEditor?.editor?.cm.state.field(rangeParser).ranges.tree;
+			get tree() {
+				return this.app.workspace.activeEditor?.editor?.cm.state.field(rangeParser).ranges.tree;
 			}
 		};
 
 
 		this.registerView(CRITICMARKUP_VIEW, (leaf) => new CriticMarkupView(leaf, this));
 
-		this.settings = Object.assign({}, this.settings, await this.loadData());
+
+		const loaded_settings = await this.loadData();
+
+		const old_version = loaded_settings.version;
+		const current_version = "0.2.0";
+
+
+		this.settings = Object.assign({}, this.settings, loaded_settings);
 		this.previous_settings = Object.assign({}, this.settings);
+
+		// EXPL: Migration code for upgrading to new version
+		if (old_version !== current_version) {
+			if (!old_version) {
+				this.app.workspace.onLayoutReady(async () => {
+					new Notice("Commentator: rebuilding database for new version", 5000);
+					new Notice("Commentator: metadata and replies features are now available, you can opt-in to these features in the settings", 0);
+				});
+			}
+
+			await this.saveSettings();
+		}
 
 
 		this.previewModeHeaderButton = previewModeHeaderButton(this, this.settings.editor_preview_button);
@@ -203,7 +224,7 @@ export default class CommentatorPlugin extends Plugin {
 
 		this.database.unload();
 
-		// @ts-ignore
+		// @ts-expect-error Add debug variable to window
 		window['COMMENTATOR_DEBUG'] = undefined;
 	}
 

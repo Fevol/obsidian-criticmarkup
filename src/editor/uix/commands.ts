@@ -137,7 +137,7 @@ export const application_commmands = (plugin: CommentatorPlugin): ECommand[] => 
 		name: 'Toggle alternative editing mode',
 		icon: 'comment',
 		regular_callback: async () => {
-			plugin.settings.edit_ranges = !plugin.settings.edit_ranges;
+			plugin.settings.edit_mode = !plugin.settings.edit_mode;
 			await plugin.saveSettings();
 		},
 	}

@@ -8,6 +8,8 @@ import {
 import {SuggestionType} from "./editor/base";
 
 export const DEFAULT_SETTINGS: PluginSettings = {
+	version: "0.2.0",
+
 	preview_mode: PreviewMode.ALL,
 	suggest_mode: SuggestMode.OFF,
 
@@ -39,7 +41,7 @@ export const DEFAULT_SETTINGS: PluginSettings = {
 	post_processor: true,
 	live_preview: true,
 	alternative_cursor_movement: true,
-	edit_ranges: true,
+	edit_mode: true,
 
 
 	enable_metadata: false,
@@ -79,6 +81,7 @@ export const DEFAULT_SETTINGS: PluginSettings = {
 
 export const REQUIRES_FULL_RELOAD: Set<string> = new Set([
 	"preview_mode",
+	"edit_mode",
 	"live_preview",
 	"alternative_live_preview",
 	"editor_gutter",

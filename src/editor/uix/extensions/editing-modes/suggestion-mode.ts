@@ -6,15 +6,14 @@ import {
 	cursorMoved,
 	getEditorRanges,
 	getUserEvents,
-	is_forward_movement, mark_ranges, MarkType,
+	mark_ranges, MarkType,
 	rangeParser,
 	SuggestionType,
-	cursor_move,
-	MarkAction,
 	generate_metadata
 } from '../../../base';
 
 import {latest_keypress} from "../keypress-catcher";
+import {cursor_transaction_pass_syntax} from "./cursor_movement";
 
 
 const vim_action_resolver = {
@@ -114,6 +113,7 @@ function applySuggestion(tr: Transaction, settings: PluginSettings): Transaction
 		//      *will* result in the new transaction being filtered through the suggestion mode filter again (recursion)
 		// TODO: Currently, a only transactions with valid userEvents editevents considered
 		//       Somehow, someway, image pastes need to get an userevent attached (monkey-around insertFiles?)
+		// TODO: Dragging and dropping a selection also doesn't seem to fire a userEvent
 		if (!is_recognized_edit_operation)
 			return tr;
 
@@ -124,20 +124,17 @@ function applySuggestion(tr: Transaction, settings: PluginSettings): Transaction
 
 		const metadata = generate_metadata(settings);
 
-		const alt_mode = settings.edit_ranges ? MarkAction.REGULAR : undefined;
-
 		const backwards_delete = latest_keypress?.key === "Backspace";
 		const group_delete = latest_keypress?.ctrlKey!;
 		let offset = 0;
 		// TODO: Consider each editor_change separately to avoid issues where you try to re-insert into a now updated range
 		//        (Or: update ranges with editor_change to reflect the new state)
 		for (let editor_change of changed_ranges) {
-			let type: MarkType = editor_change.deleted ? (editor_change.inserted ? SuggestionType.SUBSTITUTION : SuggestionType.DELETION) : SuggestionType.ADDITION;
+			const type: MarkType = editor_change.deleted ? (editor_change.inserted ? SuggestionType.SUBSTITUTION : SuggestionType.DELETION) : SuggestionType.ADDITION;
 			if (type === SuggestionType.DELETION) {
 				editor_change = cursor_move_range(editor_change, ranges, backwards_delete, group_delete, tr.startState,
 					settings.suggestion_mode_operations.cursor_movement, settings.suggestion_mode_operations.bracket_movement);
 			}
-			type = alt_mode ?? type;
 
 			const edits = mark_ranges(ranges, tr.startState.doc, editor_change.from, editor_change.to, editor_change.inserted, type, metadata);
 			const added_offset = edits.slice(0, -1).reduce((acc, op) => acc - (op.to - op.from) + op.insert.length, 0);
@@ -148,51 +145,14 @@ function applySuggestion(tr: Transaction, settings: PluginSettings): Transaction
 			}
 		}
 
-		if (changes.length)
-			return tr.startState.update({ changes, selection: EditorSelection.create(selections), });
-		return tr.startState.update({})
+		return tr.startState.update(changes.length ? { changes, selection: EditorSelection.create(selections)} : {});
 	}
 
 	// CASE 2: Handle cursor movements
 	else if (isUserEvent('select', userEvents) && cursorMoved(tr) && settings.alternative_cursor_movement /*&& tr.startState.field(editorLivePreviewField)*/) {
-		// NOTE: Pointer/Mouse selection does not need any further processing (allows for debugging)
-		if (userEvents.includes('select.pointer') || (latest_keypress && (latest_keypress.key === "a" && (latest_keypress.ctrlKey || latest_keypress.metaKey))))
-			return tr;
-
-		let backwards_select = userEvents.includes('select.backward');
-		let group_select = userEvents.includes('select.group');
-		let is_selection = userEvents.includes('select.extend');
-		if (!vim_mode && latest_keypress) {
-			if (latest_keypress.key === 'ArrowLeft')
-				backwards_select = true;
-			else if (latest_keypress.key === 'ArrowRight')
-				backwards_select = false;
-			else
-				backwards_select = !is_forward_movement(tr.startState.selection, tr.selection!);
-
-			is_selection = latest_keypress.shiftKey;
-			group_select = latest_keypress.ctrlKey || latest_keypress.metaKey;
-		}
-
-
-		const ranges = tr.startState.field(rangeParser).ranges;
-
-
-		const selections: SelectionRange[] = [];
-		for (const [idx, range] of tr.selection!.ranges.entries()) {
-			const cursor_operation = cursor_move(tr.startState.selection!.ranges[idx],
-				range, ranges, !backwards_select, group_select, is_selection, vim_mode, tr.startState,
-				settings.suggestion_mode_operations.cursor_movement, settings.suggestion_mode_operations.bracket_movement,
-			)
-
-			selections.push(cursor_operation.selection);
-		}
-
-		return tr.startState.update({
-			selection: EditorSelection.create(selections),
-			// TODO: Check if filter should only apply in vim mode?
-			filter: false,
-		});
+		const result = cursor_transaction_pass_syntax(tr, userEvents, vim_mode, settings);
+		if (result)
+			return tr.startState.update(result);
 	}
 
 	return tr;
