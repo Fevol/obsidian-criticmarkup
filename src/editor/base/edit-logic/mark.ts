@@ -7,7 +7,7 @@ import {
     SubstitutionRange,
     SuggestionType
 } from "../ranges";
-import {Text} from "@codemirror/state";
+import {EditorSelection, Text} from "@codemirror/state";
 import {EditorSuggestion} from "../edit-handler";
 import {Editor} from "obsidian";
 import {rangeParser} from "../edit-util";
@@ -456,9 +456,15 @@ export function mark_editor_ranges(editor: Editor, type: MarkType, settings: Plu
     const ranges = editor.cm.state.field(rangeParser).ranges;
 
     const selections = editor.cm.state.selection.ranges;
+    const resulting_selections = [];
+    const changes = [];
     for (const selection of selections) {
-        editor.cm.dispatch(editor.cm.state.update({
-            changes: mark_ranges(ranges, editor.cm.state.doc, selection.from, selection.to, "", type, generate_metadata(settings)),
-        }));
+        const edits = mark_ranges(ranges, editor.cm.state.doc, selection.from, selection.to, "", type, generate_metadata(settings));
+        changes.push(...edits);
+        resulting_selections.push(EditorSelection.range(edits[0].start, edits[edits.length - 1].end));
     }
+    editor.cm.dispatch(editor.cm.state.update({
+        changes,
+        selection: EditorSelection.create(resulting_selections),
+    }));
 }
