@@ -10,9 +10,9 @@
 
 	let preview_mode = plugin.settings.preview_mode;
 	const preview_mode_notices = {
-		"0": "All suggestions will be visible",
-		"1": "Preview document as if all suggestions were accepted",
-		"2": "Preview document as if all suggestions were rejected",
+		[PreviewMode.ALL]: "All suggestions will be visible",
+		[PreviewMode.ACCEPT]: "Preview document as if all suggestions were accepted",
+		[PreviewMode.REJECT]: "Preview document as if all suggestions were rejected",
 	}
 </script>
 
@@ -51,8 +51,8 @@
 		]}
 		value={ plugin.settings.preview_mode.toString() }
 		onChange={ (value) => {
-			preview_mode = value;
-			plugin.settings.preview_mode = value
+			preview_mode = parseInt(value);
+			plugin.settings.preview_mode = preview_mode;
 			plugin.saveSettings();
 		}}
 	/>
@@ -64,7 +64,7 @@
 	type='dropdown'
 	notices={[
 		{ type: 'info', text: 'Allow inclusion of metadata for suggestions, such as authorship, time, etc.' },
-		{ type: 'warning', text: 'Suggestion metadata is *not* part of the official CriticMarkup standard, and the metadata will not be processed/rendered correctly in other editors' },
+		{ type: 'warning', text: 'Suggestion metadata is <b>not</b> part of the official CriticMarkup standard, and the metadata will not be processed/rendered correctly in other editors' },
 	]}
 >
 	<Toggle
