@@ -355,6 +355,7 @@ function mark_range(ranges: CriticMarkupRanges, text: Text, from: number, to: nu
                 else if (type === SuggestionType.DELETION)
                     return {from, to: from, insert: "", start: from, end: from};
             }
+            end_offset = deleted.length;
             // TODO: Downgrade is necessary (due to substitution across multiple ranges)
             //      Marking as addition should always mark all text in range as addition, regardless of whether inserted text is provided
             //      <> Sometimes inserted is empty in substitution (empty clipboard), so it should downgrade to deletion
@@ -374,13 +375,12 @@ function mark_range(ranges: CriticMarkupRanges, text: Text, from: number, to: nu
                 if (left_range!.type === SuggestionType.SUBSTITUTION) {
                     const parts = (left_range as SubstitutionRange).unwrap_parts();
                     start_offset = parts[0].length;
-                    end_offset = deleted.length + parts[1].length;
+                    end_offset += parts[1].length;
                     deleted = parts[0] + deleted;
                     insert = parts[1] + inserted;
                 } else {
                     const slice = left_range!.unwrap_slice(0, from);
                     start_offset = slice.length;
-                    end_offset = deleted.length;
                     deleted = slice + deleted;
                 }
                 from = left_range!.from;
@@ -393,7 +393,6 @@ function mark_range(ranges: CriticMarkupRanges, text: Text, from: number, to: nu
             ({type: right_merge_type, merged_metadata} = mergeable_range(to, right_range, type, metadata_fields, false));
             if (right_merge_type) {
                 if (right_range!.type === SuggestionType.SUBSTITUTION) {
-                    // TODO Check if left-merge stuff for subs should be used too
                     const parts = (right_range as SubstitutionRange).unwrap_slice_parts_inverted(from, to);
                     insert = inserted + parts[1];
                     deleted += parts[0];
