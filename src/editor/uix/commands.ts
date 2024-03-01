@@ -103,7 +103,7 @@ export const application_commmands = (plugin: CommentatorPlugin): ECommand[] => 
 		icon: 'comment',
 		editor_context: true,
 		regular_callback: async () => {
-			plugin.settings.suggest_mode = !plugin.settings.suggest_mode;
+			plugin.settings.suggest_mode = (plugin.settings.suggest_mode + 1) % 2;
 			await plugin.saveSettings();
 		},
 	},

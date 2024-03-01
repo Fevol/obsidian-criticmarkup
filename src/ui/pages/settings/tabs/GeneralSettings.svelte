@@ -27,7 +27,7 @@
 		slot='control'
 		value={ plugin.settings.suggest_mode }
 		onChange={ (value) => {
-			plugin.settings.suggest_mode = value
+			plugin.settings.suggest_mode = + value
 			plugin.saveSettings();
 		}}
 	/>

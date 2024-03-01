@@ -1,9 +1,15 @@
-import {type PluginSettings, PreviewMode, RANGE_BRACKET_MOVEMENT_OPTION, RANGE_CURSOR_MOVEMENT_OPTION} from './types';
+import {
+	type PluginSettings,
+	PreviewMode,
+	RANGE_BRACKET_MOVEMENT_OPTION,
+	RANGE_CURSOR_MOVEMENT_OPTION,
+	SuggestMode
+} from './types';
 import {SuggestionType} from "./editor/base";
 
 export const DEFAULT_SETTINGS: PluginSettings = {
 	preview_mode: PreviewMode.ALL,
-	suggest_mode: false,
+	suggest_mode: SuggestMode.OFF,
 
 	editor_gutter: true,
 

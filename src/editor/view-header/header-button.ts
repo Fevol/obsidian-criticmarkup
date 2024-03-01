@@ -52,7 +52,6 @@ export class HeaderButton {
 			this.index = +new_index;
 		} else {
 			this.index = (this.index + 1) % this.states.length;
-			await this.plugin.setSetting(this.attribute, this.index)
 		}
 
 		if (!this.changeEvent) return;
@@ -78,7 +77,9 @@ export class HeaderButton {
 			const view = leaf.view as MarkdownView;
 			if (this.active_mapping.has(view)) continue;
 
-			const button = view.addAction(icon, tooltip, async () => await this.updateButtons.bind(this)());
+			const button = view.addAction(icon, tooltip, async () => {
+				this.plugin.setSetting(this.attribute, (this.index + 1) % this.states.length);
+			});
 			const status = this.has_label ? button.createSpan({ text, cls: this.cls }) : null;
 
 			if (this.has_label)

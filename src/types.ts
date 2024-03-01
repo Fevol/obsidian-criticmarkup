@@ -7,6 +7,11 @@ export enum PreviewMode {
 	REJECT = 2,
 }
 
+export enum SuggestMode {
+	OFF = 0,
+	SUGGEST = 1,
+}
+
 /**
  * How to move through a suggestion range when moving the cursor
  */
@@ -54,7 +59,7 @@ export interface PluginSettings {
 	/**
 	 * Enable editor suggestion mode
 	 */
-	suggest_mode: boolean;
+	suggest_mode: SuggestMode;
 
 	/**
 	 * Render a gutter marking locations of ranges in the document
