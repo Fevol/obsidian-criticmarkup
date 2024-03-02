@@ -101,7 +101,7 @@ export const markupRenderer = (settings: PluginSettings) => StateField.define<De
 					markContents(decorations, range, settings.editor_styling ? style : '', null, true, settings.editor_styling);
 				} else if (range.type === SuggestionType.SUBSTITUTION) {
 					hideBracket(decorations, range, true, is_livepreview);
-					hideMetadata(decorations, range);
+					hideMetadata(decorations, range, is_livepreview);
 					markContents(decorations, range, style + ' criticmarkup-deletion', true);
 					if (is_livepreview) {
 						decorations.push(
@@ -122,7 +122,7 @@ export const markupRenderer = (settings: PluginSettings) => StateField.define<De
 					hideRange(decorations, range);
 				} else if (range.type === SuggestionType.SUBSTITUTION) {
 					hideBracket(decorations, range, true, is_livepreview);
-					hideMetadata(decorations, range);
+					hideMetadata(decorations, range, is_livepreview);
 					markContents(decorations, range, 'criticmarkup-accepted', true);
 					decorations.push(Decoration.replace({}).range((range as SubstitutionRange).middle, range.to));
 				} else {
@@ -133,6 +133,7 @@ export const markupRenderer = (settings: PluginSettings) => StateField.define<De
 					hideRange(decorations, range);
 				} else if (range.type === SuggestionType.DELETION) {
 					hideBracket(decorations, range, true, is_livepreview);
+					hideMetadata(decorations, range, is_livepreview);
 					markContents(decorations, range, 'criticmarkup-accepted');
 					hideBracket(decorations, range, false, is_livepreview);
 				} else if (range.type === SuggestionType.SUBSTITUTION) {

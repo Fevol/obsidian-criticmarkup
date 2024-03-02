@@ -4,7 +4,7 @@ import {type ECommand, PluginSettings} from '../../types';
 
 import {
 	CM_SuggestionTypes, selectionContainsRanges,
-	acceptSuggestions, rejectSuggestions, mark_editor_ranges,
+	acceptSuggestions, rejectSuggestions, mark_editor_ranges, rangeParser,
 } from '../base';
 import type CommentatorPlugin from '../../main';
 import { commentGutter } from '../renderers/gutters';
@@ -81,7 +81,12 @@ export const editor_commands: ECommand[] = [
 		icon: 'message-square',
 		editor_context: true,
 		regular_callback: (editor: Editor, view: MarkdownView) => {
-			const cursor = editor.cm.state.selection.main.from;
+			let cursor = editor.cm.state.selection.main.from;
+			const ranges = editor.cm.state.field(rangeParser).ranges;
+			const range = ranges.at_cursor(cursor);
+			if (range)
+				cursor = range.full_range_back;
+
 			editor.cm.dispatch(editor.cm.state.update({
 				changes: [{
 					from: cursor,

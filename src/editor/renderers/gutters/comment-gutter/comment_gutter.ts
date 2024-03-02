@@ -20,6 +20,7 @@ import {
 	type GutterConfig, GutterElement, GutterView,
 	sameMarkers, SingleGutterView, UpdateContext,
 } from '../base';
+import {setIcon} from "obsidian";
 
 
 const unfixGutters = Facet.define<boolean, boolean>({
@@ -167,25 +168,6 @@ class CommentUpdateContext extends UpdateContext {
 		 */
 		const height = gutter.elements[this.i]?.dom.clientHeight || UNKNOWN_HEIGHT;
 
-		// ALTERNATIVE FALLBACK HEIGHT CODE (but far too clunky)
-		// 		const char_line_length = 42;
-		// 		const line_pixel_height = 18;
-		// 		const PADDING = 16;
-		// 		const INNER_MARGIN = 6;
-		// 		const WIGGLE_ROOM = 0;
-		// 		const BORDER_SIZE = 4;
-		// 		const MAX_HEIGHT = 150;
-		// 		let height = 0;
-		// 		for (const marker of (markers as CommentMarker[])) {
-		// 			const num_end_line = marker.range.text.match(/\n/g)?.length || 0;
-		// 			const comment_length = marker.range.to - marker.range.from - 6 - num_end_line;
-		// 			const num_lines = Math.max(1, Math.ceil(comment_length / char_line_length)) + num_end_line;
-		// 			height += Math.min(MAX_HEIGHT, num_lines * line_pixel_height + PADDING + INNER_MARGIN + BORDER_SIZE) + MARGIN_BETWEEN;
-		// 		}
-		// 		height += WIGGLE_ROOM;
-		// console.log(height);
-
-
 		// Constructs element if gutter was initialised from empty
 		if (this.i == gutter.elements.length) {
 			// Create a new Gutter Element at position
@@ -209,6 +191,8 @@ class CommentUpdateContext extends UpdateContext {
 class CommentSingleGutterView extends SingleGutterView {
 	hide_on_empty: boolean = false;
 	showing: boolean = true;
+	folded = false;
+	fold_button: HTMLElement;
 
 	constructor(public view: EditorView, public config: Required<GutterConfig>) {
 		super(view, config);
@@ -218,6 +202,49 @@ class CommentSingleGutterView extends SingleGutterView {
 
 		if (view.state.facet(hideEmptyCommentGutterState))
 			this.hide_on_empty = true;
+
+		if (this.view.dom.children[0].classList.contains('criticmarkup-gutter-button'))
+			this.fold_button = this.view.dom.children[0] as HTMLElement;
+		else {
+			this.fold_button = createEl("a", { cls: ["criticmarkup-gutter-button", "view-action"] });
+			this.view.dom.prepend(this.fold_button);
+			setIcon(this.fold_button, "arrow-right-from-line")
+		}
+
+		this.fold_button.style.right = view.state.facet(commentGutterWidthState) + 60 + 'px';
+		this.fold_button.onclick = () => {
+			this.foldGutter();
+		}
+	}
+
+
+	foldGutter() {
+		this.folded = !this.folded;
+		const gutterStart = this.view.state.facet(commentGutterWidthState);
+		// Set the gutter height for every element to fixed
+		if (this.folded) {
+			// this.fold_button.style.right = '20px';
+			this.elements.forEach(element => {
+				Array.from(element.dom.getElementsByClassName('criticmarkup-gutter-comment')).forEach(comment => {
+					comment.setAttribute('style', `max-height: ${comment.clientHeight}px; overflow: hidden;`);
+				});
+			});
+			this.fold_button.animate({ right: [gutterStart + 60, 0] }, { duration: 600, fill: 'forwards' });
+			this.fold_button.children[0].animate({ transform: ['rotate(0deg)', 'rotate(-180deg)'] }, { duration: 200, fill: 'forwards' });
+		} else {
+			// this.fold_button.style.right = gutterStart + 60 + 'px';
+			this.dom.addEventListener('transitionend', () => {
+				this.elements.forEach(element => {
+					Array.from(element.dom.getElementsByClassName('criticmarkup-gutter-comment')).forEach(comment => {
+						comment.setAttribute('style', ``);
+					});
+				});
+			}, { once: true });
+			this.fold_button.animate({ right: [0, gutterStart + 60] }, { duration: 600, fill: 'forwards' });
+
+			this.fold_button.children[0].animate({ transform: ['rotate(-180deg)', 'rotate(0deg)'] }, { duration: 200, fill: 'forwards' });
+		}
+		this.dom.style.width = this.folded ? '0' : gutterStart + 'px';
 	}
 
 	update(update: ViewUpdate) {
