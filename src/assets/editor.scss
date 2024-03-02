@@ -107,7 +107,7 @@
 	top: calc(var(--file-margins) + 20px);
 	z-index: 1000;
 	color: var(--text-faint);
-	transition: color 200ms ease-in-out 0ms;
+	transition: color 200ms ease-in-out 0ms, right 600ms ease-in-out, rotate 200ms ease-in-out;
 }
 
 .criticmarkup-gutter-button:hover {

@@ -43,6 +43,8 @@ import {
 	commentGutterWidth, commentGutterWidthEffect, commentGutterWidthState,
 	hideEmptyCommentGutter, hideEmptyCommentGutterEffect, hideEmptyCommentGutterState,
 	hideEmptySuggestionGutter, hideEmptySuggestionGutterEffect, hideEmptySuggestionGutterState,
+	defaultFoldCommentGutter, defaultFoldCommentGutterState,
+	commentGutterFoldButton, commentGutterFoldButtonState, commentGutterFoldButtonEffect,
 } from './editor/settings';
 
 export default class CommentatorPlugin extends Plugin {
@@ -119,6 +121,8 @@ export default class CommentatorPlugin extends Plugin {
 		this.editorExtensions.push(hideEmptySuggestionGutter.of(hideEmptySuggestionGutterState.of(this.settings.hide_empty_suggestion_gutter)));
 		this.editorExtensions.push(commentGutterWidth.of(commentGutterWidthState.of(this.settings.comment_gutter_width)));
 		this.editorExtensions.push(hideEmptyCommentGutter.of(hideEmptyCommentGutterState.of(this.settings.hide_empty_comment_gutter)));
+		this.editorExtensions.push(defaultFoldCommentGutter.of(defaultFoldCommentGutterState.of(this.settings.default_folded_comment_gutter)));
+		this.editorExtensions.push(commentGutterFoldButton.of(commentGutterFoldButtonState.of(this.settings.comment_gutter_fold_button)));
 	}
 
 	async updateEditorExtension() {
@@ -148,28 +152,7 @@ export default class CommentatorPlugin extends Plugin {
 
 		this.registerView(CRITICMARKUP_VIEW, (leaf) => new CriticMarkupView(leaf, this));
 
-
-		const loaded_settings = await this.loadData();
-
-		const old_version = loaded_settings.version;
-		const current_version = "0.2.0";
-
-
-		this.settings = Object.assign({}, this.settings, loaded_settings);
-		this.previous_settings = Object.assign({}, this.settings);
-
-		// EXPL: Migration code for upgrading to new version
-		if (old_version !== current_version) {
-			if (!old_version) {
-				this.app.workspace.onLayoutReady(async () => {
-					new Notice("Commentator: rebuilding database for new version", 5000);
-					new Notice("Commentator: metadata and replies features are now available, you can opt-in to these features in the settings", 0);
-				});
-			}
-
-			await this.saveSettings();
-		}
-
+		await this.migrateSettings(await this.loadData());
 
 		this.previewModeHeaderButton = previewModeHeaderButton(this, this.settings.editor_preview_button);
 		this.suggestionHeaderModeButton = suggestionModeHeaderButton(this, this.settings.editor_suggest_button);
@@ -212,6 +195,32 @@ export default class CommentatorPlugin extends Plugin {
 				};
 			},
 		}));
+	}
+
+
+	async migrateSettings(new_settings: PluginSettings) {
+		const old_settings = this.settings;
+		this.settings = Object.assign({}, DEFAULT_SETTINGS, new_settings);
+		this.previous_settings = Object.assign(old_settings, this.settings);
+
+		const old_version = new_settings.version;
+		const current_version = "0.2.0";
+
+		// EXPL: Migration code for upgrading to new version
+		if (old_version !== current_version) {
+			if (!old_version) {
+				this.app.workspace.onLayoutReady(async () => {
+					new Notice("Commentator: rebuilding database for new version", 5000);
+					new Notice("Commentator: metadata and replies features are now available, you can opt-in to these features in the settings", 0);
+				});
+			}
+
+			await this.saveSettings();
+		}
+	}
+
+	async onExternalSettingsChange() {
+		await this.migrateSettings(await this.loadData());
 	}
 
 	async onunload() {
@@ -275,6 +284,9 @@ export default class CommentatorPlugin extends Plugin {
 			this.sendFacetUpdate(hideEmptySuggestionGutter, hideEmptySuggestionGutterState,
 								 hideEmptySuggestionGutterEffect, this.settings.hide_empty_suggestion_gutter);
 
+		if (this.changed_settings.comment_gutter_fold_button !== undefined)
+			this.sendFacetUpdate(commentGutterFoldButton, commentGutterFoldButtonState,
+								 commentGutterFoldButtonEffect, this.settings.comment_gutter_fold_button);
 
 		await this.updateEditorExtension();
 	}

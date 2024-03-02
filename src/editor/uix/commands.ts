@@ -80,7 +80,7 @@ export const editor_commands: ECommand[] = [
 		name: 'Add comment',
 		icon: 'message-square',
 		editor_context: true,
-		regular_callback: (editor: Editor, view: MarkdownView) => {
+		regular_callback: (editor: Editor, _) => {
 			let cursor = editor.cm.state.selection.main.from;
 			const ranges = editor.cm.state.field(rangeParser).ranges;
 			const range = ranges.at_cursor(cursor);
@@ -97,6 +97,15 @@ export const editor_commands: ECommand[] = [
 			setTimeout(() => {
 				editor.cm.plugin(commentGutter[1][0][0])!.focusCommentThread(cursor + 1);
 			});
+		}
+	},
+	{
+		id: 'fold-gutter',
+		name: 'Fold comment gutter',
+		icon: 'arrow-right-from-line',
+		editor_context: true,
+		regular_callback: (editor: Editor, _) => {
+			editor.cm.plugin(commentGutter[1][0][0])!.foldGutter();
 		}
 	}
 ];

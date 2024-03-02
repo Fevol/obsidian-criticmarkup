@@ -189,6 +189,39 @@
 </SettingItem>
 
 <SettingItem
+	name='Fold comment gutter away by default'
+	description='The comment gutter is folded away by default and can be revealed by clicking on the gutter'
+	notices={[
+		{ type: 'info', text: "Setting only applies after reload" },
+	]}
+	type='toggle'
+>
+	<Toggle
+		slot='control'
+		value={plugin.settings.default_folded_comment_gutter}
+		onChange={() => {
+			plugin.settings.default_folded_comment_gutter = !plugin.settings.default_folded_comment_gutter;
+			plugin.saveSettings();
+		}}
+	/>
+</SettingItem>
+
+<SettingItem
+	name="Comment gutter fold button"
+	description="Display a button in the gutter to fold/unfold the comments"
+	type='toggle'
+>
+	<Toggle
+		slot='control'
+		value={plugin.settings.comment_gutter_fold_button}
+		onChange={() => {
+			plugin.settings.comment_gutter_fold_button = !plugin.settings.comment_gutter_fold_button;
+			plugin.saveSettings();
+		}}
+	/>
+</SettingItem>
+
+<SettingItem
 	name='Hide comment gutter when empty'
 	description='Gutter will not take up any space when there are no comments in the current note'
 	type='toggle'

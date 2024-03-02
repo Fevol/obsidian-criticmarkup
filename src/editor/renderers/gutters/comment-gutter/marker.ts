@@ -131,7 +131,7 @@ export class CommentMarker extends GutterMarker {
                     item.setIcon('arrow-right-from-line');
                     item.onClick(() => {
                         // @ts-ignore Unexposed view
-                        this.view.plugin(commentGutter[1][0][0])!.gutters[0].foldGutter();
+                        this.view.plugin(commentGutter[1][0][0])!.foldGutter();
                     });
                 });
 

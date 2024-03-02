@@ -92,6 +92,14 @@ export interface PluginSettings {
 	 * Hide comment gutter if no comments are present in the note
 	 */
 	hide_empty_comment_gutter: boolean;
+	/**
+	 * Determine whether the comment gutter should be folded by default
+	 */
+	default_folded_comment_gutter: boolean;
+	/**
+	 * Add a button next to the comment gutter for quickly (un)folding the gutter
+	 */
+	comment_gutter_fold_button: boolean;
 
 
 	/**

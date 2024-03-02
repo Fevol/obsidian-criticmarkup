@@ -12,7 +12,8 @@ import { EditorView, ViewUpdate, BlockInfo, GutterMarker }  from '@codemirror/vi
 
 import { commentGutterMarkers, CommentMarker } from './marker';
 import {
-	commentGutterWidthEffect, commentGutterWidthState,
+	commentGutterFoldButtonEffect, commentGutterFoldButtonState,
+	commentGutterWidthEffect, commentGutterWidthState, defaultFoldCommentGutterState,
 	hideEmptyCommentGutterEffect, hideEmptyCommentGutterState,
 } from '../../../settings';
 import {
@@ -87,6 +88,10 @@ export class CommentGutterView extends GutterView {
 			const element = activeGutter.elements[0];
 			element.dom.style.marginTop = parseInt(element.dom.style.marginTop || '0') + offset + 'px';
 		}
+	}
+
+	public foldGutter() {
+		(this.gutters[0] as CommentSingleGutterView).foldGutter();
 	}
 
 	public focusCommentThread(position: number, index: number = -1) {
@@ -192,7 +197,7 @@ class CommentSingleGutterView extends SingleGutterView {
 	hide_on_empty: boolean = false;
 	showing: boolean = true;
 	folded = false;
-	fold_button: HTMLElement;
+	fold_button: HTMLElement | undefined = undefined;
 
 	constructor(public view: EditorView, public config: Required<GutterConfig>) {
 		super(view, config);
@@ -203,6 +208,16 @@ class CommentSingleGutterView extends SingleGutterView {
 		if (view.state.facet(hideEmptyCommentGutterState))
 			this.hide_on_empty = true;
 
+		if (view.state.facet(defaultFoldCommentGutterState)) {
+			this.folded = true;
+			this.dom.style.width = '0';
+		}
+
+		if (view.state.facet(commentGutterFoldButtonState))
+			this.createFoldButton();
+	}
+
+	createFoldButton() {
 		if (this.view.dom.children[0].classList.contains('criticmarkup-gutter-button'))
 			this.fold_button = this.view.dom.children[0] as HTMLElement;
 		else {
@@ -210,29 +225,28 @@ class CommentSingleGutterView extends SingleGutterView {
 			this.view.dom.prepend(this.fold_button);
 			setIcon(this.fold_button, "arrow-right-from-line")
 		}
+		this.fold_button.style.right = this.folded ? '20px' : this.view.state.facet(commentGutterWidthState) + 60 + 'px';
+		if (this.folded) this.fold_button.style.rotate = '-180deg';
 
-		this.fold_button.style.right = view.state.facet(commentGutterWidthState) + 60 + 'px';
-		this.fold_button.onclick = () => {
-			this.foldGutter();
-		}
+		this.fold_button.onclick = this.foldGutter.bind(this);
 	}
-
 
 	foldGutter() {
 		this.folded = !this.folded;
 		const gutterStart = this.view.state.facet(commentGutterWidthState);
-		// Set the gutter height for every element to fixed
+		if (this.fold_button) {
+			this.fold_button.style.right = (this.folded ? 20 : gutterStart + 60) + 'px';
+			this.fold_button.style.rotate = this.folded ? '-180deg' : '0deg';
+		}
+
+		// Set the gutter height for every element to fixed such that the element doesn't break the layout
 		if (this.folded) {
-			// this.fold_button.style.right = '20px';
 			this.elements.forEach(element => {
 				Array.from(element.dom.getElementsByClassName('criticmarkup-gutter-comment')).forEach(comment => {
 					comment.setAttribute('style', `max-height: ${comment.clientHeight}px; overflow: hidden;`);
 				});
 			});
-			this.fold_button.animate({ right: [gutterStart + 60, 0] }, { duration: 600, fill: 'forwards' });
-			this.fold_button.children[0].animate({ transform: ['rotate(0deg)', 'rotate(-180deg)'] }, { duration: 200, fill: 'forwards' });
 		} else {
-			// this.fold_button.style.right = gutterStart + 60 + 'px';
 			this.dom.addEventListener('transitionend', () => {
 				this.elements.forEach(element => {
 					Array.from(element.dom.getElementsByClassName('criticmarkup-gutter-comment')).forEach(comment => {
@@ -240,9 +254,6 @@ class CommentSingleGutterView extends SingleGutterView {
 					});
 				});
 			}, { once: true });
-			this.fold_button.animate({ right: [0, gutterStart + 60] }, { duration: 600, fill: 'forwards' });
-
-			this.fold_button.children[0].animate({ transform: ['rotate(-180deg)', 'rotate(0deg)'] }, { duration: 200, fill: 'forwards' });
 		}
 		this.dom.style.width = this.folded ? '0' : gutterStart + 'px';
 	}
@@ -259,16 +270,32 @@ class CommentSingleGutterView extends SingleGutterView {
 				} else if (eff.is(commentGutterWidthEffect)) {
 					this.dom.style.width = eff.value + 'px';
 					break;
+				} else if (eff.is(commentGutterFoldButtonEffect)) {
+					if (eff.value && !this.fold_button)
+						this.createFoldButton();
+					else if (!eff.value && this.fold_button) {
+						this.fold_button.remove();
+						this.fold_button = undefined;
+					}
+					break;
 				}
 			}
 		}
 
-		if (this.showing && this.hide_on_empty && update.state.field(commentGutterMarkers).size === 0) {
-			this.dom.parentElement!.classList.add('gutter-hidden');
-			this.showing = false;
-		} else if (!this.showing && (!this.hide_on_empty || update.state.field(commentGutterMarkers).size !== 0)) {
-			this.dom.parentElement!.classList.remove('gutter-hidden');
-			this.showing = true;
+		if (update.state.field(commentGutterMarkers).size === 0) {
+			if (this.fold_button)
+				this.fold_button.style.display = 'none';
+			if (this.showing && this.hide_on_empty) {
+				this.dom.parentElement!.classList.toggle('gutter-hidden');
+				this.showing = false;
+			}
+		} else {
+			if (this.fold_button)
+				this.fold_button.style.display = '';
+			if (!this.showing && !this.hide_on_empty) {
+				this.dom.parentElement!.classList.remove('gutter-hidden');
+				this.showing = true;
+			}
 		}
 
 		// Boolean returns true only if markers have changed within the viewport (so outside markers don't count)

@@ -32,6 +32,17 @@ export const hideEmptyCommentGutterState = Facet.define<boolean, boolean>({
 });
 export const hideEmptyCommentGutter = new Compartment();
 
+export const defaultFoldCommentGutterEffect = StateEffect.define<boolean>();
+export const defaultFoldCommentGutterState = Facet.define<boolean, boolean>({
+	combine: values => values[0]
+});
+export const defaultFoldCommentGutter = new Compartment();
+
+export const commentGutterFoldButtonEffect = StateEffect.define<boolean>();
+export const commentGutterFoldButtonState = Facet.define<boolean, boolean>({
+	combine: values => values[0]
+});
+export const commentGutterFoldButton = new Compartment();
 
 export const commentGutterWidthEffect = StateEffect.define<number>();
 export const commentGutterWidthState = Facet.define<number, number>({
