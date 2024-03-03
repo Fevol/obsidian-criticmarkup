@@ -1,4 +1,5 @@
-import {apiVersion, Platform} from "obsidian";
+import {apiVersion, Platform, View, WorkspaceLeaf} from "obsidian";
+import {around} from "monkey-around";
 
 /**
  * Helper function for opening the settings tab of the plugin
@@ -78,3 +79,36 @@ export async function generateGithubIssueLink(title: string, data: { [key: strin
 export async function openGithubIssueLink(title: string = '', data: { [key: string]: any } = {}) {
 	window.open(await generateGithubIssueLink(title, data), '_blank');
 }
+
+
+/**
+ * Helper function to overwrite a method of a view whose prototype is not directly accessible
+ * @param viewType - Type of the view (should exist in app.viewRegistry.viewByType)
+ * @param getChildPrototype - Function to get the prototype of the child view (if the view is a composite view)
+ * @tutorial
+ * ```ts
+ * this.app.workspace.onLayoutReady(async () => {
+ *    const uninstall = around(getPrototype('outline'), {
+ *    createItemDom: (oldMethod, view) => {
+ *        return (call_args: any[]) => {
+ *            const output = oldMethod(call_args);
+ *            return output;
+ *        }
+ *    }
+ * });
+ * ```
+ */
+export function getViewPrototype<T>(viewType: string, getChildPrototype: (view: any) => any = (view) => view): T {
+	const leafOfType = app.workspace.getLeavesOfType(viewType)[0];
+	let prototype: T;
+	if (leafOfType) {
+		prototype = Object.getPrototypeOf(getChildPrototype(leafOfType.view)) as T;
+	} else {
+		const leaf = app.workspace.getLeaf("split")
+		const constructed_leaf = app.viewRegistry.getViewCreatorByType(viewType)(leaf);
+		prototype = Object.getPrototypeOf(getChildPrototype(constructed_leaf)) as T;
+		leaf.detach();
+	}
+	return prototype;
+}
+
