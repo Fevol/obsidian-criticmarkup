@@ -70,7 +70,8 @@ export class HeaderButton {
 	}
 
 	attachButtons() {
-		this.changeEvent = this.plugin.app.workspace.on('layout-change', this.attachButtons.bind(this));
+		if (!this.changeEvent)
+			this.changeEvent = this.plugin.app.workspace.on('layout-change', this.attachButtons.bind(this));
 
 		const { icon, tooltip, text } = this.states[this.index];
 		for (const leaf of this.plugin.app.workspace.getLeavesOfType('markdown')) {
