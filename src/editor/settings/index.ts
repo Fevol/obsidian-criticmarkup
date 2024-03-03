@@ -1,4 +1,5 @@
 import { Compartment, Facet, StateEffect, StateEffectType, StateField } from '@codemirror/state';
+import {PreviewMode} from "../../types";
 
 /**
  * Provide a StateField extension for an arbitrary value that can be updated via effects
@@ -32,7 +33,6 @@ export const hideEmptyCommentGutterState = Facet.define<boolean, boolean>({
 });
 export const hideEmptyCommentGutter = new Compartment();
 
-export const defaultFoldCommentGutterEffect = StateEffect.define<boolean>();
 export const defaultFoldCommentGutterState = Facet.define<boolean, boolean>({
 	combine: values => values[0]
 });
@@ -56,3 +56,8 @@ export const hideEmptySuggestionGutterState = Facet.define<boolean, boolean>({
 	combine: values => values[0]
 });
 export const hideEmptySuggestionGutter = new Compartment();
+
+export const previewModeState = Facet.define<PreviewMode, PreviewMode>({
+	combine: values => values[0]
+});
+export const previewMode = new Compartment();

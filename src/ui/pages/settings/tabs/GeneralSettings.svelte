@@ -8,7 +8,7 @@
 
 	export let plugin: CommentatorPlugin;
 
-	let preview_mode = plugin.settings.preview_mode;
+	let preview_mode = plugin.settings.default_preview_mode;
 	const preview_mode_notices = {
 		[PreviewMode.ALL]: "All suggestions will be visible",
 		[PreviewMode.ACCEPT]: "Preview document as if all suggestions were accepted",
@@ -54,7 +54,7 @@
 
 
 <SettingItem
-	name='Toggle Preview Mode'
+	name='Set default Preview Mode state'
 	type='dropdown'
 	notices={[
 		{ type: 'info', text: preview_mode_notices[preview_mode] },
@@ -67,10 +67,10 @@
 			{ value: PreviewMode.ACCEPT.toString(), text: "Preview 'accept all'" },
 			{ value: PreviewMode.REJECT.toString(), text: "Preview 'reject all'" },
 		]}
-		value={ plugin.settings.preview_mode.toString() }
+		value={ plugin.settings.default_preview_mode.toString() }
 		onChange={ (value) => {
 			preview_mode = parseInt(value);
-			plugin.settings.preview_mode = preview_mode;
+			plugin.settings.default_preview_mode = preview_mode;
 			plugin.saveSettings();
 		}}
 	/>

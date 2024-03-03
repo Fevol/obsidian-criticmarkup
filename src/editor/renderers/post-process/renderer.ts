@@ -71,7 +71,7 @@ export async function postProcess(el: HTMLElement, ctx: MarkdownPostProcessorCon
 
 
 					// FIXME: Unwrap is still the issue: find when to remove brackets correctly
-					el.innerHTML = range.postprocess(false, settings.preview_mode, 'div', left, element_contents);
+					el.innerHTML = range.postprocess(false, settings.default_preview_mode, 'div', left, element_contents);
 
 					return;
 				}
@@ -124,7 +124,7 @@ export async function postProcess(el: HTMLElement, ctx: MarkdownPostProcessorCon
 	if (missing_range && left_outside && right_outside && missing_range.type === SuggestionType.SUBSTITUTION) {
 		const missing_range_middle = element_contents.indexOf(CM_All_Brackets[SuggestionType.SUBSTITUTION][1]);
 		const TempRange = new SubstitutionRange(-Infinity, missing_range_middle, Infinity, element_contents);
-		new_element += TempRange.postprocess(true, settings.preview_mode, 'span');
+		new_element += TempRange.postprocess(true, settings.default_preview_mode, 'span');
 		el.innerHTML = new_element;
 		return;
 	}
@@ -139,14 +139,14 @@ export async function postProcess(el: HTMLElement, ctx: MarkdownPostProcessorCon
 			TempRange = new SubstitutionRange(-Infinity, missing_range_middle === -1 ? -Infinity : missing_range_middle, missing_range_end, element_contents);
 		} else
 			TempRange = new RANGE_PROTOTYPE_MAPPER[missing_range.type](-Infinity, missing_range_end, element_contents);
-		new_element += TempRange.postprocess(true, settings.preview_mode, 'span');
+		new_element += TempRange.postprocess(true, settings.default_preview_mode, 'span');
 		previous_start = TempRange.to;
 	}
 
 	// DEFAULT: Ranges get processed as normal (ranges which exists completely within the block)
 	for (const range of element_ranges) {
 		new_element += element_contents.slice(previous_start, range.from) +
-			range.postprocess(true, settings.preview_mode, 'span');
+			range.postprocess(true, settings.default_preview_mode, 'span');
 		previous_start = range.to;
 	}
 
@@ -159,7 +159,7 @@ export async function postProcess(el: HTMLElement, ctx: MarkdownPostProcessorCon
 			TempRange = new SubstitutionRange(0, Infinity, Infinity, element_contents.slice(missing_range_start, -4));
 		else
 			TempRange = new RANGE_PROTOTYPE_MAPPER[missing_range.type](0, Infinity, element_contents.slice(missing_range_start, -4));
-		new_element += element_contents.slice(previous_start, missing_range_start) + TempRange.postprocess(true, settings.preview_mode, 'span');
+		new_element += element_contents.slice(previous_start, missing_range_start) + TempRange.postprocess(true, settings.default_preview_mode, 'span');
 		previous_start = Infinity;
 	}
 	new_element += element_contents.slice(previous_start);

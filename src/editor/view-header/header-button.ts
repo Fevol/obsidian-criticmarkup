@@ -8,11 +8,9 @@ export class HeaderButton {
 	}> = new WeakMap();
 
 	changeEvent: EventRef | null = null;
-	index: number = 0;
 
 	constructor(private attribute: keyof typeof plugin.settings, private states: { icon: string, tooltip: string, text: string }[],
-				private has_label: boolean, private cls: string, private plugin: CommentatorPlugin, render = false) {
-		this.index = + this.plugin.settings[this.attribute]!;
+				private has_label: boolean, private cls: string, private onchange: (view: MarkdownView, value: number) => void, private getvalue: (view: MarkdownView) => number, private plugin: CommentatorPlugin, render = false) {
 		this.setRendering(render);
 	}
 
@@ -26,9 +24,9 @@ export class HeaderButton {
 		if (render === undefined || !this.changeEvent || render === this.has_label) return;
 		this.has_label = render;
 
-		const { text } = this.states[this.index];
 		for (const leaf of this.plugin.app.workspace.getLeavesOfType('markdown')) {
 			const view = leaf.view as MarkdownView;
+			const { text } = this.states[this.getvalue(view)];
 			const elements = this.active_mapping.get(view);
 			if (!elements) continue;
 
@@ -45,23 +43,10 @@ export class HeaderButton {
 		}
 	}
 
-	async updateButtons(new_index?: number | boolean) {
-		if (new_index === undefined || +new_index === this.index) return;
-
-		if (new_index) {
-			this.index = +new_index;
-		} else {
-			this.index = (this.index + 1) % this.states.length;
-		}
-
-		if (!this.changeEvent) return;
-
-		const { icon, tooltip, text } = this.states[this.index];
-		for (const leaf of this.plugin.app.workspace.getLeavesOfType('markdown')) {
-			const view = leaf.view as MarkdownView;
-			const elements = this.active_mapping.get(view);
-			if (!elements) continue;
-
+	updateButton(view: MarkdownView, value: number) {
+		const { icon, tooltip, text } = this.states[value];
+		const elements = this.active_mapping.get(view);
+		if (elements) {
 			setIcon(elements.button, icon);
 			elements.button.setAttribute('aria-label', tooltip);
 			if (this.has_label)
@@ -73,13 +58,15 @@ export class HeaderButton {
 		if (!this.changeEvent)
 			this.changeEvent = this.plugin.app.workspace.on('layout-change', this.attachButtons.bind(this));
 
-		const { icon, tooltip, text } = this.states[this.index];
 		for (const leaf of this.plugin.app.workspace.getLeavesOfType('markdown')) {
 			const view = leaf.view as MarkdownView;
+			const { icon, tooltip, text } = this.states[this.getvalue(view)];
 			if (this.active_mapping.has(view)) continue;
 
 			const button = view.addAction(icon, tooltip, async () => {
-				this.plugin.setSetting(this.attribute, (this.index + 1) % this.states.length);
+				const value = (this.getvalue(view) + 1) % this.states.length;
+				this.updateButton(view, value);
+				this.onchange(view, value);
 			});
 			const status = this.has_label ? button.createSpan({ text, cls: this.cls }) : null;
 

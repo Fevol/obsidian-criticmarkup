@@ -60,7 +60,7 @@ export interface PluginSettings {
 	 * - 1: Visualise 'accept' action (only show regular text and Addition Ranges)
 	 * - 2: Visualise 'reject' action (only show regular text and Deletion Ranges)
 	 */
-	preview_mode: PreviewMode;
+	default_preview_mode: PreviewMode;
 	/**
 	 * Enable editor suggestion mode
 	 */

@@ -8,6 +8,7 @@ import {
 } from '../base';
 import type CommentatorPlugin from '../../main';
 import { commentGutter } from '../renderers/gutters';
+import {previewMode, previewModeState} from "../settings";
 
 
 export const suggestion_commands: (settings: PluginSettings) => ECommand[] = (settings) => Object.entries(CM_SuggestionTypes).map(([text, type]) => ({
@@ -107,7 +108,18 @@ export const editor_commands: ECommand[] = [
 		regular_callback: (editor: Editor, _) => {
 			editor.cm.plugin(commentGutter[1][0][0])!.foldGutter();
 		}
-	}
+	},
+	{
+		id: 'toggle-preview-mode',
+		name: 'Toggle preview mode',
+		icon: 'comment',
+		editor_context: true,
+		regular_callback: (editor: Editor, _) => {
+			editor.cm.dispatch(editor.cm.state.update({
+				effects: previewMode.reconfigure((previewModeState.of((editor.cm.state.facet(previewModeState) + 1) % 3))),
+			}));
+		},
+	},
 ];
 
 export const application_commmands = (plugin: CommentatorPlugin): ECommand[] => [
@@ -135,15 +147,6 @@ export const application_commmands = (plugin: CommentatorPlugin): ECommand[] => 
 		icon: 'comment',
 		regular_callback: async () => {
 			await plugin.activateView();
-		},
-	},
-	{
-		id: 'toggle-preview-mode',
-		name: 'Toggle preview mode',
-		icon: 'comment',
-		regular_callback: async () => {
-			plugin.settings.preview_mode = (plugin.settings.preview_mode + 1) % 3;
-			await plugin.saveSettings();
 		},
 	},
 	{

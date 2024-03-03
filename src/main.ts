@@ -44,7 +44,7 @@ import {
 	hideEmptyCommentGutter, hideEmptyCommentGutterEffect, hideEmptyCommentGutterState,
 	hideEmptySuggestionGutter, hideEmptySuggestionGutterEffect, hideEmptySuggestionGutterState,
 	defaultFoldCommentGutter, defaultFoldCommentGutterState,
-	commentGutterFoldButton, commentGutterFoldButtonState, commentGutterFoldButtonEffect,
+	commentGutterFoldButton, commentGutterFoldButtonState, commentGutterFoldButtonEffect, previewMode, previewModeState,
 } from './editor/settings';
 
 export default class CommentatorPlugin extends Plugin {
@@ -123,6 +123,7 @@ export default class CommentatorPlugin extends Plugin {
 		this.editorExtensions.push(hideEmptyCommentGutter.of(hideEmptyCommentGutterState.of(this.settings.hide_empty_comment_gutter)));
 		this.editorExtensions.push(defaultFoldCommentGutter.of(defaultFoldCommentGutterState.of(this.settings.default_folded_comment_gutter)));
 		this.editorExtensions.push(commentGutterFoldButton.of(commentGutterFoldButtonState.of(this.settings.comment_gutter_fold_button)));
+		this.editorExtensions.push(previewMode.of(previewModeState.of(this.settings.default_preview_mode)));
 	}
 
 	async updateEditorExtension() {
@@ -247,11 +248,11 @@ export default class CommentatorPlugin extends Plugin {
 		this.changed_settings = objectDifference(this.settings, this.previous_settings);
 		this.previous_settings = Object.assign({}, this.settings);
 
-		this.previewModeStatusBarButton.updateButton(this.changed_settings.preview_mode);
-		await this.previewModeHeaderButton.updateButtons(this.changed_settings.preview_mode);
+		this.previewModeStatusBarButton.updateButton(this.changed_settings.default_preview_mode);
+		// await this.previewModeHeaderButton.updateButtons(this.changed_settings.preview_mode);
 
 		this.suggestionModeStatusBarButton.updateButton((this.changed_settings.suggest_mode));
-		await this.suggestionHeaderModeButton.updateButtons(this.changed_settings.suggest_mode);
+		// await this.suggestionHeaderModeButton.updateButtons(this.changed_settings.suggest_mode);
 
 		this.previewModeHeaderButton.setLabelRendering(this.changed_settings.show_editor_buttons_labels);
 		this.suggestionHeaderModeButton.setLabelRendering(this.changed_settings.show_editor_buttons_labels);
@@ -288,7 +289,27 @@ export default class CommentatorPlugin extends Plugin {
 			this.sendFacetUpdate(commentGutterFoldButton, commentGutterFoldButtonState,
 								 commentGutterFoldButtonEffect, this.settings.comment_gutter_fold_button);
 
+		if (this.changed_settings.default_preview_mode !== undefined)
+			this.applyFacetEffect(previewMode, previewModeState, this.settings.default_preview_mode);
+
 		await this.updateEditorExtension();
+	}
+
+	applyFacetEffect<T>(compartment: Compartment, facet: Facet<T, T>, value: T) {
+		/**
+		 * What is this black magic?!
+		 * In short: where the above updates the facet and gutter of *active* CM instances respectively,
+		 * 	the code below updates the facet value of the extension by accessing the compartment instance
+		 * 	and updating the attached extension (in this case, the facet)
+		 * @remark This needs to be done very careful, creating a new compartment will give errors, and
+		 *   defining a new facet on the compartment directly, will create a new facet that is different from
+		 *   the one that is attached to other instances
+		 * @todo A less bodgy solution would be nice
+		 */
+		// @ts-expect-error (Accessing compartment directly of an Extension created by compartment)
+		const extensionIndex = this.editorExtensions.findIndex(extension => extension?.compartment === compartment);
+		// @ts-expect-error (idem)
+		this.editorExtensions[extensionIndex] = this.editorExtensions[extensionIndex].compartment.of(facet.of(value));
 	}
 
 	sendFacetUpdate<T>(compartment: Compartment, facet: Facet<T, T>, effect: StateEffectType<T>, value: T) {
@@ -302,20 +323,7 @@ export default class CommentatorPlugin extends Plugin {
 			cm.dispatch({ effects: [ gutterFacetUpdate, stateFacetUpdate, ] });
 		});
 
-		/**
-		 * What is this black magic?!
-		 * In short: where the above updates the facet and gutter of *active* CM instances respectively,
-		 * 	the code below updates the facet value of the extension by accessing the compartment instance
-		 * 	and updating the attached extension (in this case, the facet)
-		 * @remark This needs to be done very careful, creating a new compartment will give errors, and
-		 *   defining a new facet on the compartment directly, will create a new facet that is different from
-		 *   the one that is attached to other instances
-		 * @todo A less bodgy solution would be nice
-		 */
-		// @ts-ignore (Accessing compartment directly of an Extension created by compartment)
-		const extensionIndex = this.editorExtensions.findIndex(extension => extension?.compartment === compartment);
-		// @ts-ignore (idem)
-		this.editorExtensions[extensionIndex] = this.editorExtensions[extensionIndex].compartment.of(facet.of(value));
+		this.applyFacetEffect(compartment, facet, value);
 	}
 
 

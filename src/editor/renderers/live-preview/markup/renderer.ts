@@ -1,10 +1,11 @@
-import {type Extension, Range, StateField, Transaction} from '@codemirror/state';
+import {EditorSelection, type Extension, Range, RangeSet, StateField, Transaction} from '@codemirror/state';
 import {Decoration, type DecorationSet, EditorView} from '@codemirror/view';
 
 import {editorLivePreviewField} from 'obsidian';
 
 import {CriticMarkupRange, rangeParser, SubstitutionRange, SuggestionType} from '../../../base';
 import {type PluginSettings, PreviewMode} from '../../../../types';
+import {previewMode, previewModeState} from "../../../settings";
 
 function hideBracket(decorations: Range<Decoration>[], range: CriticMarkupRange, left: boolean, is_livepreview: boolean) {
 	if (!is_livepreview) return;
@@ -70,6 +71,67 @@ function hideSyntax(decorations: Range<Decoration>[], range: CriticMarkupRange, 
 	hideBracket(decorations, range, false, is_livepreview);
 }
 
+
+function constructMarkings(ranges: CriticMarkupRange[], selections: EditorSelection, live_preview: boolean, preview_mode: PreviewMode, settings: PluginSettings): Range<Decoration>[] {
+	const decorations: Range<Decoration>[] = [];
+	for (const range of ranges) {
+		if (preview_mode === PreviewMode.ALL) {
+			const in_range = selections.ranges.some(sel_range => range.partially_in_range(sel_range.from, sel_range.to));
+
+			const style = `criticmarkup-editing criticmarkup-inline criticmarkup-${range.repr.toLowerCase()} ` + (range.fields.style || '');
+
+			if (!settings.suggest_mode && in_range) {
+				markContents(decorations, range, settings.editor_styling ? style : '', null, true, settings.editor_styling);
+			} else if (range.type === SuggestionType.SUBSTITUTION) {
+				hideBracket(decorations, range, true, live_preview);
+				hideMetadata(decorations, range, live_preview);
+				markContents(decorations, range, style + ' criticmarkup-deletion', true);
+				if (live_preview) {
+					decorations.push(
+						Decoration.replace({
+							attributes: { 'data-contents': 'string' },
+						}).range((range as SubstitutionRange).middle, (range as SubstitutionRange).middle + 2),
+					);
+				}
+				markContents(decorations, range, style + ' criticmarkup-addition', false);
+				hideBracket(decorations, range, false, live_preview);
+			} else {
+				hideSyntax(decorations, range, style, live_preview);
+			}
+		} else if (preview_mode === PreviewMode.ACCEPT) {
+			if (range.type === SuggestionType.ADDITION) {
+				hideSyntax(decorations, range, 'criticmarkup-accepted', live_preview);
+			} else if (range.type === SuggestionType.DELETION) {
+				hideRange(decorations, range);
+			} else if (range.type === SuggestionType.SUBSTITUTION) {
+				hideBracket(decorations, range, true, live_preview);
+				hideMetadata(decorations, range, live_preview);
+				markContents(decorations, range, 'criticmarkup-accepted', true);
+				decorations.push(Decoration.replace({}).range((range as SubstitutionRange).middle, range.to));
+			} else {
+				hideSyntax(decorations, range, '', live_preview);
+			}
+		} else if (preview_mode === PreviewMode.REJECT) {
+			if (range.type === SuggestionType.ADDITION) {
+				hideRange(decorations, range);
+			} else if (range.type === SuggestionType.DELETION) {
+				hideBracket(decorations, range, true, live_preview);
+				hideMetadata(decorations, range, live_preview);
+				markContents(decorations, range, 'criticmarkup-accepted');
+				hideBracket(decorations, range, false, live_preview);
+			} else if (range.type === SuggestionType.SUBSTITUTION) {
+				decorations.push(Decoration.replace({}).range(range.from, (range as SubstitutionRange).middle + 2));
+				markContents(decorations, range, 'criticmarkup-accepted', false);
+				hideBracket(decorations, range, false, live_preview);
+			} else {
+				hideSyntax(decorations, range, '', live_preview);
+			}
+		}
+	}
+	return decorations;
+}
+
+
 /**
  * Extension providing styling for the markup and implementation for the preview modes within the Live Preview editor
  * @remark A StateField approach is required due to the fact that hiding/removing text in preview can go beyond the viewport,
@@ -83,69 +145,25 @@ export const markupRenderer = (settings: PluginSettings) => StateField.define<De
 	},
 
 	update(oldSet: DecorationSet, tr: Transaction) {
-		if (!tr.docChanged && oldSet.size && tr.state.field(editorLivePreviewField) === tr.startState.field(editorLivePreviewField)) return oldSet;
+		const livepreview = tr.state.field(editorLivePreviewField);
+		const livepreview_changed = livepreview !== tr.startState.field(editorLivePreviewField);
+		const preview_mode = tr.state.facet(previewModeState);
+		const preview_mode_changed = preview_mode !== tr.startState.facet(previewModeState);
+		if (!tr.docChanged && oldSet.size && !livepreview_changed && !preview_mode_changed) return oldSet;
 
-		const is_livepreview = tr.state.field(editorLivePreviewField);
-		const ranges = tr.state.field(rangeParser).ranges;
+		const parsed_ranges = tr.state.field(rangeParser);
 
-		// const builder = new RangeSetBuilder<Decoration>();
-		const decorations: Range<Decoration>[] = [];
-
-		for (const range of ranges.ranges) {
-			if (settings.preview_mode === PreviewMode.ALL) {
-				const in_range = tr.selection?.ranges?.some(sel_range => range.partially_in_range(sel_range.from, sel_range.to));
-
-				const style = `criticmarkup-editing criticmarkup-inline criticmarkup-${range.repr.toLowerCase()} ` + (range.fields.style || '');
-
-				if (!settings.suggest_mode && in_range) {
-					markContents(decorations, range, settings.editor_styling ? style : '', null, true, settings.editor_styling);
-				} else if (range.type === SuggestionType.SUBSTITUTION) {
-					hideBracket(decorations, range, true, is_livepreview);
-					hideMetadata(decorations, range, is_livepreview);
-					markContents(decorations, range, style + ' criticmarkup-deletion', true);
-					if (is_livepreview) {
-						decorations.push(
-							Decoration.replace({
-								attributes: { 'data-contents': 'string' },
-							}).range((range as SubstitutionRange).middle, (range as SubstitutionRange).middle + 2),
-						);
-					}
-					markContents(decorations, range, style + ' criticmarkup-addition', false);
-					hideBracket(decorations, range, false, is_livepreview);
-				} else {
-					hideSyntax(decorations, range, style, is_livepreview);
-				}
-			} else if (settings.preview_mode === PreviewMode.ACCEPT) {
-				if (range.type === SuggestionType.ADDITION) {
-					hideSyntax(decorations, range, 'criticmarkup-accepted', is_livepreview);
-				} else if (range.type === SuggestionType.DELETION) {
-					hideRange(decorations, range);
-				} else if (range.type === SuggestionType.SUBSTITUTION) {
-					hideBracket(decorations, range, true, is_livepreview);
-					hideMetadata(decorations, range, is_livepreview);
-					markContents(decorations, range, 'criticmarkup-accepted', true);
-					decorations.push(Decoration.replace({}).range((range as SubstitutionRange).middle, range.to));
-				} else {
-					hideSyntax(decorations, range, '', is_livepreview);
-				}
-			} else if (settings.preview_mode === PreviewMode.REJECT) {
-				if (range.type === SuggestionType.ADDITION) {
-					hideRange(decorations, range);
-				} else if (range.type === SuggestionType.DELETION) {
-					hideBracket(decorations, range, true, is_livepreview);
-					hideMetadata(decorations, range, is_livepreview);
-					markContents(decorations, range, 'criticmarkup-accepted');
-					hideBracket(decorations, range, false, is_livepreview);
-				} else if (range.type === SuggestionType.SUBSTITUTION) {
-					decorations.push(Decoration.replace({}).range(range.from, (range as SubstitutionRange).middle + 2));
-					markContents(decorations, range, 'criticmarkup-accepted', false);
-					hideBracket(decorations, range, false, is_livepreview);
-				} else {
-					hideSyntax(decorations, range, '', is_livepreview);
-				}
-			}
+		if (livepreview_changed || preview_mode_changed) {
+			return RangeSet.of<Decoration>(constructMarkings(parsed_ranges.ranges.ranges, tr.state.selection, livepreview, preview_mode, settings));
+		} else {
+			return oldSet.map(tr.changes)
+				.update({
+					filter: (from, to, value) => {
+						return !tr.changes.touchesRange(from, to);
+					},
+					add: constructMarkings(parsed_ranges.inserted_ranges, tr.state.selection, livepreview, preview_mode, settings)
+				});
 		}
-		return Decoration.set(decorations);
 	},
 
 	provide(field: StateField<DecorationSet>): Extension {
