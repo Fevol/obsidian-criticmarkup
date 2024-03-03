@@ -12,7 +12,7 @@ import {
 	generate_metadata
 } from '../../../base';
 
-import {latest_keypress} from "../keypress-catcher";
+import {latest_event} from "../keypress-catcher";
 import {cursor_transaction_pass_syntax} from "./cursor_movement";
 
 
@@ -124,8 +124,8 @@ function applySuggestion(tr: Transaction, settings: PluginSettings): Transaction
 
 		const metadata = generate_metadata(settings);
 
-		const backwards_delete = latest_keypress?.key === "Backspace";
-		const group_delete = latest_keypress?.ctrlKey!;
+		const backwards_delete = (latest_event as KeyboardEvent)?.key === "Backspace";
+		const group_delete = (latest_event as KeyboardEvent)?.ctrlKey!;
 		let offset = 0;
 		// TODO: Consider each editor_change separately to avoid issues where you try to re-insert into a now updated range
 		//        (Or: update ranges with editor_change to reflect the new state)
@@ -150,9 +150,11 @@ function applySuggestion(tr: Transaction, settings: PluginSettings): Transaction
 
 	// CASE 2: Handle cursor movements
 	else if (isUserEvent('select', userEvents) && cursorMoved(tr) && settings.alternative_cursor_movement /*&& tr.startState.field(editorLivePreviewField)*/) {
-		const result = cursor_transaction_pass_syntax(tr, userEvents, vim_mode, settings);
-		if (result)
-			return tr.startState.update(result);
+		if (latest_event instanceof KeyboardEvent) {
+			const result = cursor_transaction_pass_syntax(tr, userEvents, vim_mode, settings, latest_event);
+			if (result)
+				return tr.startState.update(result);
+		}
 	}
 
 	return tr;

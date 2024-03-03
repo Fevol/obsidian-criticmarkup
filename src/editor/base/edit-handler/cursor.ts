@@ -1,15 +1,12 @@
 import type {EditorRange} from "./types";
-import {
-    CriticMarkupRange,
-    CriticMarkupRanges,
-} from "../ranges";
+import {CriticMarkupRange, CriticMarkupRanges, SuggestionType,} from "../ranges";
 import {CharCategory, EditorSelection, type EditorState} from "@codemirror/state";
 import {findBlockingChar, getCharCategory} from "../edit-util";
 import {
-    RANGE_BRACKET_MOVEMENT_OPTION,
-    RANGE_CURSOR_MOVEMENT_OPTION,
     BracketOptionsMap,
-    CursorOptionsMap
+    CursorOptionsMap,
+    RANGE_BRACKET_MOVEMENT_OPTION,
+    RANGE_CURSOR_MOVEMENT_OPTION
 } from "../../../types";
 
 function cat_ignore_ws(cat: CharCategory | null) {
@@ -185,8 +182,26 @@ export function cursor_move(old_cursor_range: EditorRange, new_cursor_range: Edi
 }
 
 
+const default_movement_options: CursorOptionsMap = {
+    [SuggestionType.ADDITION]: RANGE_CURSOR_MOVEMENT_OPTION.IGNORE_METADATA,
+    [SuggestionType.DELETION]: RANGE_CURSOR_MOVEMENT_OPTION.IGNORE_METADATA,
+    [SuggestionType.SUBSTITUTION]: RANGE_CURSOR_MOVEMENT_OPTION.IGNORE_METADATA,
+    [SuggestionType.COMMENT]: RANGE_CURSOR_MOVEMENT_OPTION.IGNORE_METADATA,
+    [SuggestionType.HIGHLIGHT]: RANGE_CURSOR_MOVEMENT_OPTION.IGNORE_METADATA,
+}
+
+const bracket_movement_options: BracketOptionsMap = {
+    [SuggestionType.ADDITION]: RANGE_BRACKET_MOVEMENT_OPTION.STAY_INSIDE,
+    [SuggestionType.DELETION]: RANGE_BRACKET_MOVEMENT_OPTION.STAY_INSIDE,
+    [SuggestionType.SUBSTITUTION]: RANGE_BRACKET_MOVEMENT_OPTION.STAY_INSIDE,
+    [SuggestionType.COMMENT]: RANGE_BRACKET_MOVEMENT_OPTION.STAY_INSIDE,
+    [SuggestionType.HIGHLIGHT]: RANGE_BRACKET_MOVEMENT_OPTION.STAY_INSIDE,
+}
+
+
 export function cursor_move_range<T extends EditorRange>(cursor_range: T, ranges: CriticMarkupRanges, backwards_delete: boolean,
-                                  group_delete: boolean, state: EditorState, movement_options: CursorOptionsMap, bracket_options: BracketOptionsMap): T {
+                                  group_delete: boolean, state: EditorState, movement_options: CursorOptionsMap = default_movement_options,
+                                  bracket_options: BracketOptionsMap = bracket_movement_options): T {
     if (!cursor_range.selection) {
         const cursor_anchor = cursor_range.anchor!;
         let cursor_head = backwards_delete ? cursor_range.from : cursor_range.to;
