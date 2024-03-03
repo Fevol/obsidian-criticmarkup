@@ -1,5 +1,5 @@
-import { Compartment, Facet, StateEffect, StateEffectType, StateField } from '@codemirror/state';
-import {PreviewMode} from "../../types";
+import { Compartment, Facet, StateEffectType, StateField } from '@codemirror/state';
+import {EditMode, PreviewMode} from "../../types";
 
 /**
  * Provide a StateField extension for an arbitrary value that can be updated via effects
@@ -27,37 +27,24 @@ export function attachValue<T>(value: T, effect: StateEffectType<T>) {
 
 
 
-export const hideEmptyCommentGutterEffect = StateEffect.define<boolean>();
-export const hideEmptyCommentGutterState = Facet.define<boolean, boolean>({
-	combine: values => values[0]
-});
+export const hideEmptyCommentGutterState = Facet.define<boolean, boolean>({ combine: values => values[0] });
 export const hideEmptyCommentGutter = new Compartment();
 
-export const defaultFoldCommentGutterState = Facet.define<boolean, boolean>({
-	combine: values => values[0]
-});
-export const defaultFoldCommentGutter = new Compartment();
-
-export const commentGutterFoldButtonEffect = StateEffect.define<boolean>();
-export const commentGutterFoldButtonState = Facet.define<boolean, boolean>({
-	combine: values => values[0]
-});
+export const commentGutterFoldButtonState = Facet.define<boolean, boolean>({ combine: values => values[0] });
 export const commentGutterFoldButton = new Compartment();
 
-export const commentGutterWidthEffect = StateEffect.define<number>();
-export const commentGutterWidthState = Facet.define<number, number>({
-	combine: values => values[0]
-});
+export const commentGutterWidthState = Facet.define<number, number>({ combine: values => values[0] });
 export const commentGutterWidth = new Compartment();
 
+export const commentGutterFoldedState = Facet.define<boolean, boolean>({ combine: values => values[0] });
+export const commentGutterFolded = new Compartment();
 
-export const hideEmptySuggestionGutterEffect = StateEffect.define<boolean>();
-export const hideEmptySuggestionGutterState = Facet.define<boolean, boolean>({
-	combine: values => values[0]
-});
+export const hideEmptySuggestionGutterState = Facet.define<boolean, boolean>({ combine: values => values[0] });
 export const hideEmptySuggestionGutter = new Compartment();
 
-export const previewModeState = Facet.define<PreviewMode, PreviewMode>({
-	combine: values => values[0]
-});
+export const previewModeState = Facet.define<PreviewMode, PreviewMode>({ combine: values => values[0] });
 export const previewMode = new Compartment();
+
+export const editModeValueState = Facet.define<EditMode, EditMode>({ combine: values => values[0] });
+export const editModeValue = new Compartment();
+export const editMode = new Compartment();

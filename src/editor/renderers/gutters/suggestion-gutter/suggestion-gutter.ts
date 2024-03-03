@@ -11,7 +11,7 @@ import {
 } from '../base';
 import { EditorView, ViewUpdate } from '@codemirror/view';
 import { type Extension, Facet } from '@codemirror/state';
-import { hideEmptySuggestionGutterEffect, hideEmptySuggestionGutterState } from '../../../settings';
+import { hideEmptySuggestionGutterState } from '../../../settings';
 import { rangeParser } from '../../../base';
 
 const unfixGutters = Facet.define<boolean, boolean>({
@@ -45,14 +45,9 @@ class SuggestionSingleGutterView extends SingleGutterView {
 	update(update: ViewUpdate) {
 		const result = super.update(update);
 
-		for (const tr of update.transactions) {
-			for (const eff of tr.effects) {
-				if (eff.is(hideEmptySuggestionGutterEffect)) {
-					this.hide_on_empty = eff.value;
-					break;
-				}
-			}
-		}
+		const hide_on_empty = update.state.facet(hideEmptySuggestionGutterState);
+		if (hide_on_empty !== update.startState.facet(hideEmptySuggestionGutterState))
+			this.hide_on_empty = hide_on_empty;
 
 		if (this.showing && this.hide_on_empty && update.state.field(rangeParser).ranges.empty()) {
 			this.dom.parentElement!.classList.add('gutter-hidden');

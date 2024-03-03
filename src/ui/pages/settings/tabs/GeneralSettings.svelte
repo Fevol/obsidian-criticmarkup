@@ -4,7 +4,7 @@
 	import { openGithubIssueLink } from '../../../../obsidian-util';
 	import type CommentatorPlugin from '../../../../main';
 
-	import { PreviewMode } from '../../../../types';
+	import {EditMode, PreviewMode} from '../../../../types';
 
 	export let plugin: CommentatorPlugin;
 
@@ -19,44 +19,33 @@
 
 
 <SettingItem
-	name='Toggle Suggestion Mode'
-	description='When enabled, any text deleted or inserted will be marked as a suggestion'
-	notices={[
-		{ type: 'info', text: "Enable insertion of metadata in the <i>'Include Metadata Extension'</i> setting" },
-	]}
-	type='toggle'
+		name="Default <i>Edit</i> Mode"
+		type='dropdown'
+		notices={[
+			{ type: 'info', text: 'When opening a new note, this will be the default editing mode' },
+		]}
 >
-	<Toggle
-		slot='control'
-		value={ plugin.settings.suggest_mode }
-		onChange={ (value) => {
-			plugin.settings.suggest_mode = + value
-			plugin.saveSettings();
-		}}
+	<Dropdown
+			slot='control'
+			options={[
+			{ value: EditMode.OFF.toString(), text: 'Regular Edit Mode' },
+			{ value: EditMode.CORRECTED.toString(), text: 'Corrected Edit Mode' },
+			{ value: EditMode.SUGGEST.toString(), text: 'Suggestion Mode' },
+		]}
+			value={ plugin.settings.default_edit_mode.toString() }
+			onChange={ (value) => {
+				let edit_mode = parseInt(value);
+				plugin.settings.default_edit_mode = edit_mode;
+				plugin.saveSettings();
+			}}
 	/>
 </SettingItem>
 
 <SettingItem
-	name='Toggle Alternative Edit Mode'
-	description='When enabled and in regular editing mode, prevents inserts/deletes from creating malformed suggestions'
-	type='toggle'
->
-	<Toggle
-		slot='control'
-		value={ plugin.settings.edit_mode }
-		onChange={ (value) => {
-			plugin.settings.edit_mode = value
-			plugin.saveSettings();
-		}}
-	/>
-</SettingItem>
-
-
-
-<SettingItem
-	name='Set default Preview Mode state'
+	name="Default <i>Preview</i> Mode"
 	type='dropdown'
 	notices={[
+		{ type: 'info', text: 'When opening a new note, this will be the default editing mode' },
 		{ type: 'info', text: preview_mode_notices[preview_mode] },
 	]}
 >
@@ -82,7 +71,7 @@
 	type='dropdown'
 	notices={[
 		{ type: 'info', text: 'Allow inclusion of metadata for suggestions, such as authorship, time, etc.' },
-		{ type: 'warning', text: 'Suggestion metadata is <b>not</b> part of the official CriticMarkup standard, and the metadata will not be processed/rendered correctly in other editors' },
+		{ type: 'warning', text: 'Suggestion metadata is <b>not</b> part of the official CriticMarkup standard, this metadata will not get processed/rendered correctly in other editors' },
 	]}
 >
 	<Toggle

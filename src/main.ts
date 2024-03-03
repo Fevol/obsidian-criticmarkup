@@ -1,51 +1,53 @@
 import {type MarkdownPostProcessor, MarkdownPreviewRenderer, Notice, Plugin, TFile} from 'obsidian';
 
-import { EditorView } from '@codemirror/view';
-import { Compartment, type EditorState, type Extension, Facet, Prec, StateEffectType } from '@codemirror/state';
+import {EditorView} from '@codemirror/view';
+import {type EditorState, type Extension, Prec} from '@codemirror/state';
 
-import { around } from 'monkey-around';
+import {around} from 'monkey-around';
 
-import {
-	rangeParser, type CriticMarkupRange, RANGE_PROTOTYPE_MAPPER,
-	getRangesInText, text_copy,
-} from './editor/base';
+import {type CriticMarkupRange, getRangesInText, RANGE_PROTOTYPE_MAPPER, rangeParser, text_copy,} from './editor/base';
 
 import {
-	suggestion_commands,
-	editor_commands,
 	application_commmands,
-	initializeCommands,
 	cmenuCommands,
+	editor_commands,
+	initializeCommands,
+	suggestion_commands,
 } from './editor/uix';
-import { rangeCorrecter, bracketMatcher, suggestionMode, editMode, editorKeypressCatcher } from './editor/uix/extensions';
+import {bracketMatcher, editorKeypressCatcher, rangeCorrecter} from './editor/uix/extensions';
 
-import { postProcess, postProcessorRerender, postProcessorUpdate } from './editor/renderers/post-process';
-import { markupRenderer, commentRenderer } from './editor/renderers/live-preview';
-import { suggestionGutter, commentGutter } from './editor/renderers/gutters';
-import { type HeaderButton, previewModeHeaderButton, suggestionModeHeaderButton } from './editor/view-header';
+import {postProcess, postProcessorRerender, postProcessorUpdate} from './editor/renderers/post-process';
+import {commentRenderer, markupRenderer} from './editor/renderers/live-preview';
+import {commentGutter, suggestionGutter} from './editor/renderers/gutters';
+import {type HeaderButton, previewModeHeaderButton, suggestionModeHeaderButton} from './editor/view-header';
 import {
-	type StatusBarButton, type MetadataStatusBarButton,
+	type MetadataStatusBarButton,
+	metadataStatusBarButton,
 	previewModeStatusBarButton,
-	suggestionModeStatusBarButton,
-	metadataStatusBarButton
+	type StatusBarButton,
+	suggestionModeStatusBarButton
 } from './editor/status-bar';
 
 
-import { CRITICMARKUP_VIEW, CriticMarkupView } from './ui/view';
-import { CommentatorSettings } from './ui/settings';
+import {CRITICMARKUP_VIEW, CriticMarkupView} from './ui/view';
+import {CommentatorSettings} from './ui/settings';
 
-import { Database } from './database';
+import {Database} from './database';
 
-import { iterateAllCMInstances, objectDifference } from './util';
-import { DEFAULT_SETTINGS, REQUIRES_FULL_RELOAD } from './constants';
-import { type PluginSettings } from './types';
+import {objectDifference} from './util';
+import {DEFAULT_SETTINGS, REQUIRES_FULL_RELOAD} from './constants';
+import {type PluginSettings} from './types';
 import {
-	commentGutterWidth, commentGutterWidthEffect, commentGutterWidthState,
-	hideEmptyCommentGutter, hideEmptyCommentGutterEffect, hideEmptyCommentGutterState,
-	hideEmptySuggestionGutter, hideEmptySuggestionGutterEffect, hideEmptySuggestionGutterState,
-	defaultFoldCommentGutter, defaultFoldCommentGutterState,
-	commentGutterFoldButton, commentGutterFoldButtonState, commentGutterFoldButtonEffect, previewMode, previewModeState,
+	commentGutterFoldButton, commentGutterFoldButtonState,
+	commentGutterWidth, commentGutterWidthState,
+	editModeValue, editModeValueState, editMode,
+	hideEmptyCommentGutter, hideEmptyCommentGutterState,
+	hideEmptySuggestionGutter, hideEmptySuggestionGutterState,
+	previewMode, previewModeState,
+	commentGutterFolded, commentGutterFoldedState,
 } from './editor/settings';
+import {getEditMode} from "./editor/uix/extensions/editing-modes";
+import {updateAllCompartments, updateCompartment} from "./cm-util";
 
 export default class CommentatorPlugin extends Plugin {
 	private editorExtensions: Extension[] = [];
@@ -60,6 +62,8 @@ export default class CommentatorPlugin extends Plugin {
 	previewModeStatusBarButton!: StatusBarButton;
 	suggestionModeStatusBarButton!: StatusBarButton;
 	metadataStatusBarButton!: MetadataStatusBarButton;
+
+	defaultEditModeExtension: Extension[] = [];
 
 	remove_monkeys: (() => void)[] = [];
 
@@ -100,14 +104,10 @@ export default class CommentatorPlugin extends Plugin {
 			this.editorExtensions.push(markupRenderer(this.settings));
 
 		// TODO: Rerender gutter on Ctrl+Scroll
-		// TODO: Check performance costs of statefield vs viewport gutter
 		if (this.settings.editor_gutter)
 			this.editorExtensions.push(suggestionGutter);
 
-		if (this.settings.suggest_mode)
-			this.editorExtensions.push(suggestionMode(this.settings));
-		else if (this.settings.edit_mode)
-			this.editorExtensions.push(editMode(this.settings));
+		this.editorExtensions.push(editMode.of(getEditMode(this.settings.default_edit_mode, this.settings)));
 
 		if (this.settings.tag_completion)
 			this.editorExtensions.push(bracketMatcher);
@@ -118,12 +118,13 @@ export default class CommentatorPlugin extends Plugin {
 			copy: text_copy.bind(null, this.settings),
 		}));
 
-		this.editorExtensions.push(hideEmptySuggestionGutter.of(hideEmptySuggestionGutterState.of(this.settings.hide_empty_suggestion_gutter)));
+		this.editorExtensions.push(hideEmptySuggestionGutter.of(hideEmptySuggestionGutterState.of(this.settings.suggestion_gutter_hide_empty)));
 		this.editorExtensions.push(commentGutterWidth.of(commentGutterWidthState.of(this.settings.comment_gutter_width)));
-		this.editorExtensions.push(hideEmptyCommentGutter.of(hideEmptyCommentGutterState.of(this.settings.hide_empty_comment_gutter)));
-		this.editorExtensions.push(defaultFoldCommentGutter.of(defaultFoldCommentGutterState.of(this.settings.default_folded_comment_gutter)));
+		this.editorExtensions.push(hideEmptyCommentGutter.of(hideEmptyCommentGutterState.of(this.settings.comment_gutter_hide_empty)));
+		this.editorExtensions.push(commentGutterFolded.of(commentGutterFoldedState.of(this.settings.comment_gutter_default_fold_state)));
 		this.editorExtensions.push(commentGutterFoldButton.of(commentGutterFoldButtonState.of(this.settings.comment_gutter_fold_button)));
 		this.editorExtensions.push(previewMode.of(previewModeState.of(this.settings.default_preview_mode)));
+		this.editorExtensions.push(editModeValue.of(editModeValueState.of(this.settings.default_edit_mode)));
 	}
 
 	async updateEditorExtension() {
@@ -155,12 +156,14 @@ export default class CommentatorPlugin extends Plugin {
 
 		await this.migrateSettings(await this.loadData());
 
-		this.previewModeHeaderButton = previewModeHeaderButton(this, this.settings.editor_preview_button);
-		this.suggestionHeaderModeButton = suggestionModeHeaderButton(this, this.settings.editor_suggest_button);
+		this.previewModeHeaderButton = previewModeHeaderButton(this, this.settings.toolbar_preview_button);
+		this.suggestionHeaderModeButton = suggestionModeHeaderButton(this, this.settings.toolbar_suggest_button);
 
 		this.previewModeStatusBarButton = previewModeStatusBarButton(this, this.settings.status_bar_preview_button);
 		this.suggestionModeStatusBarButton = suggestionModeStatusBarButton(this, this.settings.status_bar_suggest_button);
 		this.metadataStatusBarButton = metadataStatusBarButton(this, this.settings.status_bar_metadata_button);
+
+		this.defaultEditModeExtension = getEditMode(this.settings.default_edit_mode, this.settings);
 
 		this.addSettingTab(new CommentatorSettings(this.app, this));
 		this.loadEditorExtensions();
@@ -177,8 +180,8 @@ export default class CommentatorPlugin extends Plugin {
 		// this.registerEvent(file_view_modes);
 
 		const commands = [
-			...suggestion_commands(this.settings),
-			...editor_commands,
+			...suggestion_commands(this),
+			...editor_commands(this),
 			...application_commmands(this),
 		];
 
@@ -251,14 +254,14 @@ export default class CommentatorPlugin extends Plugin {
 		this.previewModeStatusBarButton.updateButton(this.changed_settings.default_preview_mode);
 		// await this.previewModeHeaderButton.updateButtons(this.changed_settings.preview_mode);
 
-		this.suggestionModeStatusBarButton.updateButton((this.changed_settings.suggest_mode));
+		this.suggestionModeStatusBarButton.updateButton((this.changed_settings.default_edit_mode));
 		// await this.suggestionHeaderModeButton.updateButtons(this.changed_settings.suggest_mode);
 
-		this.previewModeHeaderButton.setLabelRendering(this.changed_settings.show_editor_buttons_labels);
-		this.suggestionHeaderModeButton.setLabelRendering(this.changed_settings.show_editor_buttons_labels);
+		this.previewModeHeaderButton.setLabelRendering(this.changed_settings.toolbar_show_buttons_labels);
+		this.suggestionHeaderModeButton.setLabelRendering(this.changed_settings.toolbar_show_buttons_labels);
 
-		this.previewModeHeaderButton.setRendering(this.changed_settings.editor_preview_button);
-		this.suggestionHeaderModeButton.setRendering(this.changed_settings.editor_suggest_button);
+		this.previewModeHeaderButton.setRendering(this.changed_settings.toolbar_preview_button);
+		this.suggestionHeaderModeButton.setRendering(this.changed_settings.toolbar_suggest_button);
 
 		this.previewModeStatusBarButton.setRendering(this.changed_settings.status_bar_preview_button);
 		this.suggestionModeStatusBarButton.setRendering(this.changed_settings.status_bar_suggest_button);
@@ -274,58 +277,26 @@ export default class CommentatorPlugin extends Plugin {
 		}
 
 		if (this.changed_settings.comment_gutter_width !== undefined)
-			this.sendFacetUpdate(commentGutterWidth, commentGutterWidthState,
-								 commentGutterWidthEffect, this.settings.comment_gutter_width);
+			updateAllCompartments(this.editorExtensions, commentGutterWidth, commentGutterWidthState, this.settings.comment_gutter_width);
 
-		if (this.changed_settings.hide_empty_comment_gutter !== undefined)
-			this.sendFacetUpdate(hideEmptyCommentGutter, hideEmptyCommentGutterState,
-								 hideEmptyCommentGutterEffect, this.settings.hide_empty_comment_gutter);
+		if (this.changed_settings.comment_gutter_hide_empty !== undefined)
+			updateAllCompartments(this.editorExtensions, hideEmptyCommentGutter, hideEmptyCommentGutterState, this.settings.comment_gutter_hide_empty);
 
-		if (this.changed_settings.hide_empty_suggestion_gutter !== undefined)
-			this.sendFacetUpdate(hideEmptySuggestionGutter, hideEmptySuggestionGutterState,
-								 hideEmptySuggestionGutterEffect, this.settings.hide_empty_suggestion_gutter);
+		if (this.changed_settings.suggestion_gutter_hide_empty !== undefined)
+			updateAllCompartments(this.editorExtensions, hideEmptySuggestionGutter, hideEmptySuggestionGutterState, this.settings.suggestion_gutter_hide_empty);
 
 		if (this.changed_settings.comment_gutter_fold_button !== undefined)
-			this.sendFacetUpdate(commentGutterFoldButton, commentGutterFoldButtonState,
-								 commentGutterFoldButtonEffect, this.settings.comment_gutter_fold_button);
+			updateAllCompartments(this.editorExtensions, commentGutterFoldButton, commentGutterFoldButtonState, this.settings.comment_gutter_fold_button);
 
 		if (this.changed_settings.default_preview_mode !== undefined)
-			this.applyFacetEffect(previewMode, previewModeState, this.settings.default_preview_mode);
+			updateCompartment(this.editorExtensions, previewMode, previewModeState.of(this.settings.default_preview_mode));
+		if (this.changed_settings.default_edit_mode !== undefined) {
+			updateCompartment(this.editorExtensions, editMode, getEditMode(this.settings.default_edit_mode, this.settings));
+			updateCompartment(this.editorExtensions, editModeValue, editModeValueState.of(this.settings.default_edit_mode));
+		}
 
 		await this.updateEditorExtension();
 	}
-
-	applyFacetEffect<T>(compartment: Compartment, facet: Facet<T, T>, value: T) {
-		/**
-		 * What is this black magic?!
-		 * In short: where the above updates the facet and gutter of *active* CM instances respectively,
-		 * 	the code below updates the facet value of the extension by accessing the compartment instance
-		 * 	and updating the attached extension (in this case, the facet)
-		 * @remark This needs to be done very careful, creating a new compartment will give errors, and
-		 *   defining a new facet on the compartment directly, will create a new facet that is different from
-		 *   the one that is attached to other instances
-		 * @todo A less bodgy solution would be nice
-		 */
-		// @ts-expect-error (Accessing compartment directly of an Extension created by compartment)
-		const extensionIndex = this.editorExtensions.findIndex(extension => extension?.compartment === compartment);
-		// @ts-expect-error (idem)
-		this.editorExtensions[extensionIndex] = this.editorExtensions[extensionIndex].compartment.of(facet.of(value));
-	}
-
-	sendFacetUpdate<T>(compartment: Compartment, facet: Facet<T, T>, effect: StateEffectType<T>, value: T) {
-		/**
-		 * Iterate over all active CodeMirror instances and update both the facet (via state effect of facet),
-		 * 	and the gutter (via custom state effect)
-		 */
-		const stateFacetUpdate = compartment.reconfigure(facet.of(value));
-		const gutterFacetUpdate = effect.of(value);
-		iterateAllCMInstances(cm => {
-			cm.dispatch({ effects: [ gutterFacetUpdate, stateFacetUpdate, ] });
-		});
-
-		this.applyFacetEffect(compartment, facet, value);
-	}
-
 
 
 	async setSetting<K extends keyof PluginSettings>(key: K, value: PluginSettings[K]) {

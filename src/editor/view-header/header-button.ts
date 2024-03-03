@@ -1,4 +1,4 @@
-import { type EventRef, type MarkdownView, setIcon } from 'obsidian';
+import {type EventRef, type MarkdownView, Menu, setIcon} from 'obsidian';
 import type CommentatorPlugin from '../../main';
 
 export class HeaderButton {
@@ -9,8 +9,9 @@ export class HeaderButton {
 
 	changeEvent: EventRef | null = null;
 
-	constructor(private attribute: keyof typeof plugin.settings, private states: { icon: string, tooltip: string, text: string }[],
-				private has_label: boolean, private cls: string, private onchange: (view: MarkdownView, value: number) => void, private getvalue: (view: MarkdownView) => number, private plugin: CommentatorPlugin, render = false) {
+	constructor(private states: { icon: string, tooltip: string, text: string }[],
+				private has_label: boolean, private cls: string, private onchange: (view: MarkdownView, value: number) => void,
+				private getvalue: (view: MarkdownView) => number, private plugin: CommentatorPlugin, render = false) {
 		this.setRendering(render);
 	}
 
@@ -44,10 +45,10 @@ export class HeaderButton {
 	}
 
 	updateButton(view: MarkdownView, value: number) {
-		const { icon, tooltip, text } = this.states[value];
+		const { tooltip, text } = this.states[value];
 		const elements = this.active_mapping.get(view);
 		if (elements) {
-			setIcon(elements.button, icon);
+			setIcon(elements.button, this.states[(value + 1) % this.states.length].icon);
 			elements.button.setAttribute('aria-label', tooltip);
 			if (this.has_label)
 				elements.status!.innerText = text;
@@ -60,10 +61,11 @@ export class HeaderButton {
 
 		for (const leaf of this.plugin.app.workspace.getLeavesOfType('markdown')) {
 			const view = leaf.view as MarkdownView;
-			const { icon, tooltip, text } = this.states[this.getvalue(view)];
 			if (this.active_mapping.has(view)) continue;
 
-			const button = view.addAction(icon, tooltip, async () => {
+			const value = this.getvalue(view);
+			const { tooltip, text } = this.states[value];
+			const button = view.addAction(this.states[(value + 1) % this.states.length].icon, tooltip, async () => {
 				const value = (this.getvalue(view) + 1) % this.states.length;
 				this.updateButton(view, value);
 				this.onchange(view, value);
@@ -73,6 +75,24 @@ export class HeaderButton {
 			if (this.has_label)
 				// @ts-ignore (Parent element exists)
 				button.parentElement.insertBefore(status, button);
+
+			button.oncontextmenu = (e: MouseEvent) => {
+				const menu = new Menu();
+				const current_value = this.getvalue(view);
+				for (const [i, { icon, text }] of this.states.entries()) {
+					menu.addItem((item) => {
+						item.setIcon(icon)
+							.setTitle(text)
+							.setChecked(i === current_value)
+							.onClick(() => {
+								this.updateButton(view, i);
+								this.onchange(view, i);
+							});
+					});
+				}
+				menu.showAtMouseEvent(e);
+			}
+
 
 			this.active_mapping.set(view, { button, status });
 		}

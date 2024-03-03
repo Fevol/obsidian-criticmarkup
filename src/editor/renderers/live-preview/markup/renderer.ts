@@ -4,8 +4,8 @@ import {Decoration, type DecorationSet, EditorView} from '@codemirror/view';
 import {editorLivePreviewField} from 'obsidian';
 
 import {CriticMarkupRange, rangeParser, SubstitutionRange, SuggestionType} from '../../../base';
-import {type PluginSettings, PreviewMode} from '../../../../types';
-import {previewMode, previewModeState} from "../../../settings";
+import {EditMode, type PluginSettings, PreviewMode} from '../../../../types';
+import {editModeValueState, previewModeState} from "../../../settings";
 
 function hideBracket(decorations: Range<Decoration>[], range: CriticMarkupRange, left: boolean, is_livepreview: boolean) {
 	if (!is_livepreview) return;
@@ -72,7 +72,7 @@ function hideSyntax(decorations: Range<Decoration>[], range: CriticMarkupRange, 
 }
 
 
-function constructMarkings(ranges: CriticMarkupRange[], selections: EditorSelection, live_preview: boolean, preview_mode: PreviewMode, settings: PluginSettings): Range<Decoration>[] {
+function constructMarkings(ranges: CriticMarkupRange[], selections: EditorSelection, live_preview: boolean, preview_mode: PreviewMode, suggest_mode: EditMode, settings: PluginSettings): Range<Decoration>[] {
 	const decorations: Range<Decoration>[] = [];
 	for (const range of ranges) {
 		if (preview_mode === PreviewMode.ALL) {
@@ -80,7 +80,7 @@ function constructMarkings(ranges: CriticMarkupRange[], selections: EditorSelect
 
 			const style = `criticmarkup-editing criticmarkup-inline criticmarkup-${range.repr.toLowerCase()} ` + (range.fields.style || '');
 
-			if (!settings.suggest_mode && in_range) {
+			if (suggest_mode === EditMode.SUGGEST && in_range) {
 				markContents(decorations, range, settings.editor_styling ? style : '', null, true, settings.editor_styling);
 			} else if (range.type === SuggestionType.SUBSTITUTION) {
 				hideBracket(decorations, range, true, live_preview);
@@ -149,19 +149,21 @@ export const markupRenderer = (settings: PluginSettings) => StateField.define<De
 		const livepreview_changed = livepreview !== tr.startState.field(editorLivePreviewField);
 		const preview_mode = tr.state.facet(previewModeState);
 		const preview_mode_changed = preview_mode !== tr.startState.facet(previewModeState);
+		const suggest_mode = tr.state.facet(editModeValueState);
+
 		if (!tr.docChanged && oldSet.size && !livepreview_changed && !preview_mode_changed) return oldSet;
 
 		const parsed_ranges = tr.state.field(rangeParser);
 
 		if (livepreview_changed || preview_mode_changed) {
-			return RangeSet.of<Decoration>(constructMarkings(parsed_ranges.ranges.ranges, tr.state.selection, livepreview, preview_mode, settings));
+			return RangeSet.of<Decoration>(constructMarkings(parsed_ranges.ranges.ranges, tr.state.selection, livepreview, preview_mode, suggest_mode, settings));
 		} else {
 			return oldSet.map(tr.changes)
 				.update({
 					filter: (from, to, value) => {
 						return !tr.changes.touchesRange(from, to);
 					},
-					add: constructMarkings(parsed_ranges.inserted_ranges, tr.state.selection, livepreview, preview_mode, settings)
+					add: constructMarkings(parsed_ranges.inserted_ranges, tr.state.selection, livepreview, preview_mode, suggest_mode, settings)
 				});
 		}
 	},

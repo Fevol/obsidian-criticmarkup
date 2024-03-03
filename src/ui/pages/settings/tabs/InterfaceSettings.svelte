@@ -20,9 +20,9 @@
 >
 	<Toggle
 		slot='control'
-		value={plugin.settings.show_editor_buttons_labels}
+		value={plugin.settings.toolbar_show_buttons_labels}
 		onChange={() => {
-			plugin.settings.show_editor_buttons_labels = !plugin.settings.show_editor_buttons_labels;
+			plugin.settings.toolbar_show_buttons_labels = !plugin.settings.toolbar_show_buttons_labels;
 			plugin.saveSettings();
 		}}
 	/>
@@ -35,9 +35,9 @@
 >
 	<Toggle
 		slot='control'
-		value={plugin.settings.editor_preview_button}
+		value={plugin.settings.toolbar_preview_button}
 		onChange={() => {
-			plugin.settings.editor_preview_button = !plugin.settings.editor_preview_button;
+			plugin.settings.toolbar_preview_button = !plugin.settings.toolbar_preview_button;
 			plugin.saveSettings();
 		}}
 	/>
@@ -50,9 +50,9 @@
 >
 	<Toggle
 		slot='control'
-		value={plugin.settings.editor_suggest_button}
+		value={plugin.settings.toolbar_suggest_button}
 		onChange={() => {
-			plugin.settings.editor_suggest_button = !plugin.settings.editor_suggest_button;
+			plugin.settings.toolbar_suggest_button = !plugin.settings.toolbar_suggest_button;
 			plugin.saveSettings();
 		}}
 	/>

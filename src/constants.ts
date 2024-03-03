@@ -1,25 +1,24 @@
 import {
+	EditMode,
 	type PluginSettings,
 	PreviewMode,
 	RANGE_BRACKET_MOVEMENT_OPTION,
 	RANGE_CURSOR_MOVEMENT_OPTION,
-	SuggestMode
 } from './types';
 import {SuggestionType} from "./editor/base";
 
 export const DEFAULT_SETTINGS: PluginSettings = {
 	version: "0.2.0",
 
+	default_edit_mode: EditMode.CORRECTED,
 	default_preview_mode: PreviewMode.ALL,
-	suggest_mode: SuggestMode.OFF,
 
 	editor_gutter: true,
 
 	editor_styling: false,
-	hide_empty_gutter: false,
-	hide_empty_suggestion_gutter: false,
-	hide_empty_comment_gutter: false,
-	default_folded_comment_gutter: false,
+	suggestion_gutter_hide_empty: false,
+	comment_gutter_hide_empty: false,
+	comment_gutter_default_fold_state: false,
 	comment_gutter_fold_button: true,
 
 	comment_gutter_width: 300,
@@ -30,9 +29,9 @@ export const DEFAULT_SETTINGS: PluginSettings = {
 	clipboard_remove_syntax: true,
 	edit_info: true,
 
-	editor_preview_button: true,
-	editor_suggest_button: true,
-	show_editor_buttons_labels: true,
+	toolbar_preview_button: true,
+	toolbar_suggest_button: true,
+	toolbar_show_buttons_labels: true,
 
 	status_bar_preview_button: true,
 	status_bar_suggest_button: true,
@@ -43,8 +42,6 @@ export const DEFAULT_SETTINGS: PluginSettings = {
 	post_processor: true,
 	live_preview: true,
 	alternative_cursor_movement: true,
-	edit_mode: true,
-
 
 	enable_metadata: false,
 	enable_author_metadata: false,
@@ -87,7 +84,6 @@ export const REQUIRES_FULL_RELOAD: Set<string> = new Set([
 	"alternative_live_preview",
 	"editor_gutter",
 
-	"hide_empty_gutter",
 	"comment_style",
 
 	"tag_completion",

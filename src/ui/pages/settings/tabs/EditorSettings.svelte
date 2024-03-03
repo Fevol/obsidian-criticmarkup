@@ -117,10 +117,10 @@
 >
 	<Toggle
 		slot='control'
-		value={plugin.settings.hide_empty_suggestion_gutter}
+		value={plugin.settings.suggestion_gutter_hide_empty}
 		onChange={() => {
 			// TODO: Split up into two settings
-			plugin.settings.hide_empty_suggestion_gutter = !plugin.settings.hide_empty_suggestion_gutter;
+			plugin.settings.suggestion_gutter_hide_empty = !plugin.settings.suggestion_gutter_hide_empty;
 			plugin.saveSettings();
 		}}
 	/>
@@ -198,9 +198,9 @@
 >
 	<Toggle
 		slot='control'
-		value={plugin.settings.default_folded_comment_gutter}
+		value={plugin.settings.comment_gutter_default_fold_state}
 		onChange={() => {
-			plugin.settings.default_folded_comment_gutter = !plugin.settings.default_folded_comment_gutter;
+			plugin.settings.comment_gutter_default_fold_state = !plugin.settings.comment_gutter_default_fold_state;
 			plugin.saveSettings();
 		}}
 	/>
@@ -228,10 +228,10 @@
 >
 	<Toggle
 		slot='control'
-		value={plugin.settings.hide_empty_comment_gutter}
+		value={plugin.settings.comment_gutter_hide_empty}
 		onChange={() => {
 			// TODO: Split up into two settings
-			plugin.settings.hide_empty_comment_gutter = !plugin.settings.hide_empty_comment_gutter;
+			plugin.settings.comment_gutter_hide_empty = !plugin.settings.comment_gutter_hide_empty;
 			plugin.saveSettings();
 		}}
 	/>

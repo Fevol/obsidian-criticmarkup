@@ -1,6 +1,6 @@
 import { type Editor, type MarkdownView, Platform } from 'obsidian';
 
-import {type ECommand, PluginSettings} from '../../types';
+import {type ECommand, EditMode} from '../../types';
 
 import {
 	CM_SuggestionTypes, selectionContainsRanges,
@@ -8,20 +8,24 @@ import {
 } from '../base';
 import type CommentatorPlugin from '../../main';
 import { commentGutter } from '../renderers/gutters';
-import {previewMode, previewModeState} from "../settings";
+import {
+	editMode, editModeValue, editModeValueState,
+	previewMode, previewModeState
+} from "../settings";
+import {getEditMode} from "./extensions/editing-modes";
 
 
-export const suggestion_commands: (settings: PluginSettings) => ECommand[] = (settings) => Object.entries(CM_SuggestionTypes).map(([text, type]) => ({
+export const suggestion_commands: (plugin: CommentatorPlugin) => ECommand[] = (plugin) => Object.entries(CM_SuggestionTypes).map(([text, type]) => ({
 	id: `toggle-${text.toLowerCase()}`,
 	name: `Mark as ${text}`,
 	icon: text.toLowerCase(),
 	editor_context: true,
 	regular_callback: (editor: Editor, view: MarkdownView) => {
-		mark_editor_ranges(editor, type, settings)
+		mark_editor_ranges(editor, type, plugin.settings)
 	},
 }));
 
-export const editor_commands: ECommand[] = [
+export const editor_commands: (plugin: CommentatorPlugin) => ECommand[] = (plugin) => [
 	{
 		id: 'accept-all-suggestions',
 		name: 'Accept all suggestions',
@@ -120,19 +124,26 @@ export const editor_commands: ECommand[] = [
 			}));
 		},
 	},
-];
-
-export const application_commmands = (plugin: CommentatorPlugin): ECommand[] => [
 	{
 		id: 'suggest-mode',
 		name: 'Toggle suggestion mode',
 		icon: 'comment',
 		editor_context: true,
-		regular_callback: async () => {
-			plugin.settings.suggest_mode = (plugin.settings.suggest_mode + 1) % 2;
-			await plugin.saveSettings();
+		regular_callback: (editor: Editor, _) => {
+			const current_value = editor.cm.state.facet(editModeValueState);
+			const resulting_mode = current_value === EditMode.SUGGEST ? EditMode.CORRECTED : EditMode.SUGGEST;
+			editor.cm.dispatch(editor.cm.state.update({
+				effects: [
+					editModeValue.reconfigure(editModeValueState.of(resulting_mode)),
+					editMode.reconfigure(getEditMode(resulting_mode, plugin.settings))
+				]
+			}))
+
 		},
 	},
+];
+
+export const application_commmands = (plugin: CommentatorPlugin): ECommand[] => [
 	{
 		id: 'toggle-vim',
 		name: '(DEBUG) Toggle Vim mode',
@@ -147,15 +158,6 @@ export const application_commmands = (plugin: CommentatorPlugin): ECommand[] => 
 		icon: 'comment',
 		regular_callback: async () => {
 			await plugin.activateView();
-		},
-	},
-	{
-		id: 'toggle-alt',
-		name: 'Toggle alternative editing mode',
-		icon: 'comment',
-		regular_callback: async () => {
-			plugin.settings.edit_mode = !plugin.settings.edit_mode;
-			await plugin.saveSettings();
 		},
 	}
 ];

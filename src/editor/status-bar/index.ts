@@ -3,7 +3,7 @@ import { MetadataStatusBarButton } from "./metadata-status-bar-button";
 import type CommentatorPlugin from '../../main';
 
 export const previewModeStatusBarButton = (plugin: CommentatorPlugin, render: boolean) => new StatusBarButton(
-	'preview_mode',
+	'default_preview_mode',
 	[
 		{ icon: 'message-square', text: 'Showing all suggestions' },
 		{ icon: 'check', text: 'Previewing "accept all"' },
@@ -14,7 +14,7 @@ export const previewModeStatusBarButton = (plugin: CommentatorPlugin, render: bo
 );
 
 export const suggestionModeStatusBarButton = (plugin: CommentatorPlugin, render: boolean) => new StatusBarButton(
-	'suggest_mode',
+	'default_edit_mode',
 	[
 		{ icon: 'edit', text: 'Editing' },
 		{ icon: 'file-edit', text: 'Suggesting' },

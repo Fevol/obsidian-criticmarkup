@@ -2,14 +2,18 @@ import type { Command } from 'obsidian';
 import {SuggestionType} from "./editor/base";
 
 export enum PreviewMode {
+	// Show all text
 	ALL = 0,
+	// Visualise 'accept' action (only show regular text and Addition Ranges)
 	ACCEPT = 1,
+	// Visualise 'reject' action (only show regular text and Deletion Ranges)
 	REJECT = 2,
 }
 
-export enum SuggestMode {
+export enum EditMode {
 	OFF = 0,
-	SUGGEST = 1,
+	CORRECTED = 1,
+	SUGGEST = 2,
 }
 
 /**
@@ -55,21 +59,19 @@ export interface PluginSettings {
 	version: string;
 
 	/**
-	 * Determines how ranges should be visualised in LP/S mode
+	 * When opening a new view, determine how the editor should behave by default
+	 * - 0: Regular (default) editing mode
+	 * - 1: Corrected mode (ensure that edits do not break the syntax)
+	 * - 2: Suggestion mode (convert edit operations into suggestion ranges)
+	 */
+	default_edit_mode: EditMode;
+	/**
+	 * When opening a new view, determine how the ranges should be visualised in LP/S mode by default
 	 * - 0: Show all text
 	 * - 1: Visualise 'accept' action (only show regular text and Addition Ranges)
 	 * - 2: Visualise 'reject' action (only show regular text and Deletion Ranges)
 	 */
 	default_preview_mode: PreviewMode;
-	/**
-	 * Enable editor suggestion mode
-	 */
-	suggest_mode: SuggestMode;
-	/**
-	 * Enable corrected edits in regular editing mode
-	 * @remark Prevent breaking up brackets, allows deletion within additions, generally avoid creation of broken syntax
-	 */
-	edit_mode: boolean;
 
 	/**
 	 * Render a gutter marking locations of ranges in the document
@@ -79,29 +81,24 @@ export interface PluginSettings {
 	 * Keep styling ranges even if cursor is inside it
 	 */
 	editor_styling: boolean;
-	/**
-	 * Hide gutter is no ranges are present (such that editor body is flush with the title)
-	 */
-	hide_empty_gutter: boolean;
 
 	/**
 	 * Hide suggestion gutter if no suggestions are present in the note
 	 */
-	hide_empty_suggestion_gutter: boolean;
+	suggestion_gutter_hide_empty: boolean;
+
 	/**
 	 * Hide comment gutter if no comments are present in the note
 	 */
-	hide_empty_comment_gutter: boolean;
+	comment_gutter_hide_empty: boolean;
 	/**
 	 * Determine whether the comment gutter should be folded by default
 	 */
-	default_folded_comment_gutter: boolean;
+	comment_gutter_default_fold_state: boolean;
 	/**
 	 * Add a button next to the comment gutter for quickly (un)folding the gutter
 	 */
 	comment_gutter_fold_button: boolean;
-
-
 	/**
 	 * How much space the comment gutter should take up
 	 */
@@ -132,15 +129,15 @@ export interface PluginSettings {
 	/**
 	 * Add a toggle button for quickly toggling between preview modes in the editor toolbar
 	 */
-	editor_preview_button: boolean;
+	toolbar_preview_button: boolean;
 	/**
 	 * Add a toggle button for quickly toggling suggestion mode on/off in the editor toolbar
 	 */
-	editor_suggest_button: boolean;
+	toolbar_suggest_button: boolean;
 	/**
 	 * Show the labels on the buttons found in the header
 	 */
-	show_editor_buttons_labels: boolean;
+	toolbar_show_buttons_labels: boolean;
 
 	/**
 	 * Add a button for quickly toggling preview mode in the status bar
@@ -224,7 +221,7 @@ export interface PluginSettings {
 	add_color_metadata: boolean;
 
 	/**
-	 * Include authorship metadata
+	 * Author name to use for metadata
 	 */
 	author?: string;
 

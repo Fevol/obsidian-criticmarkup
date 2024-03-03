@@ -1,15 +1,15 @@
 import { HeaderButton } from './header-button';
 import type CommentatorPlugin from '../../main';
-import {previewMode, previewModeState} from "../settings";
+import {editMode, editModeValue, editModeValueState, previewMode, previewModeState} from "../settings";
+import {getEditMode} from "../uix/extensions/editing-modes";
 
 export const previewModeHeaderButton = (plugin: CommentatorPlugin, render: boolean) => new HeaderButton(
-	"default_preview_mode",
 	[
-		{ icon: 'check', tooltip: 'Current mode: show all suggestions\nClick to preview \'accept all\'', text: 'Showing all suggestions' },
-		{ icon: 'cross', tooltip: 'Current mode: preview \'accept all\'\nClick to preview \'reject all\'', text: 'Previewing "accept all"' },
-		{ icon: 'message-square', tooltip: 'Current mode: preview \'reject all\'\nClick to preview \'show all\'', text: 'Previewing "reject all"' },
+		{ icon: 'message-square', tooltip: 'Current mode: show all suggestions\nClick to preview \'accept all\'', text: 'Showing all suggestions' },
+		{ icon: 'check', tooltip: 'Current mode: preview \'accept all\'\nClick to preview \'reject all\'', text: 'Previewing "accept all"' },
+		{ icon: 'cross', tooltip: 'Current mode: preview \'reject all\'\nClick to preview \'show all\'', text: 'Previewing "reject all"' },
 	],
-	plugin.settings.show_editor_buttons_labels,
+	plugin.settings.toolbar_show_buttons_labels,
 	'criticmarkup-suggestion-status',
 	(view, value) => {
 		view.editor.cm.dispatch(view.editor.cm.state.update({
@@ -24,18 +24,23 @@ export const previewModeHeaderButton = (plugin: CommentatorPlugin, render: boole
 );
 
 export const suggestionModeHeaderButton = (plugin: CommentatorPlugin, render: boolean) => new HeaderButton(
-	"suggest_mode",
 	[
-		{ icon: 'edit', tooltip: 'Current mode: editing\nClick to suggest', text: 'Editing' },
-		{ icon: 'file-edit', tooltip: 'Current mode: suggesting\nClick to edit', text: 'Suggesting' },
+		{ icon: 'pencil', tooltip: 'Current mode: editing (regular)\nClick to edit (corrected)', text: 'Editing (REG)' },
+		{ icon: 'edit', tooltip: 'Current mode: editing (corrected)\nClick to suggest', text: 'Editing (ALT)' },
+		{ icon: 'file-edit', tooltip: 'Current mode: suggesting\nClick to edit (regular)', text: 'Suggesting' },
 	],
-	plugin.settings.show_editor_buttons_labels,
+	plugin.settings.toolbar_show_buttons_labels,
 	'criticmarkup-suggestion-status',
 	(view, value) => {
-		plugin.setSetting('suggest_mode', value);
+		view.editor.cm.dispatch(view.editor.cm.state.update({
+			effects: [
+				editMode.reconfigure(getEditMode(value, plugin.settings)),
+				editModeValue.reconfigure(editModeValueState.of(value))
+			]
+		}));
 	},
 	(view) => {
-		return plugin.settings.suggest_mode;
+		return view.editor.cm.state.facet(editModeValueState);
 	},
 	plugin,
 	render

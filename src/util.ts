@@ -1,8 +1,3 @@
-import { RangeSet, RangeValue } from '@codemirror/state';
-import { MarkdownView } from 'obsidian';
-import { type EditorView } from '@codemirror/view';
-
-
 export function objectDifference<T>(new_obj: T, old_obj: T): Partial<T> {
     const diff: Partial<typeof new_obj> = {};
     for (const key in new_obj)
@@ -52,15 +47,6 @@ export function spliceString(str: string, remove: [number, number][]) {
     return str;
 }
 
-export function debugRangeset<Type extends RangeValue>(set: RangeSet<Type>): { from: number, to: number, value: Type }[] {
-    const ptr = set.iter();
-    const output: { from: number, to: number, value: Type }[] = [];
-    while (ptr.value) {
-        output.push({ from: ptr.from, to: ptr.to, value: ptr.value });
-        ptr.next();
-    }
-    return output;
-}
 
 export function capitalizeFirstLetter(string: string) {
     return string.charAt(0).toUpperCase() + string.toLowerCase().slice(1);
@@ -73,13 +59,4 @@ export function splitIntoEvenChunks<T>(array: T[], chunk_count: number): T[][] {
     for (let i = chunk_count; i > 0; i--)
         result.push(array.splice(0, Math.ceil(array.length / i)));
     return result;
-}
-
-export function iterateAllCMInstances(callback: (cm: EditorView) => void) {
-    app.workspace.iterateAllLeaves((leaf) => {
-        // @ts-ignore
-        if (leaf.view instanceof MarkdownView && leaf.view.currentMode.type === "source")
-            // @ts-ignore
-            callback(leaf.view.editor.cm);
-    });
 }
