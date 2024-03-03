@@ -1,9 +1,10 @@
 import { EditorView, WidgetType } from '@codemirror/view';
 
-import { Component, MarkdownRenderer, setIcon } from 'obsidian';
+import {Component, MarkdownRenderer, Menu, setIcon} from 'obsidian';
 
-import { CriticMarkupRange } from '../../../base';
-import { commentGutterMarkers } from '../../gutters';
+import {CriticMarkupRange} from '../../../base';
+import {commentGutter, commentGutterMarkers} from '../../gutters';
+
 
 export class CommentIconWidget extends WidgetType {
 	tooltip: HTMLElement | null = null;
@@ -32,6 +33,17 @@ export class CommentIconWidget extends WidgetType {
 		}
 	}
 
+	focusComment(view: EditorView, e: Event) {
+		const gutterElements = view.state.field(commentGutterMarkers);
+		e.preventDefault();
+		gutterElements.between(this.range.from, this.range.to, (from, to, widget) => {
+			if (this.range.equals(widget.comment_range)) {
+				widget.comment_thread!.dispatchEvent(new MouseEvent('dblclick'));
+				return false;
+			}
+		});
+	}
+
 	unrenderTooltip() {
 		if (!this.focused && this.tooltip) {
 			this.component.unload();
@@ -52,16 +64,42 @@ export class CommentIconWidget extends WidgetType {
 		// this.icon.appendChild(line);
 
 		if (this.is_block) {
-			this.icon.onclick = (e) => {
-				const gutterElements = view.state.field(commentGutterMarkers);
+			this.icon.onclick = (e) => this.focusComment(view, e);
+
+			this.icon.oncontextmenu = (e) => {
 				e.preventDefault();
-				gutterElements.between(this.range.from, this.range.to, (from, to, widget) => {
-					if (this.range.equals(widget.comment_range)) {
-						widget.comment_thread!.dispatchEvent(new MouseEvent('dblclick'));
-						return false;
-					}
+
+
+				const menu = new Menu();
+				menu.addItem((item) => {
+					item.setTitle('Focus comment')
+					    .setIcon('eye')
+					    .onClick(this.focusComment.bind(this, view));
 				});
-			};
+				menu.addItem((item) => {
+					item.setTitle("Add comment")
+						.setIcon('message-square')
+						.onClick((e) => {
+							e.preventDefault();
+							const cursor = this.range.full_range_back;
+							view.dispatch(view.state.update({
+								changes: {
+									from: cursor,
+									to: cursor,
+									insert: '{>><<}',
+								},
+							}));
+							if (view.plugin(commentGutter[1][0][0])) {
+								setTimeout(() => {
+									view.plugin(commentGutter[1][0][0])!.focusCommentThread(cursor + 1);
+								});
+							}
+					});
+				});
+
+				menu.showAtMouseEvent(e);
+			}
+
 		} else {
 			if (this.range.length) {
 				this.icon.onmouseenter = () => {

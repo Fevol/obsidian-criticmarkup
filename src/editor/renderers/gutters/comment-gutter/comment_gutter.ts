@@ -282,19 +282,21 @@ class CommentSingleGutterView extends SingleGutterView {
 			}
 		}
 
-		if (update.state.field(commentGutterMarkers).size === 0) {
-			if (this.fold_button)
-				this.fold_button.style.display = 'none';
-			if (this.showing && this.hide_on_empty) {
-				this.dom.parentElement!.classList.toggle('gutter-hidden');
-				this.showing = false;
-			}
-		} else {
-			if (this.fold_button)
-				this.fold_button.style.display = '';
-			if (!this.showing && !this.hide_on_empty) {
-				this.dom.parentElement!.classList.remove('gutter-hidden');
-				this.showing = true;
+		if (update.docChanged) {
+			if (update.state.field(commentGutterMarkers).size === 0) {
+				if (this.fold_button)
+					this.fold_button.style.display = 'none';
+				if (this.showing && this.hide_on_empty) {
+					this.dom.parentElement!.classList.toggle('gutter-hidden');
+					this.showing = false;
+				}
+			} else {
+				if (this.fold_button)
+					this.fold_button.style.display = '';
+				if (!this.showing && this.hide_on_empty) {
+					this.dom.parentElement!.classList.remove('gutter-hidden');
+					this.showing = true;
+				}
 			}
 		}
 
@@ -317,8 +319,7 @@ class CommentGutterElement extends GutterElement {
 		// 	this.dom.style.height = (this.height = height) + 'px';
 		if (this.above != above)
 			this.dom.style.marginTop = (this.above = above) ? above + 'px' : '';
-		if (!sameMarkers(this.markers, markers)) {
+		if (!sameMarkers(this.markers, markers))
 			this.setMarkers(view, markers);
-		}
 	}
 }
