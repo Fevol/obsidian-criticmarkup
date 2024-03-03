@@ -1,7 +1,7 @@
 <script lang='ts'>
 	import { SettingItem, Button, Dropdown, Slider, Toggle } from '../../../components';
 
-	import { openGithubIssueLink } from '../../../../obsidian-util';
+	import { openGithubIssueLink } from '../../../../util/obsidian-util';
 	import type CommentatorPlugin from '../../../../main';
 
 	import {EditMode, PreviewMode} from '../../../../types';

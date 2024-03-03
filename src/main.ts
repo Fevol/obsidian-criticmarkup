@@ -34,7 +34,7 @@ import {CommentatorSettings} from './ui/settings';
 
 import {Database} from './database';
 
-import {objectDifference} from './util';
+import {objectDifference} from './util/util';
 import {DEFAULT_SETTINGS, REQUIRES_FULL_RELOAD} from './constants';
 import {type PluginSettings} from './types';
 import {
@@ -47,7 +47,7 @@ import {
 	commentGutterFolded, commentGutterFoldedState,
 } from './editor/settings';
 import {getEditMode} from "./editor/uix/extensions/editing-modes";
-import {updateAllCompartments, updateCompartment} from "./cm-util";
+import {updateAllCompartments, updateCompartment} from "./util/cm-util";
 
 export default class CommentatorPlugin extends Plugin {
 	private editorExtensions: Extension[] = [];
