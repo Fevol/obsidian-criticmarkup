@@ -1,26 +1,23 @@
 import {EditorView, GutterMarker} from '@codemirror/view';
-import {type EditorState, type RangeSet, Line, RangeSetBuilder, StateField} from '@codemirror/state';
+import {type EditorState, Line, RangeSet, StateField} from '@codemirror/state';
 
 import {Component, editorEditorField, MarkdownRenderer, Menu} from 'obsidian';
 
-import {type CommentRange, rangeParser, SuggestionType} from '../../../base';
+import {type CommentRange, CriticMarkupRange, rangeParser, SuggestionType} from '../../../base';
 import {commentGutter} from './index';
 
 export class CommentMarker extends GutterMarker {
     comment_thread: HTMLElement | null = null;
     component: Component = new Component();
+    thread: CommentRange[] = [];
 
-    constructor(public comment_range: CommentRange, public view: EditorView) {
+    constructor(public comment_range: CommentRange, public view: EditorView, public itr = 0) {
         super();
+        this.thread = comment_range.thread;
     }
 
-    // TODO: I have many gripes with this implementation, though much fewer ideas on how to fix it
-    //    - Comparing hashes of ranges (prevents having to chain together the entire comment thread, but expensive)
-    //    - ...
     eq(other: CommentMarker) {
-        const base_range = this.comment_range.attached_comment || this.comment_range;
-        const other_base_range = other.comment_range.attached_comment || other.comment_range;
-        return base_range.equals(other_base_range);
+        return this.itr === other.itr && this.comment_range.equals(other.comment_range);
     }
 
     renderComment(comment: HTMLElement, range: CommentRange, text: string) {
@@ -65,6 +62,7 @@ export class CommentMarker extends GutterMarker {
 
         for (const range of comment_ranges_flattened) {
             const comment = createDiv({cls: 'criticmarkup-gutter-comment'});
+            // TODO: Switch to prototype?
             comment.contentEditable = 'false';
 
             comment.onblur = () => {
@@ -160,16 +158,15 @@ export class CommentMarker extends GutterMarker {
     }
 }
 
-function createMarkers(state: EditorState) {
-    const builder = new RangeSetBuilder<CommentMarker>();
+function createMarkers(state: EditorState, changed_ranges: CriticMarkupRange[]) {
     const view = state.field(editorEditorField);
-    const ranges = state.field(rangeParser).ranges;
 
     let overlapping_block = false;
     let previous_block: Line;
     let stop_next_block = null;
 
-    for (const range of ranges.ranges) {
+    const cm_ranges: { from: number, to: number, value: CommentMarker }[] = [];
+    for (const range of changed_ranges) {
         if (range.type !== SuggestionType.COMMENT || (range as CommentRange).reply_depth) continue;
 
         // Mental note to myself: this code exists because the fact that comments
@@ -197,21 +194,41 @@ function createMarkers(state: EditorState) {
             previous_block = block_from;
         }
 
-        builder.add(block_from.from, block_from.to - 1, new CommentMarker(range as CommentRange, view));
+        cm_ranges.push({
+            from: block_from.from,
+            to: block_from.to - 1,
+            value: new CommentMarker(range as CommentRange, view, itr)
+        })
     }
 
-    return builder.finish();
+    return cm_ranges;
 }
 
-
+let itr = 0;
 export const commentGutterMarkers = StateField.define<RangeSet<CommentMarker>>({
     create(state) {
-        return createMarkers(state);
+        return RangeSet.of<CommentMarker>(createMarkers(state, state.field(rangeParser).ranges.ranges));
     },
 
     update(oldSet, tr) {
         if (!tr.docChanged)
             return oldSet;
-        return createMarkers(tr.state);
+
+
+        itr += 1;
+        const updated_comment_threads = [];
+        for (const range of tr.state.field(rangeParser).inserted_ranges) {
+            if (range.type === SuggestionType.COMMENT && updated_comment_threads.indexOf(range.base_range) === -1)
+                updated_comment_threads.push(range.base_range);
+        }
+
+        const deletedRanges = tr.state.field(rangeParser).deleted_ranges.filter(range => range.type === SuggestionType.COMMENT) as CommentRange[];
+        return oldSet.map(tr.changes)
+            .update({
+                filter: (from, to, value) => {
+                    return !deletedRanges.some(range => value.thread.contains(range));
+                },
+                add: createMarkers(tr.state, updated_comment_threads)
+            });
     }
 });

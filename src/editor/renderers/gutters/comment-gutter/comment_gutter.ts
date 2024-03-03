@@ -223,10 +223,12 @@ class CommentSingleGutterView extends SingleGutterView {
 		else {
 			this.fold_button = createEl("a", { cls: ["criticmarkup-gutter-button", "view-action"] });
 			this.view.dom.prepend(this.fold_button);
-			setIcon(this.fold_button, "arrow-right-from-line")
+			setIcon(this.fold_button, "arrow-right-from-line");
 		}
 		this.fold_button.style.right = this.folded ? '20px' : this.view.state.facet(commentGutterWidthState) + 60 + 'px';
 		if (this.folded) this.fold_button.style.rotate = '-180deg';
+		this.fold_button.ariaLabel = this.folded ? "Unfold gutter" : "Fold gutter";
+		this.fold_button.setAttribute('data-tooltip-position', 'left');
 
 		this.fold_button.onclick = this.foldGutter.bind(this);
 	}
@@ -237,6 +239,7 @@ class CommentSingleGutterView extends SingleGutterView {
 		if (this.fold_button) {
 			this.fold_button.style.right = (this.folded ? 20 : gutterStart + 60) + 'px';
 			this.fold_button.style.rotate = this.folded ? '-180deg' : '0deg';
+			this.fold_button.ariaLabel = this.folded ? "Unfold gutter" : "Fold gutter";
 		}
 
 		// Set the gutter height for every element to fixed such that the element doesn't break the layout

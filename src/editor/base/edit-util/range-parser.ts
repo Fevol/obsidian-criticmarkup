@@ -9,15 +9,17 @@ import {
 
 import {criticmarkupLanguage} from '../parser';
 
-export const rangeParser: StateField<{tree: Tree, fragments: readonly TreeFragment[], ranges: CriticMarkupRanges}> = StateField.define({
+export const rangeParser: StateField<{tree: Tree, fragments: readonly TreeFragment[], ranges: CriticMarkupRanges, inserted_ranges: CriticMarkupRange[], deleted_ranges: CriticMarkupRange[]}> = StateField.define({
 	create(state) {
 		const text = state.doc.toString();
 		const tree = criticmarkupLanguage.parser.parse(text);
-
+		const ranges = new CriticMarkupRanges(cursorGenerateRanges(tree, text));
 		return {
 			tree,
 			fragments: TreeFragment.addTree(tree),
-			ranges: new CriticMarkupRanges(cursorGenerateRanges(tree, text))
+			ranges: ranges,
+			inserted_ranges: ranges.ranges,
+			deleted_ranges: [],
 		}
 	},
 
@@ -42,27 +44,27 @@ export const rangeParser: StateField<{tree: Tree, fragments: readonly TreeFragme
 		fragments = TreeFragment.addTree(tree, fragments);
 
 		// regenerate-ranges: 0.20 - 0.55 ms
-		const new_ranges = [];
+		const inserted_ranges = [];
 		const offsets: [number, number][] = [];
 		const dangling_comments: Set<CommentRange> = new Set();
+		const deleted_ranges: CriticMarkupRange[] = [];
 		for (const changed_range of changed_ranges) {
 			value.ranges.tree
 				.search([changed_range.fromA, changed_range.toA], (range: CriticMarkupRange, key: Interval) => {
 					value.ranges.tree.remove(key, range);
+					deleted_ranges.push(range);
 					if (range.base_range !== range && range.base_range.type === SuggestionType.COMMENT)
 						dangling_comments.add(range.base_range as CommentRange);
 					for (const reply of range.base_range.replies) {
 						dangling_comments.add(reply);
-						reply.clear_references();
 					}
-					range.base_range.replies.length = 0;
 					if (range.type === SuggestionType.COMMENT)
 						dangling_comments.delete(range as CommentRange);
 
 					return true;
 				});
 
-			new_ranges.push(...cursorGenerateRanges(tree, text, changed_range.fromB, changed_range.toB));
+			inserted_ranges.push(...cursorGenerateRanges(tree, text, changed_range.fromB, changed_range.toB));
 			offsets.push([changed_range.toA, changed_range.toB - changed_range.fromB - (changed_range.toA - changed_range.fromA)]);
 		}
 
@@ -80,14 +82,15 @@ export const rangeParser: StateField<{tree: Tree, fragments: readonly TreeFragme
 		});
 
 		// insert-new-ranges: <0.01 - 0.05 ms
-		for (const range of new_ranges)
+		for (const range of inserted_ranges)
 			value.ranges.tree.insert([range.from, range.to], range);
 
 		// comments-thread-reconstruction: <0.01 - 0.05 ms
-		for (const range of new_ranges.filter(range => range.type === SuggestionType.COMMENT) as CommentRange[])
+		for (const range of inserted_ranges.filter(range => range.type === SuggestionType.COMMENT) as CommentRange[])
 			dangling_comments.add(range);
 
 		if (dangling_comments.size) {
+			// FIXME: still an issue of clearing replies correctly!
 			const comment_threads: CommentRange[][] = [];
 			let last_range: CommentRange | undefined = undefined;
 			let current_thread: CommentRange[] = [];
@@ -116,7 +119,7 @@ export const rangeParser: StateField<{tree: Tree, fragments: readonly TreeFragme
 		// finalize: 1.80 - 1.85 ms
 		value.ranges.ranges = value.ranges.tree.values;
 
-		return { tree, ranges: value.ranges, fragments }
+		return { tree, ranges: value.ranges, fragments, inserted_ranges, deleted_ranges };
 	},
 });
 
