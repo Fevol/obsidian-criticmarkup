@@ -1,5 +1,3 @@
-import { ChangeSet } from '@codemirror/state';
-
 import {CM_All_Brackets, SuggestionType} from '../definitions';
 import { CriticMarkupRange } from '../base_range';
 
@@ -31,20 +29,6 @@ export class SubstitutionRange extends CriticMarkupRange {
 			this.text.slice(3, this.char_middle),
 			this.text.slice(this.char_middle + 2, -3),
 		];
-	}
-	unwrap_slice_parts(from: number, to: number): [string, string] {
-		from -= this.range_front;
-		to -= this.range_front;
-		if (to <= 0 || from === to) return ['', ''];
-
-		if (to <= this.char_middle)
-			return [this.text.slice(3, to), this.text.slice(this.char_middle + 2, -3)];
-		if (from >= this.char_middle + 2)
-			return [this.text.slice(3, this.char_middle), this.text.slice(from, -3)];
-		return [
-			this.text.slice(0, from),
-			this.text.slice(to, -3),
-		]
 	}
 
 	unwrap_slice_parts_inverted(from: number, to: number) {
@@ -113,27 +97,6 @@ export class SubstitutionRange extends CriticMarkupRange {
 	contains_separator(from: number, to: number) {
 		return from <= this.middle + 2 && to >= this.middle;
 	}
-
-	cursor_move_outside_dir(cursor: number, left: boolean) {
-		if (left) {
-			if (this.touches_right_bracket(cursor, true, false))
-				cursor = this.to - 3;
-			if (this.touches_separator(cursor, true, true))
-				cursor = this.middle;
-			if (this.touches_left_bracket(cursor, false, true)) {
-				cursor = this.from;
-			}
-		} else {
-			if (this.touches_left_bracket(cursor, true, false))
-				cursor = this.from + 3;
-			if (this.touches_separator(cursor, true, true))
-				cursor = this.middle + 2;
-			if (this.touches_right_bracket(cursor, false, true))
-				cursor = this.to;
-		}
-		return cursor;
-	}
-
 
 	cursor_pass_syntax(cursor: number, right: boolean, skip_metadata: boolean = false): number {
 		if (right) {
@@ -204,11 +167,6 @@ export class SubstitutionRange extends CriticMarkupRange {
 				str = `<${tag} class='criticmarkup-preview'>${parts[0]}</${tag}>`;
 		}
 		return str;
-	}
-
-	apply_change(changes: ChangeSet): void {
-		super.apply_change(changes);
-		this.to = changes.mapPos(this.to, 1);
 	}
 
 	apply_offset(offset: number) {

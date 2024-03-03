@@ -135,12 +135,8 @@ export abstract class CriticMarkupRange {
 		return Object.assign(Object.create(Object.getPrototypeOf(this)), this);
 	}
 
-	weak_equals(other: CriticMarkupRange) {
-		return this.type === other.type && this.from === other.from && this.to === other.to && this.text === other.text;
-	}
-
 	equals(other: CriticMarkupRange) {
-		return this.type === other.type && this.from === other.from && this.to === other.to && this.full_text === other.full_text;
+		return this.type === other.type && this.from === other.from && this.to === other.to && this.replies.length === other.replies.length && this.full_text === other.full_text;
 	}
 
 	left_adjacent(other: CriticMarkupRange) {
@@ -179,20 +175,9 @@ export abstract class CriticMarkupRange {
 		return this.text.slice(Math.max(3, from), Math.min(this.text.length - 3, to));
 	}
 
-	fully_in_range(start: number, end: number, strict = false) {
-		if (strict)
-			return start <= this.from + 3 && this.to - 3 <= end;
-		return start <= this.from && this.to <= end;
-	}
-
 	partially_in_range(start: number, end: number) {
 		// return this.from < end && start < this.to;
 		return !(start > this.to || end < this.from);
-	}
-
-	encloses(cursor: number, strict = false) {
-		if (strict) return this.from < cursor && this.to > cursor;
-		return this.from <= cursor && this.to >= cursor;
 	}
 
 	encloses_range(start: number, end: number, strict = false) {
@@ -216,32 +201,8 @@ export abstract class CriticMarkupRange {
 		return this.from === cursor || this.to === cursor;
 	}
 
-	range_infront(start: number, end: number) {
-		return this.to < start;
-	}
-
-	range_behind(start: number, end: number) {
-		return end < this.from;
-	}
-
 	cursor_inside(cursor: number) {
 		return this.from <= cursor && cursor <= this.to;
-	}
-
-	cursor_outside(cursor: number, left: boolean) {
-		return left ? cursor <= this.from : cursor >= this.to;
-	}
-
-	cursor_infront(cursor: number, left: boolean, strict = false) {
-		if (strict)
-			return left ? cursor < this.from + 3 : cursor > this.to - 3;
-		return left ? cursor <= this.from + 3 : cursor >= this.to - 3;
-	}
-
-	cursor_behind(cursor: number, left: boolean, strict = false) {
-		if (strict)
-			return left ? cursor > this.from + 3 : cursor < this.to - 3;
-		return left ? cursor >= this.from + 3 : cursor <= this.to - 3;
 	}
 
 	cursor_before_range(cursor: number) {
@@ -250,31 +211,6 @@ export abstract class CriticMarkupRange {
 
 	cursor_after_range(cursor: number) {
 		return cursor > this.to;
-	}
-
-
-	cursor_move_outside(cursor: number, include_metadata = false) {
-		if (this.touches_right_bracket(cursor, false, true))
-			return this.to;
-		if (this.touches_left_bracket(cursor, false, true, include_metadata))
-			return this.from;
-		return cursor;
-	}
-
-	cursor_move_outside_dir(cursor: number, left: boolean): number {
-		if (left) {
-			if (this.touches_right_bracket(cursor, true, false))
-				cursor = this.to - 3;
-			if (this.touches_left_bracket(cursor, false, true))
-				cursor = this.from;
-		} else {
-			if (this.touches_left_bracket(cursor, true, false))
-				cursor = this.from + 3;
-			if (this.touches_right_bracket(cursor, false, true))
-				cursor = this.to;
-		}
-
-		return cursor;
 	}
 
 	/**
@@ -330,11 +266,6 @@ export abstract class CriticMarkupRange {
 			this.touches_right_bracket(cursor, outside_loose, inside_loose);
 	}
 
-	touches_brackets(cursor: number, outside_loose = false, inside_loose = false) {
-		return this.touches_left_bracket(cursor, outside_loose, inside_loose)
-			|| this.touches_right_bracket(cursor, outside_loose, inside_loose);
-	}
-
 	postprocess(unwrap: boolean = true, livepreview_mode: number = 0, tag: string = 'div', left: boolean | null = null, text?: string) {
 		let str = text ?? this.text;
 		if (!text && unwrap) {
@@ -350,27 +281,12 @@ export abstract class CriticMarkupRange {
 		return `<${tag} class='criticmarkup-${this.repr.toLowerCase()}'>${str}</${tag}>`;
 	}
 
-	apply_change(changes: ChangeSet) {
-		this.from = changes.mapPos(this.from, 1);
-		this.to = changes.mapPos(this.to, 1);
-	}
-
 	apply_offset(offset: number) {
 		this.from += offset;
 		this.to += offset;
 		if (this.metadata !== undefined) this.metadata += offset;
 
 		return this;
-	}
-
-	/**
-	 * Returns whether the character at the given cursor position is a syntax character
-	 * @param cursor
-	 */
-	is_syntax_char(cursor: number) {
-		return (this.from <= cursor && cursor <= this.from + 3) ||
-			   (this.to - 3 <= cursor && cursor <= this.to) ||
-			   (this.metadata !== undefined && this.metadata <= cursor && cursor <= this.metadata + 2);
 	}
 
 	/**

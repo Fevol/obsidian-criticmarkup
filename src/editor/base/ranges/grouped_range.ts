@@ -1,4 +1,4 @@
-import { type ChangeSet, Text } from '@codemirror/state';
+import { Text } from '@codemirror/state';
 import { type CriticMarkupRange } from './base_range';
 import IntervalTree, {Node} from "@flatten-js/interval-tree";
 
@@ -133,9 +133,8 @@ export class CriticMarkupRanges {
 		else
 			back_range = ranges.at(-1)!;
 
-
-		const new_from = front_range ? front_range.cursor_move_outside_dir(from, true) : from;
-		const new_to = back_range ? back_range.cursor_move_outside_dir(to, false) : to;
+		const new_from = front_range ? front_range.cursor_pass_syntax(from, false) : from;
+		const new_to = back_range ? back_range.cursor_pass_syntax(to, true) : to;
 		if (new_from !== from || from === front_range?.from) front_range = undefined;
 		if (new_to !== to || to === back_range?.to) back_range = undefined;
 
@@ -146,15 +145,5 @@ export class CriticMarkupRanges {
 			front_range,
 			back_range
 		};
-	}
-
-	applyChanges(changes: ChangeSet) {
-		const ranges: CriticMarkupRange[] = [];
-		for (const range of this.ranges) {
-			const new_range = range.copy();
-			new_range.apply_change(changes);
-			ranges.push(new_range);
-		}
-		return new CriticMarkupRanges(ranges);
 	}
 }
