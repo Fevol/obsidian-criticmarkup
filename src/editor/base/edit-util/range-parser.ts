@@ -1,5 +1,5 @@
-import { EditorState, StateField } from '@codemirror/state';
-import { type ChangedRange, type SyntaxNode, type Tree, TreeFragment } from '@lezer/common';
+import {EditorState, StateField} from '@codemirror/state';
+import {type ChangedRange, type SyntaxNode, type Tree, TreeFragment} from '@lezer/common';
 import {Interval, Node} from "@flatten-js/interval-tree";
 
 import {
@@ -7,7 +7,7 @@ import {
 	AdditionRange, CommentRange, DeletionRange, HighlightRange, SubstitutionRange, SuggestionType,
 } from '../ranges';
 
-import { criticmarkupLanguage } from '../parser';
+import {criticmarkupLanguage} from '../parser';
 
 export const rangeParser: StateField<{tree: Tree, fragments: readonly TreeFragment[], ranges: CriticMarkupRanges}> = StateField.define({
 	create(state) {
@@ -42,17 +42,28 @@ export const rangeParser: StateField<{tree: Tree, fragments: readonly TreeFragme
 		fragments = TreeFragment.addTree(tree, fragments);
 
 		// regenerate-ranges: 0.20 - 0.55 ms
-		const new_nodes = [];
+		const new_ranges = [];
 		const offsets: [number, number][] = [];
-		for (const range of changed_ranges) {
+		const dangling_comments: Set<CommentRange> = new Set();
+		for (const changed_range of changed_ranges) {
 			value.ranges.tree
-				.search([range.fromA, range.toA], (node: CriticMarkupRange, key: Interval) => {
-					value.ranges.tree.remove(key, node);
+				.search([changed_range.fromA, changed_range.toA], (range: CriticMarkupRange, key: Interval) => {
+					value.ranges.tree.remove(key, range);
+					if (range.base_range !== range && range.base_range.type === SuggestionType.COMMENT)
+						dangling_comments.add(range.base_range as CommentRange);
+					for (const reply of range.base_range.replies) {
+						dangling_comments.add(reply);
+						reply.clear_references();
+					}
+					range.base_range.replies.length = 0;
+					if (range.type === SuggestionType.COMMENT)
+						dangling_comments.delete(range as CommentRange);
+
 					return true;
 				});
 
-			new_nodes.push(...cursorGenerateRanges(tree, text, range.fromB, range.toB));
-			offsets.push([range.toA, range.toB - range.fromB - (range.toA - range.fromA)]);
+			new_ranges.push(...cursorGenerateRanges(tree, text, changed_range.fromB, changed_range.toB));
+			offsets.push([changed_range.toA, changed_range.toB - changed_range.fromB - (changed_range.toA - changed_range.fromA)]);
 		}
 
 		let cumulative_offset = 0;
@@ -69,8 +80,38 @@ export const rangeParser: StateField<{tree: Tree, fragments: readonly TreeFragme
 		});
 
 		// insert-new-ranges: <0.01 - 0.05 ms
-		for (const range of new_nodes)
+		for (const range of new_ranges)
 			value.ranges.tree.insert([range.from, range.to], range);
+
+		// comments-thread-reconstruction: <0.01 - 0.05 ms
+		for (const range of new_ranges.filter(range => range.type === SuggestionType.COMMENT) as CommentRange[])
+			dangling_comments.add(range);
+
+		if (dangling_comments.size) {
+			const comment_threads: CommentRange[][] = [];
+			let last_range: CommentRange | undefined = undefined;
+			let current_thread: CommentRange[] = [];
+			for (const range of Array.from(dangling_comments).sort((a, b) => a.from - b.from)) {
+				range.clear_references();
+				range.replies.length = 0;
+
+				if (!last_range || last_range?.right_adjacent(range))
+					current_thread.push(range);
+				else {
+					comment_threads.push(current_thread);
+					current_thread = [range];
+				}
+				last_range = range;
+			}
+			comment_threads.push(current_thread);
+
+			for (const thread of comment_threads) {
+				const head = thread[0];
+				const adjacent_range = value.ranges.tree.search([head.from, head.from])[0] as CriticMarkupRange;
+				for (const comment of thread.slice(adjacent_range === head ? 1 : 0))
+					comment.add_reply(adjacent_range);
+			}
+		}
 
 		// finalize: 1.80 - 1.85 ms
 		value.ranges.ranges = value.ranges.tree.values;
@@ -95,7 +136,6 @@ function constructRangeFromSyntaxNode(range: SyntaxNode, text: string) {
 export function cursorGenerateRanges(tree: Tree, text: string, start = 0, to = text.length) {
 	const ranges: CriticMarkupRange[] = [];
 
-	let previous_regular_range: CriticMarkupRange | undefined = undefined;
 	let previous_range: CriticMarkupRange | undefined = undefined;
 
 	const cursor = tree.cursor();
@@ -111,15 +151,10 @@ export function cursorGenerateRanges(tree: Tree, text: string, start = 0, to = t
 			const range = cursor.node;
 			if (range.type.name === "⚠") continue;
 			const new_range = constructRangeFromSyntaxNode(range, text);
-			let is_reply = false;
 			if (new_range) {
-				if (new_range.type === SuggestionType.COMMENT && previous_range && previous_range.right_adjacent(new_range)) {
-					(new_range as CommentRange).attach_to_range(previous_regular_range!)
-					is_reply = true;
-				}
+				if (new_range.type === SuggestionType.COMMENT && previous_range && previous_range.right_adjacent(new_range))
+					(new_range as CommentRange).add_reply(previous_range);
 				ranges.push(new_range);
-				if (!is_reply)
-					previous_regular_range = new_range;
 				previous_range = new_range;
 			}
 		} while (cursor.nextSibling() && cursor.node.from <= to)

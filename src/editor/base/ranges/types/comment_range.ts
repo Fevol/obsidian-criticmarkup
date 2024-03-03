@@ -13,6 +13,15 @@ export class CommentRange extends CriticMarkupRange {
 		return this.attached_comment ? this.attached_comment.replies : [this, ...this.replies];
 	}
 
+	clear_references() {
+		this.attached_comment = null;
+		this.reply_depth = 0;
+	}
+
+	add_reply(range: CriticMarkupRange) {
+		this.attach_to_range(range.type === SuggestionType.COMMENT ? (range as CommentRange).base_range : range);
+	}
+
 	attach_to_range(range: CriticMarkupRange) {
 		range.replies.push(this);
 		this.reply_depth = range.replies.length - (range.type === SuggestionType.COMMENT ? 0 : 1);

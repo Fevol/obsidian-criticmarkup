@@ -2,11 +2,8 @@ import { ChangeSet } from '@codemirror/state';
 
 import {CM_All_Brackets, SuggestionType} from '../definitions';
 import { CriticMarkupRange } from '../base_range';
-import {RANGE_CURSOR_MOVEMENT_OPTION} from "../../../../types";
 
 export class SubstitutionRange extends CriticMarkupRange {
-	num_ignore_chars = 8;
-
 	constructor(from: number, public middle: number, to: number, text: string, metadata?: number) {
 		super(from, to, SuggestionType.SUBSTITUTION, 'Substitution', text, metadata);
 	}
@@ -23,16 +20,6 @@ export class SubstitutionRange extends CriticMarkupRange {
 		return to <= this.middle + 2 ? SuggestionType.DELETION :
 			   from >= this.middle ? SuggestionType.ADDITION :
 				   					SuggestionType.SUBSTITUTION;
-	}
-
-	num_ignored_chars(from: number, to: number): number {
-		if (to <= this.from || from >= this.to)
-			return 0;
-		if (to <= this.from + 3 || from >= this.to - 3)
-			return 3;
-		if (to <= this.middle + 2 || from >= this.middle)
-			return 5;
-		return 8;
 	}
 
 	unwrap() {

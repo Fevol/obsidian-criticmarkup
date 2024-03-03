@@ -24,8 +24,6 @@ export interface MetadataFields {
 }
 
 export abstract class CriticMarkupRange {
-	num_ignore_chars = 6;
-
 	fields: MetadataFields = {};
 	replies: CommentRange[] = [];
 
@@ -151,12 +149,6 @@ export abstract class CriticMarkupRange {
 
 	right_adjacent(other: CriticMarkupRange) {
 		return this.to === other.from;
-	}
-
-	num_ignored_chars(from: number, to: number): number {
-		if (from >= this.to || to <= this.from || this.encloses_range(from, to)) return 0;
-		if (this.fully_in_range(from, to)) return 6;
-		return 3;
 	}
 
 	part_is_empty(left: boolean) {

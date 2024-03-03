@@ -142,10 +142,10 @@ export default class CommentatorPlugin extends Plugin {
 			plugin: this,
 			database: this.database,
 			get ranges() {
-				return this.app.workspace.activeEditor?.editor?.cm.state.field(rangeParser).ranges.ranges;
+				return app.workspace.activeEditor?.editor?.cm.state.field(rangeParser).ranges.ranges;
 			},
 			get tree() {
-				return this.app.workspace.activeEditor?.editor?.cm.state.field(rangeParser).ranges.tree;
+				return app.workspace.activeEditor?.editor?.cm.state.field(rangeParser).ranges.tree;
 			}
 		};
 
