@@ -222,6 +222,7 @@ export const commentGutterMarkers = StateField.define<RangeSet<CommentMarker>>({
                 updated_comment_threads.push(range.base_range);
         }
 
+        // PERF(range-updating): 0.50 - 3.84ms (stresstest)  (Reduced from 4.00 - 7.65ms)
         const deletedRanges = tr.state.field(rangeParser).deleted_ranges.filter(range => range.type === SuggestionType.COMMENT) as CommentRange[];
         return oldSet.map(tr.changes)
             .update({

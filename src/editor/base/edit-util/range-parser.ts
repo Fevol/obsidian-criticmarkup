@@ -58,14 +58,15 @@ export const rangeParser: StateField<{tree: Tree, fragments: readonly TreeFragme
 					for (const reply of range.base_range.replies) {
 						dangling_comments.add(reply);
 					}
-					if (range.type === SuggestionType.COMMENT)
-						dangling_comments.delete(range as CommentRange);
-
 					return true;
 				});
 
 			inserted_ranges.push(...cursorGenerateRanges(tree, text, changed_range.fromB, changed_range.toB));
 			offsets.push([changed_range.toA, changed_range.toB - changed_range.fromB - (changed_range.toA - changed_range.fromA)]);
+		}
+		for (const deleted_range of deleted_ranges) {
+			if (deleted_range.type === SuggestionType.COMMENT)
+				dangling_comments.delete(deleted_range as CommentRange);
 		}
 
 		let cumulative_offset = 0;
