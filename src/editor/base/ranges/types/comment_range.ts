@@ -10,7 +10,7 @@ export class CommentRange extends CriticMarkupRange {
 	}
 
 	get thread(): CommentRange[] {
-		return this.attached_comment ? [...this.attached_comment.replies] : [this, ...this.replies];
+		return this.attached_comment ? [...this.attached_comment.thread] : [this, ...this.replies];
 	}
 
 	clear_references() {

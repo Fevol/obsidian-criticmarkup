@@ -13,6 +13,7 @@ import {
 	previewMode, previewModeState
 } from "../settings";
 import {getEditMode} from "./extensions/editing-modes";
+import {focusCommentThread} from "../renderers/gutters/comment-gutter";
 
 
 export const suggestion_commands: (plugin: CommentatorPlugin) => ECommand[] = (plugin) => Object.entries(CM_SuggestionTypes).map(([text, type]) => ({
@@ -86,22 +87,7 @@ export const editor_commands: (plugin: CommentatorPlugin) => ECommand[] = (plugi
 		icon: 'message-square',
 		editor_context: true,
 		regular_callback: (editor: Editor, _) => {
-			let cursor = editor.cm.state.selection.main.from;
-			const ranges = editor.cm.state.field(rangeParser).ranges;
-			const range = ranges.at_cursor(cursor);
-			if (range)
-				cursor = range.full_range_back;
-
-			editor.cm.dispatch(editor.cm.state.update({
-				changes: [{
-					from: cursor,
-					to: cursor,
-					insert: '{>><<}',
-				}],
-			}));
-			setTimeout(() => {
-				editor.cm.plugin(commentGutter[1][0][0])!.focusCommentThread(cursor + 1);
-			});
+			focusCommentThread(editor.cm, editor.cm.state.field(rangeParser).ranges.at_cursor(editor.cm.state.selection.main.head));
 		}
 	},
 	{

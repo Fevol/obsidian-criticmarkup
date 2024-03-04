@@ -303,7 +303,7 @@ class CommentSingleGutterView extends SingleGutterView {
 			} else {
 				if (this.fold_button)
 					this.fold_button.style.display = '';
-				if (folded)
+				if (!folded)
 					this.dom.style.width = width + 'px';
 			}
 		}

@@ -3,7 +3,8 @@ import { EditorView, WidgetType } from '@codemirror/view';
 import {Component, MarkdownRenderer, Menu, setIcon} from 'obsidian';
 
 import {CriticMarkupRange} from '../../../base';
-import {commentGutter, commentGutterMarkers} from '../../gutters';
+import {commentGutterMarkers} from '../../gutters';
+import {focusCommentThread} from "../../gutters/comment-gutter";
 
 
 export class CommentIconWidget extends WidgetType {
@@ -81,20 +82,8 @@ export class CommentIconWidget extends WidgetType {
 						.setIcon('message-square')
 						.onClick((e) => {
 							e.preventDefault();
-							const cursor = this.range.full_range_back;
-							view.dispatch(view.state.update({
-								changes: {
-									from: cursor,
-									to: cursor,
-									insert: '{>><<}',
-								},
-							}));
-							if (view.plugin(commentGutter[1][0][0])) {
-								setTimeout(() => {
-									view.plugin(commentGutter[1][0][0])!.focusCommentThread(cursor + 1);
-								});
-							}
-					});
+							focusCommentThread(view, this.range);
+						});
 				});
 
 				menu.showAtMouseEvent(e);

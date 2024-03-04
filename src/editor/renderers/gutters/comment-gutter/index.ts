@@ -1,7 +1,8 @@
 import { CommentMarker, commentGutterMarkers } from './marker';
 import {comment_gutter, CommentGutterView} from './comment_gutter';
 import {RangeSet, StateField} from "@codemirror/state";
-import {ViewPlugin} from "@codemirror/view";
+import {EditorView, ViewPlugin} from "@codemirror/view";
+import {CriticMarkupRange} from "../../../base";
 
 export { CommentMarker, commentGutterMarkers }
 
@@ -14,3 +15,20 @@ export const commentGutter: [StateField<RangeSet<CommentMarker>>, [[ViewPlugin<C
 		markers: v => v.state.field(commentGutterMarkers),
 	}) as [[ViewPlugin<CommentGutterView>], unknown],
 ];
+
+
+export function focusCommentThread(editor: EditorView, range: CriticMarkupRange | undefined) {
+	let cursor = range ? range.full_range_back : editor.state.selection.main.head;
+	editor.dispatch(editor.state.update({
+		changes: {
+			from: cursor,
+			to: cursor,
+			insert: '{>><<}',
+		},
+	}));
+	if (editor.plugin(commentGutter[1][0][0])) {
+		setTimeout(() => {
+			editor.plugin(commentGutter[1][0][0])!.focusCommentThread((range ? range.base_range.from : cursor) + 1);
+		});
+	}
+}

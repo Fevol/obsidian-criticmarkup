@@ -4,7 +4,7 @@ import {type EditorState, Line, RangeSet, StateField, Range} from '@codemirror/s
 import {Component, editorEditorField, MarkdownRenderer, Menu} from 'obsidian';
 
 import {type CommentRange, CriticMarkupRange, rangeParser, SuggestionType} from '../../../base';
-import {commentGutter} from './index';
+import {commentGutter, focusCommentThread} from './index';
 
 export class CommentMarker extends GutterMarker {
     comment_thread: HTMLElement | null = null;
@@ -110,18 +110,7 @@ export class CommentMarker extends GutterMarker {
                     item.setTitle("Reply to comment");
                     item.setIcon('reply');
                     item.onClick(() => {
-                        const cursor = this.comment_range.full_range_back;
-                        this.view.dispatch({
-                            changes: {
-                                from: cursor,
-                                to: cursor,
-                                insert: "{>><<}"
-                            },
-                        });
-
-                        setTimeout(() => {
-                            this.view.plugin(commentGutter[1][0][0])!.focusCommentThread(cursor + 1);
-                        });
+                        focusCommentThread(this.view, this.comment_range);
                     });
                 })
                 menu.addItem((item) => {
@@ -218,8 +207,8 @@ export const commentGutterMarkers = StateField.define<RangeSet<CommentMarker>>({
         itr += 1;
         const updated_comment_threads = [];
         for (const range of tr.state.field(rangeParser).inserted_ranges) {
-            if (range.type === SuggestionType.COMMENT && updated_comment_threads.indexOf(range.base_range) === -1)
-                updated_comment_threads.push(range.base_range);
+            if (range.type === SuggestionType.COMMENT && updated_comment_threads.indexOf(range.thread[0]) === -1)
+                updated_comment_threads.push(range.thread[0]);
         }
 
         // PERF(range-updating): 0.50 - 3.84ms (stresstest)  (Reduced from 4.00 - 7.65ms)
