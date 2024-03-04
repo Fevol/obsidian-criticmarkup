@@ -32,10 +32,6 @@ declare module '@codemirror/view' {
 // Declare that BlockInfo has WidgetType
 // TODO: Uncomment widget code when Obsidian updates to upstream CodeMirror
 declare module '@codemirror/view' {
-	interface BlockInfo {
-		widget?: WidgetType;
-	}
-
 	interface WidgetType {
 		lang?: string;
 	}

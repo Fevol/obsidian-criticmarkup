@@ -16,7 +16,7 @@ declare module '@flatten-js/interval-tree' {
     }
 
     export interface Node<T = any> {
-        max: number;
+        max: Interval;
 
         not_intersect_left_subtree(search_node: Node): boolean;
 

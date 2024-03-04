@@ -285,8 +285,6 @@ export abstract class CriticMarkupRange {
 		this.from += offset;
 		this.to += offset;
 		if (this.metadata !== undefined) this.metadata += offset;
-
-		return this;
 	}
 
 	/**

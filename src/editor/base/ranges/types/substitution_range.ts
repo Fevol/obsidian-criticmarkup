@@ -170,9 +170,10 @@ export class SubstitutionRange extends CriticMarkupRange {
 	}
 
 	apply_offset(offset: number) {
-		super.apply_offset(offset);
+		this.from += offset;
 		this.middle += offset;
-		return this;
+		this.to += offset;
+		if (this.metadata !== undefined) this.metadata += offset;
 	}
 
 	split_range(cursor: number): [string, string] {
