@@ -1,10 +1,16 @@
 import {EditorState, StateField} from '@codemirror/state';
-import {type ChangedRange, Input, type SyntaxNode, type Tree, TreeFragment} from '@lezer/common';
+import {type ChangedRange, type SyntaxNode, type Tree, TreeFragment} from '@lezer/common';
 import {Interval, Node} from "@flatten-js/interval-tree";
 
 import {
-	CriticMarkupRange, CriticMarkupRanges,
-	AdditionRange, CommentRange, DeletionRange, HighlightRange, SubstitutionRange, SuggestionType,
+	AdditionRange,
+	CommentRange,
+	CriticMarkupRange,
+	CriticMarkupRanges,
+	DeletionRange,
+	HighlightRange,
+	SubstitutionRange,
+	SuggestionType,
 } from '../ranges';
 
 import {criticmarkupLanguage} from '../parser';
@@ -45,29 +51,27 @@ export const rangeParser: StateField<{tree: Tree, fragments: readonly TreeFragme
 		fragments = TreeFragment.addTree(tree, fragments);
 
 		// regenerate-ranges: 0.20 - 0.55 ms
-		const inserted_ranges = [];
+		const inserted_set = new Map<number, CriticMarkupRange>();
 		const offsets: [number, number][] = [];
-		const dangling_comments: Set<CommentRange> = new Set();
-		const deleted_ranges: CriticMarkupRange[] = [];
+		let dangling_comments = new Map<number, CommentRange>();
+		const deleted_ranges: Set<CriticMarkupRange> = new Set();
 		for (const changed_range of changed_ranges) {
 			value.ranges.tree
 				.search([changed_range.fromA, changed_range.toA], (range: CriticMarkupRange, key: Interval) => {
 					value.ranges.tree.remove(key, range);
-					deleted_ranges.push(range);
-					if (range.base_range !== range && range.base_range.type === SuggestionType.COMMENT)
-						dangling_comments.add(range.base_range as CommentRange);
-					for (const reply of range.base_range.replies) {
-						dangling_comments.add(reply);
-					}
+					deleted_ranges.add(range);
+					for (const reply of range.base_range.thread)
+						dangling_comments.set(reply.from, reply);
 					return true;
 				});
 
-			inserted_ranges.push(...cursorGenerateRanges(tree, text, changed_range.fromB, changed_range.toB));
+			for (const range of cursorGenerateRanges(tree, text, changed_range.fromB, changed_range.toB))
+				inserted_set.set(range.from, range);
 			offsets.push([changed_range.toA, changed_range.toB - changed_range.fromB - (changed_range.toA - changed_range.fromA)]);
 		}
 		for (const deleted_range of deleted_ranges) {
 			if (deleted_range.type === SuggestionType.COMMENT)
-				dangling_comments.delete(deleted_range as CommentRange);
+				dangling_comments.delete(deleted_range.from);
 		}
 
 		let cumulative_offset = 0;
@@ -90,21 +94,22 @@ export const rangeParser: StateField<{tree: Tree, fragments: readonly TreeFragme
 			}
 		}
 		visitNode(value.ranges.tree.root!);
+		const inserted_ranges = Array.from(inserted_set.values());
 
 		// insert-new-ranges: <0.01 - 0.05 ms
 		for (const range of inserted_ranges)
 			value.ranges.tree.insert([range.from, range.to], range);
 
 		// comments-thread-reconstruction: <0.01 - 0.05 ms
-		for (const range of inserted_ranges.filter(range => range.type === SuggestionType.COMMENT) as CommentRange[])
-			dangling_comments.add(range);
+		for (const range of inserted_ranges)
+			if (range.type === SuggestionType.COMMENT)
+				dangling_comments.set(range.from, range as CommentRange);
 
 		if (dangling_comments.size) {
-			// FIXME: still an issue of clearing replies correctly!
 			const comment_threads: CommentRange[][] = [];
 			let last_range: CommentRange | undefined = undefined;
 			let current_thread: CommentRange[] = [];
-			for (const range of Array.from(dangling_comments).sort((a, b) => a.from - b.from)) {
+			for (const range of Array.from(dangling_comments.values()).sort((a, b) => a.from - b.from)) {
 				range.clear_references();
 				range.replies.length = 0;
 
@@ -121,6 +126,7 @@ export const rangeParser: StateField<{tree: Tree, fragments: readonly TreeFragme
 			for (const thread of comment_threads) {
 				const head = thread[0];
 				const adjacent_range = value.ranges.tree.search([head.from, head.from])[0] as CriticMarkupRange;
+				adjacent_range!.replies.length = 0;
 				for (const comment of thread.slice(adjacent_range === head ? 1 : 0))
 					comment.add_reply(adjacent_range);
 			}
@@ -129,7 +135,7 @@ export const rangeParser: StateField<{tree: Tree, fragments: readonly TreeFragme
 		// finalize: 1.80 - 1.85 ms
 		value.ranges.ranges = value.ranges.tree.values;
 
-		return { tree, ranges: value.ranges, fragments, inserted_ranges, deleted_ranges };
+		return { tree, ranges: value.ranges, fragments, inserted_ranges, deleted_ranges: [...deleted_ranges] };
 	},
 });
 

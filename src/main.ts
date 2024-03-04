@@ -327,8 +327,6 @@ export default class CommentatorPlugin extends Plugin {
 				]
 			}));
 
-			console.log(view)
-
 			this.editModeStatusBarButton.updateButton(mode);
 			this.editModeHeaderModeButton.updateButton(view as MarkdownView, mode);
 		}
