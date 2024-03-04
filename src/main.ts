@@ -1,4 +1,7 @@
-import {type MarkdownPostProcessor, MarkdownPreviewRenderer, Notice, Plugin, TFile} from 'obsidian';
+import {
+	MarkdownFileInfo, type MarkdownPostProcessor, MarkdownPreviewRenderer,
+	MarkdownView, Notice, Plugin, TFile
+}  from 'obsidian';
 
 import {EditorView} from '@codemirror/view';
 import {type EditorState, type Extension, Prec} from '@codemirror/state';
@@ -19,7 +22,7 @@ import {bracketMatcher, editorKeypressCatcher, rangeCorrecter} from './editor/ui
 import {postProcess, postProcessorRerender, postProcessorUpdate} from './editor/renderers/post-process';
 import {commentRenderer, markupRenderer} from './editor/renderers/live-preview';
 import {commentGutter, suggestionGutter} from './editor/renderers/gutters';
-import {type HeaderButton, previewModeHeaderButton, suggestionModeHeaderButton} from './editor/view-header';
+import {type HeaderButton, previewModeHeaderButton, editModeHeaderButton} from './editor/view-header';
 import {
 	type MetadataStatusBarButton,
 	metadataStatusBarButton,
@@ -57,10 +60,10 @@ export default class CommentatorPlugin extends Plugin {
 	changed_settings: Partial<PluginSettings> = {};
 
 	previewModeHeaderButton!: HeaderButton;
-	suggestionHeaderModeButton!: HeaderButton;
+	editModeHeaderModeButton!: HeaderButton;
 
 	previewModeStatusBarButton!: StatusBarButton;
-	suggestionModeStatusBarButton!: StatusBarButton;
+	editModeStatusBarButton!: StatusBarButton;
 	metadataStatusBarButton!: MetadataStatusBarButton;
 
 	defaultEditModeExtension: Extension[] = [];
@@ -157,10 +160,10 @@ export default class CommentatorPlugin extends Plugin {
 		await this.migrateSettings(await this.loadData());
 
 		this.previewModeHeaderButton = previewModeHeaderButton(this, this.settings.toolbar_preview_button);
-		this.suggestionHeaderModeButton = suggestionModeHeaderButton(this, this.settings.toolbar_suggest_button);
+		this.editModeHeaderModeButton = editModeHeaderButton(this, this.settings.toolbar_suggest_button);
 
 		this.previewModeStatusBarButton = previewModeStatusBarButton(this, this.settings.status_bar_preview_button);
-		this.suggestionModeStatusBarButton = suggestionModeStatusBarButton(this, this.settings.status_bar_suggest_button);
+		this.editModeStatusBarButton = suggestionModeStatusBarButton(this, this.settings.status_bar_suggest_button);
 		this.metadataStatusBarButton = metadataStatusBarButton(this, this.settings.status_bar_metadata_button);
 
 		this.defaultEditModeExtension = getEditMode(this.settings.default_edit_mode, this.settings);
@@ -229,7 +232,7 @@ export default class CommentatorPlugin extends Plugin {
 
 	async onunload() {
 		this.previewModeHeaderButton.detachButtons();
-		this.suggestionHeaderModeButton.detachButtons();
+		this.editModeHeaderModeButton.detachButtons();
 
 		MarkdownPreviewRenderer.unregisterPostProcessor(this.postProcessor);
 
@@ -251,20 +254,17 @@ export default class CommentatorPlugin extends Plugin {
 		this.changed_settings = objectDifference(this.settings, this.previous_settings);
 		this.previous_settings = Object.assign({}, this.settings);
 
-		this.previewModeStatusBarButton.updateButton(this.changed_settings.default_preview_mode);
-		// await this.previewModeHeaderButton.updateButtons(this.changed_settings.preview_mode);
-
-		this.suggestionModeStatusBarButton.updateButton((this.changed_settings.default_edit_mode));
-		// await this.suggestionHeaderModeButton.updateButtons(this.changed_settings.suggest_mode);
+		this.previewModeStatusBarButton.updateButton(this.changed_settings.default_preview_mode as number);
+		this.editModeStatusBarButton.updateButton((this.changed_settings.default_edit_mode as number));
 
 		this.previewModeHeaderButton.setLabelRendering(this.changed_settings.toolbar_show_buttons_labels);
-		this.suggestionHeaderModeButton.setLabelRendering(this.changed_settings.toolbar_show_buttons_labels);
+		this.editModeHeaderModeButton.setLabelRendering(this.changed_settings.toolbar_show_buttons_labels);
 
 		this.previewModeHeaderButton.setRendering(this.changed_settings.toolbar_preview_button);
-		this.suggestionHeaderModeButton.setRendering(this.changed_settings.toolbar_suggest_button);
+		this.editModeHeaderModeButton.setRendering(this.changed_settings.toolbar_suggest_button);
 
 		this.previewModeStatusBarButton.setRendering(this.changed_settings.status_bar_preview_button);
-		this.suggestionModeStatusBarButton.setRendering(this.changed_settings.status_bar_suggest_button);
+		this.editModeStatusBarButton.setRendering(this.changed_settings.status_bar_suggest_button);
 		this.metadataStatusBarButton.setRendering(this.changed_settings.status_bar_metadata_button);
 
 
@@ -315,5 +315,35 @@ export default class CommentatorPlugin extends Plugin {
 		this.app.workspace.revealLeaf(
 			this.app.workspace.getLeavesOfType(CRITICMARKUP_VIEW)[0],
 		);
+	}
+
+
+	setEditMode(view: MarkdownFileInfo | null, mode: number) {
+		if (view && view.editor) {
+			view.editor.cm.dispatch(view.editor.cm.state.update({
+				effects: [
+					editMode.reconfigure(getEditMode(mode, this.settings)),
+					editModeValue.reconfigure(editModeValueState.of(mode))
+				]
+			}));
+
+			console.log(view)
+
+			this.editModeStatusBarButton.updateButton(mode);
+			this.editModeHeaderModeButton.updateButton(view as MarkdownView, mode);
+		}
+	}
+
+	setPreviewMode(view: MarkdownFileInfo | null, mode: number) {
+		if (view && view.editor) {
+			view.editor.cm.dispatch(view.editor.cm.state.update({
+				effects: [
+					previewMode.reconfigure(previewModeState.of(mode))
+				]
+			}));
+
+			this.previewModeStatusBarButton.updateButton(mode);
+			this.previewModeHeaderButton.updateButton(view as MarkdownView, mode);
+		}
 	}
 }

@@ -1,7 +1,6 @@
 import { HeaderButton } from './header-button';
 import type CommentatorPlugin from '../../main';
-import {editMode, editModeValue, editModeValueState, previewMode, previewModeState} from "../settings";
-import {getEditMode} from "../uix/extensions/editing-modes";
+import {editModeValueState, previewModeState} from "../settings";
 
 export const previewModeHeaderButton = (plugin: CommentatorPlugin, render: boolean) => new HeaderButton(
 	[
@@ -11,11 +10,7 @@ export const previewModeHeaderButton = (plugin: CommentatorPlugin, render: boole
 	],
 	plugin.settings.toolbar_show_buttons_labels,
 	'criticmarkup-suggestion-status',
-	(view, value) => {
-		view.editor.cm.dispatch(view.editor.cm.state.update({
-			effects: previewMode.reconfigure(previewModeState.of(value))
-		}));
-	},
+	plugin.setPreviewMode.bind(plugin),
 	(view) => {
 		return view.editor.cm.state.facet(previewModeState);
 	},
@@ -23,7 +18,7 @@ export const previewModeHeaderButton = (plugin: CommentatorPlugin, render: boole
 	render
 );
 
-export const suggestionModeHeaderButton = (plugin: CommentatorPlugin, render: boolean) => new HeaderButton(
+export const editModeHeaderButton = (plugin: CommentatorPlugin, render: boolean) => new HeaderButton(
 	[
 		{ icon: 'pencil', tooltip: 'Current mode: editing (regular)\nClick to edit (corrected)', text: 'Editing (REG)' },
 		{ icon: 'edit', tooltip: 'Current mode: editing (corrected)\nClick to suggest', text: 'Editing (ALT)' },
@@ -31,14 +26,7 @@ export const suggestionModeHeaderButton = (plugin: CommentatorPlugin, render: bo
 	],
 	plugin.settings.toolbar_show_buttons_labels,
 	'criticmarkup-suggestion-status',
-	(view, value) => {
-		view.editor.cm.dispatch(view.editor.cm.state.update({
-			effects: [
-				editMode.reconfigure(getEditMode(value, plugin.settings)),
-				editModeValue.reconfigure(editModeValueState.of(value))
-			]
-		}));
-	},
+	plugin.setEditMode.bind(plugin),
 	(view) => {
 		return view.editor.cm.state.facet(editModeValueState);
 	},

@@ -67,7 +67,6 @@ export class HeaderButton {
 			const { tooltip, text } = this.states[value];
 			const button = view.addAction(this.states[(value + 1) % this.states.length].icon, tooltip, async () => {
 				const value = (this.getvalue(view) + 1) % this.states.length;
-				this.updateButton(view, value);
 				this.onchange(view, value);
 			});
 			const status = this.has_label ? button.createSpan({ text, cls: this.cls }) : null;
@@ -85,7 +84,6 @@ export class HeaderButton {
 							.setTitle(text)
 							.setChecked(i === current_value)
 							.onClick(() => {
-								this.updateButton(view, i);
 								this.onchange(view, i);
 							});
 					});

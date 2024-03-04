@@ -115,13 +115,15 @@ export const editor_commands: (plugin: CommentatorPlugin) => ECommand[] = (plugi
 	},
 	{
 		id: 'toggle-preview-mode',
-		name: 'Toggle preview mode',
+		name: 'Cycle preview mode',
 		icon: 'comment',
 		editor_context: true,
-		regular_callback: (editor: Editor, _) => {
+		regular_callback: (editor: Editor, view: MarkdownView) => {
+			const resulting_mode = (editor.cm.state.facet(previewModeState) + 1) % 3;
 			editor.cm.dispatch(editor.cm.state.update({
-				effects: previewMode.reconfigure((previewModeState.of((editor.cm.state.facet(previewModeState) + 1) % 3))),
+				effects: previewMode.reconfigure(previewModeState.of(resulting_mode)),
 			}));
+			plugin.setPreviewMode(view, resulting_mode);
 		},
 	},
 	{
@@ -129,7 +131,7 @@ export const editor_commands: (plugin: CommentatorPlugin) => ECommand[] = (plugi
 		name: 'Toggle suggestion mode',
 		icon: 'comment',
 		editor_context: true,
-		regular_callback: (editor: Editor, _) => {
+		regular_callback: (editor: Editor, view: MarkdownView) => {
 			const current_value = editor.cm.state.facet(editModeValueState);
 			const resulting_mode = current_value === EditMode.SUGGEST ? EditMode.CORRECTED : EditMode.SUGGEST;
 			editor.cm.dispatch(editor.cm.state.update({
@@ -137,8 +139,8 @@ export const editor_commands: (plugin: CommentatorPlugin) => ECommand[] = (plugi
 					editModeValue.reconfigure(editModeValueState.of(resulting_mode)),
 					editMode.reconfigure(getEditMode(resulting_mode, plugin.settings))
 				]
-			}))
-
+			}));
+			plugin.setEditMode(view, resulting_mode);
 		},
 	},
 ];
