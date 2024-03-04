@@ -285,14 +285,14 @@
 	</svelte:fragment>
 
 	<svelte:fragment slot='view'>
-		<div class='criticmarkup-view-container' tabindex='-1' use:clickOutside={".menu"} on:click_outside={onClickOutside} on:keydown={handleKey}>
+		<div class='criticmarkup-view-container' tabindex='-1' on:click={onClickOutside} on:keydown={handleKey}>
 			<VirtualList items={flattened_ranges} let:item let:index>
 				<div class='criticmarkup-view-range'
 					 class:criticmarkup-view-range-completed={item.range.fields.done}
 					 class:criticmarkup-view-range-selected={selected_ranges.some(value => value === index)}
 					 on:mouseenter={() => hover_index = index}
 					 on:mouseleave={() => hover_index = null}
-					 on:click={async (e) => {
+					 on:click|stopPropagation={async (e) => {
 							if (e.shiftKey) {
 								if (anchor_selected_range) {
 									const start = Math.min(anchor_selected_range, index);
