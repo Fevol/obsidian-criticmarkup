@@ -71,7 +71,13 @@ export async function postProcess(el: HTMLElement, ctx: MarkdownPostProcessorCon
 
 
 					// FIXME: Unwrap is still the issue: find when to remove brackets correctly
-					el.innerHTML = range.postprocess(false, settings.default_preview_mode, 'div', left, element_contents);
+					const new_el = range.postprocess(false, settings.default_preview_mode, 'div', left, element_contents);
+					if (new_el instanceof HTMLElement) {
+						el.innerHTML = "";
+						el.appendChild(new_el);
+					} else {
+						el.innerHTML = new_el;
+					}
 
 					return;
 				}
@@ -106,7 +112,7 @@ export async function postProcess(el: HTMLElement, ctx: MarkdownPostProcessorCon
 	// No range syntax found in element, and no context was provided to determine whether the element is even part of a noe
 	if (!element_ranges.length && !ranges_in_range?.length) return;
 
-	let previous_start = 0, new_element = '';
+	let previous_start = 0, new_element: (HTMLElement | string)[] = []
 
 	// Case where range was opened in earlier block, and closed in current block
 	// Parser on element contents will not register the end bracket as a valid range, so we need to manually construct the range
@@ -124,8 +130,7 @@ export async function postProcess(el: HTMLElement, ctx: MarkdownPostProcessorCon
 	if (missing_range && left_outside && right_outside && missing_range.type === SuggestionType.SUBSTITUTION) {
 		const missing_range_middle = element_contents.indexOf(CM_All_Brackets[SuggestionType.SUBSTITUTION][1]);
 		const TempRange = new SubstitutionRange(-Infinity, missing_range_middle, Infinity, element_contents);
-		new_element += TempRange.postprocess(true, settings.default_preview_mode, 'span');
-		el.innerHTML = new_element;
+		el.innerHTML = TempRange.postprocess(true, settings.default_preview_mode, 'span');
 		return;
 	}
 
@@ -139,14 +144,14 @@ export async function postProcess(el: HTMLElement, ctx: MarkdownPostProcessorCon
 			TempRange = new SubstitutionRange(-Infinity, missing_range_middle === -1 ? -Infinity : missing_range_middle, missing_range_end, element_contents);
 		} else
 			TempRange = new RANGE_PROTOTYPE_MAPPER[missing_range.type](-Infinity, missing_range_end, element_contents);
-		new_element += TempRange.postprocess(true, settings.default_preview_mode, 'span');
+		new_element.push(TempRange.postprocess(true, settings.default_preview_mode, 'span'));
 		previous_start = TempRange.to;
 	}
 
 	// DEFAULT: Ranges get processed as normal (ranges which exists completely within the block)
 	for (const range of element_ranges) {
-		new_element += element_contents.slice(previous_start, range.from) +
-			range.postprocess(true, settings.default_preview_mode, 'span');
+		new_element.push(element_contents.slice(previous_start, range.from));
+		new_element.push(range.postprocess(true, settings.default_preview_mode, 'span'));
 		previous_start = range.to;
 	}
 
@@ -159,10 +164,25 @@ export async function postProcess(el: HTMLElement, ctx: MarkdownPostProcessorCon
 			TempRange = new SubstitutionRange(0, Infinity, Infinity, element_contents.slice(missing_range_start, -4));
 		else
 			TempRange = new RANGE_PROTOTYPE_MAPPER[missing_range.type](0, Infinity, element_contents.slice(missing_range_start, -4));
-		new_element += element_contents.slice(previous_start, missing_range_start) + TempRange.postprocess(true, settings.default_preview_mode, 'span');
+		new_element.push(element_contents.slice(previous_start, missing_range_start));
+		new_element.push(TempRange.postprocess(true, settings.default_preview_mode, 'span'));
 		previous_start = Infinity;
 	}
-	new_element += element_contents.slice(previous_start);
+	new_element.push(element_contents.slice(previous_start));
 
-	el.innerHTML = new_element;
+	el.innerHTML = "";
+	const to_reinsert: HTMLElement[] = [];
+	let str = "";
+	for (const child of new_element) {
+		if (typeof child === 'string')
+			str += child;
+		else {
+			str += `<placeholder></placeholder>`;
+			to_reinsert.push(child);
+		}
+	}
+	el.innerHTML = str;
+	el.querySelectorAll('placeholder').forEach((placeholder, i) => {
+		placeholder.replaceWith(to_reinsert[i]);
+	});
 }

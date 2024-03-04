@@ -1,8 +1,7 @@
-import {ChangeSet} from '@codemirror/state';
 import {CM_All_Brackets, type STRING_SUGGESTION_TYPE, type SuggestionType} from './definitions';
 import type {EditorChange} from '../edit-handler';
 import {type CommentRange} from './types';
-import {RANGE_CURSOR_MOVEMENT_OPTION} from "../../../types";
+import {PreviewMode, RANGE_CURSOR_MOVEMENT_OPTION} from "../../../types";
 
 
 const shortHandMapping = {
@@ -266,18 +265,14 @@ export abstract class CriticMarkupRange {
 			this.touches_right_bracket(cursor, outside_loose, inside_loose);
 	}
 
-	postprocess(unwrap: boolean = true, livepreview_mode: number = 0, tag: string = 'div', left: boolean | null = null, text?: string) {
+	postprocess(unwrap: boolean = true, previewMode: PreviewMode = PreviewMode.ALL, tag: keyof HTMLElementTagNameMap = 'div', left: boolean | null = null, text?: string): string | HTMLElement {
 		let str = text ?? this.text;
 		if (!text && unwrap) {
-			// Range is larger than what is actually given (no end bracket found within text)
 			if (this.to >= str.length && !str.endsWith(CM_All_Brackets[this.type].at(-1)!))
 				str = this.unwrap_bracket(true);
-			/*else if (this.from === 0 && !str.startsWith(CM_All_Brackets[this.type][0]))
-				str = this.unwrap_bracket(str, false);*/
 			else
 				str = this.unwrap();
 		}
-
 		return `<${tag} class='criticmarkup-${this.repr.toLowerCase()}'>${str}</${tag}>`;
 	}
 

@@ -1,5 +1,6 @@
 import {CM_All_Brackets, SuggestionType} from '../definitions';
 import { CriticMarkupRange } from '../base_range';
+import {PreviewMode} from "../../../../types";
 
 export class SubstitutionRange extends CriticMarkupRange {
 	constructor(from: number, public middle: number, to: number, text: string, metadata?: number) {
@@ -133,7 +134,7 @@ export class SubstitutionRange extends CriticMarkupRange {
 		return left ? this.from + 3 === this.middle : this.middle + 2 === this.to - 3;
 	}
 
-	postprocess(unwrap: boolean = true, livepreview_mode: number = 0, tag: string = "div", left: boolean | null = null, text?: string) {
+	postprocess(unwrap: boolean = true, previewMode: PreviewMode = PreviewMode.ALL, tag: keyof HTMLElementTagNameMap = "div", left: boolean | null = null, text?: string) {
 		let str = text ?? this.text;
 		let parts: string[] = [str];
 		if (!text && unwrap) {
@@ -146,25 +147,31 @@ export class SubstitutionRange extends CriticMarkupRange {
 				parts = this.unwrap_parts();
 		}
 
+
+		const cls = "criticmarkup-preview";
 		if (parts.length === 1) {
-			if (!livepreview_mode)
-				str = `<${tag} class='criticmarkup-preview criticmarkup-${left ? "deletion" : "addition"}'>${parts[0]}</${tag}>`;
-			else if (livepreview_mode === 1)
-				str = left ? "" : `<${tag} class='criticmarkup-preview'>${parts[0]}</${tag}>`;
-			else
-				str = left ? `<${tag} class='criticmarkup-preview'>${parts[0]}</${tag}>` : "";
-		} else {
-			if (!livepreview_mode) {
-				str = "";
-				if (parts[0].length)
-					str += `<${tag} class='criticmarkup-preview criticmarkup-deletion'>${parts[0]}</${tag}>`;
-				if (parts[1].length)
-					str += `<${tag} class='criticmarkup-preview criticmarkup-addition'>${parts[1]}</${tag}>`;
+			parts[+(left as boolean)] = parts[0];
+			parts[+!left] = "";
+		}
+
+		str = "";
+		if (previewMode === PreviewMode.ALL) {
+			if (parts[0].length) {
+				str += `<${tag} class='${cls} criticmarkup-deletion'>${parts[0]}</${tag}>`;
 			}
-			else if (livepreview_mode === 1)
-				str = `<${tag} class='criticmarkup-preview'>${parts[1]}</${tag}>`;
-			else
-				str = `<${tag} class='criticmarkup-preview'>${parts[0]}</${tag}>`;
+			if (parts[1].length) {
+				str += `<${tag} class='${cls} criticmarkup-addition'>${parts[1]}</${tag}>`;
+			}
+		} else {
+			if (previewMode === PreviewMode.ACCEPT) {
+				if (parts[1].length) {
+					str += `<${tag} class='${cls}'>${parts[1]}</${tag}>`;
+				}
+			} else {
+				if (parts[0].length) {
+					str += `<${tag} class='${cls}'>${parts[0]}</${tag}>`;
+				}
+			}
 		}
 		return str;
 	}
