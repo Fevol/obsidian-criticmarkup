@@ -1,5 +1,5 @@
 import {EditorView, GutterMarker} from '@codemirror/view';
-import {type EditorState, Line, RangeSet, StateField} from '@codemirror/state';
+import {type EditorState, Line, RangeSet, StateField, Range} from '@codemirror/state';
 
 import {Component, editorEditorField, MarkdownRenderer, Menu} from 'obsidian';
 
@@ -165,7 +165,7 @@ function createMarkers(state: EditorState, changed_ranges: CriticMarkupRange[]) 
     let previous_block: Line;
     let stop_next_block = null;
 
-    const cm_ranges: { from: number, to: number, value: CommentMarker }[] = [];
+    const cm_ranges: Range<CommentMarker>[] = [];
     for (const range of changed_ranges) {
         if (range.type !== SuggestionType.COMMENT || (range as CommentRange).reply_depth) continue;
 

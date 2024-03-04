@@ -3,7 +3,7 @@ import { RangeSet, RangeSetBuilder } from '@codemirror/state';
 
 import { rangeParser, SuggestionType } from '../../../base';
 
-export class CriticMarkupMarker extends GutterMarker {
+export class RangeMarker extends GutterMarker {
 	constructor(readonly type: Set<SuggestionType>, readonly top?: boolean, readonly bottom?: boolean) {
 		super();
 	}
@@ -26,18 +26,15 @@ export class CriticMarkupMarker extends GutterMarker {
 }
 
 export const suggestionGutterMarkers = ViewPlugin.fromClass(class suggestionGutterMarkers implements PluginValue {
-	markers: RangeSet<CriticMarkupMarker> = RangeSet.empty;
+	markers: RangeSet<RangeMarker> = RangeSet.empty;
 
 	constructMarkers(view: EditorView) {
 		const ranges = view.state.field(rangeParser).ranges;
-		const builder = new RangeSetBuilder<CriticMarkupMarker>();
+		const builder = new RangeSetBuilder<RangeMarker>();
 
 		const line_markers: Record<number, { isStart: boolean, isEnd: boolean, types: Set<SuggestionType> }> = {};
 
-		for (const range of ranges.ranges) {
-			if (!view.visibleRanges.some(visible_range => range.partially_in_range(visible_range.from, visible_range.to)))
-				continue;
-
+		for (const range of ranges.ranges_in_range(view.viewport.from, view.viewport.to)) {
 			const range_line_start = view.state.doc.lineAt(range.from).number;
 			const range_line_end = view.state.doc.lineAt(range.to).number;
 			const lines = Array.from({ length: range_line_end - range_line_start + 1 }, (_, i) => range_line_start + i);
@@ -61,7 +58,7 @@ export const suggestionGutterMarkers = ViewPlugin.fromClass(class suggestionGutt
 
 		for (const [line_number, marker] of Object.entries(line_markers)) {
 			const line = view.state.doc.line(Number(line_number));
-			builder.add(line.from, line.to, new CriticMarkupMarker(
+			builder.add(line.from, line.to, new RangeMarker(
 				marker.types,
 				marker.isStart,
 				marker.isEnd,
