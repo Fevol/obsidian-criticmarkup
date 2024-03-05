@@ -4,12 +4,14 @@ import {type PluginSettings} from '../../../../types';
 import {
 	cursor_move_range,
 	cursorMoved,
+	generate_metadata,
 	getEditorRanges,
 	getUserEvents,
-	mark_ranges, MarkType,
-	rangeParser,
-	SuggestionType,
-	generate_metadata
+	mark_ranges,
+	MarkAction,
+	MarkType, range_metadata_compatible,
+	rangeParser, SubstitutionRange,
+	SuggestionType
 } from '../../../base';
 
 import {latest_event} from "../keypress-catcher";
@@ -130,10 +132,23 @@ function applySuggestion(tr: Transaction, settings: PluginSettings): Transaction
 		// TODO: Consider each editor_change separately to avoid issues where you try to re-insert into a now updated range
 		//        (Or: update ranges with editor_change to reflect the new state)
 		for (let editor_change of changed_ranges) {
-			const type: MarkType = editor_change.deleted ? (editor_change.inserted ? SuggestionType.SUBSTITUTION : SuggestionType.DELETION) : SuggestionType.ADDITION;
+			let type: MarkType = editor_change.deleted ? (editor_change.inserted ? SuggestionType.SUBSTITUTION : SuggestionType.DELETION) : SuggestionType.ADDITION;
 			if (type === SuggestionType.DELETION) {
 				editor_change = cursor_move_range(editor_change, ranges, backwards_delete, group_delete, tr.startState,
 					settings.suggestion_mode_operations.cursor_movement, settings.suggestion_mode_operations.bracket_movement);
+
+				const ranges_in_range = ranges.ranges_in_range(editor_change.from, editor_change.to);
+				if (ranges_in_range.length === 1) {
+					const range = ranges_in_range[0];
+					if (range.encloses_range(editor_change.from, editor_change.to) && range_metadata_compatible(range, metadata) &&
+						(range.type === SuggestionType.ADDITION ||
+						(range.type === SuggestionType.SUBSTITUTION && (range as SubstitutionRange).contains_part(editor_change.from, editor_change.to, false)) === false)
+					) {
+						type = MarkAction.REGULAR;
+					}
+				}
+
+
 			}
 
 			const edits = mark_ranges(ranges, tr.startState.doc, editor_change.from, editor_change.to, editor_change.inserted, type, metadata);

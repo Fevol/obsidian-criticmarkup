@@ -99,6 +99,14 @@ export class SubstitutionRange extends CriticMarkupRange {
 		return from <= this.middle + 2 && to >= this.middle;
 	}
 
+	contains_part(from: number, to: number, strict = true) {
+		if (strict)
+			return to < this.middle ? true : from > this.middle + 2 ? false : undefined
+		return to <= this.middle ? true : from >= this.middle + 2 ? false : undefined;
+	}
+
+
+
 	cursor_pass_syntax(cursor: number, right: boolean, skip_metadata: boolean = false): number {
 		if (right) {
 			if (this.touches_left_bracket(cursor, true, false, skip_metadata))

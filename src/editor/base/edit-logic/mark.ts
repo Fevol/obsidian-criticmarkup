@@ -148,7 +148,7 @@ function mark_range(ranges: CriticMarkupRanges, text: Text, from: number, to: nu
                 to = left_range.cursor_move_inside(to, false);
 
                 if (left_range.type === SuggestionType.SUBSTITUTION) {
-                    const left = to < (left_range as SubstitutionRange).middle ? true : from > (left_range as SubstitutionRange).middle + 2 ? false : undefined;
+                    const left = (left_range as SubstitutionRange).contains_part(from, to);
                     const parts = left_range.unwrap_parts();
 
                     if (left) {
@@ -215,7 +215,7 @@ function mark_range(ranges: CriticMarkupRanges, text: Text, from: number, to: nu
         // NOTE: Special code for handling operations within substitution ranges
         if (left_range !== undefined && left_range === right_range && left_range.type === SuggestionType.SUBSTITUTION) {
             // NOTE: True if edit in left part, False if right, and undefined if the edit covers both parts
-            const left = to < (left_range as SubstitutionRange).middle ? true : from > (left_range as SubstitutionRange).middle + 2 ? false : undefined;
+            const left = (left_range as SubstitutionRange).contains_part(from, to);
             const cursor = left ? from : to;
             const merge_result = mergeable_range(cursor, left_range, type, metadata_fields, left, true);
             if (!merge_result.type) {
