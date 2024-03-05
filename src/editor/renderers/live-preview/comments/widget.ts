@@ -82,7 +82,7 @@ export class CommentIconWidget extends WidgetType {
 		e.preventDefault();
 		gutterElements.between(this.range.from, this.range.to, (from, to, widget) => {
 			if (this.range.equals(widget.comment_range)) {
-				widget.comment_thread!.dispatchEvent(new MouseEvent('dblclick'));
+				widget.comment_thread!.dispatchEvent(new MouseEvent('click'));
 				return false;
 			}
 		});

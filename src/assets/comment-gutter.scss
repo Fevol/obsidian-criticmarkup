@@ -27,6 +27,23 @@
 	transition: border-color 200ms ease-in-out 0ms, background-color 200ms ease-in-out 0ms;
 }
 
+.criticmarkup-gutter-comment-thread-highlight {
+	animation: criticmarkup-gutter-comment-thread-highlight 2s infinite;
+}
+
+@keyframes criticmarkup-gutter-comment-thread-highlight {
+	0% {
+		border-color: var(--background-modifier-border);
+	}
+	50% {
+		border-color: var(--interactive-accent);
+	}
+	100% {
+		border-color: var(--background-modifier-border);
+	}
+}
+
+
 .criticmarkup-gutter-comment {
 	width: 100%;
 	max-height: 150px;

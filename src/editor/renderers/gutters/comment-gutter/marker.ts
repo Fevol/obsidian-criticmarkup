@@ -81,6 +81,9 @@ export class CommentMarker extends GutterMarker {
                 this.view.plugin(commentGutter[1][0][0])!.moveGutter(this);
                 this.view.scrollDOM.scrollTo({top, behavior: 'smooth'})
             }, 200);
+
+            this.comment_thread!.classList.add('criticmarkup-gutter-comment-thread-highlight');
+            setTimeout(() => this.comment_thread!.classList.remove('criticmarkup-gutter-comment-thread-highlight'), 4000);
         }
 
         const comment_ranges_flattened = this.comment_range.thread;
@@ -124,7 +127,6 @@ export class CommentMarker extends GutterMarker {
                     new Notice("You cannot edit comments from other authors.");
                     return;
                 }
-
 
                 comment.contentEditable = 'true';
                 comment.replaceChildren();
