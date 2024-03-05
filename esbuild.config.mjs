@@ -62,6 +62,7 @@ const context = await esbuild.context({
     minify: prod,
     outdir: dir,
     metafile: verbose,
+    drop: prod ? ["console"] : [],
 
     plugins: [
         sassPlugin(),

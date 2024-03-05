@@ -1,0 +1,53 @@
+
+.criticmarkup-daterange-picker-modal {
+  width: auto;
+}
+
+.criticmarkup-daterange-picker {
+  margin-top: var(--size-4-2);
+  display: flex;
+  --sdt-bg-main: var(--background-primary);
+  --sdt-shadow-color: var(--background-modifier-box-shadow);
+  --sdt-color: var(--text-normal);
+  --sdt-clock-color: var(--sdt-color);
+  --sdt-clock-color-hover: var(--sdt-color);
+  --sdt-clock-time-bg: transparent;
+  --sdt-clock-time-bg-hover: var(--background-modifier-hover);
+  --sdt-clock-disabled: var(--background-modifier-disabled);
+  --sdt-clock-disabled-bg: var(--sdt-bg-main);
+  --sdt-header-color: var(--text-muted);
+  --sdt-bg-selected: var(--color-accent);
+  --sdt-clock-selected-bg: var(--sdt-bg-selected);
+  --sdt-table-disabled-date: var(--background-modifier-disabled);
+  --sdt-table-disabled-date-bg: var(--sdt-bg-main);
+  --sdt-table-data-bg-hover: var(--background-modifier-hover);
+  --sdt-table-selected-bg: var(--sdt-bg-selected);
+  --sdt-header-btn-bg-hover: var(--background-modifier-hover);
+  --sdt-color-selected: var(--text-on-accent);
+  --sdt-table-today-indicator: var(--text-faint);
+  --sdt-clock-bg: var(--background-primary-alt);
+  /* custom buttons */
+  --sdt-today-bg: var(--color-accent);
+  --sdt-today-color: var(--text-on-accent);
+  --sdt-clear-color: var(--background-modifier-error);
+  --sdt-clear-bg: var(--sdt-bg-main);
+  --sdt-clear-hover-color: var(--text-on-accent);
+  --sdt-clear-hover-bg: var(--background-modifier-error);
+}
+
+.criticmarkup-daterange-picker.criticmarkup-daterange-picker.criticmarkup-daterange-picker .sdt-widget + .sdt-widget:before {
+  background-color: var(--background-modifier-border);
+}
+
+.criticmarkup-daterange-picker button {
+  box-shadow: unset;
+}
+
+.criticmarkup-daterange-picker div.std-calendar-wrap.std-calendar-wrap {
+  box-shadow: unset;
+}
+
+// Target td children of last tr in table and add padding-bottom 2px
+.criticmarkup-daterange-picker table tr:last-child td {
+  padding-bottom: var(--size-4-1) !important;
+}

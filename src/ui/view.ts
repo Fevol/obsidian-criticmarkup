@@ -42,6 +42,8 @@ export class CriticMarkupView extends ItemView {
 			state.range_type_filter = this.view.$$.ctx[<number>this.view.$$.props.range_type_filter];
 			state.location_filter = this.view.$$.ctx[<number>this.view.$$.props.location_filter];
 			state.content_filter = this.view.$$.ctx[<string>this.view.$$.props.content_filter];
+			state.author_filter = this.view.$$.ctx[<string>this.view.$$.props.author_filter];
+			state.date_filter = this.view.$$.ctx[<string>this.view.$$.props.date_filter];
 		}
 
 		return state;
@@ -61,6 +63,8 @@ export class CriticMarkupView extends ItemView {
 			range_type_filter: state.range_type_filter || 0,
 			location_filter: state.location_filter || 0,
 			content_filter: state.content_filter || 0,
+			author_filter: state.author_filter || 0,
+			date_filter: state.date_filter || undefined,
 		})
 
 		await super.setState(state, result);

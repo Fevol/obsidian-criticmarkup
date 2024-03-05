@@ -2,7 +2,7 @@
 	import type CommentatorPlugin from '../../../main';
 
 	import { onDestroy, onMount } from 'svelte';
-	import { MarkdownRenderer, Icon, View, StateButton, NavHeader, Button, Input, VirtualList, clickOutside } from '../../components';
+	import { MarkdownRenderer, Icon, View, StateButton, NavHeader, Button, Input, VirtualList } from '../../components';
 
 	import { type TFile, Menu, debounce, prepareSimpleSearch, Notice } from 'obsidian';
 
@@ -12,9 +12,9 @@
 		SuggestionType, SUGGESTION_ICON_MAPPER, type CriticMarkupRange, type CommentRange,
 		acceptSuggestionsInFile, rejectSuggestionsInFile,
 	} from '../../../editor/base';
+	import {DaterangeModal} from "../../modals";
 
 	export let plugin: CommentatorPlugin;
-
 
 	enum SuggestionTypeFilter {
 		ALL,
@@ -37,20 +37,33 @@
 		EMPTY,
 	}
 
+	enum AuthorFilter {
+		ALL,
+		SELF,
+		OTHERS,
+	}
+
 	type RangeEntry = { path: string, range: CriticMarkupRange }
 
 	export let range_type_filter: SuggestionTypeFilter = SuggestionTypeFilter.ALL;
 	export let location_filter: LocationFilter = LocationFilter.VAULT;
 	export let content_filter: ContentFilter = ContentFilter.ALL;
-	let search_filter: string = '';
+	export let author_filter: AuthorFilter = AuthorFilter.ALL;
+	export let date_filter: number[] | undefined = undefined;
 
-	const file_change_event = plugin.app.workspace.on('active-leaf-change', filterRanges);
+	let search_filter: string = '';
+	let active_file: TFile | null = null;
+	const file_change_event = plugin.app.workspace.on('active-leaf-change', () => {
+		active_file = plugin.app.workspace.getActiveFile()
+	});
 
 	let all_ranges: DatabaseEntry<CriticMarkupRange[]>[] = [];
 	let flattened_ranges: RangeEntry[] = [];
 	let selected_ranges: number[] = [];
 	let anchor_selected_range: number | null = null;
 	let hover_index: number | null = null;
+
+	const save_view_state = debounce(() => plugin.app.workspace.requestSaveLayout(), 2500)
 
 	const range_filters = [
 		{ icon: 'asterisk', tooltip: 'All markup' },
@@ -82,6 +95,12 @@
 		{ icon: 'box-select', tooltip: "Only empty suggestions" },
 	]
 
+	const author_filters = [
+		{ icon: 'users', tooltip: "All authors" },
+		{ icon: 'user', tooltip: "Only my suggestions" },
+		{ icon: 'user-x', tooltip: "Only others' suggestions" },
+	]
+
 	const debouncedUpdate = debounce(filterRanges, 500);
 
 	const undo_history: {file_history: Record<string, string>, selected_ranges: number[]}[] = [];
@@ -101,9 +120,14 @@
 	}
 
 
-	$: range_type_filter, location_filter, content_filter, selected_ranges = [], anchor_selected_range = null, filterRanges();
+	$: range_type_filter, location_filter, content_filter, author_filter, date_filter, save_view_state(), settingChanged();
+	$: active_file, settingChanged();
 
-
+	function settingChanged() {
+		selected_ranges = [];
+		anchor_selected_range = null;
+		filterRanges();
+	}
 
 	async function filterRanges() {
 		if (!all_ranges) return;
@@ -126,10 +150,29 @@
 		flattened_ranges = flattened_ranges.filter(item => item.range.type !== SuggestionType.COMMENT || !(item.range as CommentRange).attached_comment);
 
 		if (range_type_filter !== SuggestionTypeFilter.ALL)
-            flattened_ranges = flattened_ranges.filter(item => item.range.type === range_type_filter - 1);
+			flattened_ranges = flattened_ranges.filter(item => item.range.type === Object.values(SuggestionType)[range_type_filter - 1]);
 
         if (content_filter !== ContentFilter.ALL)
             flattened_ranges = flattened_ranges.filter(item => (content_filter === ContentFilter.CONTENT) !== item.range.empty());
+
+		if (plugin.settings.enable_metadata) {
+			if (plugin.settings.enable_author_metadata && author_filter !== AuthorFilter.ALL && plugin.settings.author) {
+				if (author_filter === AuthorFilter.SELF)
+					flattened_ranges = flattened_ranges.filter(item => item.range.fields.author === plugin.settings.author);
+				else if (author_filter === AuthorFilter.OTHERS)
+					flattened_ranges = flattened_ranges.filter(item => item.range.fields.author !== plugin.settings.author);
+			}
+
+			if (plugin.settings.enable_timestamp_metadata && date_filter) {
+				if (date_filter[0] && date_filter[1]) {
+					flattened_ranges = flattened_ranges.filter(item => item.range.fields.time && item.range.fields.time >= date_filter![0] && item.range.fields.time <= date_filter![1]);
+				} else if (date_filter[0]) {
+					flattened_ranges = flattened_ranges.filter(item => item.range.fields.time && item.range.fields.time >= date_filter![0]);
+				} else if (date_filter[1]) {
+					flattened_ranges = flattened_ranges.filter(item => item.range.fields.time && item.range.fields.time <= date_filter![1]);
+				}
+			}
+		}
 
 		if (search_filter.length)
             flattened_ranges = flattened_ranges.filter(item => prepareSimpleSearch(search_filter)(item.range.text)?.score);
@@ -215,9 +258,9 @@
 
 							range_filters.map((filter, index) => {
 								menu.addItem((item) => {
-									item.setTitle(filter.tooltip);
-									item.setIcon(filter.icon);
-									item.onClick(() => {
+									item.setTitle(filter.tooltip)
+										.setIcon(filter.icon)
+										.onClick(() => {
 										range_type_filter = index;
 									});
 								});
@@ -239,9 +282,9 @@
 
 							location_filters.map((filter, index) => {
 								menu.addItem((item) => {
-									item.setTitle(filter.tooltip);
-									item.setIcon(filter.icon);
-									item.onClick(() => {
+									item.setTitle(filter.tooltip)
+										.setIcon(filter.icon)
+										.onClick(() => {
 										location_filter = index;
 									});
 								});
@@ -259,9 +302,9 @@
 
                             content_filters.map((filter, index) => {
                                 menu.addItem((item) => {
-                                    item.setTitle(filter.tooltip);
-                                    item.setIcon(filter.icon);
-                                    item.onClick(() => {
+                                    item.setTitle(filter.tooltip)
+                                    	.setIcon(filter.icon)
+                                    	.onClick(() => {
                                         content_filter = index;
                                     });
                                 });
@@ -273,9 +316,80 @@
                         bind:value={content_filter}
                         states={content_filters}
 					/>
+					{#if plugin.settings.enable_metadata}
+						{#if plugin.settings.enable_author_metadata}
+							<StateButton
+								onContextMenu={(e) => {
+									let menu = new Menu();
+
+									author_filters.map((filter, index) => {
+										menu.addItem((item) => {
+											item.setTitle(filter.tooltip)
+												.setIcon(filter.icon)
+												.onClick(() => {
+												author_filter = index;
+											});
+										});
+									});
+
+									menu.showAtMouseEvent(e);
+								}}
+								class='clickable-icon nav-action-button'
+								bind:value={author_filter}
+								states={author_filters}
+							/>
+						{/if}
+
+						{#if plugin.settings.enable_timestamp_metadata}
+							<!--FIXME: Dropping console.log statements from build since this component added some-->
+							<button class="clickable-icon nav-action-button svelcomlib-icon-text" aria-label="Filter by date"
+									on:click={() => new DaterangeModal(plugin, date_filter, (val) => {
+										date_filter = val?.map((date) => date ? window.moment(date, "YYYY-MM-DD HH:mm:ss").unix() : 0);
+									}).open() }
+									on:contextmenu={(e) => {
+										e.preventDefault();
+										const menu = new Menu();
+										menu.addItem((item) => {
+											item.setTitle("Clear date filter")
+												.setIcon("calendar-x")
+												.onClick(() => {
+													date_filter = undefined;
+												});
+										});
+										menu.addItem((item) => {
+											item.setTitle("Filter to today")
+												.setIcon("calendar-days")
+												.onClick(() => {
+													const today = window.moment().startOf('day').unix();
+													date_filter = [today, today + 86400];
+												});
+										});
+										menu.addItem((item) => {
+											item.setTitle("Filter to this week")
+												.setIcon("calendar-range")
+												.onClick(() => {
+													const today = window.moment().startOf('day').unix();
+													date_filter = [today - (window.moment().day() * 86400), today + ((7 - window.moment().day()) * 86400)];
+												});
+										});
+										menu.addItem((item) => {
+											item.setTitle("Filter to this month")
+												.setIcon("calendar-clock")
+												.onClick(() => {
+													const today = window.moment().startOf('day').unix();
+													date_filter = [today - (window.moment().date() * 86400), today + ((window.moment().daysInMonth() - window.moment().date()) * 86400)];
+												});
+										});
+										menu.showAtMouseEvent(e);
+									}}
+							>
+								<Icon icon='calendar' />
+							</button>
+						{/if}
+					{/if}
 				</div>
 				<div class='criticmarkup-view-info'>
-					<span>{flattened_ranges.length} {filter_names[range_type_filter]} in the {location_filters[location_filter].tooltip.toLowerCase()}</span>
+					<span>{flattened_ranges.length} {filter_names[range_type_filter]} in the {location_filters[active_file ? location_filter : LocationFilter.VAULT].tooltip.toLowerCase()}</span>
 					{#if selected_ranges.length}
 						<span> · {selected_ranges.length} selected</span>
 					{/if}
@@ -326,15 +440,15 @@
 						}}
 					 on:contextmenu={(e) => {
 							const menu = new Menu();
-							menu.addItem((m_item) => {
-								m_item.setTitle("Accept" + (selected_ranges.length ? " selected changes" : " changes"));
-								m_item.setIcon("check");
-								m_item.onClick(async () => editSelectedRanges(true, index));
+							menu.addItem((item) => {
+									item.setTitle("Accept" + (selected_ranges.length ? " selected changes" : " changes"))
+										.setIcon("check")
+										.onClick(async () => editSelectedRanges(true, index));
 							});
-							menu.addItem((m_item) => {
-								m_item.setTitle("Reject" + (selected_ranges.length ? " selected changes" : " changes"));
-								m_item.setIcon("cross");
-								m_item.onClick(async () => editSelectedRanges(false, index));
+							menu.addItem((item) => {
+								item.setTitle("Reject" + (selected_ranges.length ? " selected changes" : " changes"))
+									.setIcon("cross")
+									.onClick(async () => editSelectedRanges(false, index));
 							});
 
 							menu.showAtMouseEvent(e);
