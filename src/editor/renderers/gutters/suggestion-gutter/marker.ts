@@ -1,20 +1,20 @@
 import { EditorView, GutterMarker, type PluginValue, ViewPlugin, ViewUpdate } from '@codemirror/view';
 import { RangeSet, RangeSetBuilder } from '@codemirror/state';
 
-import { nodeParser, NodeType } from '../../../base';
+import { rangeParser, SuggestionType } from '../../../base';
 
-export class CriticMarkupMarker extends GutterMarker {
-	constructor(readonly type: Set<NodeType>, readonly top?: boolean, readonly bottom?: boolean) {
+export class RangeMarker extends GutterMarker {
+	constructor(readonly type: Set<SuggestionType>, readonly top?: boolean, readonly bottom?: boolean) {
 		super();
 	}
 
 	toDOM() {
 		let class_list = '';
-		if (this.type.has(NodeType.ADDITION))
+		if (this.type.has(SuggestionType.ADDITION))
 			class_list += 'criticmarkup-gutter-addition ';
-		if (this.type.has(NodeType.DELETION))
+		if (this.type.has(SuggestionType.DELETION))
 			class_list += 'criticmarkup-gutter-deletion ';
-		if (this.type.has(NodeType.SUBSTITUTION))
+		if (this.type.has(SuggestionType.SUBSTITUTION))
 			class_list += 'criticmarkup-gutter-substitution ';
 		if (this.top)
 			class_list += 'criticmarkup-gutter-top ';
@@ -25,43 +25,40 @@ export class CriticMarkupMarker extends GutterMarker {
 	}
 }
 
-export const criticmarkupGutterMarkers = ViewPlugin.fromClass(class CriticmarkupGutterMarkers implements PluginValue {
-	markers: RangeSet<CriticMarkupMarker> = RangeSet.empty;
+export const suggestionGutterMarkers = ViewPlugin.fromClass(class suggestionGutterMarkers implements PluginValue {
+	markers: RangeSet<RangeMarker> = RangeSet.empty;
 
 	constructMarkers(view: EditorView) {
-		const nodes = view.state.field(nodeParser).nodes;
-		const builder = new RangeSetBuilder<CriticMarkupMarker>();
+		const ranges = view.state.field(rangeParser).ranges;
+		const builder = new RangeSetBuilder<RangeMarker>();
 
-		const line_markers: Record<number, { isStart: boolean, isEnd: boolean, types: Set<NodeType> }> = {};
+		const line_markers: Record<number, { isStart: boolean, isEnd: boolean, types: Set<SuggestionType> }> = {};
 
-		for (const node of nodes.nodes) {
-			if (!view.visibleRanges.some(range => node.partially_in_range(range.from, range.to)))
-				continue;
+		for (const range of ranges.ranges_in_range(view.viewport.from, view.viewport.to)) {
+			const range_line_start = view.state.doc.lineAt(range.from).number;
+			const range_line_end = view.state.doc.lineAt(range.to).number;
+			const lines = Array.from({ length: range_line_end - range_line_start + 1 }, (_, i) => range_line_start + i);
 
-			const node_line_start = view.state.doc.lineAt(node.from).number;
-			const node_line_end = view.state.doc.lineAt(node.to).number;
-			const lines = Array.from({ length: node_line_end - node_line_start + 1 }, (_, i) => node_line_start + i);
-
-			if (line_markers[node_line_start])
-				line_markers[node_line_start].isStart = true;
+			if (line_markers[range_line_start])
+				line_markers[range_line_start].isStart = true;
 			else
-				line_markers[node_line_start] = { isStart: true, isEnd: false, types: new Set()};
+				line_markers[range_line_start] = { isStart: true, isEnd: false, types: new Set()};
 
 			for (const line of lines) {
 				if (line_markers[line]) {
 					line_markers[line].isEnd = false;
-					line_markers[line].types.add(node.type);
+					line_markers[line].types.add(range.type);
 				} else {
-					line_markers[line] = { isStart: false, isEnd: false, types: new Set([node.type]) };
+					line_markers[line] = { isStart: false, isEnd: false, types: new Set([range.type]) };
 				}
 			}
-			if (line_markers[node_line_end])
-				line_markers[node_line_end].isEnd = true;
+			if (line_markers[range_line_end])
+				line_markers[range_line_end].isEnd = true;
 		}
 
 		for (const [line_number, marker] of Object.entries(line_markers)) {
 			const line = view.state.doc.line(Number(line_number));
-			builder.add(line.from, line.to, new CriticMarkupMarker(
+			builder.add(line.from, line.to, new RangeMarker(
 				marker.types,
 				marker.isStart,
 				marker.isEnd,

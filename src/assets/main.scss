@@ -1,7 +1,16 @@
 @import "../ui/components/main.scss";
 
+@import "view";
+@import "settings";
+@import "editor";
+@import "modal";
+
+@import "comment-gutter";
+@import "criticicmarkup-gutter";
+
 .theme-light {
 	--addition-color: var(--color-green);
+	--addition-color-alt: color-mix(in srgb-linear,var(--addition-color),black 15%);
 	--deletion-color: var(--color-red);
 	--substitution-color: var(--color-orange);
 	--comment-color: #bacff4;
@@ -12,6 +21,7 @@
 
 .theme-dark {
 	--addition-color: var(--color-green);
+	--addition-color-alt: color-mix(in srgb-linear,var(--addition-color),white 10%);
 	--deletion-color: var(--color-red);
 	--substitution-color: var(--color-orange);
 	--comment-color: #445f8f;
@@ -21,392 +31,29 @@
 }
 
 
+.my-custom-markup {
+	color: red;
+	letter-spacing: 0.9px;
+	text-decoration: underline;
+	text-decoration-thickness: 0.5px;
+	text-decoration-style: dotted;
+	font-variant: all-small-caps;
+}
 
-// FIXME: Joke, do not uncomment
-//body.minimal-theme::after {
-//	content: "PLEASE TELL KEPANO TO FIX COMMENTATOR STYLING";
-//	position: absolute;
-//	z-index: 1000000;
-//	font-size: 8em;
-//	left: 20%;
-//	top: 30%;
-//
-//	background: linear-gradient(to right, #6666ff, #0099ff , #00ff00, #ff3399, #6666ff);
-//	-webkit-background-clip: text;
-//	background-clip: text;
-//	color: transparent;
-//	animation: commentator-rainbow_animation 3s ease-in-out infinite,
-//			   commentator-scale-updown 1.5s ease-in-out infinite,
-//			   commentator-rotate-leftright 3s ease-in-out infinite;
-//	background-size: 400% 100%;
-//
-//}
-//
-//@keyframes commentator-rainbow_animation {
-//	0%,100% {
-//		background-position: 0 0;
-//	}
-//
-//	50% {
-//		background-position: 100% 0;
-//	}
-//}
-//
-//@keyframes commentator-scale-updown {
-//	0%, 100% {
-//		transform: scale(1);
-//	}
-//
-//	50% {
-//		transform: scale(1.1);
-//	}
-//}
-//
-//@keyframes commentator-rotate-leftright {
-//	// Rotate left 30 degrees, then right 60 degrees from center
-//	0%, 100% {
-//		transform-orientation: -100% 50%;
-//		transform: rotate(20deg);
-//	}
-//
-//	50% {
-//		transform-orientation: 100% 50%;
-//		transform: rotate(-20deg);
-//	}
-//
-//}
+.criticmarkup-fail > button {
+	background-color: var(--color-red);
+	color: var(--text-on-accent);
+}
 
-// ================================================
-//           CriticMarkup Editor Styles
-// ================================================
-
-.criticmarkup-editing { }
-
-.criticmarkup-inline { }
-
-.criticmarkup-accepted {}
-
-.criticmarkup-rejected {
+/**
+Determines what to do when gutter contains no contents
+DEFAULT: hidden
+ */
+.cm-gutters.gutter-hidden {
 	display: none;
 }
 
-
-// ================================================
-//        CriticMarkup Main Suggestion Styles
-// ================================================
-.criticmarkup-addition {
-	color: var(--addition-color);
-}
-
-.criticmarkup-deletion {
-	text-decoration: var(--deletion-color) 2px line-through;
-}
-
-.criticmarkup-comment {
-	background-color: var(--comment-color);
-	border-bottom: 2px solid var(--comment-border-color);
-}
-
-.criticmarkup-comment-icon {
-	padding: 0 0 var(--size-4-2) 0;
-}
-
-.criticmarkup-comment-icon:hover {
-	cursor: pointer;
-}
-
-.criticmarkup-comment-icon svg {
-	color: var(--comment-border-color);
-	stroke-width: 4px;
-	transition: stroke-width 150ms ease-in-out;
-}
-
-.criticmarkup-comment-icon:hover svg {
-	stroke-width: 5px;
-}
-
-.criticmarkup-comment-tooltip {
-	max-height: var(--popover-height);
-	max-width: var(--popover-width);
-	overflow-y: scroll;
-
-	position: absolute;
-	z-index: 10000;
-	border: 4px solid var(--comment-border-color);
-
-	// Fancy notes:
-	filter: drop-shadow(4px 4px 0px var(--comment-inverse-color));
-
-	//border: 1px solid var(--background-modifier-border);
-	background-color: var(--background-primary-alt);
-	padding: var(--size-4-2);
-	border-radius: var(--radius-l);
-}
-
-.criticmarkup-comment-tooltip * {
-	margin-block-start: 0.25em;
-	margin-block-end: 0.25em;
-}
-
-.criticmarkup-highlight {
-	background-color: var(--highlight-color);
-}
-
-
-// ================================================
-//              View CriticMarkup Styles
-// ================================================
-
-.criticmarkup-view-container {
-	padding: 0 0 0 var(--size-4-4);
-	height: 95%;
-}
-
-.criticmarkup-view-node {
-	border: 1px solid var(--background-modifier-border);
-	border-radius: var(--radius-l);
-	padding: var(--size-4-2);
-	background: var(--background-primary);
-	margin: 2px 8px 8px 2px;
-	max-height: 400px;
-	overflow-y: scroll;
-	word-wrap: break-word;
-}
-
-.criticmarkup-view-node-placeholder {
-	@extend .svelcomlib-skeleton-placeholder;
-	border-radius: var(--radius-l);
-}
-
-.criticmarkup-view-node-placeholder-title {
-	height: var(--size-4-3);
-	margin-bottom: var(--size-4-4);
-}
-
-.criticmarkup-view-node-placeholder-body {
-	height: 10px;
-	margin-bottom: var(--size-4-1);
-}
-
-.criticmarkup-view-node:hover {
-	box-shadow: unset;
-	outline: 2px dashed var(--interactive-accent-hover);
-}
-
-.criticmarkup-view-node-selected {
-	box-shadow: 0 0 0 2px var(--interactive-accent);
-}
-
-.criticmarkup-view-node-top {
-	display: flex;
-	align-items: center;
-	gap: var(--size-4-2);
-}
-
-.criticmarkup-view-node-icon { }
-
-.criticmarkup-view-node-title {
-	font-variant: all-small-caps;
-	font-weight: var(--bold-weight);
-}
-
-.criticmarkup-view-node-empty {
-	color: var(--text-faint);
-}
-
-
-// ================================================
-//            Editor UIX Elements Styling
-// ================================================
-
-.criticmarkup-suggestion-status {
-	font-size: var(--font-smallest);
-	color: var(--text-faint);
-	margin-right: var(--size-2-1);
-}
-
-
-// ================================================
-// 	           Editor Gutter Styling
-// ================================================
-
-.cm-gutters.cm-gutters:has(>.criticmarkup-gutter:not(.criticmarkup-gutter-show-empty):empty) {
-	padding-inline-end: 0;
-}
-
-.cm-gutters.cm-gutters:has(>.criticmarkup-gutter) {
-	// How far away the gutter should be removed from the text
-	padding-inline-end: 1em;
-}
-
-.cm-gutters:has(>.criticmarkup-gutter-show-empty) {
-	min-width: 18px;
-}
-
-.criticmarkup-gutter-addition {
-	background-color: var(--addition-color);
-	width: 6px;
-	height: 100%;
-}
-
-.criticmarkup-gutter-deletion {
-	background-color: var(--deletion-color);
-	width: 6px;
-	height: 100%;
-}
-
-.criticmarkup-gutter-addition.criticmarkup-gutter-deletion {
-	//background: var(--substitution-color);
-	//background: repeating-linear-gradient(45deg, var(--addition-color), var(--addition-color) 10px, var(--deletion-color) 10px, var(--deletion-color) 20px);
-	background: repeating-linear-gradient(45deg, var(--addition-color), var(--addition-color) 10px, var(--deletion-color) 10px, var(--deletion-color) 18px);
-}
-
-.criticmarkup-gutter-substitution {
-	//background: var(--substitution-color);
-	//background: linear-gradient(to right, var(--addition-color), var(--addition-color) 50%, var(--deletion-color) 50%, var(--deletion-color));
-	//background: repeating-linear-gradient(45deg, var(--addition-color), var(--addition-color) 50%, var(--deletion-color) 50%, var(--deletion-color) 100%);
-	background: repeating-linear-gradient(45deg, var(--addition-color), var(--addition-color) 10px, var(--deletion-color) 10px, var(--deletion-color) 18px);
-
-
-	width: 6px;
-	height: 100%;
-}
-
-
-.criticmarkup-gutter-top {
-	// TODO: Figure out a better way to do this
-	border-top: 1px solid var(--background-primary);
-	border-top-left-radius: 8px;
-	border-top-right-radius: 8px;
-}
-
-.criticmarkup-gutter-bottom {
-	border-bottom: 1px solid var(--background-primary);
-	border-bottom-left-radius: 8px;
-	border-bottom-right-radius: 8px;
-}
-
-
-.cm-gutters.cm-gutters.cm-gutters.cm-gutters:has(.is-minimal.criticmarkup-comment-gutter) {
-	position: sticky !important;
-}
-
-.cm-gutters.cm-gutters.cm-gutters.cm-gutters:has(.is-minimal.criticmarkup-gutter) {
-	position: sticky !important;
-	left: 20px;
-}
-
-.cm-gutters.cm-gutters:has(>.criticmarkup-comment-gutter) {
-	padding-inline-end: 0;
-}
-
-.criticmarkup-comment-gutter {
-	margin-top: 50px;
-	transition: width 200ms ease-in-out;
-}
-
-.criticmarkup-gutter-comment {
-	width: 300px;
-	color: var(--text-muted);
-	border: 2px solid var(--background-modifier-border);
-	border-radius: var(--radius-l);
-	padding: var(--size-4-2);
-	transition: border-color 200ms ease-in-out 0ms, background-color 200ms ease-in-out 0ms;
-	background-color: var(--background-secondary-alt);
-
-	// Position comments relative to their optical center
-	//transform: translateY(-25%);
-
-	max-height: 150px;
-	overflow-y: scroll;
-	word-wrap: break-word;
-}
-
-
-.criticmarkup-comment-gutter .cm-gutterElement {
-	transition: margin 200ms ease-in-out;
-}
-
-.criticmarkup-gutter-comment * {
-	margin-block-start: 0.25em;
-	margin-block-end: 0.25em;
-}
-
-.criticmarkup-gutter-comment:hover {
-	border: 2px solid var(--interactive-accent);
-	background-color: var(--background-primary-alt);
-}
-
-
-.criticmarkup-gutter-comment:focus {
-	border: 2px solid var(--comment-border-color);
-	background-color: var(--background-primary);
-}
-
-.commentator-progress-bar {
-	display: flex;
-	justify-content: center;
-	accent-color: var(--color-accent);
-}
-
-
-// ================================================
-//             Markdown-specific Fixes
-// ================================================
-
-
-span.cm-strikethrough:has(.criticmarkup-editing) {
-	text-decoration: unset;
-}
-
-span.cm-strikethrough:has(.criticmarkup-accepted) {
-	text-decoration: unset;
-}
-
-span.cm-highlight:has(.criticmarkup-editing) {
-	background-color: unset;
-}
-
-.cm-strikethrough:has(.criticmarkup-substitution.criticmarkup-addition) {
-	text-decoration: unset;
-}
-
-//
-//.cm-line:has(>.criticmarkup-inline) ~ .cm-line.cm-strikethrough {
-//  text-decoration: unset;
-//  color: var(--color-red);
-//}
-
-
-// ================================================
-//           Markdown-specific Styling
-// ================================================
-
-.criticmarkup-addition .list-bullet::after {
-	background-color: var(--addition-color);
-}
-
-.criticmarkup-addition img {
-	border: 4px solid var(--addition-color);
-	border-radius: 12px;
-}
-
-.criticmarkup-addition hr {
-	border-color: var(--addition-color);
-}
-
-.criticmarkup-addition .callout {
-	border: 4px dashed var(--addition-color);
-}
-.criticmarkup-addition:has(.markdown-embed) {
-	border: 4px dotted var(--addition-color);
-
-	.markdown-embed {
-		border-left: unset;
-	}
-}
-
-.criticmarkup-deletion img {
-	border: 4px solid var(--deletion-color) !important;
-	border-radius: 12px;
+.criticmarkup-debug-comment-line {
+	width: 100%;
+	border-bottom: 1px dashed red;
 }

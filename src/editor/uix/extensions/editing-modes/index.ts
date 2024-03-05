@@ -1,0 +1,20 @@
+import {editMode} from "./edit-mode";
+import {suggestionMode} from "./suggestion-mode";
+
+import {EditMode, PluginSettings} from "../../../../types";
+import {Extension} from "@codemirror/state";
+
+export function getEditMode(edit_mode: EditMode, settings: PluginSettings): Extension[] {
+    if (edit_mode === EditMode.OFF) {
+        return [];
+    } else if (edit_mode === EditMode.CORRECTED) {
+        return [editMode(settings)];
+    } else if (edit_mode === EditMode.SUGGEST) {
+        return [suggestionMode(settings)];
+    }
+    return [];
+}
+
+export * from "./cursor_movement"
+export * from "./edit-mode"
+export * from "./suggestion-mode"

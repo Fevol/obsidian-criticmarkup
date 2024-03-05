@@ -1,2 +1,2 @@
-export * from "./alter_suggestion";
-export * from "./change_type";
+export * from "./alter-suggestion";
+export * from "./mark";

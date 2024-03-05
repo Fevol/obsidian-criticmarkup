@@ -1,10 +1,10 @@
 import { EditorState } from '@codemirror/state';
 import { EditorView } from '@codemirror/view';
 
-import { suggestionMode, overridden_keymap } from '../src/editor/uix/extensions';
+import { suggestionMode } from '../src/editor/uix/extensions';
 
 import {
-	nodeParser, CriticMarkupNodes, SubstitutionNode,
+	rangeParser, CriticMarkupRanges, SubstitutionRange,
 	findBlockingChar, applyToText,
 } from '../src/editor/base';
 
@@ -39,6 +39,14 @@ global.app = <Partial<App>>{
 };
 
 const movement_directions = ['ArrowLeft', 'ArrowRight', 'Mod-ArrowLeft', 'Mod-ArrowRight'];
+
+const keyboard_events: KeyboardEvent[] = [
+	new KeyboardEvent('keydown', { key: 'ArrowLeft' }),
+	new KeyboardEvent('keydown', { key: 'ArrowRight' }),
+	new KeyboardEvent('keydown', { key: 'ArrowLeft', ctrlKey: true }),
+	new KeyboardEvent('keydown', { key: 'ArrowRight', ctrlKey: true }),
+];
+
 
 function visualize_cursor_location(text: string, position: number) {
 	return text.substring(0, position) + '░' + text.substring(position);
@@ -75,40 +83,40 @@ function visualize_mapping(text: string, mapping: number[]) {
 // This function gives the position of the cursor where it SHOULD end
 // If an entry is -1, the cursor landed in an invalid spot (where cursor could and should not be able to enter)
 // If an entry is positive, the number represents the cursor location in the original text, defined by index
-function character_mapper(nodes: CriticMarkupNodes, positions: number[], left: boolean = false) {
+function character_mapper(ranges: CriticMarkupRanges, positions: number[], left: boolean = false) {
 	const mapping = [];
 	let original_cursor_location = -1;
 	for (const position of positions) {
-		const node = nodes.at_cursor(position);
+		const range = ranges.at_cursor(position);
 
-		if (node) {
-			if (position === node.to && nodes.adjacent_to_node(node, !left, true)?.from) {
+		if (range) {
+			if (position === range.to && ranges.adjacent_range(range, !left, true)?.from) {
 				mapping.push(-1);
-			} else if (node.touches_left_bracket(position, true, !left)) {
-				if (left && position === node.from + 3) {
+			} else if (range.touches_left_bracket(position, true, !left)) {
+				if (left && position === range.from + 3) {
 					original_cursor_location += 1;
 					mapping.push(original_cursor_location);
-				} else if (!left && position === node.from) {
-					original_cursor_location += 1;
-					mapping.push(original_cursor_location);
-				} else {
-					mapping.push(-1);
-				}
-			} else if (node.touches_right_bracket(position, true, left)) {
-				if (left && position === node.to) {
-					original_cursor_location += 1;
-					mapping.push(original_cursor_location);
-				} else if (!left && position === node.to - 3) {
+				} else if (!left && position === range.from) {
 					original_cursor_location += 1;
 					mapping.push(original_cursor_location);
 				} else {
 					mapping.push(-1);
 				}
-			} else if (node.touches_separator(position, true, !left)) {
-				if (!left && position === (<SubstitutionNode>node).middle) {
+			} else if (range.touches_right_bracket(position, true, left)) {
+				if (left && position === range.to) {
 					original_cursor_location += 1;
 					mapping.push(original_cursor_location);
-				} else if (left && position === (<SubstitutionNode>node).middle + 2) {
+				} else if (!left && position === range.to - 3) {
+					original_cursor_location += 1;
+					mapping.push(original_cursor_location);
+				} else {
+					mapping.push(-1);
+				}
+			} else if (range.touches_separator(position, true, !left)) {
+				if (!left && position === (<SubstitutionRange>range).middle) {
+					original_cursor_location += 1;
+					mapping.push(original_cursor_location);
+				} else if (left && position === (<SubstitutionRange>range).middle + 2) {
 					original_cursor_location += 1;
 					mapping.push(original_cursor_location);
 				} else {
@@ -135,18 +143,18 @@ for (let test_case of test_cases) {
 		const view = new EditorView({
 			state: EditorState.create({
 				doc: test_case,
-				extensions: [nodeParser, suggestionMode(DEFAULT_SETTINGS)],
+				extensions: [rangeParser, suggestionMode(DEFAULT_SETTINGS)],
 			}),
 		});
 
-		const nodes = view.state.field(nodeParser).nodes;
+		const ranges = view.state.field(rangeParser).ranges;
 
-		const unwrapped_string = applyToText(test_case, (node, text) => node.unwrap(), nodes.nodes);
+		const unwrapped_string = applyToText(test_case, (range, text) => range.unwrap(), ranges.ranges);
 
 		const actual_view = new EditorView({
 			state: EditorState.create({
 				doc: unwrapped_string,
-				extensions: [nodeParser, suggestionMode(DEFAULT_SETTINGS)],
+				extensions: [rangeParser, suggestionMode(DEFAULT_SETTINGS)],
 			}),
 		});
 
@@ -157,12 +165,12 @@ for (let test_case of test_cases) {
 			const left = direction % 2 === 0;
 			describe(movement_directions[direction] + (left ? ' (⟵)' : ' (⟶)'), () => {
 				let mapping: number[] = [];
-				if (nodes.nodes.length) {
-					mapping = character_mapper(nodes, position_numbers, left);
+				if (ranges.ranges.length) {
+					mapping = character_mapper(ranges, position_numbers, left);
 				} else {
 					mapping = [...position_numbers];
 				}
-				console.log(visualize_mapping(test_case, mapping) + (left ? ' (⟵)' : ' (⟶)'));
+				// console.log(visualize_mapping(test_case, mapping) + (left ? ' (⟵)' : ' (⟶)'));
 
 				for (const cursor of position_numbers) {
 					test(visualize_cursor_movement(test_case, cursor, findBlockingChar(cursor, !left, view.state)[0]), () => {
@@ -180,15 +188,16 @@ for (let test_case of test_cases) {
 
 						actual_view.dispatch({ selection: { anchor: actual_cursor, head: actual_cursor } });
 
-						// Run key input and dispatch a transaction
-						const action = overridden_keymap.find(x => x.key === movement_directions[direction])!;
-						action.run(view);
-						action.run(actual_view);
+						const event = keyboard_events[direction];
+						view.dom.dispatchEvent(event);
+						actual_view.dom.dispatchEvent(event);
 
-						const new_cursor = mapping[view.state.selection.main.head];
-						const new_actual_cursor = actual_view.state.selection.main.head;
+						setTimeout(() => {
+							const new_cursor = mapping[view.state.selection.main.head];
+							const new_actual_cursor = actual_view.state.selection.main.head;
 
-						expect(new_cursor).toBe(new_actual_cursor);
+							expect(new_cursor).toBe(new_actual_cursor);
+						}, 0);
 					});
 				}
 			});

@@ -1,38 +1,46 @@
 import { type Editor, type MarkdownView, Platform } from 'obsidian';
 
-import { type ECommand } from '../../types';
+import {type ECommand, EditMode} from '../../types';
 
 import {
-	CM_NodeTypes, selectionContainsNodes,
-	changeType, acceptSuggestions, rejectSuggestions,
+	CM_SuggestionTypes, selectionContainsRanges,
+	acceptSuggestions, rejectSuggestions, mark_editor_ranges, rangeParser,
 } from '../base';
 import type CommentatorPlugin from '../../main';
+import { commentGutter } from '../renderers/gutters';
+import {
+	editMode, editModeValue, editModeValueState,
+	previewMode, previewModeState
+} from "../settings";
+import {getEditMode} from "./extensions/editing-modes";
+import {addCommentToView} from "../renderers/gutters/comment-gutter";
+import {generateCriticMarkupPatchFromDiff} from "../base/edit-logic/text-diff";
 
 
-export const suggestion_commands: ECommand[] = Object.entries(CM_NodeTypes).map(([text, type]) => ({
-	id: `commentator-toggle-${text.toLowerCase()}`,
+export const suggestion_commands: (plugin: CommentatorPlugin) => ECommand[] = (plugin) => Object.entries(CM_SuggestionTypes).map(([text, type]) => ({
+	id: `toggle-${text.toLowerCase()}`,
 	name: `Mark as ${text}`,
 	icon: text.toLowerCase(),
 	editor_context: true,
 	regular_callback: (editor: Editor, view: MarkdownView) => {
-		changeType(editor, view, type);
+		mark_editor_ranges(editor, type, plugin.settings)
 	},
 }));
 
-export const editor_commands: ECommand[] = [
+export const editor_commands: (plugin: CommentatorPlugin) => ECommand[] = (plugin) => [
 	{
-		id: 'commentator-accept-all-suggestions',
+		id: 'accept-all-suggestions',
 		name: 'Accept all suggestions',
 		icon: 'check-check',
 		editor_context: true,
 		regular_callback: (editor: Editor, _) => {
-			// TODO: Add warning is #nodes > 100 ('Are you sure you want to accept all suggestions?')
+			// TODO: Add warning is #ranges > 100 ('Are you sure you want to accept all suggestions?')
 			editor.cm.dispatch(editor.cm.state.update({
 				changes: acceptSuggestions(editor.cm.state),
 			}));
 		},
 	}, {
-		id: 'commentator-reject-all-suggestions',
+		id: 'reject-all-suggestions',
 		name: 'Reject all suggestions',
 		icon: 'cross',
 		editor_context: true,
@@ -43,14 +51,14 @@ export const editor_commands: ECommand[] = [
 		},
 	},
 	{
-		id: 'commentator-accept-selected-suggestions',
+		id: 'accept-selected-suggestions',
 		name: 'Accept suggestions in selection',
 		icon: 'check',
 		editor_context: true,
 		check_callback: (checking: boolean, editor: Editor, _) => {
-			const contains_node = selectionContainsNodes(editor.cm.state);
-			if (checking || !contains_node)
-				return contains_node;
+			const contains_range = selectionContainsRanges(editor.cm.state);
+			if (checking || !contains_range)
+				return contains_range;
 			const selections = editor.cm.state.selection.ranges;
 			const changes = selections.map(selection => acceptSuggestions(editor.cm.state, selection.from, selection.to));
 			editor.cm.dispatch(editor.cm.state.update({
@@ -59,14 +67,14 @@ export const editor_commands: ECommand[] = [
 		},
 	},
 	{
-		id: 'commentator-reject-selected-suggestions',
+		id: 'reject-selected-suggestions',
 		name: 'Reject suggestions in selection',
 		icon: 'cross',
 		editor_context: true,
 		check_callback: (checking: boolean, editor: Editor, _) => {
-			const contains_node = selectionContainsNodes(editor.cm.state);
-			if (checking || !contains_node)
-				return contains_node;
+			const contains_range = selectionContainsRanges(editor.cm.state);
+			if (checking || !contains_range)
+				return contains_range;
 			const selections = editor.cm.state.selection.ranges;
 			const changes = selections.map(selection => rejectSuggestions(editor.cm.state, selection.from, selection.to));
 			editor.cm.dispatch(editor.cm.state.update({
@@ -74,21 +82,83 @@ export const editor_commands: ECommand[] = [
 			}));
 		},
 	},
+	{
+		id: 'comment',
+		name: 'Add comment',
+		icon: 'message-square',
+		editor_context: true,
+		regular_callback: (editor: Editor, _) => {
+			addCommentToView(editor.cm, editor.cm.state.field(rangeParser).ranges.at_cursor(editor.cm.state.selection.main.head));
+		}
+	},
+	{
+		id: 'fold-gutter',
+		name: 'Fold comment gutter',
+		icon: 'arrow-right-from-line',
+		editor_context: true,
+		regular_callback: (editor: Editor, _) => {
+			editor.cm.plugin(commentGutter[1][0][0])!.foldGutter();
+		}
+	},
+	{
+		id: 'toggle-preview-mode',
+		name: 'Cycle preview mode',
+		icon: 'comment',
+		editor_context: true,
+		regular_callback: (editor: Editor, view: MarkdownView) => {
+			const resulting_mode = (editor.cm.state.facet(previewModeState) + 1) % 3;
+			editor.cm.dispatch(editor.cm.state.update({
+				effects: previewMode.reconfigure(previewModeState.of(resulting_mode)),
+			}));
+			plugin.setPreviewMode(view, resulting_mode);
+		},
+	},
+	{
+		id: 'suggest-mode',
+		name: 'Toggle suggestion mode',
+		icon: 'file-edit',
+		editor_context: true,
+		regular_callback: (editor: Editor, view: MarkdownView) => {
+			const current_value = editor.cm.state.facet(editModeValueState);
+			const resulting_mode = current_value === EditMode.SUGGEST ? EditMode.CORRECTED : EditMode.SUGGEST;
+			editor.cm.dispatch(editor.cm.state.update({
+				effects: [
+					editModeValue.reconfigure(editModeValueState.of(resulting_mode)),
+					editMode.reconfigure(getEditMode(resulting_mode, plugin.settings))
+				]
+			}));
+			plugin.setEditMode(view, resulting_mode);
+		},
+	},
+	{
+		id: 'generate-text-diff',
+		name: 'Generate text diff from clipboard',
+		icon: 'diff',
+		editor_context: true,
+		regular_callback: async (editor: Editor, _) => {
+			const newText = await navigator.clipboard.readText();
+			const ranges = editor.cm.state.field(rangeParser).ranges;
+			const selection = editor.cm.state.selection.main;
+			// TODO: Split up edges of ranges in selection
+			// TODO: Do not diff on comments
+			const oldText = ranges.unwrap_in_range(editor.cm.state.doc, selection.from, selection.to).output;
+
+			const diff = generateCriticMarkupPatchFromDiff(oldText, newText);
+
+			editor.cm.dispatch(editor.cm.state.update({
+				changes: [{
+					from: selection.from,
+					to: selection.to,
+					insert: diff
+				}]
+			}));
+		},
+	}
 ];
 
 export const application_commmands = (plugin: CommentatorPlugin): ECommand[] => [
 	{
-		id: 'commentator-suggest-mode',
-		name: 'Toggle suggestion mode',
-		icon: 'comment',
-		editor_context: true,
-		regular_callback: async () => {
-			plugin.settings.suggest_mode = !plugin.settings.suggest_mode;
-			await plugin.saveSettings();
-		},
-	},
-	{
-		id: 'commentator-toggle-vim',
+		id: 'toggle-vim',
 		name: '(DEBUG) Toggle Vim mode',
 		icon: 'comment',
 		regular_callback: async () => {
@@ -96,16 +166,21 @@ export const application_commmands = (plugin: CommentatorPlugin): ECommand[] => 
 		},
 	},
 	{
-		id: 'commentator-view',
+		id: 'view',
 		name: 'Open CriticMarkup view',
 		icon: 'comment',
 		regular_callback: async () => {
 			await plugin.activateView();
 		},
-	},
+	}
 ];
 
 
+/**
+ * Automatically assigns correct callback to commands
+ * @param commands Commands to initialize
+ * @remark This results in non-editor callback commands also being available in the mobile toolbar
+ */
 export function initializeCommands(commands: ECommand[]) {
 	for (const command of commands) {
 		if (Platform.isMobile || command.editor_context) {

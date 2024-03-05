@@ -1,7 +1,7 @@
 {
   "extends": "@tsconfig/svelte/tsconfig.json",
   "compilerOptions": {
-    "baseUrl": ".",
+    "baseUrl": "./src",
     "inlineSources": true,
     "module": "ESNext",
     "target": "ESNext",
@@ -10,6 +10,7 @@
     "moduleResolution": "node",
     "esModuleInterop": true,
     "importHelpers": true,
+    "verbatimModuleSyntax": false,
     "strict": true,
     "paths": {
       "src": [
@@ -28,9 +29,10 @@
     ]
   },
   "files": [
-    "node_modules/jest-expect-message/types/index.d.ts"
+    "node_modules/jest-expect-message/types/index.d.ts",
   ],
   "include": [
-    "**/**.ts"
+    "**/**.ts",
+    "./src/types/extensions.d.ts"
   ]
 }

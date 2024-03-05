@@ -1,0 +1,55 @@
+.cm-gutters.cm-gutters:has(>.criticmarkup-gutter) {
+	// How far away the gutter should be removed from the text
+	//padding-inline-end: 1em;
+}
+
+.cm-gutters:has(>.criticmarkup-gutter-show-empty) {
+	min-width: 18px;
+}
+
+.criticmarkup-gutter-addition {
+	background-color: var(--addition-color);
+	width: 6px;
+	height: 100%;
+}
+
+.criticmarkup-gutter-deletion {
+	background-color: var(--deletion-color);
+	width: 6px;
+	height: 100%;
+}
+
+.criticmarkup-gutter-addition.criticmarkup-gutter-deletion {
+	background: repeating-linear-gradient(45deg, var(--addition-color), var(--addition-color) 10px, var(--deletion-color) 10px, var(--deletion-color) 18px);
+}
+
+.criticmarkup-gutter-substitution {
+	background: repeating-linear-gradient(45deg, var(--addition-color), var(--addition-color) 10px, var(--deletion-color) 10px, var(--deletion-color) 18px);
+
+	width: 6px;
+	height: 100%;
+}
+
+
+.criticmarkup-gutter-top {
+	// TODO: Figure out a better way to do this
+	border-top: 1px solid var(--background-primary);
+	border-top-left-radius: 8px;
+	border-top-right-radius: 8px;
+}
+
+.criticmarkup-gutter-bottom {
+	border-bottom: 1px solid var(--background-primary);
+	border-bottom-left-radius: 8px;
+	border-bottom-right-radius: 8px;
+}
+
+.cm-gutters.cm-gutters.cm-gutters.cm-gutters:has(.is-minimal.criticmarkup-gutter) {
+	position: sticky !important;
+	left: 20px;
+}
+
+
+
+
+

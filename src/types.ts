@@ -1,36 +1,109 @@
 import type { Command } from 'obsidian';
+import {SuggestionType} from "./editor/base";
 
 export enum PreviewMode {
+	// Show all text
 	ALL = 0,
+	// Visualise 'accept' action (only show regular text and Addition Ranges)
 	ACCEPT = 1,
+	// Visualise 'reject' action (only show regular text and Deletion Ranges)
 	REJECT = 2,
 }
 
+export enum EditMode {
+	OFF = 0,
+	CORRECTED = 1,
+	SUGGEST = 2,
+}
+
+/**
+ * How to move through a suggestion range when moving the cursor
+ */
+export enum RANGE_CURSOR_MOVEMENT_OPTION {
+	// Treat all characters as normal
+	UNCHANGED = "unchanged",
+
+	// Ignores all bracket characters, but NOT metadata
+	IGNORE_BRACKET = "ignore_bracket",
+
+	// Ignores all bracket characters AND metadata
+	IGNORE_METADATA = "ignore_metadata",
+
+	// Ignores the entire suggestion range
+	IGNORE_COMPLETELY = "ignore_completely",
+}
+
+/**
+ * How to move through a range when moving through a bracket
+ */
+export enum RANGE_BRACKET_MOVEMENT_OPTION {
+	// Move as normal (move through a bracket)
+	UNCHANGED = "unchanged",
+
+	// When *leaving* a bracket, stay inside the range if cursor cannot move anymore
+	STAY_INSIDE = "stay_inside",
+
+	// When *reaching* a bracket, stay outside, even if cursor can move further
+	STAY_OUTSIDE = "stay_outside",
+}
+
+
+export type CursorOptionsMap = Record<SuggestionType, RANGE_CURSOR_MOVEMENT_OPTION>
+
+export type BracketOptionsMap = Record<SuggestionType, RANGE_BRACKET_MOVEMENT_OPTION>
+
 export interface PluginSettings {
 	/**
-	 * Determines how nodes should be visualised in LP/S mode
-	 * - 0: Show all text
-	 * - 1: Visualise 'accept' action (only show regular text and Addition Nodes)
-	 * - 2: Visualise 'reject' action (only show regular text and Deletion Nodes)
+	 * String to store the version of the plugin settings (used for migrations)
 	 */
-	preview_mode: PreviewMode;
-	/**
-	 * Enable editor suggestion mode
-	 */
-	suggest_mode: boolean;
+	version: string;
 
 	/**
-	 * Render a gutter marking locations of nodes in the document
+	 * When opening a new view, determine how the editor should behave by default
+	 * - 0: Regular (default) editing mode
+	 * - 1: Corrected mode (ensure that edits do not break the syntax)
+	 * - 2: Suggestion mode (convert edit operations into suggestion ranges)
+	 */
+	default_edit_mode: EditMode;
+	/**
+	 * When opening a new view, determine how the ranges should be visualised in LP/S mode by default
+	 * - 0: Show all text
+	 * - 1: Visualise 'accept' action (only show regular text and Addition Ranges)
+	 * - 2: Visualise 'reject' action (only show regular text and Deletion Ranges)
+	 */
+	default_preview_mode: PreviewMode;
+
+	/**
+	 * Render a gutter marking locations of ranges in the document
 	 */
 	editor_gutter: boolean;
 	/**
-	 * Keep styling nodes even if cursor is inside it
+	 * Keep styling ranges even if cursor is inside it
 	 */
 	editor_styling: boolean;
+
 	/**
-	 * Hide gutter is no nodes are present (such that editor body is flush with the title)
+	 * Hide suggestion gutter if no suggestions are present in the note
 	 */
-	hide_empty_gutter: boolean;
+	suggestion_gutter_hide_empty: boolean;
+
+	/**
+	 * Hide comment gutter if no comments are present in the note
+	 */
+	comment_gutter_hide_empty: boolean;
+	/**
+	 * Determine whether the comment gutter should be folded by default
+	 */
+	comment_gutter_default_fold_state: boolean;
+	/**
+	 * Add a button next to the comment gutter for quickly (un)folding the gutter
+	 */
+	comment_gutter_fold_button: boolean;
+	/**
+	 * How much space the comment gutter should take up
+	 */
+	comment_gutter_width: number;
+
 	/**
 	 * How comments should be rendered
 	 */
@@ -43,24 +116,28 @@ export interface PluginSettings {
 	/**
 	 * Automatically correct invalid criticmarkup tags
 	 */
-	node_correcter: boolean;
+	tag_correcter: boolean;
 	/**
 	 * Remove CM syntax when copying text to clipboard
 	 */
 	clipboard_remove_syntax: boolean;
+	/**
+	 * Give a warning when a transaction is being filtered out due to editing logic
+	 */
+	edit_info: boolean;
 
 	/**
 	 * Add a toggle button for quickly toggling between preview modes in the editor toolbar
 	 */
-	editor_preview_button: boolean;
+	toolbar_preview_button: boolean;
 	/**
 	 * Add a toggle button for quickly toggling suggestion mode on/off in the editor toolbar
 	 */
-	editor_suggest_button: boolean;
+	toolbar_suggest_button: boolean;
 	/**
 	 * Show the labels on the buttons found in the header
 	 */
-	show_editor_buttons_labels: boolean;
+	toolbar_show_buttons_labels: boolean;
 
 	/**
 	 * Add a button for quickly toggling preview mode in the status bar
@@ -70,7 +147,8 @@ export interface PluginSettings {
 	 * Add a button for quickly toggling suggestion mode in the status bar
 	 */
 	status_bar_suggest_button: boolean;
-
+	/** Add a button for quickly toggling metadata in the status bar */
+	status_bar_metadata_button: boolean;
 
 	/**
 	 * Number of workers that are available for database indexing
@@ -87,9 +165,80 @@ export interface PluginSettings {
 	live_preview: boolean;
 
 	/**
-	 * Enable corrected cursor movement near/within nodes
+	 * Enable corrected cursor movement near/within ranges
 	 */
 	alternative_cursor_movement: boolean;
+
+
+	/**
+	 * Whether metadata extensions should be enabled
+	 */
+	enable_metadata: boolean;
+	/**
+	 * Whether authorship metadata should be enabled
+	 */
+	enable_author_metadata: boolean;
+	/**
+	 * Whether timestamps metadata should be enabled
+	 */
+	enable_timestamp_metadata: boolean
+	/**
+	 * Whether completed metadata should be enabled
+	 */
+	enable_completed_metadata: boolean;
+	/**
+	 * Whether style metadata should be enabled
+	 */
+	enable_style_metadata: boolean;
+	/**
+	 * Whether color metadata should be enabled
+	 */
+	enable_color_metadata: boolean;
+
+	/**
+	 * Whether metadata should be added to new ranges
+	 */
+	add_metadata: boolean;
+	/**
+	 * Whether authorship metadata should be added to new ranges
+	 */
+	add_author_metadata: boolean;
+	/**
+	 * Whether timestamps metadata should be added to new ranges
+	 */
+	add_timestamp_metadata: boolean
+	/**
+	 * Whether completed metadata should be added to new ranges
+	 */
+	add_completed_metadata: boolean;
+	/**
+	 * Whether style metadata should be added to new ranges
+	 */
+	add_style_metadata: boolean;
+	/**
+	 * Whether color metadata should be added to new ranges
+	 */
+	add_color_metadata: boolean;
+
+	/**
+	 * Author name to use for metadata
+	 */
+	author?: string;
+
+
+	/**
+	 * Cursor movement options for ranges when in suggestion mode
+	 */
+	suggestion_mode_operations: {
+		/**
+		 * Options for cursor movement within a suggestion range
+		 */
+		cursor_movement: CursorOptionsMap;
+		/**
+		 *  Options for cursor movement between two suggestion ranges
+		 */
+		bracket_movement: BracketOptionsMap;
+	},
 }
 
 /**

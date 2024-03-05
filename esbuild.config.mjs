@@ -7,6 +7,7 @@ import sveltePreprocess from "svelte-preprocess";
 
 import process from "process";
 import builtins from 'builtin-modules'
+import builtinModules from "builtin-modules";
 
 const banner =
     `/*
@@ -61,20 +62,28 @@ const context = await esbuild.context({
     minify: prod,
     outdir: dir,
     metafile: verbose,
+    drop: prod ? ["console"] : [],
 
     plugins: [
         sassPlugin(),
         esbuildSvelte({
-            compilerOptions: {css: "injected"},
+            compilerOptions: {css: "injected", hydratable: false},
             preprocess: sveltePreprocess(),
             filterWarnings: (warning) => {
                 // Remove accessibility warnings (base Obsidian ignores these guidelines too)
-                return warning.code !== "a11y-click-events-have-key-events" && warning.code !== "a11y-no-static-element-interactions"
+                return warning.code !== "a11y-click-events-have-key-events" && warning.code !== "a11y-no-static-element-interactions" &&
+                    warning.code !== "a11y-mouse-events-have-key-events" && warning.code !== "a11y-no-noninteractive-element-interactions" &&
+                    warning.code !== "a11y-no-noninteractive-tabindex"
             },
         }),
         inlineWorkerPlugin({
-            workerName: "Commentator Indexer",
-            external: ["obsidian"]
+            platform: "browser",
+            external: ["obsidian", ...builtinModules],
+            format: "cjs",
+            treeShaking: true,
+            minify: prod,
+            bundle: true,
+            sourcemap: "inline",
         }),
     ]
 });

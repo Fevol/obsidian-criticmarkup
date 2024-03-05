@@ -1,45 +1,99 @@
-import { type PluginSettings, PreviewMode } from './types';
+import {
+	EditMode,
+	type PluginSettings,
+	PreviewMode,
+	RANGE_BRACKET_MOVEMENT_OPTION,
+	RANGE_CURSOR_MOVEMENT_OPTION,
+} from './types';
+import {SuggestionType} from "./editor/base";
+
+
+export const PLUGIN_VERSION = "0.2.0";
+export const DATABASE_VERSION = 4;
 
 export const DEFAULT_SETTINGS: PluginSettings = {
-	preview_mode: PreviewMode.ALL,
-	suggest_mode: false,
+	version: PLUGIN_VERSION,
+
+	default_edit_mode: EditMode.CORRECTED,
+	default_preview_mode: PreviewMode.ALL,
 
 	editor_gutter: true,
 
 	editor_styling: false,
-	hide_empty_gutter: false,
+	suggestion_gutter_hide_empty: false,
+	comment_gutter_hide_empty: false,
+	comment_gutter_default_fold_state: false,
+	comment_gutter_fold_button: true,
+
+	comment_gutter_width: 300,
 	comment_style: "block",
 
 	tag_completion: true,
-	node_correcter: true,
+	tag_correcter: true,
 	clipboard_remove_syntax: true,
+	edit_info: true,
 
-
-	editor_preview_button: true,
-	editor_suggest_button: true,
-	show_editor_buttons_labels: true,
+	toolbar_preview_button: true,
+	toolbar_suggest_button: true,
+	toolbar_show_buttons_labels: true,
 
 	status_bar_preview_button: true,
 	status_bar_suggest_button: true,
+	status_bar_metadata_button: true,
 
 	database_workers: 2,
 
 	post_processor: true,
 	live_preview: true,
 	alternative_cursor_movement: true,
+
+	enable_metadata: false,
+	enable_author_metadata: false,
+	enable_timestamp_metadata: false,
+	enable_completed_metadata: false,
+	enable_style_metadata: false,
+	enable_color_metadata: false,
+
+	add_metadata: false,
+	add_author_metadata: false,
+	add_timestamp_metadata: false,
+	add_completed_metadata: false,
+	add_style_metadata: false,
+	add_color_metadata: false,
+
+	author: "",
+
+	suggestion_mode_operations: {
+		cursor_movement: {
+			[SuggestionType.ADDITION]: RANGE_CURSOR_MOVEMENT_OPTION.IGNORE_METADATA,
+			[SuggestionType.DELETION]: RANGE_CURSOR_MOVEMENT_OPTION.IGNORE_METADATA,
+			[SuggestionType.SUBSTITUTION]: RANGE_CURSOR_MOVEMENT_OPTION.IGNORE_METADATA,
+			[SuggestionType.HIGHLIGHT]: RANGE_CURSOR_MOVEMENT_OPTION.IGNORE_METADATA,
+			[SuggestionType.COMMENT]: RANGE_CURSOR_MOVEMENT_OPTION.IGNORE_COMPLETELY,
+		},
+		bracket_movement: {
+			[SuggestionType.ADDITION]: RANGE_BRACKET_MOVEMENT_OPTION.STAY_INSIDE,
+			[SuggestionType.DELETION]: RANGE_BRACKET_MOVEMENT_OPTION.STAY_INSIDE,
+			[SuggestionType.SUBSTITUTION]: RANGE_BRACKET_MOVEMENT_OPTION.STAY_INSIDE,
+			[SuggestionType.HIGHLIGHT]: RANGE_BRACKET_MOVEMENT_OPTION.STAY_INSIDE,
+			[SuggestionType.COMMENT]: RANGE_BRACKET_MOVEMENT_OPTION.STAY_INSIDE,
+		}
+	}
 };
 
 
 export const REQUIRES_FULL_RELOAD: Set<string> = new Set([
-	"preview_mode",
 	"live_preview",
-	"alternative_live_preview",
 	"editor_gutter",
-
-	"hide_empty_gutter",
 	"comment_style",
-
 	"tag_completion",
-	"node_correcter",
-	"suggest_mode",
+	"tag_correcter",
+]);
+
+export const REQUIRES_EDITOR_RELOAD: Set<string> = new Set([
+	"enable_metadata"
+]);
+
+export const REQUIRES_DATABASE_REINDEX: Set<string> = new Set([
+	"enable_metadata",
 ]);

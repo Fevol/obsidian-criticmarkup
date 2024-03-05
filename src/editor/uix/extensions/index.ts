@@ -1,11 +1,12 @@
 import { bracketMatcher } from './bracket-matcher';
-import { nodeCorrecter } from './node-correcter';
-import { suggestionMode, keybindExtensions, overridden_keymap } from './suggestion-mode';
+import { rangeCorrecter } from './range-correcter';
+import { suggestionMode, editMode } from './editing-modes';
+import { editorKeypressCatcher } from "./keypress-catcher";
 
 export {
 	bracketMatcher,
-	nodeCorrecter,
+	rangeCorrecter,
 	suggestionMode,
-	keybindExtensions,
-	overridden_keymap,
+	editMode,
+	editorKeypressCatcher,
 }

@@ -1,8 +1,8 @@
 [submodule "src/editor/parser"]
-	path = src/editor/parser
+	path = src/editor/base/parser
 	url = https://github.com/Fevol/criticmarkup-parser.git
 [submodule "typings"]
-	path = typings
+	path = src/types/typings
 	url = https://github.com/Fevol/obsidian-typings.git
 [submodule "src/ui/components"]
 	path = src/ui/components
