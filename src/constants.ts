@@ -7,8 +7,12 @@ import {
 } from './types';
 import {SuggestionType} from "./editor/base";
 
+
+export const PLUGIN_VERSION = "0.2.0";
+export const DATABASE_VERSION = 4;
+
 export const DEFAULT_SETTINGS: PluginSettings = {
-	version: "0.2.0",
+	version: PLUGIN_VERSION,
 
 	default_edit_mode: EditMode.CORRECTED,
 	default_preview_mode: PreviewMode.ALL,
@@ -79,15 +83,10 @@ export const DEFAULT_SETTINGS: PluginSettings = {
 
 
 export const REQUIRES_FULL_RELOAD: Set<string> = new Set([
-	"edit_mode",
 	"live_preview",
-	"alternative_live_preview",
 	"editor_gutter",
-
 	"comment_style",
-
 	"tag_completion",
 	"tag_correcter",
-	"suggest_mode",
-	"suggestion_mode_cursor_movement",
+	"enable_metadata"
 ]);

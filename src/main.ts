@@ -38,7 +38,7 @@ import {CommentatorSettings} from './ui/settings';
 import {Database} from './database';
 
 import {objectDifference} from './util/util';
-import {DEFAULT_SETTINGS, REQUIRES_FULL_RELOAD} from './constants';
+import {DATABASE_VERSION, DEFAULT_SETTINGS, REQUIRES_FULL_RELOAD} from './constants';
 import {type PluginSettings} from './types';
 import {
 	commentGutterFoldButton, commentGutterFoldButtonState,
@@ -76,7 +76,7 @@ export default class CommentatorPlugin extends Plugin {
 		this,
 		'commentator/cache',
 		'Commentator cache',
-		4,
+		DATABASE_VERSION,
 		'Vault-wide cache for Commentator plugin',
 		() => [],
 		async (file, state?: EditorState) => {
@@ -134,10 +134,9 @@ export default class CommentatorPlugin extends Plugin {
 		if (Object.keys(this.changed_settings).some(key => REQUIRES_FULL_RELOAD.has(key))) {
 			this.loadEditorExtensions();
 			this.app.workspace.updateOptions();
+			if (this.settings.post_processor)
+				postProcessorUpdate();
 		}
-
-		if (this.settings.post_processor)
-			postProcessorUpdate();
 	}
 
 	async onload() {
@@ -153,7 +152,6 @@ export default class CommentatorPlugin extends Plugin {
 				return app.workspace.activeEditor?.editor?.cm.state.field(rangeParser).ranges.tree;
 			}
 		};
-
 
 		this.registerView(CRITICMARKUP_VIEW, (leaf) => new CriticMarkupView(leaf, this));
 
@@ -211,10 +209,9 @@ export default class CommentatorPlugin extends Plugin {
 		this.previous_settings = Object.assign(old_settings, this.settings);
 
 		const old_version = new_settings.version;
-		const current_version = "0.2.0";
 
 		// EXPL: Migration code for upgrading to new version
-		if (old_version !== current_version) {
+		if (old_version !== DEFAULT_SETTINGS.version) {
 			if (!old_version) {
 				this.app.workspace.onLayoutReady(async () => {
 					new Notice("Commentator: rebuilding database for new version", 5000);
@@ -253,9 +250,6 @@ export default class CommentatorPlugin extends Plugin {
 
 		this.changed_settings = objectDifference(this.settings, this.previous_settings);
 		this.previous_settings = Object.assign({}, this.settings);
-
-		this.previewModeStatusBarButton.updateButton(this.changed_settings.default_preview_mode as number);
-		this.editModeStatusBarButton.updateButton((this.changed_settings.default_edit_mode as number));
 
 		this.previewModeHeaderButton.setLabelRendering(this.changed_settings.toolbar_show_buttons_labels);
 		this.editModeHeaderModeButton.setLabelRendering(this.changed_settings.toolbar_show_buttons_labels);

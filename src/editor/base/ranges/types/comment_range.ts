@@ -1,7 +1,8 @@
 import {CM_All_Brackets, SuggestionType} from '../definitions';
 import { CriticMarkupRange } from '../base_range';
-import {Component, MarkdownRenderer, setIcon} from "obsidian";
 import {PreviewMode} from "../../../../types";
+
+import {Component, MarkdownRenderer, setIcon} from "obsidian";
 
 export class CommentRange extends CriticMarkupRange {
 	reply_depth = 0;

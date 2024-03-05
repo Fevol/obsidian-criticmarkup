@@ -88,7 +88,7 @@
 
 
 <SettingItem
-	name="Database Settings"
+	name="Database"
 	type="heading"
 />
 

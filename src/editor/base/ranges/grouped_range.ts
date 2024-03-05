@@ -1,28 +1,6 @@
 import { Text } from '@codemirror/state';
 import { type CriticMarkupRange } from './base_range';
-import IntervalTree, {Node} from "@flatten-js/interval-tree";
-
-
-IntervalTree.prototype.tree_search_nearest_backward = function <T>(node: Node<T>, search_node: Node<any>): Node<T> | null {
-	let best;
-	let curr = node;
-	while (curr && curr !== this.nil_node) {
-		if (!curr.less_than(search_node)) {
-			if (curr.intersect(search_node)) {
-				best = curr;
-				curr = curr.right;
-			} else {
-				curr = curr.left;
-			}
-		} else {
-			if (!best || !curr.less_than(best)) best = curr;
-			curr = curr.right;
-		}
-	}
-	return best || null;
-
-}
-
+import IntervalTree from '@flatten-js/interval-tree'
 
 export class CriticMarkupRanges {
 	ranges: CriticMarkupRange[];
@@ -63,10 +41,6 @@ export class CriticMarkupRanges {
 	 * @param include_edge - Whether to include the edges of the range
 	 */
 	range_adjacent_to_cursor(cursor: number, left: boolean, loose = false, include_edge = false) {
-		// Array-based version is consistently faster than tree-based version (only exception: stresstest on end of note)
-		// const node = (left ? this.tree.tree_search_nearest_backward(this.tree.root!, new Node([cursor, cursor])) :
-		// 												this.tree.tree_search_nearest_forward(this.tree.root!, new Node([cursor, cursor])))?.item.value;
-
 		const ranges = (left ? this.ranges.slice().reverse() : this.ranges);
 		if (include_edge)
 			return ranges.find(range => left ? ((loose ? range.from : range.to) < cursor) : (cursor < (loose ? range.to : range.from)));

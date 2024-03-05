@@ -11,8 +11,6 @@ declare module '@flatten-js/interval-tree' {
         tree_search_interval(node: Node<T>, search_node: Node, resulting_nodes: Node[]): void;
 
         tree_search_nearest_forward(node: Node<T>, search_node: Node): Node<T> | null;
-
-        tree_search_nearest_backward(node: Node<T>, search_node: Node): Node<T> | null;
     }
 
     export interface Node<T = any> {
