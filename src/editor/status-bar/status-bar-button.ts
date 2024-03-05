@@ -35,7 +35,7 @@ export class StatusBarButton {
 	}
 
 	updateButton(value: number) {
-		if (!this.button) return;
+		if (!this.button || value === undefined) return;
 
 		this.value = value;
 		const { icon, text } = this.states[value];

@@ -1,10 +1,11 @@
-import {type EventRef, type MarkdownView, Menu, setIcon} from 'obsidian';
+import {type EventRef, type MarkdownView, Menu, setIcon, WorkspaceLeaf} from 'obsidian';
 import type CommentatorPlugin from '../../main';
 
 export class HeaderButton {
 	active_mapping: WeakMap<MarkdownView, {
 		button: HTMLElement,
 		status: HTMLElement | null,
+		event: EventRef
 	}> = new WeakMap();
 
 	changeEvent: EventRef | null = null;
@@ -45,9 +46,9 @@ export class HeaderButton {
 	}
 
 	updateButton(view: MarkdownView, value: number) {
-		const { tooltip, text } = this.states[value];
 		const elements = this.active_mapping.get(view);
 		if (elements) {
+			const { tooltip, text } = this.states[value];
 			setIcon(elements.button, this.states[(value + 1) % this.states.length].icon);
 			elements.button.setAttribute('aria-label', tooltip);
 			if (this.has_label)
@@ -62,6 +63,9 @@ export class HeaderButton {
 		for (const leaf of this.plugin.app.workspace.getLeavesOfType('markdown')) {
 			const view = leaf.view as MarkdownView;
 			if (this.active_mapping.has(view)) continue;
+			const event = leaf.on('history-change', () => {
+				this.updateButton(view, this.getvalue(view));
+			});
 
 			const value = this.getvalue(view);
 			const { tooltip, text } = this.states[value];
@@ -92,23 +96,27 @@ export class HeaderButton {
 			}
 
 
-			this.active_mapping.set(view, { button, status });
+			this.active_mapping.set(view, { button, status, event });
 		}
+	}
+
+	detachButton(leaf: WorkspaceLeaf) {
+		const view = leaf.view as MarkdownView;
+		const elements = this.active_mapping.get(view);
+		if (!elements) return;
+
+		leaf.offref(elements.event);
+		elements.button.detach();
+		elements.status?.detach();
+
+		this.active_mapping.delete(view);
 	}
 
 	detachButtons() {
 		if (!this.changeEvent) return;
 
-		for (const leaf of this.plugin.app.workspace.getLeavesOfType('markdown')) {
-			const view = leaf.view as MarkdownView;
-			const elements = this.active_mapping.get(view);
-			if (!elements) continue;
-
-			elements.button.detach();
-			elements.status?.detach();
-
-			this.active_mapping.delete(view);
-		}
+		for (const leaf of this.plugin.app.workspace.getLeavesOfType('markdown'))
+			this.detachButton(leaf);
 		this.plugin.app.workspace.offref(this.changeEvent!);
 		this.changeEvent = null;
 	}
