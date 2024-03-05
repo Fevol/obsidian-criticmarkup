@@ -23,6 +23,10 @@ export function construct_range(inserted: string, deleted: string, type: Suggest
     return {insert: output, start_offset, end_offset};
 }
 
+export function create_suggestion(inserted: string, deleted: string = "") {
+    return construct_suggestion(inserted, deleted, generate_metadata()).insert;
+}
+
 export function create_range(type: SuggestionType, inserted: string, deleted: string = "") {
     return construct_range(inserted, deleted, type, generate_metadata()).insert;
 }

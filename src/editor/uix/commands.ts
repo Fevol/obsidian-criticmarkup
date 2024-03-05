@@ -14,6 +14,7 @@ import {
 } from "../settings";
 import {getEditMode} from "./extensions/editing-modes";
 import {addCommentToView} from "../renderers/gutters/comment-gutter";
+import {generateCriticMarkupPatchFromDiff} from "../base/edit-logic/text-diff";
 
 
 export const suggestion_commands: (plugin: CommentatorPlugin) => ECommand[] = (plugin) => Object.entries(CM_SuggestionTypes).map(([text, type]) => ({
@@ -115,7 +116,7 @@ export const editor_commands: (plugin: CommentatorPlugin) => ECommand[] = (plugi
 	{
 		id: 'suggest-mode',
 		name: 'Toggle suggestion mode',
-		icon: 'comment',
+		icon: 'file-edit',
 		editor_context: true,
 		regular_callback: (editor: Editor, view: MarkdownView) => {
 			const current_value = editor.cm.state.facet(editModeValueState);
@@ -129,6 +130,30 @@ export const editor_commands: (plugin: CommentatorPlugin) => ECommand[] = (plugi
 			plugin.setEditMode(view, resulting_mode);
 		},
 	},
+	{
+		id: 'generate-text-diff',
+		name: 'Generate text diff from clipboard',
+		icon: 'diff',
+		editor_context: true,
+		regular_callback: async (editor: Editor, _) => {
+			const newText = await navigator.clipboard.readText();
+			const ranges = editor.cm.state.field(rangeParser).ranges;
+			const selection = editor.cm.state.selection.main;
+			// TODO: Split up edges of ranges in selection
+			// TODO: Do not diff on comments
+			const oldText = ranges.unwrap_in_range(editor.cm.state.doc, selection.from, selection.to).output;
+
+			const diff = generateCriticMarkupPatchFromDiff(oldText, newText);
+
+			editor.cm.dispatch(editor.cm.state.update({
+				changes: [{
+					from: selection.from,
+					to: selection.to,
+					insert: diff
+				}]
+			}));
+		},
+	}
 ];
 
 export const application_commmands = (plugin: CommentatorPlugin): ECommand[] => [
