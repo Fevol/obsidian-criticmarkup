@@ -2,7 +2,8 @@ import { CommentMarker, commentGutterMarkers } from './marker';
 import {comment_gutter, CommentGutterView} from './comment_gutter';
 import {RangeSet, StateField} from "@codemirror/state";
 import {EditorView, ViewPlugin} from "@codemirror/view";
-import {CriticMarkupRange} from "../../../base";
+import {CriticMarkupRange, SuggestionType} from "../../../base";
+import {create_range} from "../../../base/edit-util/range-create";
 
 export { CommentMarker, commentGutterMarkers }
 
@@ -17,13 +18,13 @@ export const commentGutter: [StateField<RangeSet<CommentMarker>>, [[ViewPlugin<C
 ];
 
 
-export function focusCommentThread(editor: EditorView, range: CriticMarkupRange | undefined) {
-	let cursor = range ? range.full_range_back : editor.state.selection.main.head;
+export function addCommentToView(editor: EditorView, range: CriticMarkupRange | undefined) {
+	const cursor = range ? range.full_range_back : editor.state.selection.main.head;
 	editor.dispatch(editor.state.update({
 		changes: {
 			from: cursor,
 			to: cursor,
-			insert: '{>><<}',
+			insert: create_range(SuggestionType.COMMENT, ""),
 		},
 	}));
 	if (editor.plugin(commentGutter[1][0][0])) {

@@ -4,7 +4,7 @@ import {Component, MarkdownRenderer, Menu, setIcon} from 'obsidian';
 
 import {CM_All_Brackets, CommentRange, CriticMarkupRange} from '../../../base';
 import {commentGutterMarkers} from '../../gutters';
-import {focusCommentThread} from "../../gutters/comment-gutter";
+import {addCommentToView} from "../../gutters/comment-gutter";
 
 
 
@@ -125,7 +125,7 @@ export class CommentIconWidget extends WidgetType {
 						.setIcon('message-square')
 						.onClick((e) => {
 							e.preventDefault();
-							focusCommentThread(view, this.range);
+							addCommentToView(view, this.range);
 						});
 				});
 

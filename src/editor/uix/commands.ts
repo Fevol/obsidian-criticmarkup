@@ -13,7 +13,7 @@ import {
 	previewMode, previewModeState
 } from "../settings";
 import {getEditMode} from "./extensions/editing-modes";
-import {focusCommentThread} from "../renderers/gutters/comment-gutter";
+import {addCommentToView} from "../renderers/gutters/comment-gutter";
 
 
 export const suggestion_commands: (plugin: CommentatorPlugin) => ECommand[] = (plugin) => Object.entries(CM_SuggestionTypes).map(([text, type]) => ({
@@ -87,7 +87,7 @@ export const editor_commands: (plugin: CommentatorPlugin) => ECommand[] = (plugi
 		icon: 'message-square',
 		editor_context: true,
 		regular_callback: (editor: Editor, _) => {
-			focusCommentThread(editor.cm, editor.cm.state.field(rangeParser).ranges.at_cursor(editor.cm.state.selection.main.head));
+			addCommentToView(editor.cm, editor.cm.state.field(rangeParser).ranges.at_cursor(editor.cm.state.selection.main.head));
 		}
 	},
 	{

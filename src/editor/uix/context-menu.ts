@@ -1,6 +1,6 @@
 import type {EventRef} from 'obsidian';
 import {acceptSuggestions, isCursor, rangeParser, rejectSuggestions} from '../base';
-import {focusCommentThread} from "../renderers/gutters/comment-gutter";
+import {addCommentToView} from "../renderers/gutters/comment-gutter";
 
 export const cmenuCommands: EventRef =
 	app.workspace.on('editor-menu', (menu, editor) => {
@@ -10,7 +10,7 @@ export const cmenuCommands: EventRef =
 				.setIcon('message-square')
 				.setSection('criticmarkup')
 				.onClick(() => {
-					focusCommentThread(editor.cm, ranges.at_cursor(editor.cm.state.selection.main.head));
+					addCommentToView(editor.cm, ranges.at_cursor(editor.cm.state.selection.main.head));
 				});
 		});
 

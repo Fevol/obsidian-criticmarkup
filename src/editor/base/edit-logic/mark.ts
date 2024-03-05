@@ -1,5 +1,4 @@
 import {
-    CM_All_Brackets,
     CriticMarkupRange,
     CriticMarkupRanges,
     METADATA_TYPE,
@@ -13,12 +12,14 @@ import {Editor} from "obsidian";
 import {rangeParser} from "../edit-util";
 import {PluginSettings} from "../../../types";
 import {generate_metadata} from "../edit-util/metadata";
+import {construct_range, construct_suggestion} from "../edit-util/range-create";
 
 export enum MarkAction {
     REGULAR = "regular",
     CLEAR = "clear",
     NONE = "none",
 }
+
 export type MarkType = SuggestionType | MarkAction;
 
 
@@ -84,7 +85,7 @@ function range_metadata_compatible(range: CriticMarkupRange, metadata_fields?: M
         if (metadata_fields[type] !== range.fields[type]) {
             const action = metadata_compatibility[type as METADATA_TYPE];
             if (MetadataMergeAction.SPLIT === action || MetadataMergeAction.MOVE_OUTSIDE === action)
-                    return {compatible: false, merged_metadata: undefined};
+                return {compatible: false, merged_metadata: undefined};
             else if (MetadataMergeAction.OLD === action)
                 merged_metadata[type as METADATA_TYPE] = range.fields[type];
 
@@ -110,7 +111,10 @@ function merge_type(left: SuggestionType, right: SuggestionType) {
     return undefined;
 }
 
-function mergeable_range(cursor: number, range?: CriticMarkupRange, type?: SuggestionType, metadata_fields?: MetadataFields, left = false, single_range = false): {type?: SuggestionType, merged_metadata?: MetadataFields}{
+function mergeable_range(cursor: number, range?: CriticMarkupRange, type?: SuggestionType, metadata_fields?: MetadataFields, left = false, single_range = false): {
+    type?: SuggestionType,
+    merged_metadata?: MetadataFields
+} {
     if (!range || !type || !range_type_compatible(range, type))
         return {};
 
@@ -134,28 +138,6 @@ function mergeable_range(cursor: number, range?: CriticMarkupRange, type?: Sugge
     return {type, merged_metadata: type ? merged_metadata : undefined};
 }
 
-export function create_suggestion(inserted: string, deleted: string, metadata_fields?: MetadataFields, start_offset = 0, end_offset = 0) {
-    return create_range(inserted, deleted, ["", ""], metadata_fields,
-        inserted && deleted ? SuggestionType.SUBSTITUTION : (inserted ? SuggestionType.ADDITION : SuggestionType.DELETION), start_offset, end_offset);
-}
-
-export function create_range(inserted: string, deleted: string, affixes: [string, string], metadata_fields?: MetadataFields, type?: SuggestionType, start_offset = 0, end_offset = 0) {
-    if (!type)
-        return {insert: deleted + inserted, start_offset, end_offset};
-
-    const brackets = CM_All_Brackets[type];
-    const metadata = metadata_fields && Object.keys(metadata_fields).length ? JSON.stringify(metadata_fields) + "@@" : "";
-    const output = brackets[0] + metadata +
-        (type === SuggestionType.SUBSTITUTION ? deleted + brackets[1] + inserted + brackets[2]
-            : deleted + inserted + brackets[1]);
-    const initial_offset = affixes[0].length + brackets[0].length + metadata.length;
-    start_offset += initial_offset;
-    // FIXME: end may not be offset if the bracket appears after the end
-    end_offset += (type === SuggestionType.SUBSTITUTION ? brackets[1].length : 0);
-
-    return {insert: affixes[0] + output + affixes[1], start_offset, end_offset};
-}
-
 function mark_range(ranges: CriticMarkupRanges, text: Text, from: number, to: number, inserted: string, type: MarkType, metadata_fields?: MetadataFields): EditorSuggestion | undefined {
     const in_range = ranges.ranges_in_range(from, to);
 
@@ -173,7 +155,7 @@ function mark_range(ranges: CriticMarkupRanges, text: Text, from: number, to: nu
                 from = left_range.from;
             } else if (!left_range.touches_right_bracket(from, false, true)) {
                 if (left_range.type === SuggestionType.SUBSTITUTION && (force || (left_range as SubstitutionRange).contains_separator(from, to))) {
-                    affixes[0] = create_range("", left_range.unwrap_slice(0, from), ["", ""], left_range.fields, SuggestionType.DELETION).insert;
+                    affixes[0] = construct_range("", left_range.unwrap_slice(0, from), SuggestionType.DELETION, left_range.fields).insert;
                     from = left_range.from;
                 } else {
                     affixes[0] = left_range.split_range(from)[0];
@@ -192,7 +174,7 @@ function mark_range(ranges: CriticMarkupRanges, text: Text, from: number, to: nu
                 // TODO: Downgrade range to addition/deletion if past bracket
                 if (right_range.type === SuggestionType.SUBSTITUTION && (force || (right_range as SubstitutionRange).contains_separator(from, to))) {
                     const deleted = right_range.unwrap_slice(to, Infinity);
-                    affixes[1] = create_range(deleted, "", ["", ""], right_range.fields, SuggestionType.ADDITION).insert;
+                    affixes[1] = construct_range(deleted, "", SuggestionType.ADDITION, right_range.fields).insert;
                     to = right_range.to;
                     special_case = true;
                 } else {
@@ -207,9 +189,7 @@ function mark_range(ranges: CriticMarkupRanges, text: Text, from: number, to: nu
     if (type === MarkAction.NONE) {
         to = from;
         insert = "";
-    }
-
-    else if (type === MarkAction.REGULAR) {
+    } else if (type === MarkAction.REGULAR) {
         if (left_range !== undefined && left_range === right_range) {
             let deleted = from === to ? "" : left_range.unwrap_slice(from, to);
             if (deleted) {
@@ -242,7 +222,7 @@ function mark_range(ranges: CriticMarkupRanges, text: Text, from: number, to: nu
                     }
                     from = left_range.from;
                     to = left_range.to;
-                    ({insert, start_offset, end_offset} = create_suggestion(insert, deleted, left_range.fields, start_offset, end_offset));
+                    ({ insert, start_offset, end_offset } = construct_suggestion(insert, deleted, left_range.fields, start_offset, end_offset));
                 }
             } else {
                 const cursor = left_range.cursor_move_inside(from, true);
@@ -273,18 +253,14 @@ function mark_range(ranges: CriticMarkupRanges, text: Text, from: number, to: nu
                 insert = inserted;
             }
         }
-    }
-
-    else if (type === MarkAction.CLEAR) {
+    } else if (type === MarkAction.CLEAR) {
         split_left_range();
         split_right_range();
         const deleted = from === to ? "" : ranges.unwrap_in_range(text, from, to, in_range).output;
         start_offset += affixes[0].length;
         end_offset += deleted.length;
         insert = affixes[0] + deleted + affixes[1];
-    }
-
-    else {
+    } else {
         // NOTE: Special code for handling operations within substitution ranges
         if (left_range !== undefined && left_range === right_range && left_range.type === SuggestionType.SUBSTITUTION) {
             // NOTE: True if edit in left part, False if right, and undefined if the edit covers both parts
@@ -296,17 +272,17 @@ function mark_range(ranges: CriticMarkupRanges, text: Text, from: number, to: nu
                 const deleted = left_range.unwrap_slice(from, to);
                 split_left_range(to < (left_range as SubstitutionRange).middle);
                 split_right_range(from > (left_range as SubstitutionRange).middle + 2);
-                ({insert, start_offset, end_offset} = create_range(inserted, deleted, affixes, metadata_fields, type, start_offset, end_offset + inserted.length + deleted.length));
+                ({ insert, start_offset, end_offset } = construct_range(inserted, deleted, type, metadata_fields, start_offset, end_offset + inserted.length + deleted.length));
             } else {
                 let deleted = "";
                 const parts = left_range.unwrap_parts();
                 if (merge_result.type === SuggestionType.ADDITION) {
                     // CASE 2: Adding to the addition-part (right) of the substitution
                     deleted = parts[0];
-                    const insertion_point = Math.clamp( cursor - (left_range as SubstitutionRange).middle - 2, 0, parts[1].length);
+                    const insertion_point = Math.clamp(cursor - (left_range as SubstitutionRange).middle - 2, 0, parts[1].length);
                     start_offset = parts[0].length + insertion_point;
                     insert = parts[1].slice(0, insertion_point) + inserted + parts[1].slice(insertion_point);
-                    ({insert, start_offset, end_offset} = create_suggestion(insert, deleted, merge_result.merged_metadata, start_offset, end_offset));
+                    ({ insert, start_offset, end_offset } = construct_suggestion(insert, deleted, merge_result.merged_metadata, start_offset, end_offset));
                     from = left_range.from;
                     to = left_range.to;
                 } else if (merge_result.type === SuggestionType.DELETION) {
@@ -322,7 +298,7 @@ function mark_range(ranges: CriticMarkupRanges, text: Text, from: number, to: nu
                         split_right_range();
                         start_offset = l_delete.length;
                         end_offset = r_delete.length;
-                        ({insert, start_offset, end_offset} = create_range(inserted, l_delete + r_delete, affixes, merge_result.merged_metadata, merge_result.type, start_offset, end_offset));
+                        ({ insert, start_offset, end_offset } = construct_range(inserted, l_delete + r_delete, merge_result.type, merge_result.merged_metadata, start_offset, end_offset));
                         from = left_range.from;
                     } else if (left === false) {
                         // CASE 5: Deleting/Replacing from the addition-part of the substitution
@@ -331,7 +307,7 @@ function mark_range(ranges: CriticMarkupRanges, text: Text, from: number, to: nu
                         insert = inserted + left_range.unwrap_slice(to, Infinity);
                         if (!inserted.length) end_offset -= 2;
                         split_left_range();
-                        ({insert, start_offset, end_offset} = create_range(insert, deleted, affixes, merge_result.merged_metadata, merge_result.type, start_offset, end_offset));
+                        ({ insert, start_offset, end_offset } = construct_range(insert, deleted, merge_result.type, merge_result.merged_metadata, start_offset, end_offset));
                         to = left_range.to;
                     } else {
                         // CASE 6: Deleting/Replacing from the addition-part of the substitution and inserting to the deletion-part
@@ -341,7 +317,7 @@ function mark_range(ranges: CriticMarkupRanges, text: Text, from: number, to: nu
                         end_offset = char_middle + (parts[0].length - from + left_range.range_start);
                         insert = inserted + parts[1].slice(char_middle);
                         if (insert.length && !inserted.length) end_offset -= 2;
-                        ({insert, start_offset, end_offset} = create_suggestion(insert, deleted, merge_result.merged_metadata, start_offset, end_offset));
+                        ({ insert, start_offset, end_offset } = construct_suggestion(insert, deleted, merge_result.merged_metadata, start_offset, end_offset));
                         from = left_range.from;
                         to = left_range.to;
                     }
@@ -392,7 +368,7 @@ function mark_range(ranges: CriticMarkupRanges, text: Text, from: number, to: nu
             }
             // end_offset = deleted.length;
 
-            ({type: right_merge_type, merged_metadata} = mergeable_range(to, right_range, type, metadata_fields, false));
+            ({ type: right_merge_type, merged_metadata } = mergeable_range(to, right_range, type, metadata_fields, false));
             if (right_merge_type) {
                 if (right_range!.type === SuggestionType.SUBSTITUTION) {
                     const parts = (right_range as SubstitutionRange).unwrap_slice_parts_inverted(from, to);
@@ -410,10 +386,11 @@ function mark_range(ranges: CriticMarkupRanges, text: Text, from: number, to: nu
             if (left_merge_type === SuggestionType.SUBSTITUTION || right_merge_type === SuggestionType.SUBSTITUTION)
                 type = SuggestionType.SUBSTITUTION;
 
-            ({insert, start_offset, end_offset} = create_range(insert, deleted, affixes, metadata_fields, type, start_offset, end_offset));
+            ({ insert, start_offset, end_offset } = construct_range(insert, deleted, type, metadata_fields, start_offset, end_offset));
         }
     }
-
+    start_offset += affixes[0].length;
+    insert = affixes[0] + insert + affixes[1];
     return {from, to, insert, start: from + start_offset, end: from + start_offset + end_offset + inserted.length};
 }
 
@@ -461,7 +438,7 @@ export function mark_editor_ranges(editor: Editor, type: MarkType, settings: Plu
     const resulting_selections = [];
     const changes = [];
     for (const selection of selections) {
-        const edits = mark_ranges(ranges, editor.cm.state.doc, selection.from, selection.to, "", type, generate_metadata(settings));
+        const edits = mark_ranges(ranges, editor.cm.state.doc, selection.from, selection.to, "", type, generate_metadata());
         changes.push(...edits);
         resulting_selections.push(EditorSelection.range(edits[0].start, edits[edits.length - 1].end));
     }

@@ -4,7 +4,7 @@ import {type EditorState, Line, RangeSet, StateField, Range} from '@codemirror/s
 import {Component, editorEditorField, MarkdownRenderer, Menu} from 'obsidian';
 
 import {type CommentRange, CriticMarkupRange, rangeParser, SuggestionType} from '../../../base';
-import {commentGutter, focusCommentThread} from './index';
+import {commentGutter, addCommentToView} from './index';
 
 export class CommentMarker extends GutterMarker {
     comment_thread: HTMLElement | null = null;
@@ -110,7 +110,7 @@ export class CommentMarker extends GutterMarker {
                     item.setTitle("Reply to comment");
                     item.setIcon('reply');
                     item.onClick(() => {
-                        focusCommentThread(this.view, this.comment_range);
+                        addCommentToView(this.view, this.comment_range);
                     });
                 })
                 menu.addItem((item) => {
