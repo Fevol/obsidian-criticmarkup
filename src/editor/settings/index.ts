@@ -1,4 +1,4 @@
-import { Compartment, Facet, StateEffectType, StateField } from '@codemirror/state';
+import {Compartment, Facet, StateEffect, StateEffectType, StateField} from '@codemirror/state';
 import {EditMode, PreviewMode} from "../../types";
 
 /**
@@ -48,3 +48,5 @@ export const previewMode = new Compartment();
 export const editModeValueState = Facet.define<EditMode, EditMode>({ combine: values => values[0] });
 export const editModeValue = new Compartment();
 export const editMode = new Compartment();
+
+export const fullReloadEffect = StateEffect.define<boolean>();

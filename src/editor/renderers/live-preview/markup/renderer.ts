@@ -5,7 +5,7 @@ import {editorLivePreviewField} from 'obsidian';
 
 import {CriticMarkupRange, rangeParser, SubstitutionRange, SuggestionType} from '../../../base';
 import {EditMode, type PluginSettings, PreviewMode} from '../../../../types';
-import {editModeValueState, previewModeState} from "../../../settings";
+import {editModeValueState, fullReloadEffect, previewModeState} from "../../../settings";
 
 function hideBracket(decorations: Range<Decoration>[], range: CriticMarkupRange, left: boolean, is_livepreview: boolean) {
 	if (!is_livepreview) return;
@@ -146,18 +146,13 @@ export const markupRenderer = (settings: PluginSettings) => StateField.define<De
 
 	update(oldSet: DecorationSet, tr: Transaction) {
 		const livepreview = tr.state.field(editorLivePreviewField);
-		const livepreview_changed = livepreview !== tr.startState.field(editorLivePreviewField);
 		const preview_mode = tr.state.facet(previewModeState);
-		const preview_mode_changed = preview_mode !== tr.startState.facet(previewModeState);
 		const suggest_mode = tr.state.facet(editModeValueState);
 
-		if (!tr.docChanged && oldSet.size && !livepreview_changed && !preview_mode_changed) return oldSet;
-
 		const parsed_ranges = tr.state.field(rangeParser);
-
-		if (livepreview_changed || preview_mode_changed) {
+		if ((!tr.docChanged) || livepreview !== tr.startState.field(editorLivePreviewField) || preview_mode !== tr.startState.facet(previewModeState) || tr.effects.some(e => e.is(fullReloadEffect))) {
 			return RangeSet.of<Decoration>(constructMarkings(parsed_ranges.ranges.ranges, tr.state.selection, livepreview, preview_mode, suggest_mode, settings));
-		} else {
+		} else if (tr.docChanged || (!tr.docChanged && parsed_ranges.inserted_ranges.length)) {
 			return oldSet.map(tr.changes)
 				.update({
 					filter: (from, to, value) => {
@@ -165,6 +160,8 @@ export const markupRenderer = (settings: PluginSettings) => StateField.define<De
 					},
 					add: constructMarkings(parsed_ranges.inserted_ranges, tr.state.selection, livepreview, preview_mode, suggest_mode, settings)
 				});
+		} else {
+			return oldSet;
 		}
 	},
 

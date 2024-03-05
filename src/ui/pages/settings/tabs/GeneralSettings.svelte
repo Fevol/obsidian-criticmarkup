@@ -72,6 +72,7 @@
 	notices={[
 		{ type: 'info', text: 'Allow inclusion of metadata for suggestions, such as authorship, time, etc.' },
 		{ type: 'warning', text: 'Suggestion metadata is <b>not</b> part of the official CriticMarkup standard, this metadata will not get processed/rendered correctly in other editors' },
+		{ type: 'error', text: 'Toggling this setting results in a re-indexation of the entire vault' },
 	]}
 >
 	<Toggle

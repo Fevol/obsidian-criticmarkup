@@ -15,6 +15,8 @@ import {
 
 import {criticmarkupLanguage} from '../parser';
 import {DocInput} from "@codemirror/language";
+import {COMMENTATOR_GLOBAL} from "../../../global";
+import {fullReloadEffect} from "../../settings";
 
 export const rangeParser: StateField<{tree: Tree, fragments: readonly TreeFragment[], ranges: CriticMarkupRanges, inserted_ranges: CriticMarkupRange[], deleted_ranges: CriticMarkupRange[]}> = StateField.define({
 	create(state) {
@@ -32,7 +34,12 @@ export const rangeParser: StateField<{tree: Tree, fragments: readonly TreeFragme
 
 	// @ts-ignore (Not sure how to set fragments as readonly)
 	update(value, tr) {
-		if (!tr.docChanged) return value;
+		if (tr.effects.some(effect => effect.is(fullReloadEffect)))
+			return this.create(tr.state);
+
+		if (!tr.docChanged)
+			return value;
+
 
 		// Below times are based on stresstest (250.000 words, 56.167 ranges)
 		// get-changes: 0.01 - 0.05 ms
@@ -141,7 +148,7 @@ export const rangeParser: StateField<{tree: Tree, fragments: readonly TreeFragme
 
 
 function constructRangeFromSyntaxNode(range: SyntaxNode, text: string) {
-	const metadata = range.firstChild?.type.name.startsWith('MDSep') ? range.firstChild!.from : undefined;
+	const metadata = (COMMENTATOR_GLOBAL.PLUGIN_SETTINGS.enable_metadata && range.firstChild?.type.name.startsWith('MDSep')) ? range.firstChild!.from : undefined;
 	let middle = undefined;
 	if (range.type.name === 'Substitution') {
 		const child = (metadata ? range.firstChild?.nextSibling : range.firstChild);

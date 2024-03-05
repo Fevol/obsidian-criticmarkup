@@ -38,7 +38,13 @@ import {CommentatorSettings} from './ui/settings';
 import {Database} from './database';
 
 import {objectDifference} from './util/util';
-import {DATABASE_VERSION, DEFAULT_SETTINGS, REQUIRES_FULL_RELOAD} from './constants';
+import {
+	DATABASE_VERSION,
+	DEFAULT_SETTINGS,
+	REQUIRES_DATABASE_REINDEX,
+	REQUIRES_EDITOR_RELOAD,
+	REQUIRES_FULL_RELOAD
+} from './constants';
 import {type PluginSettings} from './types';
 import {
 	commentGutterFoldButton, commentGutterFoldButtonState,
@@ -47,10 +53,11 @@ import {
 	hideEmptyCommentGutter, hideEmptyCommentGutterState,
 	hideEmptySuggestionGutter, hideEmptySuggestionGutterState,
 	previewMode, previewModeState,
-	commentGutterFolded, commentGutterFoldedState,
+	commentGutterFolded, commentGutterFoldedState, fullReloadEffect,
 } from './editor/settings';
 import {getEditMode} from "./editor/uix/extensions/editing-modes";
-import {updateAllCompartments, updateCompartment} from "./util/cm-util";
+import {iterateAllCMInstances, updateAllCompartments, updateCompartment} from "./util/cm-util";
+import {COMMENTATOR_GLOBAL} from "./global";
 
 export default class CommentatorPlugin extends Plugin {
 	private editorExtensions: Extension[] = [];
@@ -86,6 +93,7 @@ export default class CommentatorPlugin extends Plugin {
 		(data: CriticMarkupRange[]) => {
 			return data.map(range => Object.setPrototypeOf(range, RANGE_PROTOTYPE_MAPPER[range.type].prototype));
 		},
+		() => this.settings
 	);
 
 	postProcessor!: MarkdownPostProcessor;
@@ -96,21 +104,22 @@ export default class CommentatorPlugin extends Plugin {
 		this.editorExtensions.length = 0;
 
 		this.editorExtensions.push(Prec.highest(editorKeypressCatcher));
+		this.editorExtensions.push(editMode.of(getEditMode(this.settings.default_edit_mode, this.settings)));
+
 		this.editorExtensions.push(rangeParser);
 
 		if (this.settings.comment_style === 'icon' || this.settings.comment_style === 'block')
-			this.editorExtensions.push(commentRenderer(this.settings));
+			this.editorExtensions.push(Prec.low(commentRenderer(this.settings)));
 		if (this.settings.comment_style === 'block')
-			this.editorExtensions.push(commentGutter as Extension[]);
+			this.editorExtensions.push(Prec.low(commentGutter as Extension[]));
 
 		if (this.settings.live_preview)
-			this.editorExtensions.push(markupRenderer(this.settings));
+			this.editorExtensions.push(Prec.low(markupRenderer(this.settings)));
 
 		// TODO: Rerender gutter on Ctrl+Scroll
 		if (this.settings.editor_gutter)
 			this.editorExtensions.push(suggestionGutter);
 
-		this.editorExtensions.push(editMode.of(getEditMode(this.settings.default_edit_mode, this.settings)));
 
 		if (this.settings.tag_completion)
 			this.editorExtensions.push(bracketMatcher);
@@ -136,6 +145,15 @@ export default class CommentatorPlugin extends Plugin {
 			this.app.workspace.updateOptions();
 			if (this.settings.post_processor)
 				postProcessorUpdate();
+		}
+
+		else if (Object.keys(this.changed_settings).some(key => REQUIRES_EDITOR_RELOAD.has(key))) {
+			// TODO: Check if it is possible to catch the effect fired by the updateOptions statefield
+			iterateAllCMInstances((cm) => {
+				cm.dispatch(cm.state.update({
+					effects: fullReloadEffect.of(true)
+				}));
+			});
 		}
 	}
 
@@ -207,6 +225,7 @@ export default class CommentatorPlugin extends Plugin {
 		const old_settings = this.settings;
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, new_settings);
 		this.previous_settings = Object.assign(old_settings, this.settings);
+		COMMENTATOR_GLOBAL.PLUGIN_SETTINGS = this.settings;
 
 		const old_version = new_settings.version;
 
@@ -246,6 +265,7 @@ export default class CommentatorPlugin extends Plugin {
 	}
 
 	async saveSettings() {
+		COMMENTATOR_GLOBAL.PLUGIN_SETTINGS = this.settings;
 		await this.saveData(this.settings);
 
 		this.changed_settings = objectDifference(this.settings, this.previous_settings);
@@ -290,6 +310,10 @@ export default class CommentatorPlugin extends Plugin {
 		}
 
 		await this.updateEditorExtension();
+
+		if (Object.keys(this.changed_settings).some(key => REQUIRES_DATABASE_REINDEX.has(key))) {
+			await this.database.reinitializeDatabase();
+		}
 	}
 
 

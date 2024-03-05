@@ -88,5 +88,12 @@ export const REQUIRES_FULL_RELOAD: Set<string> = new Set([
 	"comment_style",
 	"tag_completion",
 	"tag_correcter",
+]);
+
+export const REQUIRES_EDITOR_RELOAD: Set<string> = new Set([
 	"enable_metadata"
+]);
+
+export const REQUIRES_DATABASE_REINDEX: Set<string> = new Set([
+	"enable_metadata",
 ]);
