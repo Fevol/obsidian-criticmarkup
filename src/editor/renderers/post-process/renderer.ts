@@ -1,13 +1,31 @@
-import { type MarkdownPostProcessorContext } from 'obsidian';
-import { decodeHTML, DecodingMode } from 'entities';
+import {type MarkdownPostProcessorContext} from 'obsidian';
+import {decodeHTML, DecodingMode} from 'entities';
 
-import { type PluginSettings } from '../../../types';
+import {type PluginSettings, PreviewMode} from '../../../types';
 
 import {
-	SuggestionType, type CriticMarkupRange, SubstitutionRange,
-	RANGE_PROTOTYPE_MAPPER, CM_All_Brackets,
+	CM_All_Brackets, CommentRange,
+	type CriticMarkupRange,
 	getRangesInText,
+	RANGE_PROTOTYPE_MAPPER,
+	SubstitutionRange,
+	SuggestionType,
 } from '../../base';
+import {renderCommentWidget} from "../live-preview/comments/widget";
+
+
+// FIXME: Extracted due to renderCommentWidget function importing obsidian package, which could not be marked as external in the inlinepluginworker
+// FIXME: Extracted due to renderCommentWidget function importing obsidian package, which could not be marked as external in the inlinepluginworker
+// FIXME: Extracted due to renderCommentWidget function importing obsidian package, which could not be marked as external in the inlinepluginworker
+export function rangePostProcess(range: CriticMarkupRange, unwrap: boolean = true, previewMode: PreviewMode = PreviewMode.ALL, tag: keyof HTMLElementTagNameMap = "div", left: boolean | null = null, text?: string) {
+	if (range.type === SuggestionType.COMMENT) {
+		return renderCommentWidget(range as CommentRange, text, unwrap);
+	} else {
+		return range.postprocess(unwrap, previewMode, tag, left, text);
+	}
+}
+
+
 
 export async function postProcess(el: HTMLElement, ctx: MarkdownPostProcessorContext, settings: PluginSettings) {
 	let ranges_in_range: CriticMarkupRange[] | null = null;
@@ -71,7 +89,7 @@ export async function postProcess(el: HTMLElement, ctx: MarkdownPostProcessorCon
 
 
 					// FIXME: Unwrap is still the issue: find when to remove brackets correctly
-					const new_el = range.postprocess(false, settings.default_preview_mode, 'div', left, element_contents);
+					const new_el = rangePostProcess(range, false, settings.default_preview_mode, 'div', left, element_contents);
 					if (new_el instanceof HTMLElement) {
 						el.innerHTML = "";
 						el.appendChild(new_el);
@@ -130,7 +148,7 @@ export async function postProcess(el: HTMLElement, ctx: MarkdownPostProcessorCon
 	if (missing_range && left_outside && right_outside && missing_range.type === SuggestionType.SUBSTITUTION) {
 		const missing_range_middle = element_contents.indexOf(CM_All_Brackets[SuggestionType.SUBSTITUTION][1]);
 		const TempRange = new SubstitutionRange(-Infinity, missing_range_middle, Infinity, element_contents);
-		el.innerHTML = TempRange.postprocess(true, settings.default_preview_mode, 'span');
+		el.innerHTML = rangePostProcess(TempRange,true, settings.default_preview_mode, 'span') as string;
 		return;
 	}
 
@@ -144,14 +162,14 @@ export async function postProcess(el: HTMLElement, ctx: MarkdownPostProcessorCon
 			TempRange = new SubstitutionRange(-Infinity, missing_range_middle === -1 ? -Infinity : missing_range_middle, missing_range_end, element_contents);
 		} else
 			TempRange = new RANGE_PROTOTYPE_MAPPER[missing_range.type](-Infinity, missing_range_end, element_contents);
-		new_element.push(TempRange.postprocess(true, settings.default_preview_mode, 'span'));
+		new_element.push(rangePostProcess(TempRange, true, settings.default_preview_mode, 'span'));
 		previous_start = TempRange.to;
 	}
 
 	// DEFAULT: Ranges get processed as normal (ranges which exists completely within the block)
 	for (const range of element_ranges) {
 		new_element.push(element_contents.slice(previous_start, range.from));
-		new_element.push(range.postprocess(true, settings.default_preview_mode, 'span'));
+		new_element.push(rangePostProcess(range, true, settings.default_preview_mode, 'span'));
 		previous_start = range.to;
 	}
 
@@ -165,7 +183,7 @@ export async function postProcess(el: HTMLElement, ctx: MarkdownPostProcessorCon
 		else
 			TempRange = new RANGE_PROTOTYPE_MAPPER[missing_range.type](0, Infinity, element_contents.slice(missing_range_start, -4));
 		new_element.push(element_contents.slice(previous_start, missing_range_start));
-		new_element.push(TempRange.postprocess(true, settings.default_preview_mode, 'span'));
+		new_element.push(rangePostProcess(TempRange, true, settings.default_preview_mode, 'span'));
 		previous_start = Infinity;
 	}
 	new_element.push(element_contents.slice(previous_start));

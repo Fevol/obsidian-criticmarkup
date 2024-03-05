@@ -7,6 +7,7 @@ import sveltePreprocess from "svelte-preprocess";
 
 import process from "process";
 import builtins from 'builtin-modules'
+import builtinModules from "builtin-modules";
 
 const banner =
     `/*
@@ -75,8 +76,13 @@ const context = await esbuild.context({
             },
         }),
         inlineWorkerPlugin({
-            workerName: "Commentator Indexer",
-            external: ["obsidian"],
+            platform: "browser",
+            external: ["obsidian", ...builtinModules],
+            format: "cjs",
+            treeShaking: true,
+            minify: prod,
+            bundle: true,
+            sourcemap: "inline",
         }),
     ]
 });

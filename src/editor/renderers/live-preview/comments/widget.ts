@@ -2,9 +2,52 @@ import { EditorView, WidgetType } from '@codemirror/view';
 
 import {Component, MarkdownRenderer, Menu, setIcon} from 'obsidian';
 
-import {CriticMarkupRange} from '../../../base';
+import {CM_All_Brackets, CommentRange, CriticMarkupRange} from '../../../base';
 import {commentGutterMarkers} from '../../gutters';
 import {focusCommentThread} from "../../gutters/comment-gutter";
+
+
+
+export function renderCommentWidget(range: CommentRange, text?: string, unwrap = false) {
+	let str = text ?? range.text;
+	if (!text && unwrap) {
+		if (range.to >= str.length && !str.endsWith(CM_All_Brackets[range.type].at(-1)!))
+			str = range.unwrap_bracket(true);
+		else
+			str = range.unwrap();
+	}
+
+	const icon = document.createElement('span');
+	icon.classList.add('criticmarkup-comment-icon');
+	setIcon(icon, 'message-square');
+	let tooltip: HTMLElement | null = null;
+	const component = new Component();
+	icon.onmouseenter = () => {
+		if (tooltip) return;
+
+		tooltip = document.createElement('div');
+		tooltip.classList.add('criticmarkup-comment-tooltip');
+		MarkdownRenderer.render(app, str, tooltip, '', component);
+		component.load();
+		icon!.appendChild(tooltip);
+
+		// Set tooltip position
+		const icon_rect = icon!.getBoundingClientRect();
+		const tooltip_rect = tooltip.getBoundingClientRect();
+		tooltip.style.left = icon_rect.x - tooltip_rect.x  + 12 + "px";
+	}
+
+	icon.onmouseleave = () => {
+		if (tooltip) {
+			component.unload();
+			icon!.removeChild(tooltip!);
+			tooltip = null;
+		}
+	}
+
+
+	return icon;
+}
 
 
 export class CommentIconWidget extends WidgetType {
