@@ -1,10 +1,12 @@
 import {EditorView, GutterMarker} from '@codemirror/view';
-import {type EditorState, Line, RangeSet, StateField, Range} from '@codemirror/state';
+import {type EditorState, Line, Range, RangeSet, StateField} from '@codemirror/state';
 
-import {Component, editorEditorField, MarkdownRenderer, Menu} from 'obsidian';
+import {Component, editorEditorField, MarkdownRenderer, Menu, Notice} from 'obsidian';
 
 import {type CommentRange, CriticMarkupRange, rangeParser, SuggestionType} from '../../../base';
-import {commentGutter, addCommentToView} from './index';
+import {addCommentToView, commentGutter} from './index';
+import {create_range} from "../../../base/edit-util/range-create";
+import {COMMENTATOR_GLOBAL} from "../../../../global";
 
 export class CommentMarker extends GutterMarker {
     comment_thread: HTMLElement | null = null;
@@ -43,6 +45,29 @@ export class CommentMarker extends GutterMarker {
                 });
                 metadataContainer.appendChild(author);
             }
+
+            if (range.fields.time) {
+                if (metadataContainer.children.length > 0) {
+                    const separator = createSpan({
+                        cls: 'criticmarkup-gutter-comment-metadata-separator',
+                        text: " • "
+                    });
+                    metadataContainer.appendChild(separator);
+                }
+
+                const timeLabel = createSpan({
+                    cls: 'criticmarkup-gutter-comment-time-label',
+                    text: "Updated at: "
+                });
+                metadataContainer.appendChild(timeLabel);
+
+                const time = createSpan({
+                    cls: 'criticmarkup-gutter-comment-time',
+                    text: window.moment.unix(range.fields.time!).format('MMM DD YYYY, HH:mm')
+                });
+                metadataContainer.appendChild(time);
+
+            }
         }
     }
 
@@ -75,9 +100,9 @@ export class CommentMarker extends GutterMarker {
                 } else {
                     setTimeout(() => this.view.dispatch({
                         changes: {
-                            from: range.from + 3,
-                            to: range.to - 3,
-                            insert: comment!.innerText
+                            from: range.from,
+                            to: range.to,
+                            insert: create_range(SuggestionType.COMMENT, comment.innerText)
                         },
                     }));
                 }
@@ -94,6 +119,12 @@ export class CommentMarker extends GutterMarker {
 
             comment.ondblclick = (e) => {
                 e.stopPropagation();
+
+                if (this.comment_range.fields.author && this.comment_range.fields.author !== COMMENTATOR_GLOBAL.PLUGIN_SETTINGS.author) {
+                    new Notice("You cannot edit comments from other authors.");
+                    return;
+                }
+
 
                 comment.contentEditable = 'true';
                 comment.replaceChildren();

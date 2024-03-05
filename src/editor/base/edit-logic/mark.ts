@@ -9,7 +9,7 @@ import {
 import {EditorSelection, Text} from "@codemirror/state";
 import {EditorSuggestion} from "../edit-handler";
 import {Editor} from "obsidian";
-import {rangeParser} from "../edit-util";
+import {MetadataCompatibility, MetadataMergeAction, range_metadata_compatible, rangeParser} from "../edit-util";
 import {PluginSettings} from "../../../types";
 import {generate_metadata} from "../edit-util/metadata";
 import {construct_range, construct_suggestion} from "../edit-util/range-create";
@@ -21,27 +21,6 @@ export enum MarkAction {
 }
 
 export type MarkType = SuggestionType | MarkAction;
-
-
-export enum MetadataMergeAction {
-    // TODO: Check necessity of SKIP action (giving warning for insert in diff-author range could also be handled on SPLIT level)
-    // Disable action
-    // SKIP = "skip",
-
-    // Split range into two ranges (allow overwriting, does not allow merging)
-    SPLIT = "split",
-    // Move outside of range (does not allow overwriting, does not allow merging)
-    MOVE_OUTSIDE = "move_outside",
-
-    // Choose value of old range
-    OLD = "old",
-    // Choose value of new range
-    NEW = "new",
-}
-
-type MetadataCompatibility = {
-    [key in METADATA_TYPE]?: MetadataMergeAction;
-};
 
 function range_type_compatible(range: CriticMarkupRange, type: MarkType) {
     if (type === MarkAction.REGULAR || type === MarkAction.CLEAR)
@@ -71,34 +50,6 @@ function should_ignore_range(range: CriticMarkupRange, type: MarkType, metadata_
 }
 
 
-function range_metadata_compatible(range: CriticMarkupRange, metadata_fields?: MetadataFields, metadata_compatibility: MetadataCompatibility = {}) {
-    // If no metadata was provided, allow merging of range
-    if (!metadata_fields)
-        return {compatible: true, merged_metadata: range.fields};
-
-    // If metadata was provided but range has no metadata, do not allow merging
-    if (!range.fields)
-        return {compatible: false, merged_metadata: undefined};
-
-    const merged_metadata = Object.assign({}, range.fields, metadata_fields);
-    for (const type of [...new Set(Object.keys(metadata_fields).concat(Object.keys(range.fields)))]) {
-        if (metadata_fields[type] !== range.fields[type]) {
-            const action = metadata_compatibility[type as METADATA_TYPE];
-            if (MetadataMergeAction.SPLIT === action || MetadataMergeAction.MOVE_OUTSIDE === action)
-                return {compatible: false, merged_metadata: undefined};
-            else if (MetadataMergeAction.OLD === action)
-                merged_metadata[type as METADATA_TYPE] = range.fields[type];
-
-        }
-    }
-    return {compatible: true, merged_metadata};
-}
-
-const METADATA_INCOMPATIBILITY: MetadataCompatibility = {
-    "author": MetadataMergeAction.SPLIT,
-}
-
-
 function merge_type(left: SuggestionType, right: SuggestionType) {
     if (left !== SuggestionType.SUBSTITUTION && left === right)
         return left;
@@ -122,7 +73,7 @@ function mergeable_range(cursor: number, range?: CriticMarkupRange, type?: Sugge
     if (!single_range && (left && range.touches_left_bracket(cursor, false, true, true) || !left && range.touches_right_bracket(cursor, false, true)))
         return {};
 
-    const {compatible, merged_metadata} = range_metadata_compatible(range, metadata_fields, METADATA_INCOMPATIBILITY);
+    const {compatible, merged_metadata} = range_metadata_compatible(range, metadata_fields);
     if (!compatible)
         return {};
 
@@ -411,7 +362,7 @@ export function mark_ranges(ranges: CriticMarkupRanges, text: Text, from: number
 
     if (!force) {
         for (const range of in_range) {
-            if (should_ignore_range(range, type, metadata_fields, METADATA_INCOMPATIBILITY)) {
+            if (should_ignore_range(range, type, metadata_fields)) {
                 if (last_range_start < range.from) {
                     const adj_type = type === SuggestionType.SUBSTITUTION ? SuggestionType.DELETION : type;
                     const edit = mark_range(ranges, text, last_range_start, range.from, "", adj_type, metadata_fields);
