@@ -1,6 +1,7 @@
 import type {EventRef} from 'obsidian';
 import {acceptSuggestions, isCursor, rangeParser, rejectSuggestions} from '../base';
 import {addCommentToView} from "../renderers/gutters/comment-gutter";
+import {COMMENTATOR_GLOBAL} from "../../global";
 
 export const cmenuCommands: EventRef =
 	app.workspace.on('editor-menu', (menu, editor) => {
@@ -55,7 +56,7 @@ export const cmenuCommands: EventRef =
 							.setIcon('lucide-user')
 							.onClick(() => {
 								editor.cm.dispatch(editor.cm.state.update({
-									changes: range.add_metadata('author', 'ITS A ME!')
+									changes: range.add_metadata('author', COMMENTATOR_GLOBAL.PLUGIN_SETTINGS.author)
 								}));
 							});
 					});
@@ -64,7 +65,7 @@ export const cmenuCommands: EventRef =
 							.setIcon('lucide-calendar')
 							.onClick(() => {
 								editor.cm.dispatch(editor.cm.state.update({
-									changes: range.add_metadata('time', Date.now() / 1000)
+									changes: range.add_metadata('time', Math.round(Date.now() / 1000))
 								}));
 							});
 					});
