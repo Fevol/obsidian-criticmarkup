@@ -13,8 +13,8 @@
 		{id: "general", name: "General", icon: "settings"},
 		{id: "editor", name: "Editor", icon: "pencil"},
 		{id: "interface", name: "Interface", icon: "layout"},
-		{id: "advanced", name: "Advanced", icon: "shield-alert"},
-		{id: "metadata", name: "Metadata", icon: "tags"}
+		{id: "metadata", name: "Metadata", icon: "tags"},
+		{id: "advanced", name: "Advanced", icon: "shield-alert"}
 	];
 	let tab_idx = tabs.findIndex(tab => tab.id === plugin.settings_tab);
 	let tab_id = tabs[tab_idx].id;

@@ -94,3 +94,18 @@
 		}}
 	/>
 </SettingItem>
+
+<SettingItem
+	name='Metadata status bar toggle'
+	description='Adds a status bar item for quickly toggling the inclusion of (particular) metadata'
+	type='toggle'
+>
+	<Toggle
+		slot='control'
+		value={plugin.settings.status_bar_metadata_button}
+		onChange={() => {
+			plugin.settings.status_bar_metadata_button = !plugin.settings.status_bar_metadata_button;
+			plugin.saveSettings();
+		}}
+	/>
+</SettingItem>
