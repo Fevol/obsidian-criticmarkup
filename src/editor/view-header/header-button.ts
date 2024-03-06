@@ -48,11 +48,16 @@ export class HeaderButton {
 	updateButton(view: MarkdownView, value: number) {
 		const elements = this.active_mapping.get(view);
 		if (elements) {
-			const { tooltip, text } = this.states[value];
-			setIcon(elements.button, this.states[(value + 1) % this.states.length].icon);
-			elements.button.setAttribute('aria-label', tooltip);
-			if (this.has_label)
-				elements.status!.innerText = text;
+			if (this.states[value]) {
+				const { tooltip, text } = this.states[value];
+				setIcon(elements.button, this.states[(value + 1) % this.states.length].icon);
+				elements.button.setAttribute('aria-label', tooltip);
+				elements.button.style.display = '';
+				if (this.has_label)
+					elements.status!.innerText = text;
+			} else {
+				elements.button.style.display = 'none';
+			}
 		}
 	}
 
