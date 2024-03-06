@@ -73,6 +73,7 @@ export class StatusBarButton {
 		if (!this.button) return;
 
 		this.button.detach();
+		this.button = null;
 		this.plugin.app.workspace.offref(this.changeEvent!);
 	}
 }

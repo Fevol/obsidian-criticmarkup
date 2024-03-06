@@ -100,6 +100,9 @@ export class MetadataStatusBarButton {
 	}
 
 	detachButton() {
-		this.button?.detach();
+		if (!this.button) return;
+
+		this.button.detach();
+		this.button = null;
 	}
 }
