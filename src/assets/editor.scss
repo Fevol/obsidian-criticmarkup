@@ -20,15 +20,39 @@
 	color: var(--addition-color);
 }
 
-.criticmarkup-addition.criticmarkup-has-reply {
-	color: var(--text-on-accent);
+.criticmarkup-has-reply .criticmarkup-addition, .criticmarkup-has-reply.criticmarkup-addition {
+	color: var(--text-on-accent) !important;
 	background-color: var(--addition-color);
 	box-shadow: 0 0 0 2px var(--addition-color);
-	transition: background-color 200ms ease-in-out 0ms;
+	transition: background-color 200ms ease-in-out 0ms, box-shadow 200ms ease-in-out 0ms;
 
 	&:hover {
 		box-shadow: 0 0 0 2px var(--addition-color-alt);
 		background-color: var(--addition-color-alt);
+	}
+}
+
+.criticmarkup-has-reply .criticmarkup-deletion, .criticmarkup-has-reply.criticmarkup-deletion {
+	color: var(--text-on-accent);
+	background-color: var(--deletion-color);
+	box-shadow: 0 0 0 2px var(--deletion-color);
+	transition: background-color 200ms ease-in-out 0ms;
+
+	&:hover {
+		box-shadow: 0 0 0 2px var(--deletion-color-alt);
+		background-color: var(--deletion-color-alt);
+	}
+}
+
+.criticmarkup-has-reply .criticmarkup-substitution, .criticmarkup-has-reply.criticmarkup-substitution {
+	color: var(--text-on-accent);
+	background-color: var(--substitution-color);
+	box-shadow: 0 0 0 2px var(--substitution-color);
+	transition: background-color 200ms ease-in-out 0ms;
+
+	&:hover {
+		box-shadow: 0 0 0 2px var(--substitution-color-alt);
+		background-color: var(--substitution-color-alt);
 	}
 }
 

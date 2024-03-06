@@ -1,6 +1,6 @@
 import { CommentMarker, commentGutterMarkers } from './marker';
 import {comment_gutter, CommentGutterView} from './comment_gutter';
-import {RangeSet, StateField} from "@codemirror/state";
+import {EditorSelection, RangeSet, StateField} from "@codemirror/state";
 import {EditorView, ViewPlugin} from "@codemirror/view";
 import {CriticMarkupRange, SuggestionType} from "../../../base";
 import {create_range} from "../../../base/edit-util/range-create";
@@ -26,6 +26,7 @@ export function addCommentToView(editor: EditorView, range: CriticMarkupRange | 
 			to: cursor,
 			insert: create_range(SuggestionType.COMMENT, ""),
 		},
+		selection: EditorSelection.cursor(cursor),
 	}));
 	if (editor.plugin(commentGutter[1][0][0])) {
 		setTimeout(() => {
