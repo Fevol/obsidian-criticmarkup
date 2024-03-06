@@ -23,7 +23,7 @@ jobs:
       -   name: Build
           id: build
           run: |
-            cd ./src/editor/parser
+            cd ./src/editor/base/parser
             npm i --force
             npm run build --if-present
             cd ../../..
