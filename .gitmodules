@@ -1,4 +1,4 @@
-[submodule "src/editor/parser"]
+[submodule "src/editor/base/parser"]
 	path = src/editor/base/parser
 	url = https://github.com/Fevol/criticmarkup-parser.git
 [submodule "typings"]
