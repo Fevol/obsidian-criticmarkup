@@ -196,8 +196,6 @@ export default class CommentatorPlugin extends Plugin {
 		}
 
 		this.registerEvent(cmenuCommands);
-		// this.registerEvent(file_view_modes);
-
 		for (const command of commands(this))
 			this.addCommand(command);
 
