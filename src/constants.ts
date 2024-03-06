@@ -34,11 +34,11 @@ export const DEFAULT_SETTINGS: PluginSettings = {
 	edit_info: true,
 
 	toolbar_preview_button: true,
-	toolbar_suggest_button: true,
+	toolbar_edit_button: true,
 	toolbar_show_buttons_labels: true,
 
 	status_bar_preview_button: true,
-	status_bar_suggest_button: true,
+	status_bar_edit_button: true,
 	status_bar_metadata_button: true,
 
 	database_workers: 2,

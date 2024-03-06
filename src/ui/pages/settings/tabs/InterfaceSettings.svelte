@@ -50,9 +50,9 @@
 >
 	<Toggle
 		slot='control'
-		value={plugin.settings.toolbar_suggest_button}
+		value={plugin.settings.toolbar_edit_button}
 		onChange={() => {
-			plugin.settings.toolbar_suggest_button = !plugin.settings.toolbar_suggest_button;
+			plugin.settings.toolbar_edit_button = !plugin.settings.toolbar_edit_button;
 			plugin.saveSettings();
 		}}
 	/>
@@ -87,9 +87,9 @@
 >
 	<Toggle
 		slot='control'
-		value={plugin.settings.status_bar_suggest_button}
+		value={plugin.settings.status_bar_edit_button}
 		onChange={() => {
-			plugin.settings.status_bar_suggest_button = !plugin.settings.status_bar_suggest_button;
+			plugin.settings.status_bar_edit_button = !plugin.settings.status_bar_edit_button;
 			plugin.saveSettings();
 		}}
 	/>

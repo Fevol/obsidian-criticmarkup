@@ -12,7 +12,7 @@ import {type CriticMarkupRange, getRangesInText, RANGE_PROTOTYPE_MAPPER, rangePa
 
 import {
 	application_commmands,
-	cmenuCommands,
+	cmenuCommands, commands,
 	editor_commands,
 	initializeCommands,
 	suggestion_commands,
@@ -176,10 +176,10 @@ export default class CommentatorPlugin extends Plugin {
 		await this.migrateSettings(await this.loadData());
 
 		this.previewModeHeaderButton = previewModeHeaderButton(this, this.settings.toolbar_preview_button);
-		this.editModeHeaderModeButton = editModeHeaderButton(this, this.settings.toolbar_suggest_button);
+		this.editModeHeaderModeButton = editModeHeaderButton(this, this.settings.toolbar_edit_button);
 
 		this.previewModeStatusBarButton = previewModeStatusBarButton(this, this.settings.status_bar_preview_button);
-		this.editModeStatusBarButton = suggestionModeStatusBarButton(this, this.settings.status_bar_suggest_button);
+		this.editModeStatusBarButton = suggestionModeStatusBarButton(this, this.settings.status_bar_edit_button);
 		this.metadataStatusBarButton = metadataStatusBarButton(this, this.settings.status_bar_metadata_button);
 
 		this.defaultEditModeExtension = getEditMode(this.settings.default_edit_mode, this.settings);
@@ -198,14 +198,7 @@ export default class CommentatorPlugin extends Plugin {
 		this.registerEvent(cmenuCommands);
 		// this.registerEvent(file_view_modes);
 
-		const commands = [
-			...suggestion_commands(this),
-			...editor_commands(this),
-			...application_commmands(this),
-		];
-
-		initializeCommands(commands);
-		for (const command of commands)
+		for (const command of commands(this))
 			this.addCommand(command);
 
 		this.remove_monkeys.push(around(this.app.plugins, {
@@ -275,10 +268,10 @@ export default class CommentatorPlugin extends Plugin {
 		this.editModeHeaderModeButton.setLabelRendering(this.changed_settings.toolbar_show_buttons_labels);
 
 		this.previewModeHeaderButton.setRendering(this.changed_settings.toolbar_preview_button);
-		this.editModeHeaderModeButton.setRendering(this.changed_settings.toolbar_suggest_button);
+		this.editModeHeaderModeButton.setRendering(this.changed_settings.toolbar_edit_button);
 
 		this.previewModeStatusBarButton.setRendering(this.changed_settings.status_bar_preview_button);
-		this.editModeStatusBarButton.setRendering(this.changed_settings.status_bar_suggest_button);
+		this.editModeStatusBarButton.setRendering(this.changed_settings.status_bar_edit_button);
 		this.metadataStatusBarButton.setRendering(this.changed_settings.status_bar_metadata_button);
 
 

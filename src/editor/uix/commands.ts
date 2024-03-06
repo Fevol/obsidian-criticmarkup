@@ -176,6 +176,15 @@ export const application_commmands = (plugin: CommentatorPlugin): ECommand[] => 
 ];
 
 
+export const commands: (plugin: CommentatorPlugin) => ECommand[] = (plugin) => initializeCommands(
+	[
+		...suggestion_commands(plugin),
+		...editor_commands(plugin),
+		...application_commmands(plugin),
+	]
+);
+
+
 /**
  * Automatically assigns correct callback to commands
  * @param commands Commands to initialize
@@ -201,4 +210,5 @@ export function initializeCommands(commands: ECommand[]) {
 			}
 		}
 	}
+	return commands;
 }

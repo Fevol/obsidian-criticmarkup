@@ -133,7 +133,7 @@ export interface PluginSettings {
 	/**
 	 * Add a toggle button for quickly toggling suggestion mode on/off in the editor toolbar
 	 */
-	toolbar_suggest_button: boolean;
+	toolbar_edit_button: boolean;
 	/**
 	 * Show the labels on the buttons found in the header
 	 */
@@ -146,7 +146,7 @@ export interface PluginSettings {
 	/**
 	 * Add a button for quickly toggling suggestion mode in the status bar
 	 */
-	status_bar_suggest_button: boolean;
+	status_bar_edit_button: boolean;
 	/** Add a button for quickly toggling metadata in the status bar */
 	status_bar_metadata_button: boolean;
 
