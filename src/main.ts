@@ -93,7 +93,7 @@ export default class CommentatorPlugin extends Plugin {
 		(data: CriticMarkupRange[]) => {
 			return data.map(range => Object.setPrototypeOf(range, RANGE_PROTOTYPE_MAPPER[range.type].prototype));
 		},
-		() => this.settings
+		() => this.settings,
 	);
 
 	postProcessor!: MarkdownPostProcessor;
@@ -220,18 +220,21 @@ export default class CommentatorPlugin extends Plugin {
 		this.previous_settings = Object.assign(old_settings, this.settings);
 		COMMENTATOR_GLOBAL.PLUGIN_SETTINGS = this.settings;
 
-		const old_version = new_settings.version;
-
-		// EXPL: Migration code for upgrading to new version
-		if (old_version !== DEFAULT_SETTINGS.version) {
-			if (!old_version) {
-				this.app.workspace.onLayoutReady(async () => {
-					new Notice("Commentator: rebuilding database for new version", 5000);
-					new Notice("Commentator: metadata and replies features are now available, you can opt-in to these features in the settings", 0);
-				});
+		// EXPL: Do not migrate new installs, immediately save settings
+		if (new_settings === null) {
+			await this.setSettings();
+		} else {
+			const old_version = new_settings?.version;
+			// EXPL: Migration code for upgrading to new version
+			if (old_version !== DEFAULT_SETTINGS.version) {
+				if (!old_version) {
+					this.app.workspace.onLayoutReady(async () => {
+						new Notice("Commentator: rebuilding database for new version", 5000);
+						new Notice("Commentator: metadata and replies features are now available, you can opt-in to these features in the settings", 0);
+					});
+				}
+				await this.setSettings();
 			}
-
-			await this.saveSettings();
 		}
 	}
 
@@ -257,12 +260,16 @@ export default class CommentatorPlugin extends Plugin {
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
 	}
 
-	async saveSettings() {
+	async setSettings() {
 		COMMENTATOR_GLOBAL.PLUGIN_SETTINGS = this.settings;
 		await this.saveData(this.settings);
 
 		this.changed_settings = objectDifference(this.settings, this.previous_settings);
 		this.previous_settings = Object.assign({}, this.settings);
+	}
+
+	async saveSettings() {
+		await this.setSettings();
 
 		this.previewModeHeaderButton.setLabelRendering(this.changed_settings.toolbar_show_buttons_labels);
 		this.editModeHeaderModeButton.setLabelRendering(this.changed_settings.toolbar_show_buttons_labels);
@@ -308,7 +315,6 @@ export default class CommentatorPlugin extends Plugin {
 			await this.database.reinitializeDatabase();
 		}
 	}
-
 
 	async setSetting<K extends keyof PluginSettings>(key: K, value: PluginSettings[K]) {
 		this.settings[key] = value;
