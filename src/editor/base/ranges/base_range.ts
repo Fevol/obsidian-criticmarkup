@@ -119,13 +119,13 @@ export abstract class CriticMarkupRange {
 			return [{
 				from: this.from + 3,
 				to: this.metadata,
-				insert: JSON.stringify(fields).slice(1, -1),
+				insert: JSON.stringify(fields),
 			}];
 		} else {
 			return [{
 				from: this.from + 3,
 				to: this.from + 3,
-				insert: `${JSON.stringify(fields)}`.slice(1, -1) + '@@',
+				insert: JSON.stringify(fields) + '@@',
 			}];
 		}
 	}
