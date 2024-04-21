@@ -1,7 +1,7 @@
 import {
 	MarkdownFileInfo, type MarkdownPostProcessor, MarkdownPreviewRenderer,
 	MarkdownView, Notice, Plugin, TFile
-}  from 'obsidian';
+} from 'obsidian';
 
 import {EditorView} from '@codemirror/view';
 import {type EditorState, type Extension, Prec} from '@codemirror/state';
@@ -60,7 +60,7 @@ import {iterateAllCMInstances, updateAllCompartments, updateCompartment} from ".
 import {COMMENTATOR_GLOBAL} from "./global";
 
 export default class CommentatorPlugin extends Plugin {
-	private editorExtensions: Extension[] = [];
+	editorExtensions: Extension[] = [];
 
 	settings: PluginSettings = DEFAULT_SETTINGS;
 	previous_settings: Partial<PluginSettings> = {};

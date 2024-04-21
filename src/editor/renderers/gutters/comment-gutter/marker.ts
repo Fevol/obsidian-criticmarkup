@@ -7,176 +7,214 @@ import {type CommentRange, CriticMarkupRange, rangeParser, SuggestionType} from 
 import {addCommentToView, commentGutter} from './index';
 import {create_range} from "../../../base/edit-util/range-create";
 import {COMMENTATOR_GLOBAL} from "../../../../global";
+import {EmbeddableMarkdownEditor} from "../../../../ui/embeddable-editor";
 
-export class CommentMarker extends GutterMarker {
-    comment_thread: HTMLElement | null = null;
-    component: Component = new Component();
-    thread: CommentRange[] = [];
+class CommentNode extends Component {
+    text: string;
+    new_text: string | null = null;
+    comment_container: HTMLElement;
+    metadata_view: HTMLElement;
+    comment_view: HTMLElement;
 
-    constructor(public comment_range: CommentRange, public view: EditorView, public itr = 0) {
+    currentMode: "preview" | "source" | null = null;
+    editMode: EmbeddableMarkdownEditor | null = null;
+
+    constructor(public range: CommentRange, public marker: CommentMarker) {
         super();
-        this.thread = comment_range.thread;
+
+        this.text = range.unwrap();
+        this.comment_container = this.marker.comment_thread.createDiv({cls: 'criticmarkup-gutter-comment'});
+        this.metadata_view = this.comment_container.createDiv({cls: 'criticmarkup-gutter-comment-metadata'});
+        this.comment_view = this.comment_container.createDiv({cls: 'criticmarkup-gutter-comment-view'});
+
+        this.comment_container.addEventListener("blur", this.renderPreview.bind(this));
+        this.comment_container.addEventListener("dblclick", this.renderSource.bind(this));
+        this.comment_container.addEventListener("contextmenu", this.onCommentContextmenu.bind(this));
+
+        this.renderMetadata();
+        this.renderPreview();
     }
 
-    eq(other: CommentMarker) {
-        return this.itr === other.itr && this.comment_range.equals(other.comment_range);
+    onload() {
+        super.onload();
     }
 
-    renderComment(comment: HTMLElement, range: CommentRange, text: string) {
-        MarkdownRenderer.render(app, text || "&nbsp;", comment, '', this.component);
-        this.renderMetadata(comment, range);
+    onunload() {
+        super.onunload();
+
+        this.comment_container.remove();
+        this.editMode = null
     }
 
-    renderMetadata(comment: HTMLElement, range: CommentRange) {
-        const metadataContainer = createSpan({cls: 'criticmarkup-gutter-comment-metadata'});
-        comment.insertBefore(metadataContainer, comment.firstChild);
-
-        if (range.metadata) {
-            if (range.fields.author) {
+    renderMetadata() {
+        if (this.range.metadata) {
+            if (this.range.fields.author) {
                 const authorLabel = createSpan({
                     cls: 'criticmarkup-gutter-comment-author-label',
                     text: "Author: "
                 });
-                metadataContainer.appendChild(authorLabel);
+                this.metadata_view.appendChild(authorLabel);
 
                 const author = createSpan({
                     cls: 'criticmarkup-gutter-comment-author-name',
-                    text: range.fields.author
+                    text: this.range.fields.author
                 });
-                metadataContainer.appendChild(author);
+                this.metadata_view.appendChild(author);
             }
 
-            if (range.fields.time) {
-                if (metadataContainer.children.length > 0) {
+            if (this.range.fields.time) {
+                if (this.metadata_view.children.length > 0) {
                     const separator = createSpan({
                         cls: 'criticmarkup-gutter-comment-metadata-separator',
                         text: " • "
                     });
-                    metadataContainer.appendChild(separator);
+                    this.metadata_view.appendChild(separator);
                 }
 
                 const timeLabel = createSpan({
                     cls: 'criticmarkup-gutter-comment-time-label',
                     text: "Updated at: "
                 });
-                metadataContainer.appendChild(timeLabel);
+                this.metadata_view.appendChild(timeLabel);
 
                 const time = createSpan({
                     cls: 'criticmarkup-gutter-comment-time',
-                    text: window.moment.unix(range.fields.time!).format('MMM DD YYYY, HH:mm')
+                    text: window.moment.unix(this.range.fields.time!).format('MMM DD YYYY, HH:mm')
                 });
-                metadataContainer.appendChild(time);
-
+                this.metadata_view.appendChild(time);
             }
         }
     }
 
+    renderSource(e?: MouseEvent) {
+        e?.stopPropagation();
+        if (this.currentMode === "source") return;
+
+        this.comment_container.toggleClass('criticmarkup-gutter-comment-editing', true);
+        if (this.range.fields.author && this.range.fields.author !== COMMENTATOR_GLOBAL.PLUGIN_SETTINGS.author) {
+            new Notice("You cannot edit comments from other authors.");
+            return;
+        }
+
+        this.comment_view.empty();
+        this.editMode = this.addChild(new EmbeddableMarkdownEditor(app, this.comment_view, {
+            value: this.text,
+            cls: "criticmarkup-gutter-comment-editor",
+            onSubmit: (editor) => {
+                this.new_text = editor.get();
+                this.renderPreview();
+            },
+            // TODO: Get a reference to the plugin somehow
+            filteredExtensions: [app.plugins.plugins["commentator"].editorExtensions],
+            onBlur: this.renderPreview.bind(this),
+        }));
+        this.currentMode = "source";
+    }
+
+    renderPreview() {
+        if (this.currentMode === "preview") return;
+
+        this.comment_container.toggleClass('criticmarkup-gutter-comment-editing', false);
+        if (this.text === this.new_text || this.new_text === null) {
+            this.new_text = null;
+            if (this.editMode) {
+                this.editMode.destroy();
+                this.editMode = null;
+            }
+            this.comment_view.empty();
+            MarkdownRenderer.render(app, this.text || "&nbsp;", this.comment_view, '', this);
+            this.currentMode = "preview";
+        } else {
+            setTimeout(() => this.marker.view.dispatch({
+                changes: {
+                    from: this.range.from,
+                    to: this.range.to,
+                    insert: create_range(SuggestionType.COMMENT, this.new_text!)
+                },
+            }));
+        }
+    }
+
+    onCommentContextmenu(e: MouseEvent) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const menu = new Menu();
+        menu.addItem((item) => {
+            item.setTitle("Edit comment")
+                .setIcon('pencil')
+                .onClick(() => {
+                    this.renderSource();
+                });
+        });
+        menu.addItem((item) => {
+            item.setTitle("Reply to comment")
+                .setIcon('reply')
+                .onClick(() => {
+                    addCommentToView(this.marker.view, this.range);
+                });
+        })
+        menu.addItem((item) => {
+            item.setTitle("Fold gutter")
+                .setIcon('arrow-right-from-line')
+                .onClick(() => {
+                    this.marker.view.plugin(commentGutter[1][0][0])!.foldGutter();
+                });
+        });
+
+        menu.showAtPosition(e);
+    }
+}
+
+
+export class CommentMarker extends GutterMarker {
+    comment_thread!: HTMLElement;
+    component: Component = new Component();
+
+    constructor(public comment_range: CommentRange, public view: EditorView, public itr = 0) {
+        super();
+    }
+
+    eq(other: CommentMarker) {
+        return this.itr === other.itr && this.comment_range.equals(other.comment_range);
+    }
+
+    onCommentThreadClick() {
+        const top = this.view.lineBlockAt(this.comment_range.from).top - 100;
+
+        setTimeout(() => {
+            this.view.plugin(commentGutter[1][0][0])!.moveGutter(this);
+            this.view.scrollDOM.scrollTo({top, behavior: 'smooth'})
+        }, 200);
+
+        this.comment_thread.classList.add('criticmarkup-gutter-comment-thread-highlight');
+        setTimeout(() => this.comment_thread.classList.remove('criticmarkup-gutter-comment-thread-highlight'), 4000);
+    }
+
     toDOM() {
         this.comment_thread = createDiv({cls: 'criticmarkup-gutter-comment-thread'});
+        this.comment_thread.addEventListener("click", this.onCommentThreadClick.bind(this));
 
-        this.comment_thread.onclick = (e) => {
-            const top = this.view.lineBlockAt(this.comment_range.from).top - 100;
-
-            setTimeout(() => {
-                this.view.plugin(commentGutter[1][0][0])!.moveGutter(this);
-                this.view.scrollDOM.scrollTo({top, behavior: 'smooth'})
-            }, 200);
-
-            this.comment_thread!.classList.add('criticmarkup-gutter-comment-thread-highlight');
-            setTimeout(() => this.comment_thread!.classList.remove('criticmarkup-gutter-comment-thread-highlight'), 4000);
-        }
-
-        const comment_ranges_flattened = this.comment_range.thread;
-
-        for (const range of comment_ranges_flattened) {
-            const comment = createDiv({cls: 'criticmarkup-gutter-comment'});
-            // TODO: Switch to prototype?
-            comment.contentEditable = 'false';
-
-            comment.onblur = () => {
-                // Only actually apply changes if the comment has changed
-                if (comment.innerText === text) {
-                    comment.replaceChildren();
-                    comment.innerText = "";
-                    comment.contentEditable = 'false';
-                    this.renderComment(comment, range, text);
-                } else {
-                    setTimeout(() => this.view.dispatch({
-                        changes: {
-                            from: range.from,
-                            to: range.to,
-                            insert: create_range(SuggestionType.COMMENT, comment.innerText)
-                        },
-                    }));
-                }
-            }
-
-            comment.onkeyup = (e) => {
-                if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-                    comment!.blur();
-                } else if (e.key === 'Escape') {
-                    comment!.innerText = text;
-                    comment!.blur();
-                }
-            }
-
-            comment.ondblclick = (e) => {
-                e.stopPropagation();
-
-                if (this.comment_range.fields.author && this.comment_range.fields.author !== COMMENTATOR_GLOBAL.PLUGIN_SETTINGS.author) {
-                    new Notice("You cannot edit comments from other authors.");
-                    return;
-                }
-
-                comment.contentEditable = 'true';
-                comment.replaceChildren();
-                comment.innerText = text;
-                comment.focus();
-            }
-
-            comment.oncontextmenu = (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-
-                const menu = new Menu();
-                menu.addItem((item) => {
-                    item.setTitle("Reply to comment");
-                    item.setIcon('reply');
-                    item.onClick(() => {
-                        addCommentToView(this.view, this.comment_range);
-                    });
-                })
-                menu.addItem((item) => {
-                    item.setTitle("Fold gutter");
-                    item.setIcon('arrow-right-from-line');
-                    item.onClick(() => {
-                        // @ts-ignore Unexposed view
-                        this.view.plugin(commentGutter[1][0][0])!.foldGutter();
-                    });
-                });
-
-                menu.showAtPosition(e);
-            }
-
-            this.comment_thread.appendChild(comment);
-
-            const text = range.unwrap();
-            this.renderComment(comment, range, text);
-        }
-
+        for (const range of this.comment_range.thread)
+            this.component.addChild(new CommentNode(range, this));
         this.component.load();
 
         return this.comment_thread;
     }
 
     focus() {
-        this.comment_thread!.focus();
+        this.comment_thread.focus();
     }
 
     focus_comment(index: number = -1) {
         if (index === -1)
-            index = this.comment_thread!.children.length - 1;
-        this.comment_thread!.children.item(index)!.dispatchEvent(new MouseEvent('dblclick'));
+            index = this.comment_thread.children.length - 1;
+        this.comment_thread.children.item(index)!.dispatchEvent(new MouseEvent('dblclick'));
+    }
+
+    destroy() {
+        this.component.unload();
+        this.comment_thread.remove();
     }
 }
 
@@ -249,7 +287,7 @@ export const commentGutterMarkers = StateField.define<RangeSet<CommentMarker>>({
         return oldSet.map(tr.changes)
             .update({
                 filter: (from, to, value) => {
-                    return !deletedRanges.some(range => value.thread.contains(range));
+                    return !deletedRanges.some(range => value.comment_range.thread.contains(range));
                 },
                 add: createMarkers(tr.state, updated_comment_threads)
             });

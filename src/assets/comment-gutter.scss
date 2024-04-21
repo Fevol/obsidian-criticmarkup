@@ -74,7 +74,7 @@
 }
 
 
-.criticmarkup-gutter-comment * {
+.criticmarkup-gutter-comment-view > * {
 	margin-block-start: 0.25em;
 	margin-block-end: 0.25em;
 }
@@ -85,7 +85,7 @@
 }
 
 
-.criticmarkup-gutter-comment:focus {
+.criticmarkup-gutter-comment:focus, .criticmarkup-gutter-comment-editing.criticmarkup-gutter-comment-editing {
 	box-shadow: 0 0 0 2px var(--comment-border-color);
 	background-color: var(--background-primary);
 }
@@ -93,4 +93,8 @@
 .criticmarkup-gutter-comment-metadata {
 	font-size: var(--font-smallest);
 	color: var(--text-faint);
+}
+
+.criticmarkup-gutter-comment-editor.cm-editor {
+	min-height: auto;
 }

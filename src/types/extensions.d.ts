@@ -1,4 +1,6 @@
 import IntervalTree, {Node} from "@flatten-js/interval-tree";
+import {Plugin} from "obsidian";
+import CommentatorPlugin from "../main";
 
 declare module '@flatten-js/interval-tree' {
     export default interface IntervalTree<T = any> {
@@ -22,3 +24,13 @@ declare module '@flatten-js/interval-tree' {
     }
 
 }
+
+declare module 'obsidian' {
+    interface Plugins {
+        plugins: Record<string, Plugin> & {
+            "commentator": CommentatorPlugin;
+        }
+    }
+}
+
+
