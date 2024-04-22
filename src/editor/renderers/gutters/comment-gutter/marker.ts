@@ -13,7 +13,7 @@ class CommentNode extends Component {
     text: string;
     new_text: string | null = null;
     comment_container: HTMLElement;
-    metadata_view: HTMLElement;
+    metadata_view: HTMLElement | null = null;
     comment_view: HTMLElement;
 
     currentMode: "preview" | "source" | null = null;
@@ -23,15 +23,16 @@ class CommentNode extends Component {
         super();
 
         this.text = range.unwrap();
-        this.comment_container = this.marker.comment_thread.createDiv({cls: 'criticmarkup-gutter-comment'});
-        this.metadata_view = this.comment_container.createDiv({cls: 'criticmarkup-gutter-comment-metadata'});
-        this.comment_view = this.comment_container.createDiv({cls: 'criticmarkup-gutter-comment-view'});
 
+        this.comment_container = this.marker.comment_thread.createDiv({cls: 'criticmarkup-gutter-comment'});
         this.comment_container.addEventListener("blur", this.renderPreview.bind(this));
         this.comment_container.addEventListener("dblclick", this.renderSource.bind(this));
         this.comment_container.addEventListener("contextmenu", this.onCommentContextmenu.bind(this));
 
-        this.renderMetadata();
+        if (this.range.metadata)
+            this.renderMetadata();
+
+        this.comment_view = this.comment_container.createDiv({cls: 'criticmarkup-gutter-comment-view'});
         this.renderPreview();
     }
 
@@ -47,42 +48,41 @@ class CommentNode extends Component {
     }
 
     renderMetadata() {
-        if (this.range.metadata) {
-            if (this.range.fields.author) {
-                const authorLabel = createSpan({
-                    cls: 'criticmarkup-gutter-comment-author-label',
-                    text: "Author: "
-                });
-                this.metadata_view.appendChild(authorLabel);
+        this.metadata_view = this.comment_container.createDiv({cls: 'criticmarkup-gutter-comment-metadata'});
+        if (this.range.fields.author) {
+            const authorLabel = createSpan({
+                cls: 'criticmarkup-gutter-comment-author-label',
+                text: "Author: "
+            });
+            this.metadata_view.appendChild(authorLabel);
 
-                const author = createSpan({
-                    cls: 'criticmarkup-gutter-comment-author-name',
-                    text: this.range.fields.author
+            const author = createSpan({
+                cls: 'criticmarkup-gutter-comment-author-name',
+                text: this.range.fields.author
+            });
+            this.metadata_view.appendChild(author);
+        }
+
+        if (this.range.fields.time) {
+            if (this.metadata_view.children.length > 0) {
+                const separator = createSpan({
+                    cls: 'criticmarkup-gutter-comment-metadata-separator',
+                    text: " • "
                 });
-                this.metadata_view.appendChild(author);
+                this.metadata_view.appendChild(separator);
             }
 
-            if (this.range.fields.time) {
-                if (this.metadata_view.children.length > 0) {
-                    const separator = createSpan({
-                        cls: 'criticmarkup-gutter-comment-metadata-separator',
-                        text: " • "
-                    });
-                    this.metadata_view.appendChild(separator);
-                }
+            const timeLabel = createSpan({
+                cls: 'criticmarkup-gutter-comment-time-label',
+                text: "Updated at: "
+            });
+            this.metadata_view.appendChild(timeLabel);
 
-                const timeLabel = createSpan({
-                    cls: 'criticmarkup-gutter-comment-time-label',
-                    text: "Updated at: "
-                });
-                this.metadata_view.appendChild(timeLabel);
-
-                const time = createSpan({
-                    cls: 'criticmarkup-gutter-comment-time',
-                    text: window.moment.unix(this.range.fields.time!).format('MMM DD YYYY, HH:mm')
-                });
-                this.metadata_view.appendChild(time);
-            }
+            const time = createSpan({
+                cls: 'criticmarkup-gutter-comment-time',
+                text: window.moment.unix(this.range.fields.time!).format('MMM DD YYYY, HH:mm')
+            });
+            this.metadata_view.appendChild(time);
         }
     }
 
@@ -187,8 +187,10 @@ export class CommentMarker extends GutterMarker {
             this.view.scrollDOM.scrollTo({top, behavior: 'smooth'})
         }, 200);
 
-        this.comment_thread.classList.add('criticmarkup-gutter-comment-thread-highlight');
-        setTimeout(() => this.comment_thread.classList.remove('criticmarkup-gutter-comment-thread-highlight'), 4000);
+        if (Math.abs(this.view.scrollDOM.scrollTop - top) > 10) {
+            this.comment_thread.classList.add('criticmarkup-gutter-comment-thread-highlight');
+            setTimeout(() => this.comment_thread.classList.remove('criticmarkup-gutter-comment-thread-highlight'), 4000);
+        }
     }
 
     toDOM() {
@@ -212,9 +214,10 @@ export class CommentMarker extends GutterMarker {
         this.comment_thread.children.item(index)!.dispatchEvent(new MouseEvent('dblclick'));
     }
 
-    destroy() {
+    destroy(dom: HTMLElement) {
         this.component.unload();
         this.comment_thread.remove();
+        super.destroy(dom);
     }
 }
 

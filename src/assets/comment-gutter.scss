@@ -20,7 +20,7 @@
 	border: 2px solid var(--background-modifier-border);
 	border-radius: var(--radius-l);
 
-	background-color: var(--background-secondary-alt);
+	background-color: var(--background-primary-alt);
 
 	color: var(--text-muted);
 
@@ -48,7 +48,9 @@
 	width: 100%;
 	max-height: 150px;
 
+	background-color: inherit;
 	padding: var(--size-2-2);
+	position: relative;
 
 	overflow-y: scroll;
 	word-wrap: break-word;
@@ -81,18 +83,26 @@
 
 .criticmarkup-gutter-comment:hover {
 	box-shadow: 0 0 0 2px var(--interactive-accent);
-	background-color: var(--background-primary-alt);
+	background-color: var(--background-secondary);
+	z-index: 20;
 }
 
 
 .criticmarkup-gutter-comment:focus, .criticmarkup-gutter-comment-editing.criticmarkup-gutter-comment-editing {
 	box-shadow: 0 0 0 2px var(--comment-border-color);
-	background-color: var(--background-primary);
+	background-color: var(--background-secondary);
+	z-index: 25;
 }
 
 .criticmarkup-gutter-comment-metadata {
 	font-size: var(--font-smallest);
 	color: var(--text-faint);
+
+	position: sticky;
+	top: -4px;
+	background-color: inherit;
+	z-index: 10;
+	padding: 2px 0;
 }
 
 .criticmarkup-gutter-comment-editor.cm-editor {

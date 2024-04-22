@@ -329,8 +329,6 @@ class CommentGutterElement extends GutterElement {
 	 */
 	update(view: EditorView, height: number, above: number, markers: readonly GutterMarker[], block: BlockInfo | null = null) {
 		this.block = block;
-		// if (this.height != height)
-		// 	this.dom.style.height = (this.height = height) + 'px';
 		if (this.above != above)
 			this.dom.style.marginTop = (this.above = above) ? above + 'px' : '';
 		if (!sameMarkers(this.markers, markers))
