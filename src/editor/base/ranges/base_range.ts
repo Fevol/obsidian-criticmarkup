@@ -130,6 +130,10 @@ export abstract class CriticMarkupRange {
 		}
 	}
 
+	has_comment(comment: CommentRange): boolean {
+		return this.thread.includes(comment);
+	}
+
 	copy(): CriticMarkupRange {
 		return Object.assign(Object.create(Object.getPrototypeOf(this)), this);
 	}

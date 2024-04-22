@@ -145,11 +145,17 @@ class CommentUpdateContext extends UpdateContext {
 		 */
 		const block_start = above <= 0 ? this.previous_element_end : block.top;
 
+
+		if ((markers as CommentMarker[]).some(marker => !marker.comment_range)) {
+			console.error("Marker without comment_range issue")
+		}
+
 		/**
 		 * SOLUTION: ensures ordering of markers of same block (bit inefficient but very easy solution)
 		 * Works by sorting the markers in-place
 		 * @todo Investigate whether the markers can be sorted earlier in the pipeline
  		 */
+		// FIXME: Marker without comment_range issue
 		(markers as CommentMarker[]).sort((a, b) => a.comment_range.from - b.comment_range.from);
 
 

@@ -117,8 +117,8 @@
 <SettingItem
 	name='Rebuild Database'
 	notices={[
-		{ type: 'info', text: "Recommended action to try if you're encountering issues with the view after updating" },
-		{ type: 'warning', text: 'In large vaults, reindexing the database may take while' }
+		{ type: 'info', text: "Recommended if you're encountering issues with the view after updating" },
+		{ type: 'warning', text: 'In large vaults, reindexing the database may take a while' }
 	]}
 >
 	<Button

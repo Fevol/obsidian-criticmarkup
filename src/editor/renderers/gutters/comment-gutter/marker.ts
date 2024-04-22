@@ -118,7 +118,7 @@ class CommentNode extends Component {
         if (this.text === this.new_text || this.new_text === null) {
             this.new_text = null;
             if (this.editMode) {
-                this.editMode.destroy();
+                this.removeChild(this.editMode);
                 this.editMode = null;
             }
             this.comment_view.empty();
@@ -276,20 +276,19 @@ export const commentGutterMarkers = StateField.define<RangeSet<CommentMarker>>({
 
 
         itr += 1;
-        const updated_comment_threads = [];
-        for (const range of tr.state.field(rangeParser).inserted_ranges) {
-            if (range.type === SuggestionType.COMMENT && updated_comment_threads.indexOf(range.thread[0]) === -1)
-                updated_comment_threads.push(range.thread[0]);
-        }
 
-        // PERF(range-updating): 0.50 - 3.84ms (stresstest)  (Reduced from 4.00 - 7.65ms)
-        const deletedRanges = tr.state.field(rangeParser).deleted_ranges.filter(range => range.type === SuggestionType.COMMENT) as CommentRange[];
+        const added_threads: CriticMarkupRange[] = [];
+        for (const range of tr.state.field(rangeParser).inserted_ranges) {
+            if (range.type === SuggestionType.COMMENT && !added_threads.includes(range.base_range))
+                added_threads.push(range.base_range);
+        }
+        const deleted_threads = tr.state.field(rangeParser).deleted_ranges
+            .filter(range => range.type === SuggestionType.COMMENT) as CommentRange[];
+
         return oldSet.map(tr.changes)
             .update({
-                filter: (from, to, value) => {
-                    return !deletedRanges.some(range => value.comment_range.thread.contains(range));
-                },
-                add: createMarkers(tr.state, updated_comment_threads)
+                filter: (from, to, value) => { return !deleted_threads.some(thread => thread.has_comment(value.comment_range)) },
+                add: createMarkers(tr.state, added_threads.map(range => range.thread[0]))
             });
     }
 });
