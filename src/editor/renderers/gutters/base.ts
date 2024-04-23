@@ -106,7 +106,11 @@ export const defaults = {
  */
 export function advanceCursor(cursor: RangeCursor<GutterMarker>, collect: GutterMarker[], pos: number) {
 	while (cursor.value && cursor.from <= pos) {
-		if (cursor.from == pos) collect.push(cursor.value);
+		// NOTE: Expects range to start *precisely* at the beginning of a line, since advancedCursor is invoked using line.from
+		// if (cursor.from == pos) collect.push(cursor.value);
+
+		// MODIFICATION: Instead, all markers up to the current position are collected (so not line-bound)
+		if (cursor.from <= pos) collect.push(cursor.value);
 		cursor.next();
 	}
 }
@@ -218,7 +222,8 @@ export class UpdateContext {
 
 		// Widgets that are not part of the same 'viewport' block as the document line block will be skipped
 		// See comment-gutter.ts for a more eloquent, analytical and in-depth explanation
-		advanceCursor(this.cursor, localMarkers, line.from);
+		// MODIFICATION: Markers are collected up until the end of the block
+		advanceCursor(this.cursor, localMarkers, line.to);
 
 		// Never happens (related to lineClass)
 		if (extraMarkers.length) localMarkers = localMarkers.concat(extraMarkers);

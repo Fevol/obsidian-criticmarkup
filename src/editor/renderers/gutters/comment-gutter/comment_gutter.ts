@@ -145,20 +145,14 @@ class CommentUpdateContext extends UpdateContext {
 		 */
 		const block_start = above <= 0 ? this.previous_element_end : block.top;
 
-
-		if ((markers as CommentMarker[]).some(marker => !marker.comment_range)) {
-			console.error("Marker without comment_range issue")
-		}
-
 		/**
 		 * SOLUTION: ensures ordering of markers of same block (bit inefficient but very easy solution)
 		 * Works by sorting the markers in-place
 		 * @todo Investigate whether the markers can be sorted earlier in the pipeline
  		 */
 		// FIXME: Marker without comment_range issue
+		// NOTE: This may be addresses used startSide bias in gutterMarker (warning: update concern)
 		(markers as CommentMarker[]).sort((a, b) => a.comment_range.from - b.comment_range.from);
-
-
 
 		const UNKNOWN_HEIGHT = 36;
 
@@ -181,20 +175,13 @@ class CommentUpdateContext extends UpdateContext {
 
 		// Constructs element if gutter was initialised from empty
 		if (this.i == gutter.elements.length) {
-			// Create a new Gutter Element at position
 			const newElt = new CommentGutterElement(view, height, above, markers, block);
 			gutter.elements.push(newElt);
-
 			gutter.dom.appendChild(newElt.dom);
-		}
-
-		// Update element (move up/down) if gutter already exists
-		else {
+		} else {
 			(gutter.elements as CommentGutterElement[])[this.i].update(view, height, above, markers, block);
 		}
-
 		this.previous_element_end = block_start + height;
-
 		this.i++;
 	}
 }

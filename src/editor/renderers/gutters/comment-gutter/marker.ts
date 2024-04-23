@@ -224,44 +224,14 @@ export class CommentMarker extends GutterMarker {
 function createMarkers(state: EditorState, changed_ranges: CriticMarkupRange[]) {
     const view = state.field(editorEditorField);
 
-    let overlapping_block = false;
-    let previous_block: Line;
-    let stop_next_block = null;
-
     const cm_ranges: Range<CommentMarker>[] = [];
     for (const range of changed_ranges) {
         if (range.type !== SuggestionType.COMMENT || (range as CommentRange).reply_depth) continue;
 
-        // Mental note to myself: this code exists because the fact that comments
-        // can appear across multiple lines/blocks. However, using `tr.state.doc.lineAt(range.from)` or
-        // `view.lineBlockAt(range.from)` *will* return the line on which it *would* be rendered, as if it isn't
-        // a different block.
-        // However, in right-gutter UpdateContext.line(), the blockInfo *does* consider every line to be part of the block
-        // due to the fact that it grabs from `view.viewportLineBlocks` (because it is then actually rendered?)
-        // Either way CodeMirror is sometimes fucky wucky, and this at least works somewhat
-        //
-        // Also, the reason why I'm even fixing this whole ordeal: if multiple comments exist on the same line (block)
-        // and one of them gets overflowed, then all subsequent comments disappear.
-        // Is this an issue anybody is likely to encounter? Probably not.
-        // But I noticed it and now I'm contractually and morally obligated to at least do the programmatic
-        // equivalent of sweeping my issues under the rug
-        //
-        // As to why I'm making this entire rant: it took me four hours to figure out
-
-        let block_from: Line = state.doc.lineAt(range.from);
-        if (overlapping_block && block_from.from <= stop_next_block!) {
-            block_from = previous_block!;
-        } else {
-            overlapping_block = range.to > block_from.to;
-            stop_next_block = range.to;
-            previous_block = block_from;
-        }
-
-        cm_ranges.push({
-            from: block_from.from,
-            to: block_from.to - 1,
-            value: new CommentMarker(range as CommentRange, view, itr)
-        })
+        // MODIFICATION: advanceCursor in base.ts required markers to be inserted into the rangeset at exactly
+        //      the positions where line starts, this caused some issues with correct adjustment of positions through updates,
+        //      so adjustment is that markers can now occur at any position before the start of the line
+        cm_ranges.push(new CommentMarker(range as CommentRange, view, itr).range(range.from, range.to));
     }
 
     return cm_ranges;
@@ -288,7 +258,8 @@ export const commentGutterMarkers = StateField.define<RangeSet<CommentMarker>>({
         const deleted_threads = tr.state.field(rangeParser).deleted_ranges
             .filter(range => range.type === SuggestionType.COMMENT) as CommentRange[];
 
-        return oldSet.map(tr.changes)
+        return oldSet
+            .map(tr.changes)
             .update({
                 filter: (from, to, value) => { return !deleted_threads.some(thread => thread.has_comment(value.comment_range)) },
                 add: createMarkers(tr.state, added_threads.map(range => range.thread[0]))
