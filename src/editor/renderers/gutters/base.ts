@@ -245,10 +245,8 @@ export class UpdateContext {
 
 	finish() {
 		const gutter = this.gutter;
+		// Removes the elements that are outside the viewport (from the bottom, on scroll-up)
 		while (gutter.elements.length > this.i) {
-			// ??? While length of gutter elements greater than i, remove last gutter element
-			// ??? Removes element if it exists the gutter
-			// FIXME: This might cause issues if there are a great many gutter elements
 			const last = gutter.elements.pop()!;
 			gutter.dom.removeChild(last.dom);
 			last.destroy();

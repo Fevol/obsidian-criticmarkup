@@ -7,12 +7,14 @@
  *  4. Exposed method for moving the gutter up/down to align with the block it is attached to
  *  5. Gutter *can* be zero-width if there are no markers in the document
  */
-import { type Extension, Facet } from '@codemirror/state';
-import { EditorView, ViewUpdate, BlockInfo, GutterMarker }  from '@codemirror/view';
+import {type Extension, Facet} from '@codemirror/state';
+import {BlockInfo, EditorView, GutterMarker, ViewUpdate} from '@codemirror/view';
 
-import { commentGutterMarkers, CommentMarker } from './marker';
+import {commentGutterMarkers, CommentMarker} from './marker';
 import {
-	commentGutterFoldButtonState, commentGutterFolded, commentGutterFoldedState,
+	commentGutterFoldButtonState,
+	commentGutterFolded,
+	commentGutterFoldedState,
 	commentGutterWidthState,
 	hideEmptyCommentGutterState,
 } from '../../../settings';
@@ -124,21 +126,20 @@ class CommentUpdateContext extends UpdateContext {
 	 * Describes the y-position of the bottom of the previous gutter element
 	 */
 	previous_element_end: number = 0;
+	new_gutter_elements: CommentGutterElement[] = [];
 
 	constructor(readonly gutter: CommentSingleGutterView, viewport: { from: number, to: number }, public height: number) {
 		super(gutter, viewport, height);
 		this.previous_element_end = height;
+		this.gutter.dom.empty();
 	}
 
 	async addElement(view: EditorView, block: BlockInfo, markers: readonly GutterMarker[]) {
-		const { gutter } = this;
-
 		/**
 		 * Describes the amount of space between the previous gutter element and the y-postion for the one that will be constructed for the current block
 		 * @remark This prevents the overlap of the gutter elements
 		 */
 		const above = Math.max(block.top - this.previous_element_end, 0);
-
 		/**
 		 * Iff there is overlap with the previous block (i.e. the top of the block is lower than the bottom of the previous gutter element),
 		 * then place the gutter element at the bottom of the previous gutter element (above = 0)
@@ -171,23 +172,38 @@ class CommentUpdateContext extends UpdateContext {
 		 * 	   in short, a better approximation for UNKNOWN_HEIGHT when the element is not rendered yet would be fantastic
 		 * 	   please - and I mean this with all sincerity in the world - please let me know if you are able to come up with a more elegant solution
 		 */
-		const height = gutter.elements[this.i]?.dom.clientHeight || UNKNOWN_HEIGHT;
+		const height = this.gutter.elements[this.i]?.dom.clientHeight || UNKNOWN_HEIGHT;
 
-		// Constructs element if gutter was initialised from empty
-		if (this.i == gutter.elements.length) {
-			const newElt = new CommentGutterElement(view, height, above, markers, block);
-			gutter.elements.push(newElt);
-			gutter.dom.appendChild(newElt.dom);
+
+		const existing_element = this.gutter.elements.find(element =>
+			sameMarkers(element.markers, markers)
+		);
+		if (existing_element) {
+			this.new_gutter_elements.push(existing_element);
+			existing_element.update(view, height, above, markers, block);
+			this.gutter.dom.appendChild(existing_element.dom);
 		} else {
-			(gutter.elements as CommentGutterElement[])[this.i].update(view, height, above, markers, block);
+			const newElt = new CommentGutterElement(view, height, above, markers, block);
+			this.new_gutter_elements.push(newElt);
+			this.gutter.dom.appendChild(newElt.dom);
 		}
+
 		this.previous_element_end = block_start + height;
-		this.i++;
+	}
+
+	finish() {
+		for (let i = this.i; i < this.gutter.elements.length; i++) {
+			if (!this.new_gutter_elements.includes(this.gutter.elements[i]))
+				this.gutter.elements[i].destroy();
+		}
+		this.gutter.elements = this.new_gutter_elements;
+		this.new_gutter_elements = [];
 	}
 }
 
 class CommentSingleGutterView extends SingleGutterView {
 	fold_button: HTMLElement | undefined = undefined;
+	declare elements: CommentGutterElement[];
 
 	constructor(public view: EditorView, public config: Required<GutterConfig>) {
 		super(view, config);
