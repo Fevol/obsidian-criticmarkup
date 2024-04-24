@@ -127,11 +127,11 @@ class CommentUpdateContext extends UpdateContext {
 	 */
 	previous_element_end: number = 0;
 	new_gutter_elements: CommentGutterElement[] = [];
+	added_elements: CommentGutterElement[] = [];
 
 	constructor(readonly gutter: CommentSingleGutterView, viewport: { from: number, to: number }, public height: number) {
 		super(gutter, viewport, height);
 		this.previous_element_end = height;
-		this.gutter.dom.empty();
 	}
 
 	async addElement(view: EditorView, block: BlockInfo, markers: readonly GutterMarker[]) {
@@ -175,17 +175,30 @@ class CommentUpdateContext extends UpdateContext {
 		const height = this.gutter.elements[this.i]?.dom.clientHeight || UNKNOWN_HEIGHT;
 
 
-		const existing_element = this.gutter.elements.find(element =>
-			sameMarkers(element.markers, markers)
-		);
-		if (existing_element) {
-			this.new_gutter_elements.push(existing_element);
-			existing_element.update(view, height, above, markers, block);
-			this.gutter.dom.appendChild(existing_element.dom);
+		let element_idx = -1;
+		for (let i = this.i; i < this.gutter.elements.length; i++) {
+			if (sameMarkers(this.gutter.elements[i].markers, markers)) {
+				element_idx = i;
+				break;
+			}
+		}
+
+		if (element_idx !== -1) {
+			const element = this.gutter.elements[element_idx];
+			for (let i = this.i; i < element_idx; i++) {
+				this.gutter.dom.removeChild(this.gutter.elements[i].dom);
+				this.gutter.elements[i].destroy();
+			}
+			for (const added_element of this.added_elements)
+				this.gutter.dom.insertBefore(added_element.dom, element.dom);
+			this.new_gutter_elements.push(...this.added_elements);
+			this.added_elements = [];
+
+			this.i = element_idx + 1;
+			this.new_gutter_elements.push(element);
+			element.update(view, height, above, markers, block);
 		} else {
-			const newElt = new CommentGutterElement(view, height, above, markers, block);
-			this.new_gutter_elements.push(newElt);
-			this.gutter.dom.appendChild(newElt.dom);
+			this.added_elements.push(new CommentGutterElement(view, height, above, markers, block));
 		}
 
 		this.previous_element_end = block_start + height;
@@ -193,11 +206,14 @@ class CommentUpdateContext extends UpdateContext {
 
 	finish() {
 		for (let i = this.i; i < this.gutter.elements.length; i++) {
-			if (!this.new_gutter_elements.includes(this.gutter.elements[i]))
-				this.gutter.elements[i].destroy();
+			this.gutter.dom.removeChild(this.gutter.elements[i].dom);
+			this.gutter.elements[i].destroy();
 		}
-		this.gutter.elements = this.new_gutter_elements;
+		for (const added_element of this.added_elements)
+			this.gutter.dom.appendChild(added_element.dom);
+		this.gutter.elements = [...this.new_gutter_elements, ...this.added_elements];
 		this.new_gutter_elements = [];
+		this.added_elements = [];
 	}
 }
 
