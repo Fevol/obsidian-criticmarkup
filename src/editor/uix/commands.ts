@@ -1,4 +1,4 @@
-import { type Editor, type MarkdownView, Platform } from 'obsidian';
+import {type Editor, editorInfoField, type MarkdownView, Platform} from 'obsidian';
 
 import {type ECommand, EditMode} from '../../types';
 
@@ -97,7 +97,8 @@ export const editor_commands: (plugin: CommentatorPlugin) => ECommand[] = (plugi
 		icon: 'arrow-right-from-line',
 		editor_context: true,
 		regular_callback: (editor: Editor, _) => {
-			editor.cm.plugin(commentGutter[1][0][0])!.foldGutter();
+			const {app} = editor.cm.state.field(editorInfoField);
+			editor.cm.plugin(commentGutter(app)[1][0][0])!.foldGutter();
 		}
 	},
 	{

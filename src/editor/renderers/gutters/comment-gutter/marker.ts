@@ -1,7 +1,7 @@
 import {EditorView, GutterMarker} from '@codemirror/view';
 import {type EditorState, Line, Range, RangeSet, StateField} from '@codemirror/state';
 
-import {Component, editorEditorField, MarkdownRenderer, Menu, Notice} from 'obsidian';
+import {Component, editorEditorField, editorInfoField, MarkdownRenderer, Menu, Notice} from 'obsidian';
 
 import {type CommentRange, CriticMarkupRange, rangeParser, SuggestionType} from '../../../base';
 import {addCommentToView, commentGutter} from './index';
@@ -158,7 +158,7 @@ class CommentNode extends Component {
             item.setTitle("Fold gutter")
                 .setIcon('arrow-right-from-line')
                 .onClick(() => {
-                    this.marker.view.plugin(commentGutter[1][0][0])!.foldGutter();
+                    this.marker.view.plugin(commentGutter(app)[1][0][0])!.foldGutter();
                 });
         });
 
@@ -183,7 +183,8 @@ export class CommentMarker extends GutterMarker {
         const top = this.view.lineBlockAt(this.comment_range.from).top - 100;
 
         setTimeout(() => {
-            this.view.plugin(commentGutter[1][0][0])!.moveGutter(this);
+            const {app} = this.view.state.field(editorInfoField);
+            this.view.plugin(commentGutter(app)[1][0][0])!.moveGutter(this);
             this.view.scrollDOM.scrollTo({top, behavior: 'smooth'})
         }, 200);
 
