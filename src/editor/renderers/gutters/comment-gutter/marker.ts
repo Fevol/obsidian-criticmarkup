@@ -97,7 +97,7 @@ class CommentNode extends Component {
         }
 
         this.comment_view.empty();
-        this.editMode = this.addChild(new EmbeddableMarkdownEditor(app, this.comment_view, {
+        this.editMode = this.addChild(new EmbeddableMarkdownEditor(COMMENTATOR_GLOBAL.app, this.comment_view, {
             value: this.text,
             cls: "criticmarkup-gutter-comment-editor",
             onSubmit: (editor) => {
@@ -105,7 +105,7 @@ class CommentNode extends Component {
                 this.renderPreview();
             },
             // TODO: Get a reference to the plugin somehow
-            filteredExtensions: [app.plugins.plugins["commentator"].editorExtensions],
+            filteredExtensions: [COMMENTATOR_GLOBAL.app.plugins.plugins["commentator"].editorExtensions],
             onBlur: this.renderPreview.bind(this),
         }));
         this.currentMode = "source";
@@ -122,7 +122,7 @@ class CommentNode extends Component {
                 this.editMode = null;
             }
             this.comment_view.empty();
-            MarkdownRenderer.render(app, this.text || "&nbsp;", this.comment_view, '', this);
+            MarkdownRenderer.render(COMMENTATOR_GLOBAL.app, this.text || "&nbsp;", this.comment_view, '', this);
             this.currentMode = "preview";
         } else {
             setTimeout(() => this.marker.view.dispatch({
@@ -158,7 +158,7 @@ class CommentNode extends Component {
             item.setTitle("Fold gutter")
                 .setIcon('arrow-right-from-line')
                 .onClick(() => {
-                    this.marker.view.plugin(commentGutter(app)[1][0][0])!.foldGutter();
+                    this.marker.view.plugin(commentGutter(COMMENTATOR_GLOBAL.app)[1][0][0])!.foldGutter();
                 });
         });
 

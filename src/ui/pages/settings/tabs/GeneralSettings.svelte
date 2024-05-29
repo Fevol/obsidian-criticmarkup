@@ -141,6 +141,7 @@
 		text='REPORT BUG'
 		icon='bug'
 		onClick={ () => openGithubIssueLink(
+			plugin.app,
 			undefined,
 			{
 				/* Additional data that will be added to the debugger information */

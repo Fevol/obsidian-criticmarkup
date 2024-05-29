@@ -1,10 +1,10 @@
-import type {EventRef} from 'obsidian';
+import type {App, EventRef} from 'obsidian';
 import {acceptSuggestions, isCursor, rangeParser, rejectSuggestions} from '../base';
 import {addCommentToView} from "../renderers/gutters/comment-gutter";
 import {COMMENTATOR_GLOBAL} from "../../global";
 
-export const cmenuCommands: EventRef =
-	app.workspace.on('editor-menu', (menu, editor) => {
+export const cmenuCommands: (app: App) => EventRef =
+	(app) => app.workspace.on('editor-menu', (menu, editor) => {
 		const ranges = editor.cm.state.field(rangeParser).ranges;
 		menu.addItem((item) => {
 			item.setTitle("Add comment")

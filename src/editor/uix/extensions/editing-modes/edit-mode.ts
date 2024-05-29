@@ -13,6 +13,7 @@ import {
 
 import {latest_event} from "../keypress-catcher";
 import {cursor_transaction_pass_syntax} from "./cursor_movement";
+import {COMMENTATOR_GLOBAL} from "../../../../global";
 
 function isUserEvent(event: string, events: string[]): boolean {
     return events.some(e => e.startsWith(event));
@@ -24,7 +25,7 @@ export const editMode = (settings: PluginSettings): Extension => EditorState.tra
 
 function applyCorrectedEdit(tr: Transaction, settings: PluginSettings): Transaction {
     const userEvents = getUserEvents(tr);
-    const vim_mode = app.workspace.activeEditor?.editor?.cm.cm !== undefined;
+    const vim_mode = COMMENTATOR_GLOBAL.app.workspace.activeEditor?.editor?.cm.cm !== undefined;
 
     if (!tr.docChanged && tr.selection && vim_mode) {
         if (cursorMoved(tr))

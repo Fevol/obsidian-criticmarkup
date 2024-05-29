@@ -16,6 +16,7 @@ import {
 
 import {latest_event} from "../keypress-catcher";
 import {cursor_transaction_pass_syntax} from "./cursor_movement";
+import {COMMENTATOR_GLOBAL} from "../../../../global";
 
 
 const vim_action_resolver = {
@@ -93,13 +94,13 @@ export const suggestionMode = (settings: PluginSettings): Extension => EditorSta
 // TODO: Functionality: Double click mouse should also floodfill (problem: no specific userevent attached)
 function applySuggestion(tr: Transaction, settings: PluginSettings): Transaction {
 	const userEvents = getUserEvents(tr);
-	const vim_mode = app.workspace.activeEditor?.editor?.cm.cm !== undefined;
+	const vim_mode = COMMENTATOR_GLOBAL.app.workspace.activeEditor?.editor?.cm.cm !== undefined;
 
 	// TODO: Resolve used vim cursor movements since they do not receive user event annotations
 	if (!tr.docChanged && tr.selection && vim_mode) {
 		if (cursorMoved(tr))
 			userEvents.push(tr.startState.selection.ranges[0].from < tr.selection!.ranges[0].from ? 'select.forward' : 'select.backward');
-		if (vim_action_resolver[app.workspace.activeEditor?.editor?.cm.cm?.state.vim.lastMotion?.name as keyof typeof vim_action_resolver]?.group)
+		if (vim_action_resolver[COMMENTATOR_GLOBAL.app.workspace.activeEditor?.editor?.cm.cm?.state.vim.lastMotion?.name as keyof typeof vim_action_resolver]?.group)
 			userEvents.push('select.group');
 	}
 

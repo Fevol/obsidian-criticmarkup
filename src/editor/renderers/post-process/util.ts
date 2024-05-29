@@ -1,8 +1,8 @@
-import { MarkdownView } from 'obsidian';
+import {App, MarkdownView} from 'obsidian';
 import {EditorSelection} from "@codemirror/state";
 
 
-export function codeBlockPostProcessorUpdate(language: string) {
+export function codeBlockPostProcessorUpdate(app: App, language: string) {
 	for (const leaf of app.workspace.getLeavesOfType("markdown")) {
 		const view = <MarkdownView>leaf.view;
 		if (view.editor.cm) {
@@ -21,7 +21,7 @@ export function codeBlockPostProcessorUpdate(language: string) {
 }
 
 
-export function postProcessorUpdate() {
+export function postProcessorUpdate(app: App) {
 	// Credits to depose/dp0z/@Profile8647 for finding this code
 	for (const leaf of app.workspace.getLeavesOfType("markdown")) {
 		const view = <MarkdownView>leaf.view;
@@ -33,7 +33,7 @@ export function postProcessorUpdate() {
 	}
 }
 
-export function postProcessorRerender() {
+export function postProcessorRerender(app: App) {
 	for (const leaf of app.workspace.getLeavesOfType("markdown"))
 		(leaf.view as MarkdownView).previewMode.rerender(true)
 }

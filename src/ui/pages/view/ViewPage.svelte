@@ -198,7 +198,7 @@
 			const file = plugin.app.vault.getAbstractFileByPath(key);
 			if (!file) continue;
 			file_history[key] = await plugin.app.vault.cachedRead(<TFile>file);
-			await editFunction(<TFile>file, value);
+			await editFunction(plugin.app, <TFile>file, value);
 		}
 		undo_history.push({file_history, selected_ranges});
 		selected_ranges = [];

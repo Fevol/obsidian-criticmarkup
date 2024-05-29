@@ -5,6 +5,7 @@ import {Component, MarkdownRenderer, Menu, setIcon} from 'obsidian';
 import {CM_All_Brackets, CommentRange, CriticMarkupRange} from '../../../base';
 import {commentGutterMarkers} from '../../gutters';
 import {addCommentToView} from "../../gutters/comment-gutter";
+import {COMMENTATOR_GLOBAL} from "../../../../global";
 
 
 
@@ -27,7 +28,7 @@ export function renderCommentWidget(range: CommentRange, text?: string, unwrap =
 
 		tooltip = document.createElement('div');
 		tooltip.classList.add('criticmarkup-comment-tooltip');
-		MarkdownRenderer.render(app, str, tooltip, '', component);
+		MarkdownRenderer.render(COMMENTATOR_GLOBAL.app, str, tooltip, '', component);
 		component.load();
 		icon!.appendChild(tooltip);
 
@@ -66,7 +67,7 @@ export class CommentIconWidget extends WidgetType {
 		if (!this.tooltip) {
 			this.tooltip = document.createElement('div');
 			this.tooltip.classList.add('criticmarkup-comment-tooltip');
-			MarkdownRenderer.render(app, this.range.text, this.tooltip, '', this.component);
+			MarkdownRenderer.render(COMMENTATOR_GLOBAL.app, this.range.text, this.tooltip, '', this.component);
 			this.component.load();
 			this.icon!.appendChild(this.tooltip);
 

@@ -1,6 +1,6 @@
 import { type ChangeSpec, EditorState } from '@codemirror/state';
 
-import { type TFile } from 'obsidian';
+import {App, type TFile} from 'obsidian';
 
 import { CriticMarkupRange, SuggestionType } from '../ranges';
 import { rangeParser, applyToText } from '../edit-util';
@@ -12,7 +12,7 @@ export function acceptSuggestions(state: EditorState, from?: number, to?: number
 		.map(range => ({ from: range.from, to: range.to, insert: range.accept() }));
 }
 
-export async function acceptSuggestionsInFile(file: TFile, ranges: CriticMarkupRange[]) {
+export async function acceptSuggestionsInFile(app: App, file: TFile, ranges: CriticMarkupRange[]) {
 	ranges.sort((a, b) => a.from - b.from);
 	const text = await app.vault.cachedRead(file);
 
@@ -29,7 +29,7 @@ export function rejectSuggestions(state: EditorState, from?: number, to?: number
 		.map(range => ({ from: range.from, to: range.to, insert: range.reject() }));
 }
 
-export async function rejectSuggestionsInFile(file: TFile, ranges: CriticMarkupRange[]) {
+export async function rejectSuggestionsInFile(app: App, file: TFile, ranges: CriticMarkupRange[]) {
 	ranges.sort((a, b) => a.from - b.from);
 	const text = await app.vault.cachedRead(file);
 

@@ -138,12 +138,12 @@ export default class CommentatorPlugin extends Plugin {
 			this.loadEditorExtensions();
 			this.app.workspace.updateOptions();
 			if (this.settings.post_processor)
-				postProcessorUpdate();
+				postProcessorUpdate(this.app);
 		}
 
 		else if (Object.keys(this.changed_settings).some(key => REQUIRES_EDITOR_RELOAD.has(key))) {
 			// TODO: Check if it is possible to catch the effect fired by the updateOptions statefield
-			iterateAllCMInstances((cm) => {
+			iterateAllCMInstances(this.app, (cm) => {
 				cm.dispatch(cm.state.update({
 					effects: fullReloadEffect.of(true)
 				}));
@@ -152,16 +152,18 @@ export default class CommentatorPlugin extends Plugin {
 	}
 
 	async onload() {
+		COMMENTATOR_GLOBAL.app = this.app;
+
 		// Note: debug options only accessible via main Obsidian window
 		// @ts-ignore (Assigning to window)
 		window['COMMENTATOR_DEBUG'] = {
 			plugin: this,
 			database: this.database,
 			get ranges() {
-				return app.workspace.activeEditor?.editor?.cm.state.field(rangeParser).ranges.ranges;
+				return this.app.workspace.activeEditor?.editor?.cm.state.field(rangeParser).ranges.ranges;
 			},
 			get tree() {
-				return app.workspace.activeEditor?.editor?.cm.state.field(rangeParser).ranges.tree;
+				return this.app.workspace.activeEditor?.editor?.cm.state.field(rangeParser).ranges.tree;
 			}
 		};
 
@@ -186,10 +188,10 @@ export default class CommentatorPlugin extends Plugin {
 			// TODO: Run postprocessor before any other MD postprocessors
 			this.postProcessor = this.registerMarkdownPostProcessor(async (el, ctx) => postProcess(el, ctx, this.settings), -99999);
 			// Full postprocessor rerender on enabling the plugin?
-			postProcessorRerender();
+			postProcessorRerender(this.app);
 		}
 
-		this.registerEvent(cmenuCommands);
+		this.registerEvent(cmenuCommands(this.app));
 		for (const command of commands(this))
 			this.addCommand(command);
 
@@ -279,20 +281,20 @@ export default class CommentatorPlugin extends Plugin {
 				this.postProcessor = this.registerMarkdownPostProcessor((el, ctx) => postProcess(el, ctx, this.settings), -99999);
 			else
 				MarkdownPreviewRenderer.unregisterPostProcessor(this.postProcessor);
-			postProcessorRerender();
+			postProcessorRerender(this.app);
 		}
 
 		if (this.changed_settings.comment_gutter_width !== undefined)
-			updateAllCompartments(this.editorExtensions, commentGutterWidth, commentGutterWidthState, this.settings.comment_gutter_width);
+			updateAllCompartments(this.app, this.editorExtensions, commentGutterWidth, commentGutterWidthState, this.settings.comment_gutter_width);
 
 		if (this.changed_settings.comment_gutter_hide_empty !== undefined)
-			updateAllCompartments(this.editorExtensions, hideEmptyCommentGutter, hideEmptyCommentGutterState, this.settings.comment_gutter_hide_empty);
+			updateAllCompartments(this.app, this.editorExtensions, hideEmptyCommentGutter, hideEmptyCommentGutterState, this.settings.comment_gutter_hide_empty);
 
 		if (this.changed_settings.suggestion_gutter_hide_empty !== undefined)
-			updateAllCompartments(this.editorExtensions, hideEmptySuggestionGutter, hideEmptySuggestionGutterState, this.settings.suggestion_gutter_hide_empty);
+			updateAllCompartments(this.app, this.editorExtensions, hideEmptySuggestionGutter, hideEmptySuggestionGutterState, this.settings.suggestion_gutter_hide_empty);
 
 		if (this.changed_settings.comment_gutter_fold_button !== undefined)
-			updateAllCompartments(this.editorExtensions, commentGutterFoldButton, commentGutterFoldButtonState, this.settings.comment_gutter_fold_button);
+			updateAllCompartments(this.app, this.editorExtensions, commentGutterFoldButton, commentGutterFoldButtonState, this.settings.comment_gutter_fold_button);
 
 		if (this.changed_settings.default_preview_mode !== undefined)
 			updateCompartment(this.editorExtensions, previewMode, previewModeState.of(this.settings.default_preview_mode));

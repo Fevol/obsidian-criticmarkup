@@ -182,7 +182,7 @@ export class GutterElement {
 	}
 
 	destroy() {
-		this.setMarkers(null as any, []); // First argument not used unless creating markers
+		this.setMarkers(null, []); // First argument not used unless creating markers
 	}
 }
 

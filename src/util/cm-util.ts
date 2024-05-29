@@ -1,6 +1,6 @@
 import {Compartment, Extension, Facet, RangeSet, RangeValue} from "@codemirror/state";
 import type {EditorView} from "@codemirror/view";
-import {MarkdownView} from "obsidian";
+import {App, MarkdownView} from "obsidian";
 
 export function updateCompartment(extensions: Extension[], compartment: Compartment, new_compartment_contents: Extension) {
     /**
@@ -19,12 +19,12 @@ export function updateCompartment(extensions: Extension[], compartment: Compartm
     extensions[extensionIndex] = (extensions[extensionIndex].compartment as Compartment).of(new_compartment_contents);
 }
 
-export function updateAllCompartments<T>(extensions: Extension[], compartment: Compartment, facet: Facet<T, T>, value: T) {
+export function updateAllCompartments<T>(app: App, extensions: Extension[], compartment: Compartment, facet: Facet<T, T>, value: T) {
     /**
      * Iterate over all active CodeMirror instances and update the facet value of the compartment,
      * also updates the gutter of the active instances
      */
-    iterateAllCMInstances(cm => {
+    iterateAllCMInstances(app, cm => {
         cm.dispatch({ effects: [ compartment.reconfigure(facet.of(value)) ] });
     });
     updateCompartment(extensions, compartment, facet.of(value));
@@ -41,7 +41,7 @@ export function debugRangeset<Type extends RangeValue>(set: RangeSet<Type>): { f
 }
 
 
-export function iterateAllCMInstances(callback: (cm: EditorView) => void) {
+export function iterateAllCMInstances(app: App, callback: (cm: EditorView) => void) {
     app.workspace.iterateAllLeaves((leaf) => {
         // @ts-ignore
         if (leaf.view instanceof MarkdownView && leaf.view.currentMode.type === "source")
