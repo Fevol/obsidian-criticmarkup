@@ -43,7 +43,7 @@ function applyCorrectedEdit(tr: Transaction, settings: PluginSettings): Transact
         const selections: SelectionRange[] = [];
 
         const backwards_delete = (latest_event as KeyboardEvent)?.key === "Backspace";
-        const group_delete = (latest_event as KeyboardEvent)?.ctrlKey!;
+        const group_delete = (latest_event as KeyboardEvent)?.ctrlKey;
         let offset = 0;
         for (let editor_change of changed_ranges) {
             if (tr.isUserEvent('delete'))

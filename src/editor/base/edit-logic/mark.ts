@@ -295,11 +295,11 @@ function mark_range(ranges: CriticMarkupRanges, text: Text, from: number, to: nu
             //         return {from, to: from, insert: ""};
             // }
 
-            let left_merge_type, right_merge_type, merged_metadata;
-            ({type: left_merge_type, merged_metadata} = mergeable_range(from, left_range, type, metadata_fields, true));
+            const left_merge = mergeable_range(from, left_range, type, metadata_fields, true);
+            let merged_metadata = left_merge.merged_metadata;
 
             insert = inserted;
-            if (left_merge_type) {
+            if (left_merge.type) {
                 // NOTE: Required for case of '{~~yyyabc~>123~~}{++zzz++}'
                 if (left_range!.type === SuggestionType.SUBSTITUTION) {
                     const parts = (left_range as SubstitutionRange).unwrap_parts();
@@ -319,8 +319,9 @@ function mark_range(ranges: CriticMarkupRanges, text: Text, from: number, to: nu
             }
             // end_offset = deleted.length;
 
-            ({ type: right_merge_type, merged_metadata } = mergeable_range(to, right_range, type, metadata_fields, false));
-            if (right_merge_type) {
+            const right_merge = mergeable_range(to, right_range, type, metadata_fields, false);
+            merged_metadata = right_merge.merged_metadata;
+            if (right_merge.type) {
                 if (right_range!.type === SuggestionType.SUBSTITUTION) {
                     const parts = (right_range as SubstitutionRange).unwrap_slice_parts_inverted(from, to);
                     insert = inserted + parts[1];
@@ -334,7 +335,7 @@ function mark_range(ranges: CriticMarkupRanges, text: Text, from: number, to: nu
                 split_right_range();
             }
 
-            if (left_merge_type === SuggestionType.SUBSTITUTION || right_merge_type === SuggestionType.SUBSTITUTION)
+            if (left_merge.type === SuggestionType.SUBSTITUTION || right_merge.type === SuggestionType.SUBSTITUTION)
                 type = SuggestionType.SUBSTITUTION;
 
             ({ insert, start_offset, end_offset } = construct_range(insert, deleted, type, metadata_fields, start_offset, end_offset));

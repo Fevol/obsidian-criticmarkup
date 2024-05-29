@@ -254,10 +254,10 @@ export interface ECommand extends Command {
 	/**
 	 * Command with regular callback, if mobile, command will be set to editorCallback by default to add the command to the mobile toolbar
 	 */
-	regular_callback?: (...args: any[]) => any;
+	regular_callback?: (...args: any[]) => void;
 
 	/**
 	 * Command with checking callback, if mobile, command will be set to editorCheckCallback by default to add the command to the mobile toolbar
 	 */
-	check_callback?: (checking: boolean, ...args: any[]) => any;
+	check_callback?: (checking: boolean, ...args: any[]) => boolean | void;
 }

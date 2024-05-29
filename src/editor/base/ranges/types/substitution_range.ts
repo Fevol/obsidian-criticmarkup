@@ -17,8 +17,8 @@ export class SubstitutionRange extends CriticMarkupRange {
 
 	range_type(from: number, to: number) {
 		return to <= this.middle + 2 ? SuggestionType.DELETION :
-			   from >= this.middle ? SuggestionType.ADDITION :
-				   					SuggestionType.SUBSTITUTION;
+            from >= this.middle ? SuggestionType.ADDITION :
+								SuggestionType.SUBSTITUTION;
 	}
 
 	unwrap() {

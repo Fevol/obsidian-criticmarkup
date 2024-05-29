@@ -3,7 +3,7 @@ import {cursor_move, is_forward_movement, rangeParser} from "../../../base";
 import {EditorSelection, SelectionRange, Transaction, TransactionSpec} from "@codemirror/state";
 import {PluginSettings} from "../../../../types";
 
-export function cursor_transaction_pass_syntax(tr: Transaction, userEvents: any, vim_mode: boolean, settings: PluginSettings, event: KeyboardEvent):  TransactionSpec | undefined {
+export function cursor_transaction_pass_syntax(tr: Transaction, userEvents: string[], vim_mode: boolean, settings: PluginSettings, event: KeyboardEvent):  TransactionSpec | undefined {
     // NOTE: Pointer/Mouse selection does not need any further processing (allows for debugging)
     if (userEvents.includes('select.pointer') || (latest_event && (event.key === "a" && (latest_event.ctrlKey || latest_event.metaKey))))
         return undefined;

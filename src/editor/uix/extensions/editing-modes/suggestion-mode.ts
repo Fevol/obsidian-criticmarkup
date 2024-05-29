@@ -127,7 +127,7 @@ function applySuggestion(tr: Transaction, settings: PluginSettings): Transaction
 		const metadata = generate_metadata();
 
 		const backwards_delete = (latest_event as KeyboardEvent)?.key === "Backspace";
-		const group_delete = (latest_event as KeyboardEvent)?.ctrlKey!;
+		const group_delete = (latest_event as KeyboardEvent)?.ctrlKey;
 		let offset = 0;
 		// TODO: Consider each editor_change separately to avoid issues where you try to re-insert into a now updated range
 		//        (Or: update ranges with editor_change to reflect the new state)

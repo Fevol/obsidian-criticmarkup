@@ -25,7 +25,7 @@ export async function getObsidianData() {
 		if (capacitor_info)
 			framework_version = capacitor_info.version + " (" + capacitor_info.build + ")";
 	} else {
-		framework_version = navigator.userAgent.match(/obsidian\/([\d\.]+\d+)/)?.[1] || "unknown"
+		framework_version = navigator.userAgent.match(/obsidian\/([\d.]+\d+)/)?.[1] || "unknown"
 	}
 
 	return {

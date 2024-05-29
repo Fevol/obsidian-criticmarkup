@@ -1,5 +1,5 @@
 import { SelectionRange } from '@codemirror/state';
-import {CriticMarkupRange, METADATA_TYPE, RangeType, SuggestionType} from "../ranges";
+import {CriticMarkupRange, METADATA_TYPE} from "../ranges";
 
 export interface EditorRange {
 	from: number;

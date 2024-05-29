@@ -142,14 +142,14 @@ export class GutterElement {
 		if (!sameMarkers(this.markers, markers)) this.setMarkers(view, markers);
 	}
 
-	setMarkers(view: EditorView, markers: readonly GutterMarker[]) {
+	setMarkers(view: EditorView | null, markers: readonly GutterMarker[]) {
 		let cls = 'cm-gutterElement', domPos = this.dom.firstChild;
 		for (let iNew = 0, iOld = 0; ;) {
 			let skipTo = iOld;
 			const marker = iNew < markers.length ? markers[iNew++] : null;
 			let matched = false;
 			if (marker) {
-				let c = marker.elementClass;
+				const c = marker.elementClass;
 				if (c) cls += ' ' + c;
 				for (let i = iOld; i < this.markers.length; i++)
 					// @ts-ignore (compare does exist on marker)
@@ -171,7 +171,7 @@ export class GutterElement {
 				}
 			}
 			if (!marker) break;
-			if (marker.toDOM) {
+			if (marker.toDOM && view) {
 				if (matched) domPos = domPos!.nextSibling;
 				else this.dom.insertBefore(marker.toDOM(view), domPos);
 			}

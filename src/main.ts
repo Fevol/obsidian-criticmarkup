@@ -10,13 +10,7 @@ import {around} from 'monkey-around';
 
 import {type CriticMarkupRange, getRangesInText, RANGE_PROTOTYPE_MAPPER, rangeParser, text_copy,} from './editor/base';
 
-import {
-	application_commmands,
-	cmenuCommands, commands,
-	editor_commands,
-	initializeCommands,
-	suggestion_commands,
-} from './editor/uix';
+import { cmenuCommands, commands } from './editor/uix';
 import {bracketMatcher, editorKeypressCatcher, rangeCorrecter} from './editor/uix/extensions';
 
 import {postProcess, postProcessorRerender, postProcessorUpdate} from './editor/renderers/post-process';

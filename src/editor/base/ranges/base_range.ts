@@ -107,7 +107,7 @@ export abstract class CriticMarkupRange {
 		return [];
 	}
 
-	add_metadata(key: string, value: any): EditorChange[] {
+	add_metadata(key: string, value: unknown): EditorChange[] {
 		this.fields[key as keyof typeof this.fields] = value;
 		return this.set_metadata(this.fields);
 	}
@@ -253,7 +253,7 @@ export abstract class CriticMarkupRange {
 
 	touches_left_bracket(cursor: number, outside_loose = false, inside_loose = false, include_metadata = false) {
 		return cursor + (outside_loose ? 0 : 1) >= this.from &&
-			   cursor + (inside_loose ? 0 : 1) <= ((include_metadata && this.metadata) ? this.metadata + 2 : this.from + 3);
+			cursor + (inside_loose ? 0 : 1) <= ((include_metadata && this.metadata) ? this.metadata + 2 : this.from + 3);
 	}
 
 	touches_separator(cursor: number, left_loose = false, right_loose = false) {

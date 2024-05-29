@@ -1,5 +1,5 @@
 import {EditorView, GutterMarker} from '@codemirror/view';
-import {type EditorState, Line, Range, RangeSet, StateField} from '@codemirror/state';
+import {type EditorState, Range, RangeSet, StateField} from '@codemirror/state';
 
 import {Component, editorEditorField, editorInfoField, MarkdownRenderer, Menu, Notice} from 'obsidian';
 

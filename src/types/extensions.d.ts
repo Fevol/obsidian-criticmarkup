@@ -3,7 +3,7 @@ import {Plugin} from "obsidian";
 import CommentatorPlugin from "../main";
 
 declare module '@flatten-js/interval-tree' {
-    export default interface IntervalTree<T = any> {
+    export default interface IntervalTree<T = unknown> {
         nil_node: Node<T>;
 
         recalc_max(node: Node<T>): void;
@@ -15,7 +15,7 @@ declare module '@flatten-js/interval-tree' {
         tree_search_nearest_forward(node: Node<T>, search_node: Node): Node<T> | null;
     }
 
-    export interface Node<T = any> {
+    export interface Node<T = unknown> {
         max: Interval;
 
         not_intersect_left_subtree(search_node: Node): boolean;

@@ -130,7 +130,8 @@ export async function postProcess(el: HTMLElement, ctx: MarkdownPostProcessorCon
 	// No range syntax found in element, and no context was provided to determine whether the element is even part of a noe
 	if (!element_ranges.length && !ranges_in_range?.length) return;
 
-	let previous_start = 0, new_element: (HTMLElement | string)[] = []
+	let previous_start = 0;
+	const new_element: (HTMLElement | string)[] = []
 
 	// Case where range was opened in earlier block, and closed in current block
 	// Parser on element contents will not register the end bracket as a valid range, so we need to manually construct the range

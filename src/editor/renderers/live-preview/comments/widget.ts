@@ -117,8 +117,8 @@ export class CommentIconWidget extends WidgetType {
 				const menu = new Menu();
 				menu.addItem((item) => {
 					item.setTitle('Focus comment')
-					    .setIcon('eye')
-					    .onClick(this.focusComment.bind(this, view));
+						.setIcon('eye')
+						.onClick(this.focusComment.bind(this, view));
 				});
 				menu.addItem((item) => {
 					item.setTitle("Add comment")

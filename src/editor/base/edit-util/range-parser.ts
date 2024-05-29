@@ -60,7 +60,7 @@ export const rangeParser: StateField<{tree: Tree, fragments: readonly TreeFragme
 		// regenerate-ranges: 0.20 - 0.55 ms
 		const inserted_set = new Map<number, CriticMarkupRange>();
 		const offsets: [number, number][] = [];
-		let dangling_comments = new Map<number, CommentRange>();
+		const dangling_comments = new Map<number, CommentRange>();
 		const deleted_ranges: Set<CriticMarkupRange> = new Set();
 		for (const changed_range of changed_ranges) {
 			value.ranges.tree

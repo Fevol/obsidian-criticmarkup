@@ -5,6 +5,13 @@ import { ViewPage } from "./pages/view";
 
 export const CRITICMARKUP_VIEW = "criticmarkup-view";
 
+interface CriticMarkupViewState {
+	range_type_filter: number;
+	location_filter: number;
+	content_filter: number;
+	author_filter: number;
+	date_filter: string;
+}
 
 export class CriticMarkupView extends ItemView {
 	view: SvelteComponent | null = null;
@@ -35,21 +42,21 @@ export class CriticMarkupView extends ItemView {
 		return "message-square";
 	}
 
-	getState(): any {
-		const state = super.getState();
+	getState() {
+		const state = super.getState() as object & CriticMarkupViewState;
 
 		if (this.view) {
 			state.range_type_filter = this.view.$$.ctx[<number>this.view.$$.props.range_type_filter];
 			state.location_filter = this.view.$$.ctx[<number>this.view.$$.props.location_filter];
-			state.content_filter = this.view.$$.ctx[<string>this.view.$$.props.content_filter];
-			state.author_filter = this.view.$$.ctx[<string>this.view.$$.props.author_filter];
+			state.content_filter = this.view.$$.ctx[<number>this.view.$$.props.content_filter];
+			state.author_filter = this.view.$$.ctx[<number>this.view.$$.props.author_filter];
 			state.date_filter = this.view.$$.ctx[<string>this.view.$$.props.date_filter];
 		}
 
 		return state;
 	}
 
-	async setState(state: any, result: ViewStateResult): Promise<void> {
+	async setState(state: Partial<CriticMarkupViewState>, result: ViewStateResult): Promise<void> {
 		if (!this.view) {
 			this.view = new ViewPage({
 				target: this.containerEl,

@@ -1,5 +1,5 @@
 <script lang='ts'>
-    import {SettingItem, Dropdown, Slider, Toggle, Input} from '../../../components';
+    import {SettingItem, Toggle, Input} from '../../../components';
 
     import type CommentatorPlugin from '../../../../main';
 
