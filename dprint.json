@@ -1,0 +1,57 @@
+{
+	"typescript": {
+		"lineWidth": 120,
+		"indentWidth": 4,
+		"useTabs": true,
+		"semiColons": "prefer",
+		"quoteStyle": "alwaysDouble",
+		"quoteProps": "preserve",
+		"newLineKind": "crlf",
+		"useBraces": "preferNone",
+		"bracePosition": "sameLineUnlessHanging",
+		"singleBodyPosition": "maintain",
+		"nextControlFlowPosition": "sameLine",
+		"trailingCommas": "onlyMultiLine",
+		"operatorPosition": "sameLine",
+		"preferHanging": false,
+		"preferSingleLine": false,
+		"arrowFunction.useParentheses": "maintain",
+		"binaryExpression.linePerExpression": false,
+		"jsx.bracketPosition": "nextLine",
+		"jsx.forceNewLinesSurroundingContent": false,
+		"jsx.multiLineParens": "prefer",
+		"memberExpression.linePerExpression": false,
+		"typeLiteral.separatorKind": "semiColon",
+		"enumDeclaration.memberSpacing": "maintain",
+		"spaceAround": false,
+		"spaceSurroundingProperties": true,
+		"commentLine.forceSpaceAfterSlashes": true,
+		"constructor.spaceBeforeParentheses": false,
+		"constructorType.spaceAfterNewKeyword": false,
+		"constructSignature.spaceAfterNewKeyword": false,
+		"exportDeclaration.spaceSurroundingNamedExports": true,
+		"importDeclaration.spaceSurroundingNamedImports": true,
+		"typeAssertion.spaceBeforeExpression": true,
+		"module.sortImportDeclarations": "caseInsensitive",
+		"module.sortExportDeclarations": "caseInsensitive",
+		"exportDeclaration.sortNamedExports": "caseInsensitive",
+		"importDeclaration.sortNamedImports": "caseInsensitive"
+	},
+	"json": {
+		"indentWidth": 4,
+		"useTabs": true,
+		"preferSingleLine": false,
+		"trailingCommas": "never"
+	},
+	"excludes": [
+		"**/node_modules",
+		"**/*.js",
+		"**/*.wasm"
+	],
+	"plugins": [
+		"https://plugins.dprint.dev/typescript-0.91.0.wasm",
+		"https://plugins.dprint.dev/json-0.19.3.wasm",
+		"https://plugins.dprint.dev/markdown-0.17.1.wasm",
+		"https://plugins.dprint.dev/prettier-0.40.0.json@68c668863ec834d4be0f6f5ccaab415df75336a992aceb7eeeb14fdf096a9e9c"
+	]
+}
