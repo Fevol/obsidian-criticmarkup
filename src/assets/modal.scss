@@ -1,4 +1,3 @@
-
 .criticmarkup-daterange-picker-modal {
   width: auto;
 }
@@ -35,7 +34,9 @@
   --sdt-clear-hover-bg: var(--background-modifier-error);
 }
 
-.criticmarkup-daterange-picker.criticmarkup-daterange-picker.criticmarkup-daterange-picker .sdt-widget + .sdt-widget:before {
+.criticmarkup-daterange-picker.criticmarkup-daterange-picker.criticmarkup-daterange-picker
+  .sdt-widget
+  + .sdt-widget:before {
   background-color: var(--background-modifier-border);
 }
 

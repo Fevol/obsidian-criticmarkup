@@ -1,6 +1,6 @@
-import { Text } from '@codemirror/state';
-import { type CriticMarkupRange } from './base_range';
-import IntervalTree from '@flatten-js/interval-tree'
+import { Text } from "@codemirror/state";
+import IntervalTree from "@flatten-js/interval-tree";
+import { type CriticMarkupRange } from "./base_range";
 
 export class CriticMarkupRanges {
 	ranges: CriticMarkupRange[];
@@ -41,11 +41,16 @@ export class CriticMarkupRanges {
 	 * @param include_edge - Whether to include the edges of the range
 	 */
 	range_adjacent_to_cursor(cursor: number, left: boolean, loose = false, include_edge = false) {
-		const ranges = (left ? this.ranges.slice().reverse() : this.ranges);
-		if (include_edge)
-			return ranges.find(range => left ? ((loose ? range.from : range.to) < cursor) : (cursor < (loose ? range.to : range.from)));
-		else
-			return ranges.find(range => left ? ((loose ? range.from : range.to) <= cursor) : (cursor <= (loose ? range.to : range.from)));
+		const ranges = left ? this.ranges.slice().reverse() : this.ranges;
+		if (include_edge) {
+			return ranges.find(range =>
+				left ? ((loose ? range.from : range.to) < cursor) : (cursor < (loose ? range.to : range.from))
+			);
+		} else {
+			return ranges.find(range =>
+				left ? ((loose ? range.from : range.to) <= cursor) : (cursor <= (loose ? range.to : range.from))
+			);
+		}
 	}
 
 	adjacent_range(range: CriticMarkupRange, left: boolean, directly_adjacent = false) {
@@ -78,8 +83,12 @@ export class CriticMarkupRanges {
 	// 	return ranges;
 	// }
 
-	unwrap_in_range(doc: Text, from = 0, to = doc.length, ranges: CriticMarkupRange[] | null = null):
-		{output: string, from: number, to: number, front_range?: CriticMarkupRange, back_range?: CriticMarkupRange} {
+	unwrap_in_range(
+		doc: Text,
+		from = 0,
+		to = doc.length,
+		ranges: CriticMarkupRange[] | null = null,
+	): { output: string; from: number; to: number; front_range?: CriticMarkupRange; back_range?: CriticMarkupRange } {
 		let front_range: undefined | CriticMarkupRange, back_range: undefined | CriticMarkupRange;
 
 		if (!ranges)
@@ -88,7 +97,7 @@ export class CriticMarkupRanges {
 		if (ranges.length === 0)
 			return { output: doc.sliceString(from, to), from, to };
 
-		let output = '';
+		let output = "";
 		if (from < ranges[0].from)
 			output += doc.sliceString(from, ranges[0].from);
 		else
@@ -117,7 +126,7 @@ export class CriticMarkupRanges {
 			from: new_from,
 			to: new_to,
 			front_range,
-			back_range
+			back_range,
 		};
 	}
 }

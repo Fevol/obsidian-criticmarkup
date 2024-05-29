@@ -9,44 +9,67 @@
 @import "criticicmarkup-gutter";
 
 .theme-light {
-	--addition-color: var(--color-green);
-	--addition-color-alt: color-mix(in srgb-linear,var(--addition-color),black 15%);
-	--deletion-color: var(--color-red);
-	--deletion-color-alt: color-mix(in srgb-linear,var(--deletion-color),black 15%);
-	--substitution-color: var(--color-orange);
-	--substitution-color-alt: color-mix(in srgb-linear,var(--substitution-color),black 15%);
-	--comment-color: #bacff4;
-	--comment-border-color: #679af4;
-	--comment-inverse-color: #445f8f;
-	--highlight-color: var(--text-highlight-bg);
+  --addition-color: var(--color-green);
+  --addition-color-alt: color-mix(
+    in srgb-linear,
+    var(--addition-color),
+    black 15%
+  );
+  --deletion-color: var(--color-red);
+  --deletion-color-alt: color-mix(
+    in srgb-linear,
+    var(--deletion-color),
+    black 15%
+  );
+  --substitution-color: var(--color-orange);
+  --substitution-color-alt: color-mix(
+    in srgb-linear,
+    var(--substitution-color),
+    black 15%
+  );
+  --comment-color: #bacff4;
+  --comment-border-color: #679af4;
+  --comment-inverse-color: #445f8f;
+  --highlight-color: var(--text-highlight-bg);
 }
 
 .theme-dark {
-	--addition-color: var(--color-green);
-	--addition-color-alt: color-mix(in srgb-linear,var(--addition-color),white 10%);
-	--deletion-color: var(--color-red);
-	--deletion-color-alt: color-mix(in srgb-linear,var(--deletion-color),white 10%);
-	--substitution-color: var(--color-orange);
-	--substitution-color-alt: color-mix(in srgb-linear,var(--substitution-color),white 10%);
-	--comment-color: #445f8f;
-	--comment-border-color: #679af4;
-	--comment-inverse-color: #bacff4;
-	--highlight-color: var(--text-highlight-bg);
+  --addition-color: var(--color-green);
+  --addition-color-alt: color-mix(
+    in srgb-linear,
+    var(--addition-color),
+    white 10%
+  );
+  --deletion-color: var(--color-red);
+  --deletion-color-alt: color-mix(
+    in srgb-linear,
+    var(--deletion-color),
+    white 10%
+  );
+  --substitution-color: var(--color-orange);
+  --substitution-color-alt: color-mix(
+    in srgb-linear,
+    var(--substitution-color),
+    white 10%
+  );
+  --comment-color: #445f8f;
+  --comment-border-color: #679af4;
+  --comment-inverse-color: #bacff4;
+  --highlight-color: var(--text-highlight-bg);
 }
 
-
 .my-custom-markup {
-	color: red;
-	letter-spacing: 0.9px;
-	text-decoration: underline;
-	text-decoration-thickness: 0.5px;
-	text-decoration-style: dotted;
-	font-variant: all-small-caps;
+  color: red;
+  letter-spacing: 0.9px;
+  text-decoration: underline;
+  text-decoration-thickness: 0.5px;
+  text-decoration-style: dotted;
+  font-variant: all-small-caps;
 }
 
 .criticmarkup-fail > button {
-	background-color: var(--color-red);
-	color: var(--text-on-accent);
+  background-color: var(--color-red);
+  color: var(--text-on-accent);
 }
 
 /**
@@ -54,10 +77,10 @@ Determines what to do when gutter contains no contents
 DEFAULT: hidden
  */
 .cm-gutters.gutter-hidden {
-	display: none;
+  display: none;
 }
 
 .criticmarkup-debug-comment-line {
-	width: 100%;
-	border-bottom: 1px dashed red;
+  width: 100%;
+  border-bottom: 1px dashed red;
 }

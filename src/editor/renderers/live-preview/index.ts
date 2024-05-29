@@ -1,4 +1,4 @@
-import { commentRenderer, CommentIconWidget } from './comments';
-import { markupRenderer } from './markup';
+import { CommentIconWidget, commentRenderer } from "./comments";
+import { markupRenderer } from "./markup";
 
-export { commentRenderer, markupRenderer, CommentIconWidget };
+export { CommentIconWidget, commentRenderer, markupRenderer };

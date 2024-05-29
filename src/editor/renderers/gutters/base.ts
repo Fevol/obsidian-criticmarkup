@@ -7,22 +7,22 @@
  *   4. Extracted activeGutters and unfixGutters Facets so multiple independent gutters can be defined
  */
 
+import { type Extension, Facet, type RangeCursor, RangeSet } from "@codemirror/state";
 import {
 	BlockInfo,
 	BlockType,
 	Direction,
-	EditorView, gutterLineClass,
+	EditorView,
+	gutterLineClass,
 	GutterMarker,
 	ViewPlugin,
 	ViewUpdate,
 	WidgetType,
-} from '@codemirror/view';
-import { type Extension, Facet, type RangeCursor, RangeSet } from '@codemirror/state';
-
+} from "@codemirror/view";
 
 // Set EditorView class to have scaleX and scaleY properties
 // TODO: REMINDER, uncomment scaleX/scaleY factors when Obsidian updates to upstream CodeMirror
-declare module '@codemirror/view' {
+declare module "@codemirror/view" {
 	interface EditorView {
 		scaleX: number;
 		scaleY: number;
@@ -31,13 +31,11 @@ declare module '@codemirror/view' {
 
 // Declare that BlockInfo has WidgetType
 // TODO: Uncomment widget code when Obsidian updates to upstream CodeMirror
-declare module '@codemirror/view' {
+declare module "@codemirror/view" {
 	interface WidgetType {
 		lang?: string;
 	}
 }
-
-
 
 export function sameMarkers(a: readonly GutterMarker[], b: readonly GutterMarker[]): boolean {
 	if (a.length != b.length) return false;
@@ -46,37 +44,37 @@ export function sameMarkers(a: readonly GutterMarker[], b: readonly GutterMarker
 	return true;
 }
 
-export type Handlers = { [event: string]: (view: EditorView, line: BlockInfo, event: Event) => boolean }
+export type Handlers = { [event: string]: (view: EditorView, line: BlockInfo, event: Event) => boolean };
 
 export interface GutterConfig {
 	/** An extra CSS class to be added to the wrapper (`cm-gutter`) element. */
-	class?: string
+	class?: string;
 	/** Controls whether empty gutter elements should be rendered.
 	 Defaults to false. */
-	renderEmptyElements?: boolean
+	renderEmptyElements?: boolean;
 	/** Retrieve a set of markers to use in this gutter. */
-	markers?: (view: EditorView) => (RangeSet<GutterMarker> | readonly RangeSet<GutterMarker>[])
+	markers?: (view: EditorView) => RangeSet<GutterMarker> | readonly RangeSet<GutterMarker>[];
 	/** Can be used to optionally add a single marker to every line. */
-	lineMarker?: (view: EditorView, line: BlockInfo, otherMarkers: readonly GutterMarker[]) => GutterMarker | null
+	lineMarker?: (view: EditorView, line: BlockInfo, otherMarkers: readonly GutterMarker[]) => GutterMarker | null;
 	/** Associate markers with block widgets in the document. */
-	widgetMarker?: (view: EditorView, widget: WidgetType, block: BlockInfo) => GutterMarker | null
+	widgetMarker?: (view: EditorView, widget: WidgetType, block: BlockInfo) => GutterMarker | null;
 	/** If line or widget markers depend on additional state, and should
 	 * be updated when that changes, pass a predicate here that checks
 	 * whether a given view update might change the line markers. */
-	lineMarkerChange?: null | ((update: ViewUpdate) => boolean)
+	lineMarkerChange?: null | ((update: ViewUpdate) => boolean);
 	/** Add a hidden spacer element that gives the gutter its base width. */
-	initialSpacer?: null | ((view: EditorView) => GutterMarker)
+	initialSpacer?: null | ((view: EditorView) => GutterMarker);
 	/** Update the spacer element when the view is updated. */
-	updateSpacer?: null | ((spacer: GutterMarker, update: ViewUpdate) => GutterMarker)
+	updateSpacer?: null | ((spacer: GutterMarker, update: ViewUpdate) => GutterMarker);
 	/** Supply event handlers for DOM events on this gutter. */
-	domEventHandlers?: Handlers,
+	domEventHandlers?: Handlers;
 }
 
 export const defaults = {
-	class: '',
+	class: "",
 	width: 300,
 	renderEmptyElements: false,
-	elementStyle: '',
+	elementStyle: "",
 	markers: () => RangeSet.empty,
 	lineMarker: () => null,
 	widgetMarker: () => null,
@@ -96,7 +94,6 @@ export const defaults = {
 // 		gutterLineClass.of(RangeSet.empty),
 // 	];
 // }
-
 
 /**
  * Advance cursor to position
@@ -119,7 +116,6 @@ export function asArray<T>(val: T | readonly T[]) {
 	return (Array.isArray(val) ? val : [val]) as readonly T[];
 }
 
-
 export class GutterElement {
 	dom: HTMLElement;
 	height: number = -1;
@@ -127,37 +123,38 @@ export class GutterElement {
 	markers: readonly GutterMarker[] = [];
 
 	constructor(view: EditorView, height: number, above: number, markers: readonly GutterMarker[]) {
-		this.dom = document.createElement('div');
-		this.dom.className = 'cm-gutterElement';
+		this.dom = document.createElement("div");
+		this.dom.className = "cm-gutterElement";
 		this.update(view, height, above, markers);
 	}
 
 	update(view: EditorView, height: number, above: number, markers: readonly GutterMarker[]) {
 		if (this.height != height) {
 			this.height = height;
-			this.dom.style.height = height + 'px';
+			this.dom.style.height = height + "px";
 		}
 		if (this.above != above)
-			this.dom.style.marginTop = (this.above = above) ? above + 'px' : '';
+			this.dom.style.marginTop = (this.above = above) ? above + "px" : "";
 		if (!sameMarkers(this.markers, markers)) this.setMarkers(view, markers);
 	}
 
 	setMarkers(view: EditorView | null, markers: readonly GutterMarker[]) {
-		let cls = 'cm-gutterElement', domPos = this.dom.firstChild;
-		for (let iNew = 0, iOld = 0; ;) {
+		let cls = "cm-gutterElement", domPos = this.dom.firstChild;
+		for (let iNew = 0, iOld = 0;;) {
 			let skipTo = iOld;
 			const marker = iNew < markers.length ? markers[iNew++] : null;
 			let matched = false;
 			if (marker) {
 				const c = marker.elementClass;
-				if (c) cls += ' ' + c;
-				for (let i = iOld; i < this.markers.length; i++)
+				if (c) cls += " " + c;
+				for (let i = iOld; i < this.markers.length; i++) {
 					// @ts-ignore (compare does exist on marker)
 					if (this.markers[i].compare(marker)) {
 						skipTo = i;
 						matched = true;
 						break;
 					}
+				}
 			} else {
 				skipTo = this.markers.length;
 			}
@@ -190,7 +187,7 @@ export class UpdateContext {
 	cursor: RangeCursor<GutterMarker>;
 	i = 0;
 
-	constructor(readonly gutter: SingleGutterView, viewport: { from: number, to: number }, public height: number) {
+	constructor(readonly gutter: SingleGutterView, viewport: { from: number; to: number }, public height: number) {
 		this.cursor = RangeSet.iter(gutter.markers, viewport.from);
 	}
 
@@ -202,7 +199,7 @@ export class UpdateContext {
 	 */
 	addElement(view: EditorView, block: BlockInfo, markers: readonly GutterMarker[]) {
 		const { gutter } = this;
-		const above = (block.top - this.height) /** / view.scaleY */;
+		const above = block.top - this.height /** / view.scaleY */;
 		const height = block.height /** / view.scaleY */;
 		if (this.i == gutter.elements.length) {
 			const newElt = new GutterElement(view, height, above, markers);
@@ -270,8 +267,8 @@ export class SingleGutterView {
 
 	constructor(public view: EditorView, public config: Required<GutterConfig>) {
 		// Initialised dom for the gutter
-		this.dom = document.createElement('div');
-		this.dom.className = 'cm-gutter' + (this.config.class ? ' ' + this.config.class : '');
+		this.dom = document.createElement("div");
+		this.dom.className = "cm-gutter" + (this.config.class ? " " + this.config.class : "");
 		for (const prop in config.domEventHandlers) {
 			this.dom.addEventListener(prop, (event: Event) => {
 				let target = event.target as HTMLElement, y;
@@ -292,7 +289,7 @@ export class SingleGutterView {
 		if (config.initialSpacer) {
 			this.spacer = new GutterElement(view, 0, 0, [config.initialSpacer(view)]);
 			this.dom.appendChild(this.spacer.dom);
-			this.spacer.dom.style.cssText += 'visibility: hidden; pointer-events: none';
+			this.spacer.dom.style.cssText += "visibility: hidden; pointer-events: none";
 		}
 	}
 
@@ -317,14 +314,18 @@ export class GutterView {
 	gutters: SingleGutterView[];
 	dom: HTMLElement;
 	fixed: boolean;
-	prevViewport: { from: number, to: number };
+	prevViewport: { from: number; to: number };
 
-	constructor(readonly view: EditorView, public unfixGutters: Facet<boolean, boolean>, public activeGutters: Facet<Required<GutterConfig>>) {
+	constructor(
+		readonly view: EditorView,
+		public unfixGutters: Facet<boolean, boolean>,
+		public activeGutters: Facet<Required<GutterConfig>>,
+	) {
 		this.prevViewport = view.viewport;
-		this.dom = document.createElement('div');
-		this.dom.className = 'cm-gutters';
-		this.dom.setAttribute('aria-hidden', 'true');
-		this.dom.style.minHeight = (this.view.contentHeight /** / this.view.scaleY*/) + 'px';
+		this.dom = document.createElement("div");
+		this.dom.className = "cm-gutters";
+		this.dom.setAttribute("aria-hidden", "true");
+		this.dom.style.minHeight = (this.view.contentHeight /** / this.view.scaleY*/) + "px";
 		this.gutters = this.createGutters(view);
 		for (const gutter of this.gutters) this.dom.appendChild(gutter.dom);
 		this.fixed = !view.state.facet(this.unfixGutters);
@@ -332,7 +333,7 @@ export class GutterView {
 			// FIXME IE11 fallback, which doesn't support position: sticky,
 			// 	by using position: relative + event handlers that realign the
 			// 	gutter (or just force fixed=false on IE11?)
-			this.dom.style.position = 'sticky';
+			this.dom.style.position = "sticky";
 		}
 		this.syncGutters(false);
 		this.insertGutters(view);
@@ -360,7 +361,9 @@ export class GutterView {
 	}
 
 	getUpdateContexts() {
-		return this.gutters.map(gutter => new UpdateContext(gutter, this.view.viewport, -this.view.documentPadding.top));
+		return this.gutters.map(gutter =>
+			new UpdateContext(gutter, this.view.viewport, -this.view.documentPadding.top)
+		);
 	}
 
 	update(update: ViewUpdate) {
@@ -370,16 +373,16 @@ export class GutterView {
 			// Then need to rerender these positions
 
 			/** Detach during sync when the viewport changed significantly
-			 *	(such as during scrolling), since for large updates that is faster.
+			 * 	(such as during scrolling), since for large updates that is faster.
 			 */
 			const vpA = this.prevViewport, vpB = update.view.viewport;
 			const vpOverlap = Math.min(vpA.to, vpB.to) - Math.max(vpA.from, vpB.from);
 			this.syncGutters(vpOverlap < (vpB.to - vpB.from) * 0.8);
 		}
-		if (update.geometryChanged) this.dom.style.minHeight = this.view.contentHeight + 'px';
+		if (update.geometryChanged) this.dom.style.minHeight = this.view.contentHeight + "px";
 		if (this.view.state.facet(this.unfixGutters) != !this.fixed) {
 			this.fixed = !this.fixed;
-			this.dom.style.position = this.fixed ? 'sticky' : '';
+			this.dom.style.position = this.fixed ? "sticky" : "";
 		}
 		this.prevViewport = update.view.viewport;
 	}
@@ -393,7 +396,6 @@ export class GutterView {
 
 		// Always detach -> Always fully rerender all SingleGutterViews and 'big' gutter
 		if (detach) this.dom.remove();
-
 
 		const lineClasses = RangeSet.iter(this.view.state.facet(gutterLineClass), this.view.viewport.from);
 		let classSet: GutterMarker[] = [];
@@ -419,9 +421,7 @@ export class GutterView {
 							cx.widget(this.view, b);
 					}
 				}
-			}
-
-			// If block consists of text
+			} // If block consists of text
 			else if (line.type == BlockType.Text) {
 				advanceCursor(lineClasses, classSet, line.from);
 				for (const cx of contexts)
@@ -447,22 +447,27 @@ export class GutterView {
 		const prev = update.startState.facet(this.activeGutters);
 		const cur = update.state.facet(this.activeGutters);
 		let change = update.docChanged || update.heightChanged || update.viewportChanged ||
-			!RangeSet.eq(update.startState.facet(gutterLineClass), update.state.facet(gutterLineClass),
-				update.view.viewport.from, update.view.viewport.to);
+			!RangeSet.eq(
+				update.startState.facet(gutterLineClass),
+				update.state.facet(gutterLineClass),
+				update.view.viewport.from,
+				update.view.viewport.to,
+			);
 		if (prev == cur) {
 			// Updates all gutters, results in syncGutters if change === True
-			for (const gutter of this.gutters)
+			for (const gutter of this.gutters) {
 				if (gutter.update(update))
 					change = true;
+			}
 		} else {
 			// This code only executes on gutter being added or removed (specifically: switching source/LP mode?)
 			change = true;
 			const gutters = [];
 			for (const conf of cur) {
 				const known = prev.indexOf(conf);
-				if (known < 0) {
+				if (known < 0)
 					gutters.push(new SingleGutterView(this.view, conf));
-				} else {
+				else {
 					this.gutters[known].update(update);
 					gutters.push(this.gutters[known]);
 				}
@@ -487,16 +492,16 @@ export class GutterView {
 
 export function createGutterViewPlugin(cls: { new(view: EditorView): GutterView }) {
 	return ViewPlugin.fromClass(cls, {
-		provide: plugin => EditorView.scrollMargins.of(view => {
-			const value = view.plugin(plugin);
-			if (!value || value.gutters.length == 0 || !value.fixed) return null;
-			return view.textDirection == Direction.LTR
-				? { left: value.dom.offsetWidth /** * view.scaleX*/ }
-				: { right: value.dom.offsetWidth /** * view.scaleX*/ };
-		}),
+		provide: plugin =>
+			EditorView.scrollMargins.of(view => {
+				const value = view.plugin(plugin);
+				if (!value || value.gutters.length == 0 || !value.fixed) return null;
+				return view.textDirection == Direction.LTR ?
+					{ left: value.dom.offsetWidth /** * view.scaleX*/ } :
+					{ right: value.dom.offsetWidth /** * view.scaleX*/ };
+			}),
 	});
 }
-
 
 /** The gutter-drawing plugin is automatically enabled when you add a
  gutter, but you can use this function to explicitly configure it.
@@ -507,7 +512,11 @@ export function createGutterViewPlugin(cls: { new(view: EditorView): GutterView 
  CSS [`position:
  sticky`](https://developer.mozilla.org/en-US/docs/Web/CSS/position#sticky)).
  */
-export function createGutterExtension(viewplugin: ViewPlugin<GutterView>, config?: { fixed?: boolean }, unfixGutters?: Facet<boolean, boolean>) {
+export function createGutterExtension(
+	viewplugin: ViewPlugin<GutterView>,
+	config?: { fixed?: boolean },
+	unfixGutters?: Facet<boolean, boolean>,
+) {
 	const result: Extension[] = [
 		viewplugin,
 	];
@@ -518,6 +527,11 @@ export function createGutterExtension(viewplugin: ViewPlugin<GutterView>, config
 /** Define an editor gutter. The order in which the gutters appear is
  determined by their extension priority.
  */
-export function createGutter(viewplugin: ViewPlugin<GutterView>, config: GutterConfig, activeGutters: Facet<Required<GutterConfig>>, unfixGutters: Facet<boolean, boolean>) {
+export function createGutter(
+	viewplugin: ViewPlugin<GutterView>,
+	config: GutterConfig,
+	activeGutters: Facet<Required<GutterConfig>>,
+	unfixGutters: Facet<boolean, boolean>,
+) {
 	return [createGutterExtension(viewplugin, {}, unfixGutters), activeGutters.of({ ...defaults, ...config })];
 }

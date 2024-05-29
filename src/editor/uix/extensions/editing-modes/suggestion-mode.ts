@@ -1,5 +1,5 @@
-import {EditorSelection, EditorState, type Extension, SelectionRange, Transaction} from '@codemirror/state';
-import {type PluginSettings} from '../../../../types';
+import { EditorSelection, EditorState, type Extension, SelectionRange, Transaction } from "@codemirror/state";
+import { type PluginSettings } from "../../../../types";
 
 import {
 	cursor_move_range,
@@ -9,19 +9,20 @@ import {
 	getUserEvents,
 	mark_ranges,
 	MarkAction,
-	MarkType, range_metadata_compatible,
-	rangeParser, SubstitutionRange,
-	SuggestionType
-} from '../../../base';
+	MarkType,
+	range_metadata_compatible,
+	rangeParser,
+	SubstitutionRange,
+	SuggestionType,
+} from "../../../base";
 
-import {latest_event} from "../keypress-catcher";
-import {cursor_transaction_pass_syntax} from "./cursor_movement";
-import {COMMENTATOR_GLOBAL} from "../../../../global";
-
+import { COMMENTATOR_GLOBAL } from "../../../../global";
+import { latest_event } from "../keypress-catcher";
+import { cursor_transaction_pass_syntax } from "./cursor_movement";
 
 const vim_action_resolver = {
-	'moveByCharacters': {
-		'group': false,
+	"moveByCharacters": {
+		"group": false,
 	},
 };
 
@@ -82,14 +83,12 @@ const vim_action_resolver = {
 // 	{ keys: 'O', motion: 'moveToOtherHighlightedEnd',
 // 	'moveToLineOrEdgeOfDocument':
 
-
 function isUserEvent(event: string, events: string[]): boolean {
 	return events.some(e => e.startsWith(event));
 }
 
-
-export const suggestionMode = (settings: PluginSettings): Extension => EditorState.transactionFilter.of(tr => applySuggestion(tr, settings));
-
+export const suggestionMode = (settings: PluginSettings): Extension =>
+	EditorState.transactionFilter.of(tr => applySuggestion(tr, settings));
 
 // TODO: Functionality: Double click mouse should also floodfill (problem: no specific userevent attached)
 function applySuggestion(tr: Transaction, settings: PluginSettings): Transaction {
@@ -98,18 +97,29 @@ function applySuggestion(tr: Transaction, settings: PluginSettings): Transaction
 
 	// TODO: Resolve used vim cursor movements since they do not receive user event annotations
 	if (!tr.docChanged && tr.selection && vim_mode) {
-		if (cursorMoved(tr))
-			userEvents.push(tr.startState.selection.ranges[0].from < tr.selection!.ranges[0].from ? 'select.forward' : 'select.backward');
-		if (vim_action_resolver[COMMENTATOR_GLOBAL.app.workspace.activeEditor?.editor?.cm.cm?.state.vim.lastMotion?.name as keyof typeof vim_action_resolver]?.group)
-			userEvents.push('select.group');
+		if (cursorMoved(tr)) {
+			userEvents.push(
+				tr.startState.selection.ranges[0].from < tr.selection!.ranges[0].from ?
+					"select.forward" :
+					"select.backward",
+			);
+		}
+		if (
+			vim_action_resolver[
+				COMMENTATOR_GLOBAL.app.workspace.activeEditor?.editor?.cm.cm?.state.vim.lastMotion
+					?.name as keyof typeof vim_action_resolver
+			]?.group
+		) {
+			userEvents.push("select.group");
+		}
 	}
-
 
 	// CASE 1: Handle edit operations
 	if (tr.docChanged) {
 		const changed_ranges = getEditorRanges(tr.startState.selection, tr.changes, tr.startState.doc);
 
-		const is_recognized_edit_operation = tr.isUserEvent('input') || tr.isUserEvent('paste') || tr.isUserEvent('delete');
+		const is_recognized_edit_operation = tr.isUserEvent("input") || tr.isUserEvent("paste") ||
+			tr.isUserEvent("delete");
 
 		// ISSUE: Pasting an image yields no userEvent that could be used to determine the type, so the
 		//      operation type needs to be determined via the changed ranges. However, a change of the state
@@ -124,7 +134,6 @@ function applySuggestion(tr: Transaction, settings: PluginSettings): Transaction
 		const changes = [];
 		const selections: SelectionRange[] = [];
 
-
 		const metadata = generate_metadata();
 
 		const backwards_delete = (latest_event as KeyboardEvent)?.key === "Backspace";
@@ -133,39 +142,67 @@ function applySuggestion(tr: Transaction, settings: PluginSettings): Transaction
 		// TODO: Consider each editor_change separately to avoid issues where you try to re-insert into a now updated range
 		//        (Or: update ranges with editor_change to reflect the new state)
 		for (let editor_change of changed_ranges) {
-			let type: MarkType = editor_change.deleted ? (editor_change.inserted ? SuggestionType.SUBSTITUTION : SuggestionType.DELETION) : SuggestionType.ADDITION;
+			let type: MarkType = editor_change.deleted ?
+				(editor_change.inserted ? SuggestionType.SUBSTITUTION : SuggestionType.DELETION) :
+				SuggestionType.ADDITION;
 			if (type === SuggestionType.DELETION) {
-				editor_change = cursor_move_range(editor_change, ranges, backwards_delete, group_delete, tr.startState,
-					settings.suggestion_mode_operations.cursor_movement, settings.suggestion_mode_operations.bracket_movement);
+				editor_change = cursor_move_range(
+					editor_change,
+					ranges,
+					backwards_delete,
+					group_delete,
+					tr.startState,
+					settings.suggestion_mode_operations.cursor_movement,
+					settings.suggestion_mode_operations.bracket_movement,
+				);
 
 				const ranges_in_range = ranges.ranges_in_range(editor_change.from, editor_change.to);
 				if (ranges_in_range.length === 1) {
 					const range = ranges_in_range[0];
-					if (range.encloses_range(editor_change.from, editor_change.to) && range_metadata_compatible(range, metadata) &&
+					if (
+						range.encloses_range(editor_change.from, editor_change.to) &&
+						range_metadata_compatible(range, metadata) &&
 						(range.type === SuggestionType.ADDITION ||
-						(range.type === SuggestionType.SUBSTITUTION && (range as SubstitutionRange).contains_part(editor_change.from, editor_change.to, false)) === false)
+							(range.type === SuggestionType.SUBSTITUTION &&
+									(range as SubstitutionRange).contains_part(
+										editor_change.from,
+										editor_change.to,
+										false,
+									)) === false)
 					) {
 						type = MarkAction.REGULAR;
 					}
 				}
-
-
 			}
 
-			const edits = mark_ranges(ranges, tr.startState.doc, editor_change.from, editor_change.to, editor_change.inserted, type, metadata);
+			const edits = mark_ranges(
+				ranges,
+				tr.startState.doc,
+				editor_change.from,
+				editor_change.to,
+				editor_change.inserted,
+				type,
+				metadata,
+			);
 			const added_offset = edits.slice(0, -1).reduce((acc, op) => acc - (op.to - op.from) + op.insert.length, 0);
 			if (edits) {
 				changes.push(edits);
-				selections.push(EditorSelection.cursor((backwards_delete ? edits[0].start : edits[edits.length - 1].end + added_offset) + offset));
-				offset += added_offset - (edits[edits.length - 1].to - edits[edits.length - 1].from) + edits[edits.length - 1].insert.length
+				selections.push(
+					EditorSelection.cursor(
+						(backwards_delete ? edits[0].start : edits[edits.length - 1].end + added_offset) + offset,
+					),
+				);
+				offset += added_offset - (edits[edits.length - 1].to - edits[edits.length - 1].from) +
+					edits[edits.length - 1].insert.length;
 			}
 		}
 
-		return tr.startState.update(changes.length ? { changes, selection: EditorSelection.create(selections)} : {});
-	}
-
-	// CASE 2: Handle cursor movements
-	else if (isUserEvent('select', userEvents) && cursorMoved(tr) && settings.alternative_cursor_movement /*&& tr.startState.field(editorLivePreviewField)*/) {
+		return tr.startState.update(changes.length ? { changes, selection: EditorSelection.create(selections) } : {});
+	} // CASE 2: Handle cursor movements
+	else if (
+		isUserEvent("select", userEvents) && cursorMoved(tr) &&
+		settings.alternative_cursor_movement /*&& tr.startState.field(editorLivePreviewField)*/
+	) {
 		if (latest_event instanceof KeyboardEvent) {
 			const result = cursor_transaction_pass_syntax(tr, userEvents, vim_mode, settings, latest_event);
 			if (result)

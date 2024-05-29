@@ -1,5 +1,5 @@
-export * from './tabs';
-import SettingsPage from './SettingsPage.svelte';
+export * from "./tabs";
+import SettingsPage from "./SettingsPage.svelte";
 
 export {
 	SettingsPage,

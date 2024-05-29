@@ -1,4 +1,4 @@
-import { CommentIconWidget } from './widget';
-import { commentRenderer } from './renderer';
+import { commentRenderer } from "./renderer";
+import { CommentIconWidget } from "./widget";
 
-export { CommentIconWidget, commentRenderer }
+export { CommentIconWidget, commentRenderer };

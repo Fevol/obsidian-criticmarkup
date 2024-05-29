@@ -3,102 +3,101 @@
 // ================================================
 
 .criticmarkup-settings-navigation-bar {
-	display: flex;
-	flex-direction: row;
-	overflow-x: auto;
-	overflow-y: hidden;
-	flex-wrap: wrap;
-	gap: 12px;
+  display: flex;
+  flex-direction: row;
+  overflow-x: auto;
+  overflow-y: hidden;
+  flex-wrap: wrap;
+  gap: 12px;
 
-	margin-bottom: var(--size-4-8);
-	//border-bottom: 1px solid var(--background-modifier-border);
-	background-color: var(--background-primary-alt);
-	padding: var(--size-4-3);
-	border-radius: var(--radius-l);
+  margin-bottom: var(--size-4-8);
+  //border-bottom: 1px solid var(--background-modifier-border);
+  background-color: var(--background-primary-alt);
+  padding: var(--size-4-3);
+  border-radius: var(--radius-l);
 }
 
 .criticmarkup-settings-navigation-item {
-	cursor: pointer;
-	border-radius: 100px;
+  cursor: pointer;
+  border-radius: 100px;
 
-	font-weight: bold;
-	display: flex;
-	flex-direction: row;
-	white-space: nowrap;
-	//padding: calc(var(--icon-size) / 3);
-	padding: 6px;
-	align-items: center;
-	gap: 4px;
-	outline: 0 solid transparent;
+  font-weight: bold;
+  display: flex;
+  flex-direction: row;
+  white-space: nowrap;
+  //padding: calc(var(--icon-size) / 3);
+  padding: 6px;
+  align-items: center;
+  gap: 4px;
+  outline: 0 solid transparent;
 
-	overflow: hidden;
+  overflow: hidden;
 
-	background-color: var(--background-primary);
-	border: 1px solid var(--background-modifier-border-hover);
+  background-color: var(--background-primary);
+  border: 1px solid var(--background-modifier-border-hover);
 
-	transition: color 0.25s ease-in-out,
-	padding 0.25s ease-in-out,
-	background-color 0.35s cubic-bezier(0.45, 0.25, 0.83, 0.67),
-	max-width 0.35s cubic-bezier(0.57, 0.04, 0.58, 1),
-	outline 0.15s ease-in-out;
-	//max-width: calc(var(--icon-size) * (5/3) + 2px);
-	max-width: 32px;
-	height: fit-content;
+  transition:
+    color 0.25s ease-in-out,
+    padding 0.25s ease-in-out,
+    background-color 0.35s cubic-bezier(0.45, 0.25, 0.83, 0.67),
+    max-width 0.35s cubic-bezier(0.57, 0.04, 0.58, 1),
+    outline 0.15s ease-in-out;
+  //max-width: calc(var(--icon-size) * (5/3) + 2px);
+  max-width: 32px;
+  height: fit-content;
 }
 
-
-
 .criticmarkup-settings-selected-element {
-	color: var(--color-accent);
-	transition: color 0.5s ease-in-out;
+  color: var(--color-accent);
+  transition: color 0.5s ease-in-out;
 }
 
 .criticmarkup-settings-navigation-item:hover {
-	background-color: var(--background-primary);
-	outline: 3px solid var(--text-accent);
+  background-color: var(--background-primary);
+  outline: 3px solid var(--text-accent);
 }
 
 .criticmarkup-settings-navigation-selected-item {
-	outline: unset !important;
-	background-color: var(--text-accent);
-	color: var(--text-on-accent);
-	padding: 6px 9px;
-	max-width: 200px;
-	transition: color 0.25s ease-in-out,
-	padding 0.25s ease-in-out,
-	background-color 0.35s cubic-bezier(0.45, 0.25, 0.83, 0.67),
-	max-width 0.45s cubic-bezier(0.57, 0.04, 0.58, 1) 0.2s;
+  outline: unset !important;
+  background-color: var(--text-accent);
+  color: var(--text-on-accent);
+  padding: 6px 9px;
+  max-width: 200px;
+  transition:
+    color 0.25s ease-in-out,
+    padding 0.25s ease-in-out,
+    background-color 0.35s cubic-bezier(0.45, 0.25, 0.83, 0.67),
+    max-width 0.45s cubic-bezier(0.57, 0.04, 0.58, 1) 0.2s;
 }
 
 .criticmarkup-settings-navigation-selected-item:hover {
-	background-color: var(--text-accent-hover);
+  background-color: var(--text-accent-hover);
 }
 
 .criticmarkup-settings-navigation-item-text {
-	height: 18px;
+  height: 18px;
 }
 
 .criticmarkup-settings-navigation-selected-item-text {
-	color: transparent;
-	overflow: clip;
-	flex: 0;
-	transition: flex 0.40s ease-in;
+  color: transparent;
+  overflow: clip;
+  flex: 0;
+  transition: flex 0.4s ease-in;
 }
 
-.criticmarkup-settings-navigation-selected-item .criticmarkup-settings-navigation-item-text {
-	flex: 1;
+.criticmarkup-settings-navigation-selected-item
+  .criticmarkup-settings-navigation-item-text {
+  flex: 1;
 }
-
-
 
 // ================================================
 //           Settings Content Styling
 // ================================================
 
 .criticmarkup-important-buttons {
-	position: absolute;
-	display: flex;
-	right: var(--size-4-6);
-	bottom: var(--size-4-2);
-	gap: var(--size-4-2);
+  position: absolute;
+  display: flex;
+  right: var(--size-4-6);
+  bottom: var(--size-4-2);
+  gap: var(--size-4-2);
 }

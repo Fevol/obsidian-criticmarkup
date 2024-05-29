@@ -1,5 +1,5 @@
-import { SelectionRange } from '@codemirror/state';
-import {CriticMarkupRange, METADATA_TYPE} from "../ranges";
+import { SelectionRange } from "@codemirror/state";
+import { CriticMarkupRange, METADATA_TYPE } from "../ranges";
 
 export interface EditorRange {
 	from: number;
@@ -11,9 +11,9 @@ export interface EditorRange {
 
 export interface EditorOffsetChange extends EditorRange {
 	offset: {
-		removed: number,
-		added: number,
-	}
+		removed: number;
+		added: number;
+	};
 }
 
 export interface EditorEditChange extends EditorOffsetChange {
@@ -36,5 +36,5 @@ export interface OperationReturn {
 	changes?: EditorChange[];
 	selection?: SelectionRange;
 	offset?: number;
-	debug?: { range?: CriticMarkupRange, metadata_type?: METADATA_TYPE };
+	debug?: { range?: CriticMarkupRange; metadata_type?: METADATA_TYPE };
 }

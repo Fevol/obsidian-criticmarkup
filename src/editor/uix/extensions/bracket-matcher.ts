@@ -1,7 +1,7 @@
-import { type ChangeSpec, EditorSelection, Prec } from '@codemirror/state';
-import { EditorView } from '@codemirror/view';
+import { type ChangeSpec, EditorSelection, Prec } from "@codemirror/state";
+import { EditorView } from "@codemirror/view";
 
-import { CM_Brackets } from '../../base';
+import { CM_Brackets } from "../../base";
 
 export const bracketMatcher = Prec.high(EditorView.inputHandler.of((view, from, to, text) => {
 	const before = view.state.doc.sliceString(from - 2, from) + text;
@@ -11,7 +11,7 @@ export const bracketMatcher = Prec.high(EditorView.inputHandler.of((view, from, 
 		const changes: ChangeSpec[] = [{
 			from,
 			to: to + 1,
-			insert: text + bracket.join(''),
+			insert: text + bracket.join(""),
 		}];
 
 		view.dispatch({

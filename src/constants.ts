@@ -1,12 +1,11 @@
+import { SuggestionType } from "./editor/base";
 import {
 	EditMode,
 	type PluginSettings,
 	PreviewMode,
 	RANGE_BRACKET_MOVEMENT_OPTION,
 	RANGE_CURSOR_MOVEMENT_OPTION,
-} from './types';
-import {SuggestionType} from "./editor/base";
-
+} from "./types";
 
 export const PLUGIN_VERSION = "0.2.0";
 export const DATABASE_VERSION = 4;
@@ -77,10 +76,9 @@ export const DEFAULT_SETTINGS: PluginSettings = {
 			[SuggestionType.SUBSTITUTION]: RANGE_BRACKET_MOVEMENT_OPTION.STAY_INSIDE,
 			[SuggestionType.HIGHLIGHT]: RANGE_BRACKET_MOVEMENT_OPTION.STAY_INSIDE,
 			[SuggestionType.COMMENT]: RANGE_BRACKET_MOVEMENT_OPTION.STAY_INSIDE,
-		}
-	}
+		},
+	},
 };
-
 
 export const REQUIRES_FULL_RELOAD: Set<string> = new Set([
 	"live_preview",
@@ -91,7 +89,7 @@ export const REQUIRES_FULL_RELOAD: Set<string> = new Set([
 ]);
 
 export const REQUIRES_EDITOR_RELOAD: Set<string> = new Set([
-	"enable_metadata"
+	"enable_metadata",
 ]);
 
 export const REQUIRES_DATABASE_REINDEX: Set<string> = new Set([

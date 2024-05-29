@@ -1,9 +1,8 @@
 export const moment = {
 	locale: () => {
-		return 'en';
-	}
-}
-
+		return "en";
+	},
+};
 
 /** @public */
 export interface RequestUrlParam {
@@ -35,16 +34,14 @@ export interface RequestUrlResponse {
 	text: string;
 }
 
-
 export function requestUrl(request: RequestUrlParam): Promise<RequestUrlResponse> {
 	return fetch(request.url, {
 		method: request.method,
 		headers: request.headers,
 		body: request.body,
 	}).then(async (response) => {
-		if (response.status >= 400 && request.throw) {
+		if (response.status >= 400 && request.throw)
 			throw new Error(`Request failed, ${response.status}`);
-		}
 
 		// Turn response headers into Record<string, string> object
 		const headers: Record<string, string> = {};
@@ -53,7 +50,7 @@ export function requestUrl(request: RequestUrlParam): Promise<RequestUrlResponse
 		});
 
 		const arraybuffer = await response.arrayBuffer();
-		const text = arraybuffer ? new TextDecoder().decode(arraybuffer) : '';
+		const text = arraybuffer ? new TextDecoder().decode(arraybuffer) : "";
 		const json = text ? JSON.parse(text) : {};
 
 		let response_body: RequestUrlResponse = {

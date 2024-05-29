@@ -1,11 +1,11 @@
-import {type EditorSelection, Transaction} from '@codemirror/state';
+import { type EditorSelection, Transaction } from "@codemirror/state";
 
-import { getEditorRanges } from './selection-logic';
-import { CriticMarkupRange, CriticMarkupRanges } from '../ranges';
-
+import { CriticMarkupRange, CriticMarkupRanges } from "../ranges";
+import { getEditorRanges } from "./selection-logic";
 
 function compareChanges(previous: CriticMarkupRanges, current: CriticMarkupRanges, tr: Transaction): {
-	removed: CriticMarkupRange[], added: CriticMarkupRange[]
+	removed: CriticMarkupRange[];
+	added: CriticMarkupRange[];
 } {
 	const removed: CriticMarkupRange[] = [];
 	const added: CriticMarkupRange[] = [];
@@ -29,8 +29,12 @@ function compareChanges(previous: CriticMarkupRanges, current: CriticMarkupRange
 	return { removed, added };
 }
 
-export function applyToText(text: string, fn: (range: CriticMarkupRange, text: string) => string, ranges: CriticMarkupRange[]) {
-	let output = '';
+export function applyToText(
+	text: string,
+	fn: (range: CriticMarkupRange, text: string) => string,
+	ranges: CriticMarkupRange[],
+) {
+	let output = "";
 	let last_range = 0;
 	for (const range of ranges) {
 		output += text.slice(last_range, range.from) + fn(range, text);
@@ -38,7 +42,6 @@ export function applyToText(text: string, fn: (range: CriticMarkupRange, text: s
 	}
 	return output + text.slice(last_range);
 }
-
 
 export function is_forward_movement(prev_selection: EditorSelection, next_selection: EditorSelection) {
 	return prev_selection.main.head < next_selection.main.head;

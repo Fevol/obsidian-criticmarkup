@@ -7,24 +7,28 @@
  *  4. Exposed method for moving the gutter up/down to align with the block it is attached to
  *  5. Gutter *can* be zero-width if there are no markers in the document
  */
-import {type Extension, Facet} from '@codemirror/state';
-import {BlockInfo, EditorView, GutterMarker, ViewUpdate} from '@codemirror/view';
+import { type Extension, Facet } from "@codemirror/state";
+import { BlockInfo, EditorView, GutterMarker, ViewUpdate } from "@codemirror/view";
 
-import {commentGutterMarkers, CommentMarker} from './marker';
+import { setIcon } from "obsidian";
 import {
 	commentGutterFoldButtonState,
 	commentGutterFolded,
 	commentGutterFoldedState,
 	commentGutterWidthState,
 	hideEmptyCommentGutterState,
-} from '../../../settings';
+} from "../../../settings";
 import {
-	createGutter, createGutterViewPlugin,
-	type GutterConfig, GutterElement, GutterView,
-	sameMarkers, SingleGutterView, UpdateContext,
-} from '../base';
-import {setIcon} from "obsidian";
-
+	createGutter,
+	createGutterViewPlugin,
+	type GutterConfig,
+	GutterElement,
+	GutterView,
+	sameMarkers,
+	SingleGutterView,
+	UpdateContext,
+} from "../base";
+import { commentGutterMarkers, CommentMarker } from "./marker";
 
 const unfixGutters = Facet.define<boolean, boolean>({
 	combine: values => values.some(x => x),
@@ -50,7 +54,9 @@ export class CommentGutterView extends GutterView {
 	}
 
 	getUpdateContexts(): UpdateContext[] {
-		return (this.gutters as CommentSingleGutterView[]).map(gutter => new CommentUpdateContext(gutter, this.view.viewport, -this.view.documentPadding.top));
+		return (this.gutters as CommentSingleGutterView[]).map(gutter =>
+			new CommentUpdateContext(gutter, this.view.viewport, -this.view.documentPadding.top)
+		);
 	}
 
 	updateGutters(update: ViewUpdate): boolean {
@@ -63,14 +69,14 @@ export class CommentGutterView extends GutterView {
 	 */
 	public moveGutter(marker: GutterMarker) {
 		// We only need to deal with one gutter
-		const activeGutter = this.gutters[0]
+		const activeGutter = this.gutters[0];
 
 		// Given the marker, fetch the gutterElement it belongs to
 		const elementIdx = activeGutter.elements.findIndex(element => element.markers.includes(marker));
 		if (elementIdx === -1) return;
 
 		const gutterElement = activeGutter.elements[elementIdx] as CommentGutterElement;
-		const widgetIndex  = gutterElement.markers.indexOf(marker);
+		const widgetIndex = gutterElement.markers.indexOf(marker);
 
 		/**
 		 * Where the gutter element should be located (i.e. flush with the top of the block)
@@ -84,11 +90,10 @@ export class CommentGutterView extends GutterView {
 		// Determine the offset between the current location and the desired location
 		let offset = desiredLocation - currentLocation;
 
-
 		if (Math.abs(offset) < 10) offset = 0;
 		if (offset) {
 			const element = activeGutter.elements[0];
-			element.dom.style.marginTop = parseInt(element.dom.style.marginTop || '0') + offset + 'px';
+			element.dom.style.marginTop = parseInt(element.dom.style.marginTop || "0") + offset + "px";
 		}
 	}
 
@@ -99,12 +104,15 @@ export class CommentGutterView extends GutterView {
 	public focusCommentThread(position: number, index: number = -1) {
 		// Find element with range in it
 		const element = this.gutters[0].elements.find(
-			element => (element as CommentGutterElement).block!.from <= position && position <= (element as CommentGutterElement).block!.to
-		)
+			element =>
+				(element as CommentGutterElement).block!.from <= position &&
+				position <= (element as CommentGutterElement).block!.to,
+		);
 
 		if (element) {
 			const marker = element.markers.find(marker => {
-				return position >= (marker as CommentMarker).comment_range.from && position <= (marker as CommentMarker).comment_range.full_range_back
+				return position >= (marker as CommentMarker).comment_range.from &&
+					position <= (marker as CommentMarker).comment_range.full_range_back;
 			}) as CommentMarker | undefined;
 			if (!marker) return;
 
@@ -119,8 +127,6 @@ export function comment_gutter(config: GutterConfig): Extension {
 	return createGutter(commentGutterView, config, activeGutters, unfixGutters);
 }
 
-
-
 class CommentUpdateContext extends UpdateContext {
 	/**
 	 * Describes the y-position of the bottom of the previous gutter element
@@ -129,7 +135,11 @@ class CommentUpdateContext extends UpdateContext {
 	new_gutter_elements: CommentGutterElement[] = [];
 	added_elements: CommentGutterElement[] = [];
 
-	constructor(readonly gutter: CommentSingleGutterView, viewport: { from: number, to: number }, public height: number) {
+	constructor(
+		readonly gutter: CommentSingleGutterView,
+		viewport: { from: number; to: number },
+		public height: number,
+	) {
 		super(gutter, viewport, height);
 		this.previous_element_end = height;
 	}
@@ -150,7 +160,7 @@ class CommentUpdateContext extends UpdateContext {
 		 * SOLUTION: ensures ordering of markers of same block (bit inefficient but very easy solution)
 		 * Works by sorting the markers in-place
 		 * @todo Investigate whether the markers can be sorted earlier in the pipeline
- 		 */
+		 */
 		// FIXME: Marker without comment_range issue
 		// NOTE: This may be addresses used startSide bias in gutterMarker (warning: update concern)
 		(markers as CommentMarker[]).sort((a, b) => a.comment_range.from - b.comment_range.from);
@@ -173,7 +183,6 @@ class CommentUpdateContext extends UpdateContext {
 		 * 	   please - and I mean this with all sincerity in the world - please let me know if you are able to come up with a more elegant solution
 		 */
 		const height = this.gutter.elements[this.i]?.dom.clientHeight || UNKNOWN_HEIGHT;
-
 
 		let element_idx = -1;
 		for (let i = this.i; i < this.gutter.elements.length; i++) {
@@ -225,39 +234,42 @@ class CommentSingleGutterView extends SingleGutterView {
 		super(view, config);
 
 		const folded = view.state.facet(commentGutterFoldedState);
-		if ((view.state.facet(hideEmptyCommentGutterState) && view.state.field(commentGutterMarkers).size === 0) || folded)
-			this.dom.style.width = '0';
-		else
-			this.dom.style.width = view.state.facet(commentGutterWidthState) + 'px';
+		if (
+			(view.state.facet(hideEmptyCommentGutterState) && view.state.field(commentGutterMarkers).size === 0) ||
+			folded
+		) {
+			this.dom.style.width = "0";
+		} else {
+			this.dom.style.width = view.state.facet(commentGutterWidthState) + "px";
+		}
 
 		if (view.state.facet(commentGutterFoldButtonState))
 			this.createFoldButton(folded);
 	}
 
 	createFoldButton(folded: boolean) {
-		if (this.view.dom.children[0].classList.contains('criticmarkup-gutter-button'))
+		if (this.view.dom.children[0].classList.contains("criticmarkup-gutter-button"))
 			this.fold_button = this.view.dom.children[0] as HTMLElement;
 		else {
 			this.fold_button = createEl("a", { cls: ["criticmarkup-gutter-button", "view-action"] });
 			this.view.dom.prepend(this.fold_button);
 			setIcon(this.fold_button, "arrow-right-from-line");
-			this.fold_button.setAttribute('data-tooltip-position', 'left');
+			this.fold_button.setAttribute("data-tooltip-position", "left");
 		}
 
-		this.setFoldButtonState(folded)
+		this.setFoldButtonState(folded);
 		this.fold_button.onclick = this.foldGutter.bind(this);
-		this.fold_button!.style.display = this.view.state.field(commentGutterMarkers).size ? '' : 'none';
+		this.fold_button!.style.display = this.view.state.field(commentGutterMarkers).size ? "" : "none";
 	}
-
 
 	setFoldButtonState(folded: boolean) {
 		if (folded) {
-			this.fold_button!.style.right = '20px';
-			this.fold_button!.style.rotate = '-180deg';
+			this.fold_button!.style.right = "20px";
+			this.fold_button!.style.rotate = "-180deg";
 			this.fold_button!.ariaLabel = "Unfold gutter";
 		} else {
-			this.fold_button!.style.right = this.view.state.facet(commentGutterWidthState) + 60 + 'px';
-			this.fold_button!.style.rotate = '0deg';
+			this.fold_button!.style.right = this.view.state.facet(commentGutterWidthState) + 60 + "px";
+			this.fold_button!.style.rotate = "0deg";
 			this.fold_button!.ariaLabel = "Fold gutter";
 		}
 	}
@@ -271,23 +283,23 @@ class CommentSingleGutterView extends SingleGutterView {
 		// Set the gutter height for every element to fixed such that the element doesn't break the layout
 		if (folded) {
 			this.elements.forEach(element => {
-				Array.from(element.dom.getElementsByClassName('criticmarkup-gutter-comment')).forEach(comment => {
-					comment.setAttribute('style', `max-height: ${comment.clientHeight}px; overflow: hidden;`);
+				Array.from(element.dom.getElementsByClassName("criticmarkup-gutter-comment")).forEach(comment => {
+					comment.setAttribute("style", `max-height: ${comment.clientHeight}px; overflow: hidden;`);
 				});
 			});
 		} else {
-			this.dom.addEventListener('transitionend', () => {
+			this.dom.addEventListener("transitionend", () => {
 				this.elements.forEach(element => {
-					Array.from(element.dom.getElementsByClassName('criticmarkup-gutter-comment')).forEach(comment => {
-						comment.setAttribute('style', ``);
+					Array.from(element.dom.getElementsByClassName("criticmarkup-gutter-comment")).forEach(comment => {
+						comment.setAttribute("style", ``);
 					});
 				});
 			}, { once: true });
 		}
-		this.dom.style.width = folded ? '0' : gutterStart + 'px';
+		this.dom.style.width = folded ? "0" : gutterStart + "px";
 
 		this.view.dispatch({
-			effects: commentGutterFolded.reconfigure(commentGutterFoldedState.of(folded))
+			effects: commentGutterFolded.reconfigure(commentGutterFoldedState.of(folded)),
 		});
 	}
 
@@ -300,16 +312,14 @@ class CommentSingleGutterView extends SingleGutterView {
 		const folded = update.state.facet(commentGutterFoldedState);
 		const widgets = update.state.field(commentGutterMarkers);
 
-
 		if (hideEmpty !== update.startState.facet(hideEmptyCommentGutterState)) {
-			if (hideEmpty && update.state.field(commentGutterMarkers).size === 0) {
-				this.dom.style.width = '0';
-			} else {
-				this.dom.style.width = update.state.facet(commentGutterWidthState) + 'px';
-			}
+			if (hideEmpty && update.state.field(commentGutterMarkers).size === 0)
+				this.dom.style.width = "0";
+			else
+				this.dom.style.width = update.state.facet(commentGutterWidthState) + "px";
 		} else if (width !== update.startState.facet(commentGutterWidthState)) {
 			if (!hideEmpty && !folded)
-				this.dom.style.width = width + 'px';
+				this.dom.style.width = width + "px";
 		} else if (foldButton !== update.startState.facet(commentGutterFoldButtonState)) {
 			if (foldButton && !this.fold_button)
 				this.createFoldButton(folded);
@@ -322,14 +332,14 @@ class CommentSingleGutterView extends SingleGutterView {
 		if (widgets.size !== update.startState.field(commentGutterMarkers).size) {
 			if (widgets.size === 0) {
 				if (this.fold_button)
-					this.fold_button.style.display = 'none';
+					this.fold_button.style.display = "none";
 				if (hideEmpty)
-					this.dom.style.width = '0';
+					this.dom.style.width = "0";
 			} else {
 				if (this.fold_button)
-					this.fold_button.style.display = '';
+					this.fold_button.style.display = "";
 				if (!folded)
-					this.dom.style.width = width + 'px';
+					this.dom.style.width = width + "px";
 			}
 		}
 
@@ -339,17 +349,29 @@ class CommentSingleGutterView extends SingleGutterView {
 }
 
 class CommentGutterElement extends GutterElement {
-	constructor(view: EditorView, height: number, above: number, markers: readonly GutterMarker[], public block: BlockInfo | null = null) {
+	constructor(
+		view: EditorView,
+		height: number,
+		above: number,
+		markers: readonly GutterMarker[],
+		public block: BlockInfo | null = null,
+	) {
 		super(view, height, above, markers);
 	}
 
 	/**
 	 * Comment update function that does not forcibly set the height of the gutter element
 	 */
-	update(view: EditorView, height: number, above: number, markers: readonly GutterMarker[], block: BlockInfo | null = null) {
+	update(
+		view: EditorView,
+		height: number,
+		above: number,
+		markers: readonly GutterMarker[],
+		block: BlockInfo | null = null,
+	) {
 		this.block = block;
 		if (this.above != above)
-			this.dom.style.marginTop = (this.above = above) ? above + 'px' : '';
+			this.dom.style.marginTop = (this.above = above) ? above + "px" : "";
 		if (!sameMarkers(this.markers, markers))
 			this.setMarkers(view, markers);
 	}

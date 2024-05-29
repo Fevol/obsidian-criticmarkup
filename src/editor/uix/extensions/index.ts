@@ -1,12 +1,12 @@
-import { bracketMatcher } from './bracket-matcher';
-import { rangeCorrecter } from './range-correcter';
-import { suggestionMode, editMode } from './editing-modes';
+import { bracketMatcher } from "./bracket-matcher";
+import { editMode, suggestionMode } from "./editing-modes";
 import { editorKeypressCatcher } from "./keypress-catcher";
+import { rangeCorrecter } from "./range-correcter";
 
 export {
 	bracketMatcher,
-	rangeCorrecter,
-	suggestionMode,
 	editMode,
 	editorKeypressCatcher,
-}
+	rangeCorrecter,
+	suggestionMode,
+};

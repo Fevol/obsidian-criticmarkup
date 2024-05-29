@@ -1,5 +1,5 @@
-import {SuggestionType} from '../definitions';
-import { CriticMarkupRange } from '../base_range';
+import { CriticMarkupRange } from "../base_range";
+import { SuggestionType } from "../definitions";
 
 export class CommentRange extends CriticMarkupRange {
 	reply_depth = 0;
@@ -29,7 +29,6 @@ export class CommentRange extends CriticMarkupRange {
 	}
 
 	constructor(from: number, to: number, text: string, metadata?: number) {
-		super(from, to, SuggestionType.COMMENT, 'Comment', text, metadata);
+		super(from, to, SuggestionType.COMMENT, "Comment", text, metadata);
 	}
 }
-

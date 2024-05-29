@@ -1,3 +1,3 @@
-import { markupRenderer } from './renderer';
+import { markupRenderer } from "./renderer";
 
 export { markupRenderer };

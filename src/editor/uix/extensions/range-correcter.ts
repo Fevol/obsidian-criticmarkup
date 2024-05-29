@@ -1,6 +1,6 @@
-import { type ChangeSpec, EditorSelection, EditorState } from '@codemirror/state';
+import { type ChangeSpec, EditorSelection, EditorState } from "@codemirror/state";
 
-import { rangeParser, SuggestionType } from '../../base';
+import { rangeParser, SuggestionType } from "../../base";
 
 /**
  * Removes initial whitespaces and double newlines from ranges that would otherwise result in markup being applied
@@ -12,7 +12,7 @@ export const rangeCorrecter = EditorState.transactionFilter.of(tr => {
 	//
 	// 	- videos~>audio~~}
 	// 	- audio files
-	if (tr.isUserEvent('select')) {
+	if (tr.isUserEvent("select")) {
 		const previous_selection = tr.startState.selection.main, current_selection = tr.selection!.main;
 
 		if (current_selection.anchor === current_selection.head) {
@@ -22,8 +22,10 @@ export const rangeCorrecter = EditorState.transactionFilter.of(tr => {
 			const end_range = ranges.at_cursor(current_selection.head);
 
 			// Execute only if the cursor is moved outside a particular range
-			if (start_range && start_range !== end_range &&
-				(start_range.type === SuggestionType.SUBSTITUTION || start_range.type === SuggestionType.HIGHLIGHT)) {
+			if (
+				start_range && start_range !== end_range &&
+				(start_range.type === SuggestionType.SUBSTITUTION || start_range.type === SuggestionType.HIGHLIGHT)
+			) {
 				let new_text = start_range.unwrap();
 				let changed = false;
 
@@ -38,7 +40,7 @@ export const rangeCorrecter = EditorState.transactionFilter.of(tr => {
 				const invalid_endlines = new_text.match(/\n\s*\n/g);
 				if (invalid_endlines) {
 					changed = true;
-					new_text = new_text.replace(/\n\s*\n/g, '\n');
+					new_text = new_text.replace(/\n\s*\n/g, "\n");
 					removed_characters += invalid_endlines.reduce((acc, cur) => acc + cur.length, 0);
 				}
 

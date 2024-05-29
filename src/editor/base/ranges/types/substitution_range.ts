@@ -1,10 +1,10 @@
-import {CM_All_Brackets, SuggestionType} from '../definitions';
-import { CriticMarkupRange } from '../base_range';
-import {PreviewMode} from "../../../../types";
+import { PreviewMode } from "../../../../types";
+import { CriticMarkupRange } from "../base_range";
+import { CM_All_Brackets, SuggestionType } from "../definitions";
 
 export class SubstitutionRange extends CriticMarkupRange {
 	constructor(from: number, public middle: number, to: number, text: string, metadata?: number) {
-		super(from, to, SuggestionType.SUBSTITUTION, 'Substitution', text, metadata);
+		super(from, to, SuggestionType.SUBSTITUTION, "Substitution", text, metadata);
 	}
 
 	get length() {
@@ -16,9 +16,11 @@ export class SubstitutionRange extends CriticMarkupRange {
 	}
 
 	range_type(from: number, to: number) {
-		return to <= this.middle + 2 ? SuggestionType.DELETION :
-            from >= this.middle ? SuggestionType.ADDITION :
-								SuggestionType.SUBSTITUTION;
+		return to <= this.middle + 2 ?
+			SuggestionType.DELETION :
+			from >= this.middle ?
+			SuggestionType.ADDITION :
+			SuggestionType.SUBSTITUTION;
 	}
 
 	unwrap() {
@@ -39,16 +41,18 @@ export class SubstitutionRange extends CriticMarkupRange {
 		from = Math.max(0, from);
 
 		if (to <= 0) return this.unwrap_parts();
-		if (to <= this.char_middle)
+		if (to <= this.char_middle) {
 			return [
 				this.text.slice(3, from) + this.text.slice(to, this.char_middle),
 				this.text.slice(this.char_middle + 2, -3),
 			];
-		if (from >= this.char_middle + 2)
+		}
+		if (from >= this.char_middle + 2) {
 			return [
 				this.text.slice(3, this.char_middle),
 				this.text.slice(this.char_middle + 2, from) + this.text.slice(to, -3),
 			];
+		}
 		return [
 			this.text.slice(3, from),
 			this.text.slice(to, -3),
@@ -60,19 +64,19 @@ export class SubstitutionRange extends CriticMarkupRange {
 			return [
 				this.text.slice(3, this.char_middle),
 				this.text.slice(this.char_middle + 2),
-			]
+			];
 		} else {
 			return [
 				this.text.slice(0, this.char_middle),
 				this.text.slice(this.char_middle + 2, -3),
-			]
+			];
 		}
 	}
 
 	unwrap_slice(from: number, to: number) {
 		from -= this.range_front;
 		to -= this.range_front;
-		if (to <= 0 || from === to) return '';
+		if (to <= 0 || from === to) return "";
 
 		if (from >= this.char_middle)
 			return this.text.slice(Math.max(this.char_middle + 2, from), Math.min(this.text.length - 3, to));
@@ -81,7 +85,6 @@ export class SubstitutionRange extends CriticMarkupRange {
 		return this.text.slice(Math.max(3, from), this.char_middle) +
 			this.text.slice(this.char_middle + 2, Math.min(this.text.length - 3, to));
 	}
-
 
 	accept() {
 		return this.unwrap_parts()[1];
@@ -101,11 +104,9 @@ export class SubstitutionRange extends CriticMarkupRange {
 
 	contains_part(from: number, to: number, strict = true) {
 		if (strict)
-			return to < this.middle ? true : from > this.middle + 2 ? false : undefined
+			return to < this.middle ? true : from > this.middle + 2 ? false : undefined;
 		return to <= this.middle ? true : from >= this.middle + 2 ? false : undefined;
 	}
-
-
 
 	cursor_pass_syntax(cursor: number, right: boolean, skip_metadata: boolean = false): number {
 		if (right) {
@@ -131,7 +132,6 @@ export class SubstitutionRange extends CriticMarkupRange {
 			return this.from <= start && end <= this.middle + 2;
 		else
 			return this.middle <= start && end <= this.to;
-
 	}
 
 	empty(): boolean {
@@ -142,7 +142,13 @@ export class SubstitutionRange extends CriticMarkupRange {
 		return left ? this.from + 3 === this.middle : this.middle + 2 === this.to - 3;
 	}
 
-	postprocess(unwrap: boolean = true, previewMode: PreviewMode = PreviewMode.ALL, tag: keyof HTMLElementTagNameMap = "div", left: boolean | null = null, text?: string) {
+	postprocess(
+		unwrap: boolean = true,
+		previewMode: PreviewMode = PreviewMode.ALL,
+		tag: keyof HTMLElementTagNameMap = "div",
+		left: boolean | null = null,
+		text?: string,
+	) {
 		let str = text ?? this.text;
 		let parts: string[] = [str];
 		if (!text && unwrap) {
@@ -155,7 +161,6 @@ export class SubstitutionRange extends CriticMarkupRange {
 				parts = this.unwrap_parts();
 		}
 
-
 		const cls = "criticmarkup-preview";
 		if (parts.length === 1) {
 			parts[+(left as boolean)] = parts[0];
@@ -164,21 +169,17 @@ export class SubstitutionRange extends CriticMarkupRange {
 
 		str = "";
 		if (previewMode === PreviewMode.ALL) {
-			if (parts[0].length) {
+			if (parts[0].length)
 				str += `<${tag} class='${cls} criticmarkup-deletion'>${parts[0]}</${tag}>`;
-			}
-			if (parts[1].length) {
+			if (parts[1].length)
 				str += `<${tag} class='${cls} criticmarkup-addition'>${parts[1]}</${tag}>`;
-			}
 		} else {
 			if (previewMode === PreviewMode.ACCEPT) {
-				if (parts[1].length) {
+				if (parts[1].length)
 					str += `<${tag} class='${cls}'>${parts[1]}</${tag}>`;
-				}
 			} else {
-				if (parts[0].length) {
+				if (parts[0].length)
 					str += `<${tag} class='${cls}'>${parts[0]}</${tag}>`;
-				}
 			}
 		}
 		return str;

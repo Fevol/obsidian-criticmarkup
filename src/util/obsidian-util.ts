@@ -1,4 +1,4 @@
-import {apiVersion, App, Platform} from "obsidian";
+import { apiVersion, App, Platform } from "obsidian";
 
 /**
  * Helper function for opening the settings tab of the plugin
@@ -23,22 +23,22 @@ export async function getObsidianData(app: App) {
 	let framework_version;
 	if (Platform.isMobileApp) {
 		// @ts-ignore (Capacitor exists)
-		const capacitor_info = await Capacitor.nativePromise('App', 'getInfo');
+		const capacitor_info = await Capacitor.nativePromise("App", "getInfo");
 		if (capacitor_info)
 			framework_version = capacitor_info.version + " (" + capacitor_info.build + ")";
 	} else {
-		framework_version = navigator.userAgent.match(/obsidian\/([\d.]+\d+)/)?.[1] || "unknown"
+		framework_version = navigator.userAgent.match(/obsidian\/([\d.]+\d+)/)?.[1] || "unknown";
 	}
 
 	return {
-		plugin_version: app.plugins.plugins['commentator'].manifest.version,
-		platform: Platform.isMobileApp ? (Platform.isAndroidApp ? 'Android' : Platform.isIosApp ? 'iOS' : 'mobile') :
-			(Platform.isMacOS ? 'macOS' : 'Desktop'),
+		plugin_version: app.plugins.plugins["commentator"].manifest.version,
+		platform: Platform.isMobileApp ?
+			(Platform.isAndroidApp ? "Android" : Platform.isIosApp ? "iOS" : "mobile") :
+			(Platform.isMacOS ? "macOS" : "Desktop"),
 		framework_version,
 		obsidian_version: apiVersion,
-	}
+	};
 }
-
 
 /**
  * Helper function for generating a pre-filled bug report for GitHub
@@ -49,28 +49,30 @@ export async function getObsidianData(app: App) {
  * @returns {string} - URL to create a new issue on GitHub
  */
 export async function generateGithubIssueLink(app: App, title: string, data: Record<string, string> = {}) {
-	const title_string = title ? `[BUG] ${title} – ADD A TITLE HERE` : '[BUG] ADD A TITLE HERE';
+	const title_string = title ? `[BUG] ${title} – ADD A TITLE HERE` : "[BUG] ADD A TITLE HERE";
 	try {
 		const base_data = await getObsidianData(app);
-		const issue_data = {...base_data, ...data};
-		const data_string = Object.entries(issue_data).map(([key, value]) => `**${key}**: ${JSON.stringify(value)}`).join('\n');
+		const issue_data = { ...base_data, ...data };
+		const data_string = Object.entries(issue_data).map(([key, value]) => `**${key}**: ${JSON.stringify(value)}`)
+			.join("\n");
 
 		return `https://github.com/Fevol/obsidian-criticmarkup/issues/new?` +
 			new URLSearchParams({
 				title: title_string,
-				body: `# User report\n**Description:** ADD A SHORT DESCRIPTION HERE \n\n\n\n---\n# Debugger data (do not alter)\n${data_string}`,
-				labels: `bug`
+				body:
+					`# User report\n**Description:** ADD A SHORT DESCRIPTION HERE \n\n\n\n---\n# Debugger data (do not alter)\n${data_string}`,
+				labels: `bug`,
 			});
 	} catch (e) {
-		return 'https://github.com/Fevol/obsidian-criticmarkup/issues/new?' +
+		return "https://github.com/Fevol/obsidian-criticmarkup/issues/new?" +
 			new URLSearchParams({
 				title: title_string,
-				body: `# User report\n**Description:** ADD A SHORT DESCRIPTION HERE \n\n\n\n---\n# Debugger data (do not alter)\n**Error while generating debugger data:** ${e}`,
-				labels: `bug`
+				body:
+					`# User report\n**Description:** ADD A SHORT DESCRIPTION HERE \n\n\n\n---\n# Debugger data (do not alter)\n**Error while generating debugger data:** ${e}`,
+				labels: `bug`,
 			});
 	}
 }
-
 
 /**
  * Helper function to open GitHub issue link for user
@@ -81,9 +83,8 @@ export async function generateGithubIssueLink(app: App, title: string, data: Rec
  * @returns {Promise<void>}
  */
 export async function openGithubIssueLink(app: App, title: string = "", data: Record<string, string> = {}) {
-	window.open(await generateGithubIssueLink(app, title, data), '_blank');
+	window.open(await generateGithubIssueLink(app, title, data), "_blank");
 }
-
 
 /**
  * Helper function to overwrite a method of a view whose prototype is not directly accessible
@@ -103,17 +104,20 @@ export async function openGithubIssueLink(app: App, title: string = "", data: Re
  * });
  * ```
  */
-export function getViewPrototype<T>(app: App, viewType: string, getChildPrototype: (view: unknown) => unknown = (view) => view): T {
+export function getViewPrototype<T>(
+	app: App,
+	viewType: string,
+	getChildPrototype: (view: unknown) => unknown = (view) => view,
+): T {
 	const leafOfType = app.workspace.getLeavesOfType(viewType)[0];
 	let prototype: T;
-	if (leafOfType) {
+	if (leafOfType)
 		prototype = Object.getPrototypeOf(getChildPrototype(leafOfType.view)) as T;
-	} else {
-		const leaf = app.workspace.getLeaf("split")
+	else {
+		const leaf = app.workspace.getLeaf("split");
 		const constructed_leaf = app.viewRegistry.getViewCreatorByType(viewType)(leaf);
 		prototype = Object.getPrototypeOf(getChildPrototype(constructed_leaf)) as T;
 		leaf.detach();
 	}
 	return prototype;
 }
-

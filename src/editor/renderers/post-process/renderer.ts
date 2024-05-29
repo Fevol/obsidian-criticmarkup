@@ -1,31 +1,35 @@
-import {type MarkdownPostProcessorContext} from 'obsidian';
-import {decodeHTML, DecodingMode} from 'entities';
+import { decodeHTML, DecodingMode } from "entities";
+import { type MarkdownPostProcessorContext } from "obsidian";
 
-import {type PluginSettings, PreviewMode} from '../../../types';
+import { type PluginSettings, PreviewMode } from "../../../types";
 
 import {
-	CM_All_Brackets, CommentRange,
+	CM_All_Brackets,
+	CommentRange,
 	type CriticMarkupRange,
 	getRangesInText,
 	RANGE_PROTOTYPE_MAPPER,
 	SubstitutionRange,
 	SuggestionType,
-} from '../../base';
-import {renderCommentWidget} from "../live-preview/comments/widget";
+} from "../../base";
+import { renderCommentWidget } from "../live-preview/comments/widget";
 
-
 // FIXME: Extracted due to renderCommentWidget function importing obsidian package, which could not be marked as external in the inlinepluginworker
 // FIXME: Extracted due to renderCommentWidget function importing obsidian package, which could not be marked as external in the inlinepluginworker
 // FIXME: Extracted due to renderCommentWidget function importing obsidian package, which could not be marked as external in the inlinepluginworker
-export function rangePostProcess(range: CriticMarkupRange, unwrap: boolean = true, previewMode: PreviewMode = PreviewMode.ALL, tag: keyof HTMLElementTagNameMap = "div", left: boolean | null = null, text?: string) {
-	if (range.type === SuggestionType.COMMENT) {
+export function rangePostProcess(
+	range: CriticMarkupRange,
+	unwrap: boolean = true,
+	previewMode: PreviewMode = PreviewMode.ALL,
+	tag: keyof HTMLElementTagNameMap = "div",
+	left: boolean | null = null,
+	text?: string,
+) {
+	if (range.type === SuggestionType.COMMENT)
 		return renderCommentWidget(range as CommentRange, text, unwrap);
-	} else {
+	else
 		return range.postprocess(unwrap, previewMode, tag, left, text);
-	}
 }
-
-
 
 export async function postProcess(el: HTMLElement, ctx: MarkdownPostProcessorContext, settings: PluginSettings) {
 	let ranges_in_range: CriticMarkupRange[] | null = null;
@@ -60,7 +64,9 @@ export async function postProcess(el: HTMLElement, ctx: MarkdownPostProcessorCon
 					// Determines whether range belongs to the left or right part of the substitution
 					if (range.part_encloses_range(start_char, end_char, true) && (in_range = true, left = true)) {
 						/* ... */
-					} else if (range.part_encloses_range(start_char, end_char, false) && (in_range = true, left = false)) {
+					} else if (
+						range.part_encloses_range(start_char, end_char, false) && (in_range = true, left = false)
+					) {
 						/* ... */
 					}
 				} else {
@@ -70,26 +76,33 @@ export async function postProcess(el: HTMLElement, ctx: MarkdownPostProcessorCon
 				if (in_range) {
 					// TEMPORARY: Remove the ~> from the element contents
 					if (range.type === SuggestionType.SUBSTITUTION)
-						element_contents = element_contents.replace(/~>/g, '');
+						element_contents = element_contents.replace(/~>/g, "");
 
 					const left_unwrap = start_char === range.from;
 					const right_unwrap = end_char === range.to;
 
-
 					// Remove last occurrence of right bracket
 					if (right_unwrap) {
 						const last_bracket = element_contents.lastIndexOf(CM_All_Brackets[range.type].at(-1)!);
-						element_contents = element_contents.substring(0, last_bracket) + element_contents.substring(last_bracket + 3);
+						element_contents = element_contents.substring(0, last_bracket) +
+							element_contents.substring(last_bracket + 3);
 					}
 
 					if (left_unwrap) {
 						const first_bracket = element_contents.indexOf(CM_All_Brackets[range.type][0]);
-						element_contents = element_contents.substring(0, first_bracket) + element_contents.substring(first_bracket + 3);
+						element_contents = element_contents.substring(0, first_bracket) +
+							element_contents.substring(first_bracket + 3);
 					}
 
-
 					// FIXME: Unwrap is still the issue: find when to remove brackets correctly
-					const new_el = rangePostProcess(range, false, settings.default_preview_mode, 'div', left, element_contents);
+					const new_el = rangePostProcess(
+						range,
+						false,
+						settings.default_preview_mode,
+						"div",
+						left,
+						element_contents,
+					);
 					if (new_el instanceof HTMLElement) {
 						el.innerHTML = "";
 						el.appendChild(new_el);
@@ -106,11 +119,11 @@ export async function postProcess(el: HTMLElement, ctx: MarkdownPostProcessorCon
 	// If code lands here, the element includes a transition of a range (either in/out of a range, or passing middle arrow)
 
 	// Revert markdown rendering of stricken through text and other incorrectly applied markup (that normally would be rendered as <del>...</del>)
-	element_contents = element_contents.replaceAll(/{<del>|{<\/del>/g, '{~~')
-		.replaceAll(/<del>}|<\/del>}/g, '~~}')
-		.replaceAll(/{<mark>|{<\/mark>/g, '{==')
-		.replaceAll(/<mark>}|<\/mark>}/g, '==}')
-		.replaceAll(/{=<mark>=}|{=<\/mark>=}/g, '{====}');
+	element_contents = element_contents.replaceAll(/{<del>|{<\/del>/g, "{~~")
+		.replaceAll(/<del>}|<\/del>}/g, "~~}")
+		.replaceAll(/{<mark>|{<\/mark>/g, "{==")
+		.replaceAll(/<mark>}|<\/mark>}/g, "==}")
+		.replaceAll(/{=<mark>=}|{=<\/mark>=}/g, "{====}");
 
 	// Part of the block is one or more CriticMarkup ranges
 
@@ -126,12 +139,11 @@ export async function postProcess(el: HTMLElement, ctx: MarkdownPostProcessorCon
 		}
 	}
 
-
 	// No range syntax found in element, and no context was provided to determine whether the element is even part of a noe
 	if (!element_ranges.length && !ranges_in_range?.length) return;
 
 	let previous_start = 0;
-	const new_element: (HTMLElement | string)[] = []
+	const new_element: (HTMLElement | string)[] = [];
 
 	// Case where range was opened in earlier block, and closed in current block
 	// Parser on element contents will not register the end bracket as a valid range, so we need to manually construct the range
@@ -149,7 +161,7 @@ export async function postProcess(el: HTMLElement, ctx: MarkdownPostProcessorCon
 	if (missing_range && left_outside && right_outside && missing_range.type === SuggestionType.SUBSTITUTION) {
 		const missing_range_middle = element_contents.indexOf(CM_All_Brackets[SuggestionType.SUBSTITUTION][1]);
 		const TempRange = new SubstitutionRange(-Infinity, missing_range_middle, Infinity, element_contents);
-		el.innerHTML = rangePostProcess(TempRange,true, settings.default_preview_mode, 'span') as string;
+		el.innerHTML = rangePostProcess(TempRange, true, settings.default_preview_mode, "span") as string;
 		return;
 	}
 
@@ -160,17 +172,23 @@ export async function postProcess(el: HTMLElement, ctx: MarkdownPostProcessorCon
 		let TempRange: CriticMarkupRange;
 		if (missing_range.type === SuggestionType.SUBSTITUTION) {
 			const missing_range_middle = element_contents.indexOf(CM_All_Brackets[SuggestionType.SUBSTITUTION][1]);
-			TempRange = new SubstitutionRange(-Infinity, missing_range_middle === -1 ? -Infinity : missing_range_middle, missing_range_end, element_contents);
-		} else
+			TempRange = new SubstitutionRange(
+				-Infinity,
+				missing_range_middle === -1 ? -Infinity : missing_range_middle,
+				missing_range_end,
+				element_contents,
+			);
+		} else {
 			TempRange = new RANGE_PROTOTYPE_MAPPER[missing_range.type](-Infinity, missing_range_end, element_contents);
-		new_element.push(rangePostProcess(TempRange, true, settings.default_preview_mode, 'span'));
+		}
+		new_element.push(rangePostProcess(TempRange, true, settings.default_preview_mode, "span"));
 		previous_start = TempRange.to;
 	}
 
 	// DEFAULT: Ranges get processed as normal (ranges which exists completely within the block)
 	for (const range of element_ranges) {
 		new_element.push(element_contents.slice(previous_start, range.from));
-		new_element.push(rangePostProcess(range, true, settings.default_preview_mode, 'span'));
+		new_element.push(rangePostProcess(range, true, settings.default_preview_mode, "span"));
 		previous_start = range.to;
 	}
 
@@ -181,10 +199,15 @@ export async function postProcess(el: HTMLElement, ctx: MarkdownPostProcessorCon
 		let TempRange: CriticMarkupRange;
 		if (missing_range.type === SuggestionType.SUBSTITUTION)
 			TempRange = new SubstitutionRange(0, Infinity, Infinity, element_contents.slice(missing_range_start, -4));
-		else
-			TempRange = new RANGE_PROTOTYPE_MAPPER[missing_range.type](0, Infinity, element_contents.slice(missing_range_start, -4));
+		else {
+			TempRange = new RANGE_PROTOTYPE_MAPPER[missing_range.type](
+				0,
+				Infinity,
+				element_contents.slice(missing_range_start, -4),
+			);
+		}
 		new_element.push(element_contents.slice(previous_start, missing_range_start));
-		new_element.push(rangePostProcess(TempRange, true, settings.default_preview_mode, 'span'));
+		new_element.push(rangePostProcess(TempRange, true, settings.default_preview_mode, "span"));
 		previous_start = Infinity;
 	}
 	new_element.push(element_contents.slice(previous_start));
@@ -193,7 +216,7 @@ export async function postProcess(el: HTMLElement, ctx: MarkdownPostProcessorCon
 	const to_reinsert: HTMLElement[] = [];
 	let str = "";
 	for (const child of new_element) {
-		if (typeof child === 'string')
+		if (typeof child === "string")
 			str += child;
 		else {
 			str += `<placeholder></placeholder>`;
@@ -201,7 +224,7 @@ export async function postProcess(el: HTMLElement, ctx: MarkdownPostProcessorCon
 		}
 	}
 	el.innerHTML = str;
-	el.querySelectorAll('placeholder').forEach((placeholder, i) => {
+	el.querySelectorAll("placeholder").forEach((placeholder, i) => {
 		placeholder.replaceWith(to_reinsert[i]);
 	});
 }

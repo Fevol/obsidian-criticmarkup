@@ -1,17 +1,15 @@
-import {CM_All_Brackets, type STRING_SUGGESTION_TYPE, type SuggestionType} from './definitions';
-import type {EditorChange} from '../edit-handler';
-import {type CommentRange} from './types';
-import {PreviewMode, RANGE_CURSOR_MOVEMENT_OPTION} from "../../../types";
-
+import { PreviewMode, RANGE_CURSOR_MOVEMENT_OPTION } from "../../../types";
+import type { EditorChange } from "../edit-handler";
+import { CM_All_Brackets, type STRING_SUGGESTION_TYPE, type SuggestionType } from "./definitions";
+import { type CommentRange } from "./types";
 
 const shortHandMapping = {
-	'a': 'author',
-	't': 'time',
-	'd': 'done',
-	's': 'style',
-	'c': 'color',
+	"a": "author",
+	"t": "time",
+	"d": "done",
+	"s": "style",
+	"c": "color",
 };
-
 
 export interface MetadataFields {
 	author?: string;
@@ -26,7 +24,14 @@ export abstract class CriticMarkupRange {
 	fields: MetadataFields = {};
 	replies: CommentRange[] = [];
 
-	protected constructor(public from: number, public to: number, public type: SuggestionType, public repr: STRING_SUGGESTION_TYPE, public text: string, public metadata?: number) {
+	protected constructor(
+		public from: number,
+		public to: number,
+		public type: SuggestionType,
+		public repr: STRING_SUGGESTION_TYPE,
+		public text: string,
+		public metadata?: number,
+	) {
 		if (metadata !== undefined) {
 			const metadata_separator = metadata - from;
 			const metadata_text = text.slice(3, metadata_separator);
@@ -65,7 +70,7 @@ export abstract class CriticMarkupRange {
 	}
 
 	get full_text() {
-		return this.text + this.replies.map(reply => reply.text).join('');
+		return this.text + this.replies.map(reply => reply.text).join("");
 	}
 
 	get range_start() {
@@ -77,7 +82,9 @@ export abstract class CriticMarkupRange {
 	}
 
 	get full_range_back(): number {
-		return this.base_range.replies.length ? this.base_range.replies[this.base_range.replies.length - 1].to : this.to;
+		return this.base_range.replies.length ?
+			this.base_range.replies[this.base_range.replies.length - 1].to :
+			this.to;
 	}
 
 	range_type(from: number, to: number): SuggestionType {
@@ -89,7 +96,7 @@ export abstract class CriticMarkupRange {
 		return [{
 			from: this.from + 3,
 			to: this.metadata + 2,
-			insert: '',
+			insert: "",
 		}];
 	}
 
@@ -98,11 +105,10 @@ export abstract class CriticMarkupRange {
 
 		if (key in this.fields) {
 			delete this.fields[key as keyof typeof this.fields];
-			if (Object.keys(this.fields).length === 0) {
+			if (Object.keys(this.fields).length === 0)
 				this.remove_metadata();
-			} else {
+			else
 				this.set_metadata(this.fields);
-			}
 		}
 		return [];
 	}
@@ -125,7 +131,7 @@ export abstract class CriticMarkupRange {
 			return [{
 				from: this.from + 3,
 				to: this.from + 3,
-				insert: JSON.stringify(fields) + '@@',
+				insert: JSON.stringify(fields) + "@@",
 			}];
 		}
 	}
@@ -139,7 +145,8 @@ export abstract class CriticMarkupRange {
 	}
 
 	equals(other: CriticMarkupRange) {
-		return this.type === other.type && this.from === other.from && this.to === other.to && this.replies.length === other.replies.length && this.full_text === other.full_text;
+		return this.type === other.type && this.from === other.from && this.to === other.to &&
+			this.replies.length === other.replies.length && this.full_text === other.full_text;
 	}
 
 	left_adjacent(other: CriticMarkupRange) {
@@ -173,7 +180,7 @@ export abstract class CriticMarkupRange {
 	unwrap_slice(from: number, to: number) {
 		from -= this.range_front;
 		to -= this.range_front;
-		if (to <= 0 || from === to) return '';
+		if (to <= 0 || from === to) return "";
 
 		return this.text.slice(Math.max(3, from), Math.min(this.text.length - 3, to));
 	}
@@ -223,14 +230,17 @@ export abstract class CriticMarkupRange {
 	 * @remark Cursor will jump to range regardless whether it is adjacent to the range or not
 	 */
 	cursor_move_inside(cursor: number, skip_metadata = false) {
-		return Math.min(Math.max((skip_metadata && this.metadata) ? this.metadata + 2 : this.from + 3, cursor), this.to - 3);
+		return Math.min(
+			Math.max((skip_metadata && this.metadata) ? this.metadata + 2 : this.from + 3, cursor),
+			this.to - 3,
+		);
 	}
 
 	cursor_pass_syntax(cursor: number, right: boolean, skip_metadata: boolean = false) {
 		if (right) {
-			if (this.touches_left_bracket(cursor, true, false, skip_metadata)) {
+			if (this.touches_left_bracket(cursor, true, false, skip_metadata))
 				cursor = (skip_metadata && this.metadata) ? (this.metadata! + 2) : (this.from + 3);
-			} if (this.touches_right_bracket(cursor, false, true))
+			if (this.touches_right_bracket(cursor, false, true))
 				cursor = this.to;
 		} else {
 			if (this.touches_right_bracket(cursor, true, false))
@@ -250,10 +260,10 @@ export abstract class CriticMarkupRange {
 		return cursor;
 	}
 
-
 	touches_left_bracket(cursor: number, outside_loose = false, inside_loose = false, include_metadata = false) {
 		return cursor + (outside_loose ? 0 : 1) >= this.from &&
-			cursor + (inside_loose ? 0 : 1) <= ((include_metadata && this.metadata) ? this.metadata + 2 : this.from + 3);
+			cursor + (inside_loose ? 0 : 1) <=
+				((include_metadata && this.metadata) ? this.metadata + 2 : this.from + 3);
 	}
 
 	touches_separator(cursor: number, left_loose = false, right_loose = false) {
@@ -265,11 +275,18 @@ export abstract class CriticMarkupRange {
 	}
 
 	touches_bracket(cursor: number, left: boolean, outside_loose = false, inside_loose = false) {
-		return left ? this.touches_left_bracket(cursor, outside_loose, inside_loose) :
+		return left ?
+			this.touches_left_bracket(cursor, outside_loose, inside_loose) :
 			this.touches_right_bracket(cursor, outside_loose, inside_loose);
 	}
 
-	postprocess(unwrap: boolean = true, previewMode: PreviewMode = PreviewMode.ALL, tag: keyof HTMLElementTagNameMap = 'div', left: boolean | null = null, text?: string): string | HTMLElement {
+	postprocess(
+		unwrap: boolean = true,
+		previewMode: PreviewMode = PreviewMode.ALL,
+		tag: keyof HTMLElementTagNameMap = "div",
+		left: boolean | null = null,
+		text?: string,
+	): string | HTMLElement {
 		let str = text ?? this.text;
 		if (!text && unwrap) {
 			if (this.to >= str.length && !str.endsWith(CM_All_Brackets[this.type].at(-1)!))
@@ -291,6 +308,6 @@ export abstract class CriticMarkupRange {
 	 * @param cursor Cursor position to split at
 	 */
 	split_range(cursor: number): [string, string] {
-		return [this.text.slice(-3), this.text.slice(0, 3) + (this.metadata ? JSON.stringify(this.fields) + '@@' : '')];
+		return [this.text.slice(-3), this.text.slice(0, 3) + (this.metadata ? JSON.stringify(this.fields) + "@@" : "")];
 	}
 }

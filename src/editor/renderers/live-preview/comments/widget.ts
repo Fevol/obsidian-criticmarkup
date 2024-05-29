@@ -1,13 +1,11 @@
-import { EditorView, WidgetType } from '@codemirror/view';
+import { EditorView, WidgetType } from "@codemirror/view";
 
-import {Component, MarkdownRenderer, Menu, setIcon} from 'obsidian';
+import { Component, MarkdownRenderer, Menu, setIcon } from "obsidian";
 
-import {CM_All_Brackets, CommentRange, CriticMarkupRange} from '../../../base';
-import {commentGutterMarkers} from '../../gutters';
-import {addCommentToView} from "../../gutters/comment-gutter";
-import {COMMENTATOR_GLOBAL} from "../../../../global";
-
-
+import { COMMENTATOR_GLOBAL } from "../../../../global";
+import { CM_All_Brackets, CommentRange, CriticMarkupRange } from "../../../base";
+import { commentGutterMarkers } from "../../gutters";
+import { addCommentToView } from "../../gutters/comment-gutter";
 
 export function renderCommentWidget(range: CommentRange, text?: string, unwrap = false) {
 	let str = text ?? range.text;
@@ -18,25 +16,25 @@ export function renderCommentWidget(range: CommentRange, text?: string, unwrap =
 			str = range.unwrap();
 	}
 
-	const icon = document.createElement('span');
-	icon.classList.add('criticmarkup-comment-icon');
-	setIcon(icon, 'message-square');
+	const icon = document.createElement("span");
+	icon.classList.add("criticmarkup-comment-icon");
+	setIcon(icon, "message-square");
 	let tooltip: HTMLElement | null = null;
 	const component = new Component();
 	icon.onmouseenter = () => {
 		if (tooltip) return;
 
-		tooltip = document.createElement('div');
-		tooltip.classList.add('criticmarkup-comment-tooltip');
-		MarkdownRenderer.render(COMMENTATOR_GLOBAL.app, str, tooltip, '', component);
+		tooltip = document.createElement("div");
+		tooltip.classList.add("criticmarkup-comment-tooltip");
+		MarkdownRenderer.render(COMMENTATOR_GLOBAL.app, str, tooltip, "", component);
 		component.load();
 		icon!.appendChild(tooltip);
 
 		// Set tooltip position
 		const icon_rect = icon!.getBoundingClientRect();
 		const tooltip_rect = tooltip.getBoundingClientRect();
-		tooltip.style.left = icon_rect.x - tooltip_rect.x  + 12 + "px";
-	}
+		tooltip.style.left = icon_rect.x - tooltip_rect.x + 12 + "px";
+	};
 
 	icon.onmouseleave = () => {
 		if (tooltip) {
@@ -44,12 +42,10 @@ export function renderCommentWidget(range: CommentRange, text?: string, unwrap =
 			icon!.removeChild(tooltip!);
 			tooltip = null;
 		}
-	}
-
+	};
 
 	return icon;
 }
-
 
 export class CommentIconWidget extends WidgetType {
 	tooltip: HTMLElement | null = null;
@@ -65,16 +61,16 @@ export class CommentIconWidget extends WidgetType {
 
 	renderTooltip() {
 		if (!this.tooltip) {
-			this.tooltip = document.createElement('div');
-			this.tooltip.classList.add('criticmarkup-comment-tooltip');
-			MarkdownRenderer.render(COMMENTATOR_GLOBAL.app, this.range.text, this.tooltip, '', this.component);
+			this.tooltip = document.createElement("div");
+			this.tooltip.classList.add("criticmarkup-comment-tooltip");
+			MarkdownRenderer.render(COMMENTATOR_GLOBAL.app, this.range.text, this.tooltip, "", this.component);
 			this.component.load();
 			this.icon!.appendChild(this.tooltip);
 
 			// Set tooltip position
 			const icon_rect = this.icon!.getBoundingClientRect();
 			const tooltip_rect = this.tooltip.getBoundingClientRect();
-			this.tooltip.style.left = icon_rect.x - tooltip_rect.x - tooltip_rect.width / 2 + 12 + 'px';
+			this.tooltip.style.left = icon_rect.x - tooltip_rect.x - tooltip_rect.width / 2 + 12 + "px";
 		}
 	}
 
@@ -83,7 +79,7 @@ export class CommentIconWidget extends WidgetType {
 		e.preventDefault();
 		gutterElements.between(this.range.from, this.range.to, (from, to, widget) => {
 			if (this.range.equals(widget.comment_range)) {
-				widget.comment_thread!.dispatchEvent(new MouseEvent('click'));
+				widget.comment_thread!.dispatchEvent(new MouseEvent("click"));
 				return false;
 			}
 		});
@@ -97,11 +93,10 @@ export class CommentIconWidget extends WidgetType {
 		}
 	}
 
-
 	toDOM(view: EditorView): HTMLElement {
-		this.icon = document.createElement('span');
-		this.icon.classList.add('criticmarkup-comment-icon');
-		setIcon(this.icon, 'message-square');
+		this.icon = document.createElement("span");
+		this.icon.classList.add("criticmarkup-comment-icon");
+		setIcon(this.icon, "message-square");
 
 		// DEBUG: Add line under icon to check alignment of comment gutter element with widget
 		// const line = document.createElement('div');
@@ -114,16 +109,15 @@ export class CommentIconWidget extends WidgetType {
 			this.icon.oncontextmenu = (e) => {
 				e.preventDefault();
 
-
 				const menu = new Menu();
 				menu.addItem((item) => {
-					item.setTitle('Focus comment')
-						.setIcon('eye')
+					item.setTitle("Focus comment")
+						.setIcon("eye")
 						.onClick(this.focusComment.bind(this, view));
 				});
 				menu.addItem((item) => {
 					item.setTitle("Add comment")
-						.setIcon('message-square')
+						.setIcon("message-square")
 						.onClick((e) => {
 							e.preventDefault();
 							addCommentToView(view, this.range);
@@ -131,8 +125,7 @@ export class CommentIconWidget extends WidgetType {
 				});
 
 				menu.showAtMouseEvent(e);
-			}
-
+			};
 		} else {
 			if (this.range.length) {
 				this.icon.onmouseenter = () => {

@@ -1,4 +1,4 @@
-import { postProcess } from './renderer';
-import { postProcessorUpdate, postProcessorRerender } from './util';
+import { postProcess } from "./renderer";
+import { postProcessorRerender, postProcessorUpdate } from "./util";
 
-export { postProcess, postProcessorUpdate, postProcessorRerender };
+export { postProcess, postProcessorRerender, postProcessorUpdate };

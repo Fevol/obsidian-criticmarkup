@@ -1,14 +1,17 @@
-import { type ChangeSpec, EditorState } from '@codemirror/state';
+import { type ChangeSpec, EditorState } from "@codemirror/state";
 
-import {App, type TFile} from 'obsidian';
+import { App, type TFile } from "obsidian";
 
-import { CriticMarkupRange, SuggestionType } from '../ranges';
-import { rangeParser, applyToText } from '../edit-util';
+import { applyToText, rangeParser } from "../edit-util";
+import { CriticMarkupRange, SuggestionType } from "../ranges";
 
 export function acceptSuggestions(state: EditorState, from?: number, to?: number): ChangeSpec[] {
 	const range_field = state.field(rangeParser).ranges;
 	return ((from || to) ? range_field.ranges_in_range(from ?? 0, to ?? Infinity) : range_field.ranges)
-		.filter(range => range.type === SuggestionType.ADDITION || range.type === SuggestionType.DELETION || range.type === SuggestionType.SUBSTITUTION)
+		.filter(range =>
+			range.type === SuggestionType.ADDITION || range.type === SuggestionType.DELETION ||
+			range.type === SuggestionType.SUBSTITUTION
+		)
 		.map(range => ({ from: range.from, to: range.to, insert: range.accept() }));
 }
 
@@ -21,11 +24,13 @@ export async function acceptSuggestionsInFile(app: App, file: TFile, ranges: Cri
 	await app.vault.modify(file, output);
 }
 
-
 export function rejectSuggestions(state: EditorState, from?: number, to?: number): ChangeSpec[] {
 	const range_field = state.field(rangeParser).ranges;
 	return ((from || to) ? range_field.ranges_in_range(from ?? 0, to ?? Infinity) : range_field.ranges)
-		.filter(range => range.type === SuggestionType.ADDITION || range.type === SuggestionType.DELETION || range.type === SuggestionType.SUBSTITUTION)
+		.filter(range =>
+			range.type === SuggestionType.ADDITION || range.type === SuggestionType.DELETION ||
+			range.type === SuggestionType.SUBSTITUTION
+		)
 		.map(range => ({ from: range.from, to: range.to, insert: range.reject() }));
 }
 

@@ -1,5 +1,5 @@
-import {Compartment, Facet, StateEffect, StateEffectType, StateField} from '@codemirror/state';
-import {EditMode, PreviewMode} from "../../types";
+import { Compartment, Facet, StateEffect, StateEffectType, StateField } from "@codemirror/state";
+import { EditMode, PreviewMode } from "../../types";
 
 /**
  * Provide a StateField extension for an arbitrary value that can be updated via effects
@@ -19,13 +19,11 @@ export function attachValue<T>(value: T, effect: StateEffectType<T>) {
 					return curr_effect.value;
 			}
 			return value;
-		}
+		},
 	});
 
 	return field;
 }
-
-
 
 export const hideEmptyCommentGutterState = Facet.define<boolean, boolean>({ combine: values => values[0] });
 export const hideEmptyCommentGutter = new Compartment();

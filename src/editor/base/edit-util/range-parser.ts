@@ -1,6 +1,6 @@
-import {EditorState, StateField} from '@codemirror/state';
-import {type ChangedRange, type SyntaxNode, type Tree, TreeFragment} from '@lezer/common';
-import {Interval, Node} from "@flatten-js/interval-tree";
+import { EditorState, StateField } from "@codemirror/state";
+import { Interval, Node } from "@flatten-js/interval-tree";
+import { type ChangedRange, type SyntaxNode, type Tree, TreeFragment } from "@lezer/common";
 
 import {
 	AdditionRange,
@@ -11,14 +11,22 @@ import {
 	HighlightRange,
 	SubstitutionRange,
 	SuggestionType,
-} from '../ranges';
+} from "../ranges";
 
-import {criticmarkupLanguage} from '../parser';
-import {DocInput} from "@codemirror/language";
-import {COMMENTATOR_GLOBAL} from "../../../global";
-import {fullReloadEffect} from "../../settings";
+import { DocInput } from "@codemirror/language";
+import { COMMENTATOR_GLOBAL } from "../../../global";
+import { fullReloadEffect } from "../../settings";
+import { criticmarkupLanguage } from "../parser";
 
-export const rangeParser: StateField<{tree: Tree, fragments: readonly TreeFragment[], ranges: CriticMarkupRanges, inserted_ranges: CriticMarkupRange[], deleted_ranges: CriticMarkupRange[]}> = StateField.define({
+export const rangeParser: StateField<
+	{
+		tree: Tree;
+		fragments: readonly TreeFragment[];
+		ranges: CriticMarkupRanges;
+		inserted_ranges: CriticMarkupRange[];
+		deleted_ranges: CriticMarkupRange[];
+	}
+> = StateField.define({
 	create(state) {
 		const text = state.doc.toString();
 		const tree = criticmarkupLanguage.parser.parse(text);
@@ -29,7 +37,7 @@ export const rangeParser: StateField<{tree: Tree, fragments: readonly TreeFragme
 			ranges: ranges,
 			inserted_ranges: ranges.ranges,
 			deleted_ranges: [],
-		}
+		};
 	},
 
 	// @ts-ignore (Not sure how to set fragments as readonly)
@@ -40,12 +48,11 @@ export const rangeParser: StateField<{tree: Tree, fragments: readonly TreeFragme
 		if (!tr.docChanged)
 			return value;
 
-
 		// Below times are based on stresstest (250.000 words, 56.167 ranges)
 		// get-changes: 0.01 - 0.05 ms
 		const changed_ranges: ChangedRange[] = [];
 		tr.changes.iterChangedRanges((from, to, fromB, toB) =>
-			changed_ranges.push({fromA: from, toA: to, fromB: fromB, toB: toB})
+			changed_ranges.push({ fromA: from, toA: to, fromB: fromB, toB: toB })
 		);
 
 		// fragment-update: 0.01 - 0.08 ms
@@ -74,7 +81,10 @@ export const rangeParser: StateField<{tree: Tree, fragments: readonly TreeFragme
 
 			for (const range of cursorGenerateRanges(tree, text, changed_range.fromB, changed_range.toB))
 				inserted_set.set(range.from, range);
-			offsets.push([changed_range.toA, changed_range.toB - changed_range.fromB - (changed_range.toA - changed_range.fromA)]);
+			offsets.push([
+				changed_range.toA,
+				changed_range.toB - changed_range.fromB - (changed_range.toA - changed_range.fromA),
+			]);
 		}
 		for (const deleted_range of deleted_ranges) {
 			if (deleted_range.type === SuggestionType.COMMENT)
@@ -108,9 +118,10 @@ export const rangeParser: StateField<{tree: Tree, fragments: readonly TreeFragme
 			value.ranges.tree.insert([range.from, range.to], range);
 
 		// comments-thread-reconstruction: <0.01 - 0.05 ms
-		for (const range of inserted_ranges)
+		for (const range of inserted_ranges) {
 			if (range.type === SuggestionType.COMMENT)
 				dangling_comments.set(range.from, range as CommentRange);
+		}
 
 		if (dangling_comments.size) {
 			const comment_threads: CommentRange[][] = [];
@@ -146,12 +157,14 @@ export const rangeParser: StateField<{tree: Tree, fragments: readonly TreeFragme
 	},
 });
 
-
 function constructRangeFromSyntaxNode(range: SyntaxNode, text: string) {
-	const metadata = (COMMENTATOR_GLOBAL.PLUGIN_SETTINGS.enable_metadata && range.firstChild?.type.name.startsWith('MDSep')) ? range.firstChild!.from : undefined;
+	const metadata =
+		(COMMENTATOR_GLOBAL.PLUGIN_SETTINGS.enable_metadata && range.firstChild?.type.name.startsWith("MDSep")) ?
+			range.firstChild!.from :
+			undefined;
 	let middle = undefined;
-	if (range.type.name === 'Substitution') {
-		const child = (metadata ? range.firstChild?.nextSibling : range.firstChild);
+	if (range.type.name === "Substitution") {
+		const child = metadata ? range.firstChild?.nextSibling : range.firstChild;
 		if (!child || child.type.name !== "MSub") return;
 		middle = child.from;
 	}
@@ -178,23 +191,26 @@ export function cursorGenerateRanges(tree: Tree, text: string, start = 0, to = t
 			if (range.type.name === "⚠") continue;
 			const new_range = constructRangeFromSyntaxNode(range, text);
 			if (new_range) {
-				if (new_range.type === SuggestionType.COMMENT && previous_range && previous_range.right_adjacent(new_range))
+				if (
+					new_range.type === SuggestionType.COMMENT && previous_range &&
+					previous_range.right_adjacent(new_range)
+				) {
 					(new_range as CommentRange).add_reply(previous_range);
+				}
 				ranges.push(new_range);
 				previous_range = new_range;
 			}
-		} while (cursor.nextSibling() && cursor.node.from <= to)
+		} while (cursor.nextSibling() && cursor.node.from <= to);
 	}
 
 	return ranges;
 }
 
-
 export function selectionContainsRanges(state: EditorState) {
 	const ranges = state.field(rangeParser).ranges;
-	return ranges.ranges.length ? state.selection.ranges.some(range =>
-		ranges.contains_range(range.from, range.to),
-	) : false;
+	return ranges.ranges.length ?
+		state.selection.ranges.some(range => ranges.contains_range(range.from, range.to)) :
+		false;
 }
 
 export function getRangesInText(text: string) {
@@ -202,17 +218,24 @@ export function getRangesInText(text: string) {
 	return cursorGenerateRanges(tree, text);
 }
 
-export function constructRange(from: number, to: number, type: string, text: string, middle?: number, metadata?: number) {
+export function constructRange(
+	from: number,
+	to: number,
+	type: string,
+	text: string,
+	middle?: number,
+	metadata?: number,
+) {
 	switch (type) {
-		case 'Addition':
+		case "Addition":
 			return new AdditionRange(from, to, text, metadata);
-		case 'Deletion':
+		case "Deletion":
 			return new DeletionRange(from, to, text, metadata);
-		case 'Substitution':
+		case "Substitution":
 			return new SubstitutionRange(from, middle!, to, text, metadata);
-		case 'Highlight':
+		case "Highlight":
 			return new HighlightRange(from, to, text, metadata);
-		case 'Comment':
+		case "Comment":
 			return new CommentRange(from, to, text, metadata);
 		default:
 			// Will never get called

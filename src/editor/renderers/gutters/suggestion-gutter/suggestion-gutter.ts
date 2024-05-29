@@ -2,17 +2,17 @@
  * This is almost identical to the gutter defined in @codemirror/view/gutter,
  * with the exception of having the gutter be correctly hidden when there are no suggestions in the note
  */
+import { type Extension, Facet } from "@codemirror/state";
+import { EditorView, ViewUpdate } from "@codemirror/view";
+import { rangeParser } from "../../../base";
+import { hideEmptySuggestionGutterState } from "../../../settings";
 import {
 	createGutter,
 	createGutterViewPlugin,
 	type GutterConfig,
 	GutterView,
 	SingleGutterView,
-} from '../base';
-import { EditorView, ViewUpdate } from '@codemirror/view';
-import { type Extension, Facet } from '@codemirror/state';
-import { hideEmptySuggestionGutterState } from '../../../settings';
-import { rangeParser } from '../../../base';
+} from "../base";
 
 const unfixGutters = Facet.define<boolean, boolean>({
 	combine: values => values.some(x => x),
@@ -37,9 +37,8 @@ class SuggestionSingleGutterView extends SingleGutterView {
 	constructor(public view: EditorView, public config: Required<GutterConfig>) {
 		super(view, config);
 
-		if (view.state.facet(hideEmptySuggestionGutterState)) {
+		if (view.state.facet(hideEmptySuggestionGutterState))
 			this.hide_on_empty = true;
-		}
 	}
 
 	update(update: ViewUpdate) {
@@ -50,10 +49,10 @@ class SuggestionSingleGutterView extends SingleGutterView {
 			this.hide_on_empty = hide_on_empty;
 
 		if (this.showing && this.hide_on_empty && update.state.field(rangeParser).ranges.empty()) {
-			this.dom.parentElement!.classList.add('gutter-hidden');
+			this.dom.parentElement!.classList.add("gutter-hidden");
 			this.showing = false;
 		} else if (!this.showing && (!this.hide_on_empty || !update.state.field(rangeParser).ranges.empty())) {
-			this.dom.parentElement!.classList.remove('gutter-hidden');
+			this.dom.parentElement!.classList.remove("gutter-hidden");
 			this.showing = true;
 		}
 

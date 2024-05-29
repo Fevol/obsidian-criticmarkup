@@ -1,6 +1,6 @@
-import {ItemView, type Plugin, type ViewStateResult, WorkspaceLeaf} from 'obsidian';
+import { ItemView, type Plugin, type ViewStateResult, WorkspaceLeaf } from "obsidian";
 
-import type {SvelteComponent} from "svelte";
+import type { SvelteComponent } from "svelte";
 import { ViewPage } from "./pages/view";
 
 export const CRITICMARKUP_VIEW = "criticmarkup-view";
@@ -35,7 +35,7 @@ export class CriticMarkupView extends ItemView {
 	}
 
 	getDisplayText(): string {
-		return 'Vault suggestions and comments';
+		return "Vault suggestions and comments";
 	}
 
 	getIcon(): string {
@@ -46,11 +46,11 @@ export class CriticMarkupView extends ItemView {
 		const state = super.getState() as object & CriticMarkupViewState;
 
 		if (this.view) {
-			state.range_type_filter = this.view.$$.ctx[<number>this.view.$$.props.range_type_filter];
-			state.location_filter = this.view.$$.ctx[<number>this.view.$$.props.location_filter];
-			state.content_filter = this.view.$$.ctx[<number>this.view.$$.props.content_filter];
-			state.author_filter = this.view.$$.ctx[<number>this.view.$$.props.author_filter];
-			state.date_filter = this.view.$$.ctx[<string>this.view.$$.props.date_filter];
+			state.range_type_filter = this.view.$$.ctx[<number> this.view.$$.props.range_type_filter];
+			state.location_filter = this.view.$$.ctx[<number> this.view.$$.props.location_filter];
+			state.content_filter = this.view.$$.ctx[<number> this.view.$$.props.content_filter];
+			state.author_filter = this.view.$$.ctx[<number> this.view.$$.props.author_filter];
+			state.date_filter = this.view.$$.ctx[<string> this.view.$$.props.date_filter];
 		}
 
 		return state;
@@ -62,7 +62,7 @@ export class CriticMarkupView extends ItemView {
 				target: this.containerEl,
 				props: {
 					plugin: this.plugin,
-				}
+				},
 			});
 		}
 
@@ -72,7 +72,7 @@ export class CriticMarkupView extends ItemView {
 			content_filter: state.content_filter || 0,
 			author_filter: state.author_filter || 0,
 			date_filter: state.date_filter || undefined,
-		})
+		});
 
 		await super.setState(state, result);
 	}

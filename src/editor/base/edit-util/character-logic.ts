@@ -1,6 +1,12 @@
-import { CharCategory, EditorState, findClusterBreak } from '@codemirror/state';
+import { CharCategory, EditorState, findClusterBreak } from "@codemirror/state";
 
-export function findBlockingChar(start: number, forward: boolean, state: EditorState, ignore_initial_space = false, cat: CharCategory | null = null): [number, number | null] {
+export function findBlockingChar(
+	start: number,
+	forward: boolean,
+	state: EditorState,
+	ignore_initial_space = false,
+	cat: CharCategory | null = null,
+): [number, number | null] {
 	let pos = start;
 	const line = state.doc.lineAt(pos);
 	// 0: Word		1: Space		2: Other
@@ -8,7 +14,7 @@ export function findBlockingChar(start: number, forward: boolean, state: EditorS
 	if (cat === CharCategory.Space) cat = null;
 
 	let nextCat = null;
-	for (cat; ;) {
+	for (cat;;) {
 		if (pos == (forward ? line.to : line.from)) {
 			if (pos == start && line.number != (forward ? state.doc.lines : 1))
 				pos += forward ? 1 : -1;
@@ -21,7 +27,7 @@ export function findBlockingChar(start: number, forward: boolean, state: EditorS
 			if (cat == 1 && ignore_initial_space) ignore_initial_space = false;
 			else break;
 		}
-		if (nextChar != ' ' || pos != start) cat = nextCat;
+		if (nextChar != " " || pos != start) cat = nextCat;
 		pos = next;
 	}
 	return [pos, cat];

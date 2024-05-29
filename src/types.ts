@@ -1,5 +1,5 @@
-import type { Command } from 'obsidian';
-import {SuggestionType} from "./editor/base";
+import type { Command } from "obsidian";
+import { SuggestionType } from "./editor/base";
 
 export enum PreviewMode {
 	// Show all text
@@ -47,10 +47,9 @@ export enum RANGE_BRACKET_MOVEMENT_OPTION {
 	STAY_OUTSIDE = "stay_outside",
 }
 
+export type CursorOptionsMap = Record<SuggestionType, RANGE_CURSOR_MOVEMENT_OPTION>;
 
-export type CursorOptionsMap = Record<SuggestionType, RANGE_CURSOR_MOVEMENT_OPTION>
-
-export type BracketOptionsMap = Record<SuggestionType, RANGE_BRACKET_MOVEMENT_OPTION>
+export type BracketOptionsMap = Record<SuggestionType, RANGE_BRACKET_MOVEMENT_OPTION>;
 
 export interface PluginSettings {
 	/**
@@ -107,7 +106,7 @@ export interface PluginSettings {
 	/**
 	 * How comments should be rendered
 	 */
-	comment_style: 'inline' | 'icon' | 'block';
+	comment_style: "inline" | "icon" | "block";
 
 	/**
 	 * Complete criticmarkup tags when they're being entered in
@@ -169,7 +168,6 @@ export interface PluginSettings {
 	 */
 	alternative_cursor_movement: boolean;
 
-
 	/**
 	 * Whether metadata extensions should be enabled
 	 */
@@ -181,7 +179,7 @@ export interface PluginSettings {
 	/**
 	 * Whether timestamps metadata should be enabled
 	 */
-	enable_timestamp_metadata: boolean
+	enable_timestamp_metadata: boolean;
 	/**
 	 * Whether completed metadata should be enabled
 	 */
@@ -206,7 +204,7 @@ export interface PluginSettings {
 	/**
 	 * Whether timestamps metadata should be added to new ranges
 	 */
-	add_timestamp_metadata: boolean
+	add_timestamp_metadata: boolean;
 	/**
 	 * Whether completed metadata should be added to new ranges
 	 */
@@ -225,7 +223,6 @@ export interface PluginSettings {
 	 */
 	author?: string;
 
-
 	/**
 	 * Cursor movement options for ranges when in suggestion mode
 	 */
@@ -238,7 +235,7 @@ export interface PluginSettings {
 		 *  Options for cursor movement between two suggestion ranges
 		 */
 		bracket_movement: BracketOptionsMap;
-	},
+	};
 }
 
 /**

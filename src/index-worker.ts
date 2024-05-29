@@ -1,10 +1,10 @@
-import {CriticMarkupRange, getRangesInText} from "./editor/base";
-import {PluginSettings} from "./types";
-import {COMMENTATOR_GLOBAL} from "./global";
+import { CriticMarkupRange, getRangesInText } from "./editor/base";
+import { COMMENTATOR_GLOBAL } from "./global";
+import { PluginSettings } from "./types";
 
 export async function indexWorker(files: string[], settings: PluginSettings): Promise<CriticMarkupRange[][]> {
-    COMMENTATOR_GLOBAL.PLUGIN_SETTINGS = settings;
-    return await Promise.all(files.map(async (file: string) => {
-        return getRangesInText(file);
-    }));
+	COMMENTATOR_GLOBAL.PLUGIN_SETTINGS = settings;
+	return await Promise.all(files.map(async (file: string) => {
+		return getRangesInText(file);
+	}));
 }

@@ -1,5 +1,5 @@
-import type CommentatorPlugin from '../../main';
-import {Editor, type EventRef, MarkdownFileInfo, MarkdownView, Menu, setIcon} from 'obsidian';
+import { Editor, type EventRef, MarkdownFileInfo, MarkdownView, Menu, setIcon } from "obsidian";
+import type CommentatorPlugin from "../../main";
 
 export class StatusBarButton {
 	button: HTMLElement | null = null;
@@ -7,8 +7,13 @@ export class StatusBarButton {
 	changeEvent: EventRef | null = null;
 	currentView: MarkdownFileInfo | null = null;
 
-	constructor(private states: { icon: string, text: string }[], private onchange: (view: MarkdownFileInfo | null, value: number) => void,
-				private getvalue: (editor: Editor) => number, private plugin: CommentatorPlugin, render = false) {
+	constructor(
+		private states: { icon: string; text: string }[],
+		private onchange: (view: MarkdownFileInfo | null, value: number) => void,
+		private getvalue: (editor: Editor) => number,
+		private plugin: CommentatorPlugin,
+		render = false,
+	) {
 		this.setRendering(render);
 
 		this.plugin.app.workspace.onLayoutReady(() => this.currentView = this.plugin.app.workspace.activeEditor);
@@ -40,33 +45,32 @@ export class StatusBarButton {
 		this.value = value;
 		const { icon, text } = this.states[value];
 		setIcon(this.button, icon);
-		this.button.setAttribute('aria-label', text);
+		this.button.setAttribute("aria-label", text);
 	}
 
 	renderButton() {
 		const { icon, text } = this.states[this.value];
 
-		this.changeEvent = this.plugin.app.workspace.on('active-leaf-change', (leaf) => {
+		this.changeEvent = this.plugin.app.workspace.on("active-leaf-change", (leaf) => {
 			if (leaf && leaf.view instanceof MarkdownView) {
 				this.currentView = leaf.view;
 				this.updateButton(this.getvalue(leaf.view.editor));
-				this.button!.style.display = '';
+				this.button!.style.display = "";
 			} else {
 				this.currentView = null;
-				this.button!.style.display = 'none';
+				this.button!.style.display = "none";
 			}
 		});
 
 		this.button = this.plugin.addStatusBarItem();
-		const span = this.button.createSpan({ cls: 'status-bar-item-icon' });
+		const span = this.button.createSpan({ cls: "status-bar-item-icon" });
 
 		setIcon(span, icon);
-		this.button.classList.add('mod-clickable');
-		this.button.setAttribute('aria-label', text);
-		this.button.setAttribute('data-tooltip-position', 'top');
-		this.button.addEventListener('click', (e) => this.showMenu(e));
-		this.button.addEventListener('contextmenu', (e) => this.showMenu(e));
-
+		this.button.classList.add("mod-clickable");
+		this.button.setAttribute("aria-label", text);
+		this.button.setAttribute("data-tooltip-position", "top");
+		this.button.addEventListener("click", (e) => this.showMenu(e));
+		this.button.addEventListener("contextmenu", (e) => this.showMenu(e));
 	}
 
 	detachButton() {
