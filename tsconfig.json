@@ -4,10 +4,10 @@
 		"baseUrl": "./src",
 		"inlineSources": false,
 		"module": "ESNext",
+		"moduleResolution": "bundler",
 		"target": "ESNext",
 		"allowJs": false,
 		"noImplicitAny": true,
-		"moduleResolution": "node",
 		"esModuleInterop": true,
 		"importHelpers": true,
 		"verbatimModuleSyntax": false,
@@ -33,7 +33,6 @@
 		"node_modules/jest-expect-message/types/index.d.ts"
 	],
 	"include": [
-		"**/**.ts",
-		"./src/types/extensions.d.ts"
+		"**/**.ts"
 	]
 }

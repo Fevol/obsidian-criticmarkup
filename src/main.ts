@@ -8,19 +8,19 @@ import {
 	TFile,
 } from "obsidian";
 
-import { type EditorState, type Extension, Prec } from "@codemirror/state";
-import { EditorView } from "@codemirror/view";
+import {type EditorState, type Extension, Prec} from "@codemirror/state";
+import {EditorView} from "@codemirror/view";
 
-import { around } from "monkey-around";
+import {around} from "monkey-around";
 
-import { type CriticMarkupRange, getRangesInText, RANGE_PROTOTYPE_MAPPER, rangeParser, text_copy } from "./editor/base";
+import {type CriticMarkupRange, getRangesInText, RANGE_PROTOTYPE_MAPPER, rangeParser, text_copy} from "./editor/base";
 
-import { cmenuCommands, commands } from "./editor/uix";
-import { bracketMatcher, editorKeypressCatcher, rangeCorrecter } from "./editor/uix/extensions";
+import {cmenuCommands, commands} from "./editor/uix";
+import {bracketMatcher, editorKeypressCatcher, rangeCorrecter} from "./editor/uix/extensions";
 
-import { commentGutter, suggestionGutter } from "./editor/renderers/gutters";
-import { commentRenderer, markupRenderer } from "./editor/renderers/live-preview";
-import { postProcess, postProcessorRerender, postProcessorUpdate } from "./editor/renderers/post-process";
+import {commentGutter, suggestionGutter} from "./editor/renderers/gutters";
+import {commentRenderer, markupRenderer} from "./editor/renderers/live-preview";
+import {postProcess, postProcessorRerender, postProcessorUpdate} from "./editor/renderers/post-process";
 import {
 	type MetadataStatusBarButton,
 	metadataStatusBarButton,
@@ -28,12 +28,12 @@ import {
 	type StatusBarButton,
 	suggestionModeStatusBarButton,
 } from "./editor/status-bar";
-import { editModeHeaderButton, type HeaderButton, previewModeHeaderButton } from "./editor/view-header";
+import {editModeHeaderButton, type HeaderButton, previewModeHeaderButton} from "./editor/view-header";
 
-import { CommentatorSettings } from "./ui/settings";
-import { CRITICMARKUP_VIEW, CriticMarkupView } from "./ui/view";
+import {CommentatorSettings} from "./ui/settings";
+import {CRITICMARKUP_VIEW, CriticMarkupView} from "./ui/view";
 
-import { Database } from "./database";
+import {Database} from "./database";
 
 import {
 	DATABASE_VERSION,
@@ -60,11 +60,11 @@ import {
 	previewMode,
 	previewModeState,
 } from "./editor/settings";
-import { getEditMode } from "./editor/uix/extensions/editing-modes";
-import { COMMENTATOR_GLOBAL } from "./global";
-import { type PluginSettings } from "./types";
-import { iterateAllCMInstances, updateAllCompartments, updateCompartment } from "./util/cm-util";
-import { objectDifference } from "./util/util";
+import {getEditMode} from "./editor/uix/extensions/editing-modes";
+import {COMMENTATOR_GLOBAL} from "./global";
+import {type PluginSettings} from "./types";
+import {iterateAllCMInstances, updateAllCompartments, updateCompartment} from "./util/cm-util";
+import {objectDifference} from "./util/util";
 
 export default class CommentatorPlugin extends Plugin {
 	editorExtensions: Extension[] = [];
@@ -219,6 +219,8 @@ export default class CommentatorPlugin extends Plugin {
 		this.registerEvent(cmenuCommands(this.app));
 		for (const command of commands(this))
 			this.addCommand(command);
+
+		console.log(this.app.plugins.plugins["eee"].app);
 
 		this.remove_monkeys.push(around(this.app.plugins, {
 			uninstallPlugin: (oldMethod) => {

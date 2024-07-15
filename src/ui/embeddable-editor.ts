@@ -14,12 +14,11 @@
 import {
 	App,
 	Constructor,
-	MarkdownScrollableEditView,
 	Scope,
 	TFile,
-	WidgetEditorView,
 	WorkspaceLeaf,
 } from "obsidian";
+import { MarkdownScrollableEditView, WidgetEditorView } from "obsidian-typings"
 
 import { EditorSelection, Extension, Prec } from "@codemirror/state";
 import { EditorView, keymap, placeholder, ViewUpdate } from "@codemirror/view";
