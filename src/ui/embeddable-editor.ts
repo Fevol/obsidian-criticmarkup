@@ -144,14 +144,14 @@ export class EmbeddableMarkdownEditor extends resolveEditorPrototype(app) implem
 		// NOTE: Apparently Chrome does a weird thing where removing an element from the DOM triggers a blur event
 		// 		 (Hence why the ._loaded check is necessary)
 		if (this.options.onBlur !== defaultProperties.onBlur) {
-			this.editor.cm.contentDOM.addEventListener("blur", () => {
+			this.editor?.cm.contentDOM.addEventListener("blur", () => {
 				if (this._loaded) this.options.onBlur(this);
 			});
 		}
 
 		// Whenever the editor is focused, set the activeEditor to the mocked view (this.owner)
 		// This allows for the editorCommands to actually work
-		this.editor.cm.contentDOM.addEventListener("focusin", (e) => {
+		this.editor?.cm.contentDOM.addEventListener("focusin", (e) => {
 			this.app.keymap.pushScope(this.scope);
 			this.app.workspace.activeEditor = this.owner;
 		});
@@ -160,7 +160,7 @@ export class EmbeddableMarkdownEditor extends resolveEditorPrototype(app) implem
 
 		if (options.cls) this.editorEl.classList.add(options.cls);
 		if (options.cursorLocation) {
-			this.editor.cm.dispatch({
+			this.editor?.cm.dispatch({
 				selection: EditorSelection.range(options.cursorLocation.anchor, options.cursorLocation.head),
 			});
 		}
@@ -250,6 +250,6 @@ export class EmbeddableMarkdownEditor extends resolveEditorPrototype(app) implem
 	 */
 	onload() {
 		super.onload();
-		if (this.options.focus) this.editor.focus();
+		if (this.options.focus) this.editor?.focus();
 	}
 }

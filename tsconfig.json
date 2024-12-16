@@ -1,38 +1,41 @@
 {
-	"extends": "@tsconfig/svelte/tsconfig.json",
-	"compilerOptions": {
-		"baseUrl": "./src",
-		"inlineSources": false,
-		"module": "ESNext",
-		"moduleResolution": "bundler",
-		"target": "ESNext",
-		"allowJs": false,
-		"noImplicitAny": true,
-		"esModuleInterop": true,
-		"importHelpers": true,
-		"verbatimModuleSyntax": false,
-		"strict": true,
-		"paths": {
-			"src": [
-				"src/*",
-				"tests/*"
-			]
-		},
-		"lib": [
-			"dom",
-			"ESNext"
-		],
-		"types": [
-			"jest",
-			"svelte",
-			"node",
-			"obsidian-typings"
-		]
-	},
-	"files": [
-		"node_modules/jest-expect-message/types/index.d.ts"
-	],
-	"include": [
-		"**/**.ts"
-	]
+  "extends": "@tsconfig/svelte/tsconfig.json",
+  "compilerOptions": {
+    "baseUrl": "./src",
+    "inlineSources": false,
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "target": "ESNext",
+    "allowJs": false,
+    "noImplicitAny": true,
+    "esModuleInterop": true,
+    "importHelpers": true,
+    "verbatimModuleSyntax": false,
+    "strict": true,
+    "paths": {
+      "src": [
+        "src/*",
+        "tests/*"
+      ],
+      "obsidian-typings/implementations": [
+        "./node_modules/@types/obsidian-typings/dist/implementations.d.ts"
+      ]
+    },
+    "lib": [
+      "dom",
+      "ESNext"
+    ],
+    "types": [
+      "jest",
+      "svelte",
+      "node",
+      "obsidian-typings"
+    ]
+  },
+  "files": [
+    "node_modules/jest-expect-message/types/index.d.ts"
+  ],
+  "include": [
+    "**/**.ts"
+  ]
 }

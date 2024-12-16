@@ -220,8 +220,6 @@ export default class CommentatorPlugin extends Plugin {
 		for (const command of commands(this))
 			this.addCommand(command);
 
-		console.log(this.app.plugins.plugins["eee"].app);
-
 		this.remove_monkeys.push(around(this.app.plugins, {
 			uninstallPlugin: (oldMethod) => {
 				return async (id: string) => {

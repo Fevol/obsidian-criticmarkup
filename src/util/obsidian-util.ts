@@ -115,7 +115,7 @@ export function getViewPrototype<T>(
 		prototype = Object.getPrototypeOf(getChildPrototype(leafOfType.view)) as T;
 	else {
 		const leaf = app.workspace.getLeaf("split");
-		const constructed_leaf = app.viewRegistry.getViewCreatorByType(viewType)(leaf);
+		const constructed_leaf = app.viewRegistry.getViewCreatorByType(viewType)?.(leaf);
 		prototype = Object.getPrototypeOf(getChildPrototype(constructed_leaf)) as T;
 		leaf.detach();
 	}
