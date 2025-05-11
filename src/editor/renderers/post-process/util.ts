@@ -6,6 +6,7 @@ export function codeBlockPostProcessorUpdate(app: App, language: string) {
 		const view = <MarkdownView> leaf.view;
 		if (view.editor.cm) {
 			const widgets = view.editor.cm.viewportLineBlocks.filter((block) =>
+				// @ts-expect-error
 				block.widget && block.widget.lang === language
 			);
 			const original_selection = view.editor.cm.state.selection;

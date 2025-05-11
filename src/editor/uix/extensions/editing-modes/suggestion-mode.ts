@@ -9,7 +9,7 @@ import {
 	getUserEvents,
 	mark_ranges,
 	MarkAction,
-	MarkType,
+	type MarkType,
 	range_metadata_compatible,
 	rangeParser,
 	SubstitutionRange,

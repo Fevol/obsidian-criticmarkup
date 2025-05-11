@@ -1,4 +1,4 @@
-import { CM_All_Brackets, MetadataFields, SuggestionType } from "../ranges";
+import { CM_All_Brackets, type MetadataFields, SuggestionType } from "../ranges";
 import { generate_metadata } from "./metadata";
 
 export function construct_suggestion(

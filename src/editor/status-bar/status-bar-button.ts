@@ -1,4 +1,4 @@
-import { Editor, type EventRef, MarkdownFileInfo, MarkdownView, Menu, setIcon } from "obsidian";
+import { Editor, type EventRef, type MarkdownFileInfo, MarkdownView, Menu, setIcon } from "obsidian";
 import type CommentatorPlugin from "../../main";
 
 export class StatusBarButton {

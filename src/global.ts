@@ -1,5 +1,5 @@
-import { App } from "obsidian";
-import { PluginSettings } from "./types";
+import type { App } from "obsidian";
+import { type PluginSettings } from "./types";
 
 // eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace COMMENTATOR_GLOBAL {

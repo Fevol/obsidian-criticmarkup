@@ -1,4 +1,4 @@
-import { Compartment, Extension, Facet, RangeSet, RangeValue } from "@codemirror/state";
+import { Compartment, type Extension, Facet, RangeSet, RangeValue } from "@codemirror/state";
 import type { EditorView } from "@codemirror/view";
 import { App, MarkdownView } from "obsidian";
 

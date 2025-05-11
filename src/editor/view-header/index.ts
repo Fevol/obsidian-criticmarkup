@@ -24,9 +24,7 @@ export const previewModeHeaderButton = (plugin: CommentatorPlugin, render: boole
 		plugin.settings.toolbar_show_buttons_labels,
 		"criticmarkup-suggestion-status",
 		plugin.setPreviewMode.bind(plugin),
-		(view) => {
-			return view.editor.cm.state.facet(previewModeState);
-		},
+		(view) => view.editor.cm.state.facet(previewModeState),
 		plugin,
 		render,
 	);
@@ -45,9 +43,7 @@ export const editModeHeaderButton = (plugin: CommentatorPlugin, render: boolean)
 		plugin.settings.toolbar_show_buttons_labels,
 		"criticmarkup-suggestion-status",
 		plugin.setEditMode.bind(plugin),
-		(view) => {
-			return view.editor.cm.state.facet(editModeValueState);
-		},
+		(view) => view.editor.cm.state.facet(editModeValueState),
 		plugin,
 		render,
 	);

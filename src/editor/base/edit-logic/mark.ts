@@ -1,15 +1,15 @@
 import { EditorSelection, Text } from "@codemirror/state";
-import { Editor } from "obsidian";
-import { PluginSettings } from "../../../types";
-import { EditorSuggestion } from "../edit-handler";
-import { MetadataCompatibility, MetadataMergeAction, range_metadata_compatible, rangeParser } from "../edit-util";
+import type { Editor } from "obsidian";
+import { type PluginSettings } from "../../../types";
+import { type EditorSuggestion } from "../edit-handler";
+import { type MetadataCompatibility, MetadataMergeAction, range_metadata_compatible, rangeParser } from "../edit-util";
 import { generate_metadata } from "../edit-util/metadata";
 import { construct_range, construct_suggestion } from "../edit-util/range-create";
 import {
 	CriticMarkupRange,
 	CriticMarkupRanges,
-	METADATA_TYPE,
-	MetadataFields,
+	type METADATA_TYPE,
+	type MetadataFields,
 	SubstitutionRange,
 	SuggestionType,
 } from "../ranges";

@@ -11,6 +11,7 @@ export const cmenuCommands: (app: App) => EventRef = (app) =>
 				.setIcon("message-square")
 				.setSection("criticmarkup")
 				.onClick(() => {
+					// @ts-expect-error CM types shenanigans
 					addCommentToView(editor.cm, ranges.at_cursor(editor.cm.state.selection.main.head));
 				});
 		});
@@ -22,6 +23,7 @@ export const cmenuCommands: (app: App) => EventRef = (app) =>
 					.setSection("criticmarkup")
 					.onClick(() => {
 						const selections = editor.cm.state.selection.ranges;
+						// @ts-expect-error Somehow selections is any (while ranges is defined)
 						const changes = selections.map(selection =>
 							acceptSuggestions(editor.cm.state, selection.from, selection.to)
 						);
@@ -37,6 +39,7 @@ export const cmenuCommands: (app: App) => EventRef = (app) =>
 					.setSection("criticmarkup")
 					.onClick(() => {
 						const selections = editor.cm.state.selection.ranges;
+						// @ts-expect-error Somehow selections is any (while ranges is defined)
 						const changes = selections.map(selection =>
 							rejectSuggestions(editor.cm.state, selection.from, selection.to)
 						);

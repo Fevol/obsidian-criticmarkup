@@ -68,6 +68,7 @@ export const editor_commands: (plugin: CommentatorPlugin) => ECommand[] = (plugi
 			if (checking || !contains_range)
 				return contains_range;
 			const selections = editor.cm.state.selection.ranges;
+			// @ts-expect-error Somehow selections is any (while ranges is defined)
 			const changes = selections.map(selection =>
 				acceptSuggestions(editor.cm.state, selection.from, selection.to)
 			);
@@ -86,6 +87,7 @@ export const editor_commands: (plugin: CommentatorPlugin) => ECommand[] = (plugi
 			if (checking || !contains_range)
 				return contains_range;
 			const selections = editor.cm.state.selection.ranges;
+			// @ts-expect-error Somehow selections is any (while ranges is defined)
 			const changes = selections.map(selection =>
 				rejectSuggestions(editor.cm.state, selection.from, selection.to)
 			);
@@ -101,6 +103,7 @@ export const editor_commands: (plugin: CommentatorPlugin) => ECommand[] = (plugi
 		editor_context: true,
 		regular_callback: (editor: Editor, _) => {
 			addCommentToView(
+				// @ts-expect-error Something fucky is still going on with Codemirror types
 				editor.cm,
 				editor.cm.state.field(rangeParser).ranges.at_cursor(editor.cm.state.selection.main.head),
 			);
@@ -113,6 +116,7 @@ export const editor_commands: (plugin: CommentatorPlugin) => ECommand[] = (plugi
 		editor_context: true,
 		regular_callback: (editor: Editor, _) => {
 			const { app } = editor.cm.state.field(editorInfoField);
+			// @ts-expect-error Improper definition
 			editor.cm.plugin(commentGutter(app)[1][0][0])!.foldGutter();
 		},
 	},

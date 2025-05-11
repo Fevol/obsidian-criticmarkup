@@ -1,5 +1,5 @@
 import { COMMENTATOR_GLOBAL } from "../../../global";
-import { CriticMarkupRange, METADATA_TYPE, MetadataFields } from "../ranges";
+import { CriticMarkupRange, type METADATA_TYPE, type MetadataFields } from "../ranges";
 
 export type MetadataCompatibility = {
 	[key in METADATA_TYPE]?: MetadataMergeAction;

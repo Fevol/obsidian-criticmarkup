@@ -1,8 +1,8 @@
 import { editMode } from "./edit-mode";
 import { suggestionMode } from "./suggestion-mode";
 
-import { Extension } from "@codemirror/state";
-import { EditMode, PluginSettings } from "../../../../types";
+import { type Extension } from "@codemirror/state";
+import { EditMode, type PluginSettings } from "../../../../types";
 
 export function getEditMode(edit_mode: EditMode, settings: PluginSettings): Extension[] {
 	if (edit_mode === EditMode.OFF)

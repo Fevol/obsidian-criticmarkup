@@ -1,5 +1,5 @@
-import { EditorSelection, SelectionRange, Transaction, TransactionSpec } from "@codemirror/state";
-import { PluginSettings } from "../../../../types";
+import { EditorSelection, SelectionRange, Transaction, type TransactionSpec } from "@codemirror/state";
+import { type PluginSettings } from "../../../../types";
 import { cursor_move, is_forward_movement, rangeParser } from "../../../base";
 import { latest_event } from "../keypress-catcher";
 

@@ -13,14 +13,14 @@
 
 import {
 	App,
-	Constructor,
+	type Constructor,
 	Scope,
 	TFile,
 	WorkspaceLeaf,
 } from "obsidian";
-import { MarkdownScrollableEditView, WidgetEditorView } from "obsidian-typings"
+import type { MarkdownScrollableEditView, WidgetEditorView } from "obsidian-typings"
 
-import { EditorSelection, Extension, Prec } from "@codemirror/state";
+import { EditorSelection, type Extension, Prec } from "@codemirror/state";
 import { EditorView, keymap, placeholder, ViewUpdate } from "@codemirror/view";
 
 import { around } from "monkey-around";
@@ -166,7 +166,9 @@ export class EmbeddableMarkdownEditor extends resolveEditorPrototype(app) implem
 		}
 	}
 
+	// @ts-expect-error (CM types shenanigans)
 	onUpdate(update: ViewUpdate, changed: boolean) {
+		// @ts-expect-error (CM types shenanigans)
 		super.onUpdate(update, changed);
 		if (changed) this.options.onChange(update);
 	}

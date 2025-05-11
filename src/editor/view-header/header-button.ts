@@ -1,4 +1,4 @@
-import { type EventRef, type MarkdownView, Menu, setIcon, WorkspaceLeaf } from "obsidian";
+import { type EventRef, MarkdownView, Menu, setIcon, WorkspaceLeaf } from "obsidian";
 import type CommentatorPlugin from "../../main";
 
 export class HeaderButton {
@@ -43,7 +43,7 @@ export class HeaderButton {
 				elements.status = null;
 			} else {
 				const status = elements.button.createSpan({ text, cls: this.cls });
-				// @ts-ignore (Parent element exists)
+				// @ts-expect-error Parent element exists
 				elements.button.parentElement.insertBefore(status, elements.button);
 				elements.status = status;
 				// this.active_mapping.set(view, elements);
@@ -72,7 +72,10 @@ export class HeaderButton {
 			this.changeEvent = this.plugin.app.workspace.on("layout-change", this.attachButtons.bind(this));
 
 		for (const leaf of this.plugin.app.workspace.getLeavesOfType("markdown")) {
-			const view = leaf.view as MarkdownView;
+			// Check if the view is deferred
+			let { view } = leaf;
+			if (!(view instanceof MarkdownView)) continue;
+
 			if (this.active_mapping.has(view)) continue;
 			const event = leaf.on("history-change", () => {
 				this.updateButton(view, this.getvalue(view));
@@ -87,7 +90,7 @@ export class HeaderButton {
 			const status = this.has_label ? button.createSpan({ text, cls: this.cls }) : null;
 
 			if (this.has_label) {
-				// @ts-ignore (Parent element exists)
+				// @ts-expect-error Parent element exists
 				button.parentElement.insertBefore(status, button);
 			}
 

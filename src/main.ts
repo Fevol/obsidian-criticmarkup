@@ -1,5 +1,5 @@
 import {
-	MarkdownFileInfo,
+	type MarkdownFileInfo,
 	type MarkdownPostProcessor,
 	MarkdownPreviewRenderer,
 	MarkdownView,
@@ -28,10 +28,10 @@ import {
 	type StatusBarButton,
 	suggestionModeStatusBarButton,
 } from "./editor/status-bar";
-import {editModeHeaderButton, type HeaderButton, previewModeHeaderButton} from "./editor/view-header";
+import {type HeaderButton, editModeHeaderButton, previewModeHeaderButton} from "./editor/view-header";
 
 import {CommentatorSettings} from "./ui/settings";
-import {CRITICMARKUP_VIEW, CriticMarkupView} from "./ui/view";
+import {CRITICMARKUP_VIEW, CriticMarkupView} from "./ui/view.svelte";
 
 import {Database} from "./database";
 
@@ -153,8 +153,33 @@ export default class CommentatorPlugin extends Plugin {
 		this.editorExtensions.push(
 			commentGutterFoldButton.of(commentGutterFoldButtonState.of(this.settings.comment_gutter_fold_button)),
 		);
+
+
 		this.editorExtensions.push(previewMode.of(previewModeState.of(this.settings.default_preview_mode)));
 		this.editorExtensions.push(editModeValue.of(editModeValueState.of(this.settings.default_edit_mode)));
+
+		// // TODO: inherit previous preview/edit mode states from leaf
+		// //  1. Onload of MarkdownView (and getState): update facet correspondingly
+		// //    (does the header adapt too)
+		// // 	Originally: onload of plugin
+		// 		// @ts-expect-error
+		// 		const proto = Object.getPrototypeOf(new MarkdownView(this.app.workspace));
+		// 		this.remove_monkeys.push(around(proto, {
+		// 			setState: (oldMethod) => {
+		// 				return async function (viewState: ViewState, eState?: any){
+		// 					// @ts-expect-error This is a shadowed variable, cursed, don't do this.
+		// 					const context = this as MarkdownView;
+		// 					// Make sure this is caught
+		// 					const result = oldMethod && oldMethod.apply(context, [viewState, eState]);
+		// 					console.log("setViewState", viewState, eState);
+		// 					console.log(context, context.editor.cm)
+		// 					// The preview/edit mode value needs to be RETRIEVED from STATE and ASSIGNED to a FACET
+		// 					//      Problem:
+		// 					//         - Facet does not exist at this moment (we need to assign the value later (HOW?))
+		// 					return result;
+		// 				};
+		// 			}
+		// 		}));
 	}
 
 	async updateEditorExtension() {
@@ -193,18 +218,24 @@ export default class CommentatorPlugin extends Plugin {
 
 		await this.migrateSettings(await this.loadData());
 
-		this.previewModeHeaderButton = previewModeHeaderButton(this, this.settings.toolbar_preview_button);
-		this.editModeHeaderModeButton = editModeHeaderButton(this, this.settings.toolbar_edit_button);
-
-		this.previewModeStatusBarButton = previewModeStatusBarButton(this, this.settings.status_bar_preview_button);
-		this.editModeStatusBarButton = suggestionModeStatusBarButton(this, this.settings.status_bar_edit_button);
-		this.metadataStatusBarButton = metadataStatusBarButton(this, this.settings.status_bar_metadata_button);
 
 		this.defaultEditModeExtension = getEditMode(this.settings.default_edit_mode, this.settings);
 
 		this.addSettingTab(new CommentatorSettings(this.app, this));
 		this.loadEditorExtensions();
 		this.registerEditorExtension(this.editorExtensions);
+
+		// EXPL: CM editor may not be fully loaded when header buttons are attached
+		//   	Since the header buttons requires an initial value from their corresponding editor facet
+		this.app.workspace.onLayoutReady(() => {
+			this.previewModeHeaderButton = previewModeHeaderButton(this, this.settings.toolbar_preview_button);
+			this.editModeHeaderModeButton = editModeHeaderButton(this, this.settings.toolbar_edit_button);
+		});
+
+		this.previewModeStatusBarButton = previewModeStatusBarButton(this, this.settings.status_bar_preview_button);
+		this.editModeStatusBarButton = suggestionModeStatusBarButton(this, this.settings.status_bar_edit_button);
+		this.metadataStatusBarButton = metadataStatusBarButton(this, this.settings.status_bar_metadata_button);
+
 
 		if (this.settings.post_processor) {
 			// TODO: Run postprocessor before any other MD postprocessors
@@ -392,7 +423,7 @@ export default class CommentatorPlugin extends Plugin {
 			active: true,
 		});
 
-		this.app.workspace.revealLeaf(
+		await this.app.workspace.revealLeaf(
 			this.app.workspace.getLeavesOfType(CRITICMARKUP_VIEW)[0],
 		);
 	}

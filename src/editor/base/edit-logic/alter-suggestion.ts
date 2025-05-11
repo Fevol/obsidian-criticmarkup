@@ -1,6 +1,6 @@
 import { type ChangeSpec, EditorState } from "@codemirror/state";
 
-import { App, type TFile } from "obsidian";
+import type { App, TFile } from "obsidian";
 
 import { applyToText, rangeParser } from "../edit-util";
 import { CriticMarkupRange, SuggestionType } from "../ranges";

@@ -1,7 +1,7 @@
 import { CharCategory, EditorSelection, type EditorState } from "@codemirror/state";
 import {
-	BracketOptionsMap,
-	CursorOptionsMap,
+	type BracketOptionsMap,
+	type CursorOptionsMap,
 	RANGE_BRACKET_MOVEMENT_OPTION,
 	RANGE_CURSOR_MOVEMENT_OPTION,
 } from "../../../types";
