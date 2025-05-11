@@ -2,6 +2,7 @@ import type { App, EventRef } from "obsidian";
 import { COMMENTATOR_GLOBAL } from "../../global";
 import { acceptSuggestions, isCursor, rangeParser, rejectSuggestions } from "../base";
 import { addCommentToView } from "../renderers/gutters/comment-gutter";
+import type {SelectionRange} from "@codemirror/state";
 
 export const cmenuCommands: (app: App) => EventRef = (app) =>
 	app.workspace.on("editor-menu", (menu, editor) => {
@@ -11,7 +12,6 @@ export const cmenuCommands: (app: App) => EventRef = (app) =>
 				.setIcon("message-square")
 				.setSection("criticmarkup")
 				.onClick(() => {
-					// @ts-expect-error CM types shenanigans
 					addCommentToView(editor.cm, ranges.at_cursor(editor.cm.state.selection.main.head));
 				});
 		});
@@ -22,8 +22,7 @@ export const cmenuCommands: (app: App) => EventRef = (app) =>
 					.setIcon("check")
 					.setSection("criticmarkup")
 					.onClick(() => {
-						const selections = editor.cm.state.selection.ranges;
-						// @ts-expect-error Somehow selections is any (while ranges is defined)
+						const selections: SelectionRange[] = editor.cm.state.selection.ranges;
 						const changes = selections.map(selection =>
 							acceptSuggestions(editor.cm.state, selection.from, selection.to)
 						);

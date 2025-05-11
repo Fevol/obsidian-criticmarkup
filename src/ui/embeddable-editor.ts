@@ -151,7 +151,7 @@ export class EmbeddableMarkdownEditor extends resolveEditorPrototype(app) implem
 
 		// Whenever the editor is focused, set the activeEditor to the mocked view (this.owner)
 		// This allows for the editorCommands to actually work
-		this.editor?.cm.contentDOM.addEventListener("focusin", (e) => {
+		this.editor?.cm.contentDOM.addEventListener("focusin", () => {
 			this.app.keymap.pushScope(this.scope);
 			this.app.workspace.activeEditor = this.owner;
 		});
@@ -166,9 +166,7 @@ export class EmbeddableMarkdownEditor extends resolveEditorPrototype(app) implem
 		}
 	}
 
-	// @ts-expect-error (CM types shenanigans)
 	onUpdate(update: ViewUpdate, changed: boolean) {
-		// @ts-expect-error (CM types shenanigans)
 		super.onUpdate(update, changed);
 		if (changed) this.options.onChange(update);
 	}

@@ -122,6 +122,11 @@
   });
 
   let filtered_items = $derived(filterRanges(all_ranges, location_filter, range_type_filter, content_filter, author_filter, date_filter))!;
+  let description_blurb = $derived.by(() => {
+    return `${filtered_items.length} ${filter_names[range_type_filter]} in the ${
+      location_filters[active_file ? location_filter : LocationFilter.VAULT].tooltip.toLowerCase()
+    }`;
+  });
 
   const debouncedUpdate = debounce(filterRanges, 500);
 
@@ -502,11 +507,7 @@
           {/if}
         </div>
         <div class="criticmarkup-view-info">
-          <span
-            >{filtered_items.length}
-            {filter_names[range_type_filter]} in the {location_filters[
-              active_file ? location_filter : LocationFilter.VAULT
-            ].tooltip.toLowerCase()}</span
+          <span>{description_blurb}</span
           >
           {#if selected_ranges.length}
             <span> · {selected_ranges.length} selected</span>
