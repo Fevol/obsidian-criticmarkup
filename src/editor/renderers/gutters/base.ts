@@ -161,10 +161,12 @@ export class GutterElement {
 			while (iOld < skipTo) {
 				const next = this.markers[iOld++];
 				if (next.toDOM) {
-					next.destroy(domPos!);
-					const after = domPos!.nextSibling;
-					domPos!.remove();
-					domPos = after;
+					if (domPos) {
+						next.destroy(domPos!);
+						const after = domPos.nextSibling;
+						domPos.remove();
+						domPos = after;
+					}
 				}
 			}
 			if (!marker) break;
@@ -179,7 +181,7 @@ export class GutterElement {
 	}
 
 	destroy() {
-		this.setMarkers(null, []); // First argument not used unless creating markers
+		this.setMarkers(null, []); // The first argument is not used except for creating markers
 	}
 }
 
