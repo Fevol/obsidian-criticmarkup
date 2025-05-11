@@ -1,9 +1,14 @@
 <script lang="ts">
-  import { createEventDispatcher } from "svelte";
   import SveltyPicker from "svelty-picker";
-  const dispatch = createEventDispatcher();
 
-  export let value: string[] | undefined;
+  interface Props {
+    value: string[] | undefined;
+
+    onClose: (value: string | string[] | null) => void;
+  }
+
+  let { value, onClose }: Props = $props();
+
 </script>
 
 <div class="criticmarkup-daterange-picker">
@@ -12,9 +17,9 @@
     isRange
     autocommit={false}
     mode="datetime"
-    bind:value
+    value={value}
     format="yyyy-mm-dd hh:ii:00"
-    on:cancel={() => dispatch("close")}
-    on:change={(e) => dispatch("close", e.detail)}
+    onBlur={() => onClose(null)}
+    onChange={(e) => onClose(e)}
   />
 </div>

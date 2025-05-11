@@ -3,7 +3,7 @@
 
   import type CommentatorPlugin from "../../../../main";
 
-  export let plugin: CommentatorPlugin;
+  let { plugin }: { plugin: CommentatorPlugin } = $props();
 
   const suggestion_ranges = {
     addition: { icon: "plus-circle", tooltip: "Additions" },
@@ -39,32 +39,34 @@
 <SettingItem name="Cursor movement" type="heading" depth={2} />
 {#each Object.keys(suggestion_ranges) as type}
   <SettingItem name={suggestion_ranges[type].tooltip} type="dropdown" depth={2}>
-    <Dropdown
-      slot="control"
-      value={plugin.settings.suggestion_mode_operations.cursor_movement[type]}
-      options={cursor_movement_options}
-      onChange={(value) => {
-        plugin.settings.suggestion_mode_operations.cursor_movement[type] =
-          value;
-        plugin.saveSettings();
-      }}
-    />
+    {#snippet control()}
+      <Dropdown
+        value={plugin.settings.suggestion_mode_operations.cursor_movement[type]}
+        options={cursor_movement_options}
+        onChange={(value) => {
+          plugin.settings.suggestion_mode_operations.cursor_movement[type] =
+            value;
+          plugin.saveSettings();
+        }}
+      />
+    {/snippet}
   </SettingItem>
 {/each}
 
 <SettingItem name="Bracket movement" type="heading" depth={2} />
 {#each Object.keys(suggestion_ranges) as type}
   <SettingItem name={suggestion_ranges[type].tooltip} type="dropdown" depth={2}>
-    <Dropdown
-      slot="control"
-      value={plugin.settings.suggestion_mode_operations.bracket_movement[type]}
-      options={bracket_movement_options}
-      onChange={(value) => {
-        plugin.settings.suggestion_mode_operations.bracket_movement[type] =
-          value;
-        plugin.saveSettings();
-      }}
-    />
+    {#snippet control()}
+      <Dropdown
+        value={plugin.settings.suggestion_mode_operations.bracket_movement[type]}
+        options={bracket_movement_options}
+        onChange={(value) => {
+          plugin.settings.suggestion_mode_operations.bracket_movement[type] =
+            value;
+          plugin.saveSettings();
+        }}
+      />
+    {/snippet}
   </SettingItem>
 {/each}
 
@@ -81,14 +83,15 @@
   description="Enable custom rendering of CriticMarkup syntax in Live Preview"
   type="toggle"
 >
-  <Toggle
-    slot="control"
-    value={plugin.settings.live_preview}
-    onChange={() => {
-      plugin.settings.live_preview = !plugin.settings.live_preview;
-      plugin.saveSettings();
-    }}
-  />
+  {#snippet control()}
+    <Toggle
+      value={plugin.settings.live_preview}
+      onChange={() => {
+        plugin.settings.live_preview = !plugin.settings.live_preview;
+        plugin.saveSettings();
+      }}
+    />
+  {/snippet}
 </SettingItem>
 
 <SettingItem
@@ -96,12 +99,13 @@
   description="Enable custom rendering of CriticMarkup syntax in Reading View"
   type="toggle"
 >
-  <Toggle
-    slot="control"
-    value={plugin.settings.post_processor}
-    onChange={() => {
-      plugin.settings.post_processor = !plugin.settings.post_processor;
-      plugin.saveSettings();
-    }}
-  />
+  {#snippet control()}
+    <Toggle
+      value={plugin.settings.post_processor}
+      onChange={() => {
+        plugin.settings.post_processor = !plugin.settings.post_processor;
+        plugin.saveSettings();
+      }}
+    />
+  {/snippet}
 </SettingItem>

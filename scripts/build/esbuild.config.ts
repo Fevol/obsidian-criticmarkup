@@ -63,15 +63,15 @@ const context = await esbuild.context({
 	plugins: [
 		sassPlugin(),
 		esbuildSvelte({
-			compilerOptions: { css: "injected", hydratable: false },
+			compilerOptions: { css: "injected" },
 			preprocess: sveltePreprocess(),
 			filterWarnings: (warning) => {
 				// Remove accessibility warnings (base Obsidian ignores these guidelines too)
-				return warning.code !== "a11y-click-events-have-key-events" &&
-					warning.code !== "a11y-no-static-element-interactions" &&
-					warning.code !== "a11y-mouse-events-have-key-events" &&
-					warning.code !== "a11y-no-noninteractive-element-interactions" &&
-					warning.code !== "a11y-no-noninteractive-tabindex";
+				return warning.code !== "a11y_click_events_have_key_events" &&
+					warning.code !== "a11y_no_static_element_interactions" &&
+					warning.code !== "a11y_mouse_events_have_key_events" &&
+					warning.code !== "a11y_no_noninteractive_element_interactions" &&
+					warning.code !== "a11y_no_noninteractive_tabindex";
 			},
 		}),
 		inlineWorkerPlugin({

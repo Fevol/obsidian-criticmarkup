@@ -10,15 +10,12 @@
     "noImplicitAny": true,
     "esModuleInterop": true,
     "importHelpers": true,
-    "verbatimModuleSyntax": false,
+    "verbatimModuleSyntax": true,
     "strict": true,
     "paths": {
       "src": [
         "src/*",
         "tests/*"
-      ],
-      "obsidian-typings/implementations": [
-        "./node_modules/@types/obsidian-typings/dist/implementations.d.ts"
       ]
     },
     "lib": [

@@ -12,7 +12,8 @@
     MetadataSettings,
   } from "./tabs";
 
-  export let plugin: CommentatorPlugin;
+  let { plugin }: { plugin: CommentatorPlugin } = $props();
+
 
   let tabs = [
     { id: "general", name: "General", icon: "settings" },
@@ -21,10 +22,9 @@
     { id: "metadata", name: "Metadata", icon: "tags" },
     { id: "advanced", name: "Advanced", icon: "shield-alert" },
   ];
-  let tab_idx = tabs.findIndex((tab) => tab.id === plugin.settings_tab);
-  let tab_id = tabs[tab_idx].id;
-
-  function getComponent() {
+  let tab_idx = $state(tabs.findIndex((tab) => tab.id === plugin.settings_tab));
+  let tab_id = $derived(tabs[tab_idx].id);
+  let Component = $derived.by(() => {
     switch (tab_id) {
       case "general":
         return GeneralSettings;
@@ -36,8 +36,10 @@
         return InterfaceSettings;
       case "metadata":
         return MetadataSettings;
+      default:
+        return GeneralSettings;
     }
-  }
+  })
 
   async function changedTabs(index: number) {
     tab_idx = index;
@@ -50,7 +52,7 @@
   <nav
     class="criticmarkup-settings-navigation-bar"
     tabindex="0"
-    on:keydown={(e) => {
+    onkeydown={(e) => {
       if (e.key === "Tab") {
         // FIXME: Prevent propagation of tab focus changing ONCE
         if (e.metaKey || e.ctrlKey) return true;
@@ -68,7 +70,7 @@
         class:criticmarkup-settings-navigation-selected-item={tab_idx === index}
         class="criticmarkup-settings-navigation-item"
         aria-label={`${name} settings`}
-        on:click={() => {
+        onclick={() => {
           changedTabs(index);
         }}
       >
@@ -88,7 +90,7 @@
 
   {#key tab_id}
     <div in:slide={{ duration: 400, delay: 400 }} out:slide={{ duration: 400 }}>
-      <svelte:component this={getComponent()} {plugin} />
+      <Component plugin={plugin}/>
     </div>
   {/key}
 </div>

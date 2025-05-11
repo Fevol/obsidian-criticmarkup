@@ -3,18 +3,19 @@
 
   import type CommentatorPlugin from "../../../../main";
 
-  export let plugin: CommentatorPlugin;
+  let { plugin }: { plugin: CommentatorPlugin } = $props();
 </script>
 
 <SettingItem name="Add Metadata" type="toggle">
-  <Toggle
-    slot="control"
-    value={plugin.settings.enable_metadata}
-    onChange={(value) => {
-      plugin.settings.enable_metadata = value;
-      plugin.saveSettings();
-    }}
-  />
+  {#snippet control()}
+    <Toggle
+      value={plugin.settings.enable_metadata}
+      onChange={(value) => {
+        plugin.settings.enable_metadata = value;
+        plugin.saveSettings();
+      }}
+    />
+  {/snippet}
 </SettingItem>
 
 <SettingItem
@@ -22,42 +23,46 @@
   description="Enable rendering and processing of author metadata"
   type="toggle"
 >
-  <Toggle
-    slot="control"
-    value={plugin.settings.enable_author_metadata}
-    onChange={(value) => {
-      plugin.settings.enable_author_metadata = value;
-      plugin.saveSettings();
-    }}
-  />
+  {#snippet control()}
+    <Toggle
+      value={plugin.settings.enable_author_metadata}
+      onChange={(value) => {
+        plugin.settings.enable_author_metadata = value;
+        plugin.saveSettings();
+      }}
+    />
+  {/snippet}
 </SettingItem>
 
 {#if plugin.settings.enable_author_metadata}
   <SettingItem
     name="Add Author Metadata"
     description="Author metadata will be added into new suggestions and comments"
+    type="toggle"
     depth={1}
   >
-    <Toggle
-      slot="control"
-      value={plugin.settings.add_author_metadata}
-      onChange={(value) => {
-        plugin.settings.add_author_metadata = value;
-        plugin.saveSettings();
-      }}
-    />
+    {#snippet control()}
+      <Toggle
+        value={plugin.settings.add_author_metadata}
+        onChange={(value) => {
+          plugin.settings.add_author_metadata = value;
+          plugin.saveSettings();
+        }}
+      />
+    {/snippet}
   </SettingItem>
 
-  <SettingItem name="Name" depth={1}>
-    <Input
-      slot="control"
-      type="text"
-      bind:value={plugin.settings.author}
-      onChange={(value) => {
-        plugin.settings.author = value;
-        plugin.saveSettings();
-      }}
-    />
+  <SettingItem name="Name" depth={1} >
+    {#snippet control()}
+      <Input
+        type="text"
+        bind:value={plugin.settings.author}
+        onChange={(value) => {
+          plugin.settings.author = value;
+          plugin.saveSettings();
+        }}
+      />
+    {/snippet}
   </SettingItem>
 {/if}
 
@@ -66,14 +71,15 @@
   description="Enable rendering and processing of timestamp metadata"
   type="toggle"
 >
-  <Toggle
-    slot="control"
-    value={plugin.settings.enable_timestamp_metadata}
-    onChange={(value) => {
-      plugin.settings.enable_timestamp_metadata = value;
-      plugin.saveSettings();
-    }}
-  />
+  {#snippet control()}
+    <Toggle
+      value={plugin.settings.enable_timestamp_metadata}
+      onChange={(value) => {
+        plugin.settings.enable_timestamp_metadata = value;
+        plugin.saveSettings();
+      }}
+    />
+  {/snippet}
 </SettingItem>
 
 {#if plugin.settings.enable_timestamp_metadata}
@@ -82,14 +88,15 @@
     description="Timestamp metadata will be added into new suggestions and comments"
     depth={1}
   >
-    <Toggle
-      slot="control"
-      value={plugin.settings.add_timestamp_metadata}
-      onChange={(value) => {
-        plugin.settings.add_timestamp_metadata = value;
-        plugin.saveSettings();
-      }}
-    />
+    {#snippet control()}
+      <Toggle
+        value={plugin.settings.add_timestamp_metadata}
+        onChange={(value) => {
+          plugin.settings.add_timestamp_metadata = value;
+          plugin.saveSettings();
+        }}
+      />
+    {/snippet}
   </SettingItem>
 {/if}
 
@@ -98,14 +105,15 @@
   description="Enable rendering and processing of completed metadata"
   type="toggle"
 >
-  <Toggle
-    slot="control"
-    value={plugin.settings.enable_completed_metadata}
-    onChange={(value) => {
-      plugin.settings.enable_completed_metadata = value;
-      plugin.saveSettings();
-    }}
-  />
+  {#snippet control()}
+    <Toggle
+      value={plugin.settings.enable_completed_metadata}
+      onChange={(value) => {
+        plugin.settings.enable_completed_metadata = value;
+        plugin.saveSettings();
+      }}
+    />
+  {/snippet}
 </SettingItem>
 
 {#if plugin.settings.enable_completed_metadata}
@@ -114,14 +122,15 @@
     description="Completed metadata will be added into new suggestions and comments"
     depth={1}
   >
-    <Toggle
-      slot="control"
-      value={plugin.settings.add_completed_metadata}
-      onChange={(value) => {
-        plugin.settings.add_completed_metadata = value;
-        plugin.saveSettings();
-      }}
-    />
+    {#snippet control()}
+      <Toggle
+        value={plugin.settings.add_completed_metadata}
+        onChange={(value) => {
+          plugin.settings.add_completed_metadata = value;
+          plugin.saveSettings();
+        }}
+      />
+    {/snippet}
   </SettingItem>
 {/if}
 
@@ -130,14 +139,15 @@
   description="Enable rendering and processing of style metadata"
   type="toggle"
 >
-  <Toggle
-    slot="control"
-    value={plugin.settings.enable_style_metadata}
-    onChange={(value) => {
-      plugin.settings.enable_style_metadata = value;
-      plugin.saveSettings();
-    }}
-  />
+  {#snippet control()}
+    <Toggle
+      value={plugin.settings.enable_style_metadata}
+      onChange={(value) => {
+        plugin.settings.enable_style_metadata = value;
+        plugin.saveSettings();
+      }}
+    />
+  {/snippet}
 </SettingItem>
 
 {#if plugin.settings.enable_style_metadata}
@@ -146,14 +156,15 @@
     description="Style metadata will be added into new suggestions and comments"
     depth={1}
   >
-    <Toggle
-      slot="control"
-      value={plugin.settings.add_style_metadata}
-      onChange={(value) => {
-        plugin.settings.add_style_metadata = value;
-        plugin.saveSettings();
-      }}
-    />
+    {#snippet control()}
+      <Toggle
+        value={plugin.settings.add_style_metadata}
+        onChange={(value) => {
+          plugin.settings.add_style_metadata = value;
+          plugin.saveSettings();
+        }}
+      />
+    {/snippet}
   </SettingItem>
 {/if}
 
@@ -162,14 +173,15 @@
   description="Enable rendering and processing of color metadata"
   type="toggle"
 >
-  <Toggle
-    slot="control"
-    value={plugin.settings.enable_color_metadata}
-    onChange={(value) => {
-      plugin.settings.enable_color_metadata = value;
-      plugin.saveSettings();
-    }}
-  />
+  {#snippet control()}
+    <Toggle
+      value={plugin.settings.enable_color_metadata}
+      onChange={(value) => {
+        plugin.settings.enable_color_metadata = value;
+        plugin.saveSettings();
+      }}
+    />
+  {/snippet}
 </SettingItem>
 
 {#if plugin.settings.enable_color_metadata}
@@ -178,13 +190,14 @@
     description="Color metadata will be added into new suggestions and comments"
     depth={1}
   >
-    <Toggle
-      slot="control"
-      value={plugin.settings.add_color_metadata}
-      onChange={(value) => {
-        plugin.settings.add_color_metadata = value;
-        plugin.saveSettings();
-      }}
-    />
+    {#snippet control()}
+      <Toggle
+        value={plugin.settings.add_color_metadata}
+        onChange={(value) => {
+          plugin.settings.add_color_metadata = value;
+          plugin.saveSettings();
+        }}
+      />
+    {/snippet}
   </SettingItem>
 {/if}

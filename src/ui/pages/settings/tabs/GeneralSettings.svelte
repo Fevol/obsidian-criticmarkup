@@ -12,9 +12,9 @@
 
   import { EditMode, PreviewMode } from "../../../../types";
 
-  export let plugin: CommentatorPlugin;
+  let { plugin }: { plugin: CommentatorPlugin } = $props();
 
-  let preview_mode = plugin.settings.default_preview_mode;
+  let preview_mode = $state(plugin.settings.default_preview_mode);
   const preview_mode_notices = {
     [PreviewMode.ALL]: "All suggestions will be visible",
     [PreviewMode.ACCEPT]:
@@ -34,20 +34,21 @@
     },
   ]}
 >
-  <Dropdown
-    slot="control"
-    options={[
-      { value: EditMode.OFF.toString(), text: "Regular Edit Mode" },
-      { value: EditMode.CORRECTED.toString(), text: "Corrected Edit Mode" },
-      { value: EditMode.SUGGEST.toString(), text: "Suggestion Mode" },
-    ]}
-    value={plugin.settings.default_edit_mode.toString()}
-    onChange={(value) => {
-      let edit_mode = parseInt(value);
-      plugin.settings.default_edit_mode = edit_mode;
-      plugin.saveSettings();
-    }}
-  />
+  {#snippet control()}
+    <Dropdown
+      options={[
+        { value: EditMode.OFF.toString(), text: "Regular Edit Mode" },
+        { value: EditMode.CORRECTED.toString(), text: "Corrected Edit Mode" },
+        { value: EditMode.SUGGEST.toString(), text: "Suggestion Mode" },
+      ]}
+      value={plugin.settings.default_edit_mode.toString()}
+      onChange={(value) => {
+        let edit_mode = parseInt(value);
+        plugin.settings.default_edit_mode = edit_mode;
+        plugin.saveSettings();
+      }}
+    />
+  {/snippet}
 </SettingItem>
 
 <SettingItem
@@ -61,20 +62,21 @@
     { type: "info", text: preview_mode_notices[preview_mode] },
   ]}
 >
-  <Dropdown
-    slot="control"
-    options={[
-      { value: PreviewMode.ALL.toString(), text: "View all suggestions" },
-      { value: PreviewMode.ACCEPT.toString(), text: "Preview 'accept all'" },
-      { value: PreviewMode.REJECT.toString(), text: "Preview 'reject all'" },
-    ]}
-    value={plugin.settings.default_preview_mode.toString()}
-    onChange={(value) => {
-      preview_mode = parseInt(value);
-      plugin.settings.default_preview_mode = preview_mode;
-      plugin.saveSettings();
-    }}
-  />
+  {#snippet control()}
+    <Dropdown
+      options={[
+        { value: PreviewMode.ALL.toString(), text: "View all suggestions" },
+        { value: PreviewMode.ACCEPT.toString(), text: "Preview 'accept all'" },
+        { value: PreviewMode.REJECT.toString(), text: "Preview 'reject all'" },
+      ]}
+      value={plugin.settings.default_preview_mode.toString()}
+      onChange={(value) => {
+        preview_mode = parseInt(value);
+        plugin.settings.default_preview_mode = preview_mode;
+        plugin.saveSettings();
+      }}
+    />
+  {/snippet}
 </SettingItem>
 
 <SettingItem
@@ -95,14 +97,15 @@
     },
   ]}
 >
-  <Toggle
-    slot="control"
-    value={plugin.settings.enable_metadata}
-    onChange={(value) => {
-      plugin.settings.enable_metadata = value;
-      plugin.saveSettings();
-    }}
-  />
+  {#snippet control()}
+    <Toggle
+      value={plugin.settings.enable_metadata}
+      onChange={(value) => {
+        plugin.settings.enable_metadata = value;
+        plugin.saveSettings();
+      }}
+    />
+  {/snippet}
 </SettingItem>
 
 <SettingItem name="Database" type="heading" />
@@ -118,17 +121,18 @@
   ]}
   type="slider"
 >
-  <Slider
-    slot="control"
-    min={1}
-    max={navigator.hardwareConcurrency / 2}
-    step={1}
-    value={plugin.settings.database_workers}
-    onChange={(value) => {
-      plugin.settings.database_workers = value;
-      plugin.saveSettings();
-    }}
-  />
+  {#snippet control()}
+    <Slider
+      min={1}
+      max={navigator.hardwareConcurrency / 2}
+      step={1}
+      value={plugin.settings.database_workers}
+      onChange={(value) => {
+        plugin.settings.database_workers = value;
+        plugin.saveSettings();
+      }}
+    />
+  {/snippet}
 </SettingItem>
 
 <SettingItem
@@ -144,14 +148,15 @@
     },
   ]}
 >
-  <Button
-    slot="control"
-    text="Rebuild"
-    onClick={async () => {
-      await plugin.database.reinitializeDatabase();
-      console.log("Database rebuilt");
-    }}
-  />
+  {#snippet control()}
+    <Button
+      text="Rebuild"
+      onClick={async () => {
+        await plugin.database.reinitializeDatabase();
+        console.log("Database rebuilt");
+      }}
+    />
+  {/snippet}
 </SettingItem>
 
 <div class="criticmarkup-important-buttons criticmarkup-fail">

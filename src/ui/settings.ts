@@ -1,12 +1,12 @@
 import { App, PluginSettingTab } from "obsidian";
 import type CommentatorPlugin from "../main";
 
-import { type SvelteComponent } from "svelte";
+import { mount, unmount } from "svelte";
 import { SettingsPage } from "./pages";
 
 export class CommentatorSettings extends PluginSettingTab {
 	plugin: CommentatorPlugin;
-	private view: SvelteComponent | null = null;
+	private view: ReturnType<typeof SettingsPage> | null = null;
 
 	constructor(app: App, plugin: CommentatorPlugin) {
 		super(app, plugin);
@@ -17,8 +17,8 @@ export class CommentatorSettings extends PluginSettingTab {
 		const { containerEl } = this;
 		containerEl.empty();
 
-		this.view = new SettingsPage({
-			target: containerEl,
+		this.view = mount(SettingsPage, {
+			target: this.containerEl,
 			props: {
 				plugin: this.plugin,
 			},
@@ -27,6 +27,8 @@ export class CommentatorSettings extends PluginSettingTab {
 
 	hide(): void {
 		super.hide();
-		this.view!.$destroy();
+		if (this.view) {
+			unmount(this.view);
+		}
 	}
 }

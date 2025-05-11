@@ -33,45 +33,32 @@
   } from "../../../editor/base";
   import { DaterangeModal } from "../../modals";
 
-  export let plugin: CommentatorPlugin;
-
-  enum SuggestionTypeFilter {
-    ALL,
-    ADDITION,
-    DELETION,
-    SUBSTITUTION,
-    HIGHLIGHT,
-    COMMENT,
-  }
-
-  enum LocationFilter {
-    VAULT,
-    FOLDER,
-    FILE,
-  }
-
-  enum ContentFilter {
-    ALL,
-    CONTENT,
-    EMPTY,
-  }
-
-  enum AuthorFilter {
-    ALL,
-    SELF,
-    OTHERS,
-  }
-
+  const enum SuggestionTypeFilter { ALL, ADDITION, DELETION, SUBSTITUTION, HIGHLIGHT, COMMENT }
+  const enum LocationFilter { VAULT, FOLDER, FILE }
+  const enum ContentFilter { ALL, CONTENT, EMPTY }
+  const enum AuthorFilter { ALL, SELF, OTHERS }
   type RangeEntry = { path: string; range: CriticMarkupRange };
 
-  export let range_type_filter: SuggestionTypeFilter = SuggestionTypeFilter.ALL;
-  export let location_filter: LocationFilter = LocationFilter.VAULT;
-  export let content_filter: ContentFilter = ContentFilter.ALL;
-  export let author_filter: AuthorFilter = AuthorFilter.ALL;
-  export let date_filter: number[] | undefined = undefined;
+  interface Props {
+    plugin: CommentatorPlugin;
+    range_type_filter?: SuggestionTypeFilter;
+    location_filter?: LocationFilter;
+    content_filter?: ContentFilter;
+    author_filter?: AuthorFilter;
+    date_filter?: number[] | undefined;
+  }
 
-  let search_filter: string = "";
-  let active_file: TFile | null = null;
+  let {
+    plugin,
+    range_type_filter = SuggestionTypeFilter.ALL,
+    location_filter = LocationFilter.VAULT,
+    content_filter = ContentFilter.ALL,
+    author_filter = AuthorFilter.ALL,
+    date_filter = undefined,
+  }: Props = $props();
+
+  let search_filter: string = $state("");
+  let active_file: TFile | null = $state(null);
   const file_change_event = plugin.app.workspace.on(
     "active-leaf-change",
     () => {
@@ -79,16 +66,10 @@
     },
   );
 
-  let all_ranges: DatabaseEntry<CriticMarkupRange[]>[] = [];
-  let flattened_ranges: RangeEntry[] = [];
-  let selected_ranges: number[] = [];
-  let anchor_selected_range: number | null = null;
-  let hover_index: number | null = null;
-
-  const save_view_state = debounce(
-    () => plugin.app.workspace.requestSaveLayout(),
-    2500,
-  );
+  let all_ranges: DatabaseEntry<CriticMarkupRange[]>[] = $state([]);
+  let selected_ranges: number[] = $state([]);
+  let anchor_selected_range: number | null = $state(null);
+  let hover_index: number | null = $state(null);
 
   const range_filters = [
     { icon: "asterisk", tooltip: "All markup" },
@@ -126,115 +107,129 @@
     { icon: "user-x", tooltip: "Only others' suggestions" },
   ];
 
-  const debouncedUpdate = debounce(filterRanges, 500);
-
   const undo_history: {
     file_history: Record<string, string>;
     selected_ranges: number[];
   }[] = [];
 
   onMount(() => {
-    plugin.database.on("database-update", updateRanges);
-    updateRanges(plugin.database.allEntries()!);
+    plugin.database.on("database-update", (ranges) => { all_ranges = ranges; });
+    all_ranges = plugin.database.allEntries()!;
   });
 
   onDestroy(() => {
     plugin.app.workspace.offref(file_change_event);
   });
 
-  async function updateRanges(ranges: DatabaseEntry<CriticMarkupRange[]>[]) {
-    all_ranges = ranges;
-    await filterRanges();
-  }
+  let filtered_items = $derived(filterRanges(all_ranges, location_filter, range_type_filter, content_filter, author_filter, date_filter))!;
 
-  $: range_type_filter,
-    location_filter,
-    content_filter,
-    author_filter,
-    date_filter,
-    save_view_state(),
+  const debouncedUpdate = debounce(filterRanges, 500);
+
+  $effect(() => {
+    active_file;
     settingChanged();
-  $: active_file, settingChanged();
+  });
+
+  const save_view_state = debounce(
+          () => plugin.app.workspace.requestSaveLayout(),
+          2500,
+  );
+
+  $effect(() => {
+    range_type_filter; location_filter; content_filter; author_filter; date_filter;
+    save_view_state()
+    settingChanged();
+  });
 
   function settingChanged() {
     selected_ranges = [];
     anchor_selected_range = null;
-    filterRanges();
   }
 
-  async function filterRanges() {
-    if (!all_ranges) return;
-    let temp = all_ranges!;
+  function filterRanges(
+          items?: DatabaseEntry<CriticMarkupRange[]>[],
+          location_filter?: LocationFilter, range_type_filter?: SuggestionTypeFilter, content_filter?: ContentFilter,
+          author_filter?: AuthorFilter, date_filter?: number[]
+  ) {
+    if (!items) return;
+    let basic_ranges = items;
 
+    // Filter by location (vault, folder, file)
     if (location_filter !== LocationFilter.VAULT) {
       const active_file = plugin.app.workspace.getActiveFile();
       if (active_file) {
         if (location_filter === LocationFilter.FOLDER)
-          temp = all_ranges.filter(([key, _]) =>
+            basic_ranges = items.filter(([key, _]) =>
             key.startsWith(active_file.parent?.path ?? ""),
           );
         else if (location_filter === LocationFilter.FILE)
-          temp = all_ranges.filter(([key, _]) => key === active_file.path);
+            basic_ranges = items.filter(([key, _]) => key === active_file.path);
       }
     }
 
-    flattened_ranges = temp.flatMap(([path, value]) =>
-      value.data.map((range) => {
-        return { path, range };
-      }),
+    let filtered_ranges = basic_ranges.flatMap(([path, value]) =>
+        value.data.map((range) => {
+            return { path, range };
+        }),
     );
 
-    flattened_ranges = flattened_ranges.filter(
-      (item) =>
-        item.range.type !== SuggestionType.COMMENT ||
-        !(item.range as CommentRange).attached_comment,
+    filtered_ranges = filtered_ranges.filter(
+        (item) =>
+            item.range.type !== SuggestionType.COMMENT ||
+            !(item.range as CommentRange).attached_comment,
     );
 
+    // Filter by type (addition, deletion, etc.)
     if (range_type_filter !== SuggestionTypeFilter.ALL)
-      flattened_ranges = flattened_ranges.filter(
+        filtered_ranges = filtered_ranges.filter(
         (item) =>
           item.range.type ===
           Object.values(SuggestionType)[range_type_filter - 1],
       );
 
+    // Filter by content (empty or not)
     if (content_filter !== ContentFilter.ALL)
-      flattened_ranges = flattened_ranges.filter(
+        filtered_ranges = filtered_ranges.filter(
         (item) =>
           (content_filter === ContentFilter.CONTENT) !== item.range.empty(),
       );
 
+    // Filter by metadata
     if (plugin.settings.enable_metadata) {
+
+      // Filter by author metadata
       if (
         plugin.settings.enable_author_metadata &&
         author_filter !== AuthorFilter.ALL &&
         plugin.settings.author
       ) {
         if (author_filter === AuthorFilter.SELF)
-          flattened_ranges = flattened_ranges.filter(
+            filtered_ranges = filtered_ranges.filter(
             (item) => item.range.fields.author === plugin.settings.author,
           );
         else if (author_filter === AuthorFilter.OTHERS)
-          flattened_ranges = flattened_ranges.filter(
+            filtered_ranges = filtered_ranges.filter(
             (item) => item.range.fields.author !== plugin.settings.author,
           );
       }
 
+      // Filter by date metadata
       if (plugin.settings.enable_timestamp_metadata && date_filter) {
         if (date_filter[0] && date_filter[1]) {
-          flattened_ranges = flattened_ranges.filter(
+            filtered_ranges = filtered_ranges.filter(
             (item) =>
               item.range.fields.time &&
               item.range.fields.time >= date_filter![0] &&
               item.range.fields.time <= date_filter![1],
           );
         } else if (date_filter[0]) {
-          flattened_ranges = flattened_ranges.filter(
+            filtered_ranges = filtered_ranges.filter(
             (item) =>
               item.range.fields.time &&
               item.range.fields.time >= date_filter![0],
           );
         } else if (date_filter[1]) {
-          flattened_ranges = flattened_ranges.filter(
+            filtered_ranges = filtered_ranges.filter(
             (item) =>
               item.range.fields.time &&
               item.range.fields.time <= date_filter![1],
@@ -243,10 +238,14 @@
       }
     }
 
-    if (search_filter.length)
-      flattened_ranges = flattened_ranges.filter(
-        (item) => prepareSimpleSearch(search_filter)(item.range.text)?.score,
+    // Filter by search terms
+    if (search_filter.length) {
+        filtered_ranges = filtered_ranges.filter(
+              (item) => prepareSimpleSearch(search_filter)(item.range.text)?.score,
       );
+    }
+
+    return filtered_ranges;
   }
 
   async function editSelectedRanges(accept: boolean, entry: number | null) {
@@ -255,7 +254,7 @@
       anchor_selected_range = entry;
     }
     const current_ranges = selected_ranges.map(
-      (value) => flattened_ranges[value],
+      (value) => filtered_items[value],
     );
 
     const grouped_ranges = current_ranges.reduce(
@@ -304,7 +303,7 @@
       !e.altKey &&
       !e.metaKey
     ) {
-      selected_ranges = Array.from(flattened_ranges.keys());
+      selected_ranges = Array.from(filtered_items.keys());
       anchor_selected_range = 0;
     } else if (e.key === "Escape") {
       selected_ranges = [];
@@ -319,9 +318,9 @@
 </script>
 
 <View>
-  <svelte:fragment slot="header">
+  {#snippet header()}
     <NavHeader>
-      <svelte:fragment slot="container">
+      {#snippet container()}
         <div class="commentator-view-search search-input-container">
           <Input
             value={search_filter}
@@ -363,7 +362,7 @@
             icon="lasso"
             tooltip="Select all markup"
             onClick={() => {
-              selected_ranges = Array.from(flattened_ranges.keys());
+              selected_ranges = Array.from(filtered_items.keys());
               anchor_selected_range = 0;
             }}
           />
@@ -439,7 +438,7 @@
               <button
                 class="clickable-icon nav-action-button svelcomlib-icon-text"
                 aria-label="Filter by date"
-                on:click={() =>
+                onclick={() =>
                   new DaterangeModal(plugin, date_filter, (val) => {
                     date_filter = val?.map((date) =>
                       date
@@ -447,7 +446,7 @@
                         : 0,
                     );
                   }).open()}
-                on:contextmenu={(e) => {
+                oncontextmenu={(e) => {
                   e.preventDefault();
                   const menu = new Menu();
                   menu.addItem((item) => {
@@ -504,7 +503,7 @@
         </div>
         <div class="criticmarkup-view-info">
           <span
-            >{flattened_ranges.length}
+            >{filtered_items.length}
             {filter_names[range_type_filter]} in the {location_filters[
               active_file ? location_filter : LocationFilter.VAULT
             ].tooltip.toLowerCase()}</span
@@ -513,186 +512,189 @@
             <span> · {selected_ranges.length} selected</span>
           {/if}
         </div>
-      </svelte:fragment>
+      {/snippet}
     </NavHeader>
-  </svelte:fragment>
+  {/snippet}
 
-  <svelte:fragment slot="view">
+  {#snippet view()}
     <div
       class="criticmarkup-view-container"
       tabindex="-1"
-      on:click={onClickOutside}
-      on:keydown={handleKey}
+      onclick={onClickOutside}
+      onkeydown={handleKey}
     >
-      <VirtualList items={flattened_ranges} let:item let:index>
-        <div
-          class="criticmarkup-view-range"
-          class:criticmarkup-view-range-completed={item.range.fields.done}
-          class:criticmarkup-view-range-selected={selected_ranges.some(
-            (value) => value === index,
-          )}
-          on:mouseenter={() => (hover_index = index)}
-          on:mouseleave={() => (hover_index = null)}
-          on:click|stopPropagation={async (e) => {
-            if (e.shiftKey) {
-              if (anchor_selected_range) {
-                const start = Math.min(anchor_selected_range, index);
-                const end = Math.max(anchor_selected_range, index);
-                selected_ranges = Array.from(
-                  { length: end - start + 1 },
-                  (_, i) => i + start,
-                );
-              } else {
-                selected_ranges = [index];
+      <VirtualList items={filtered_items}>
+        {#snippet item(row, index)}
+          <div
+            class="criticmarkup-view-range"
+            class:criticmarkup-view-range-completed={row.range.fields.done}
+            class:criticmarkup-view-range-selected={selected_ranges.some(
+              (value) => value === index,
+            )}
+            onmouseenter={() => (hover_index = index)}
+            onmouseleave={() => (hover_index = null)}
+            onclick={async (e) => {
+              e.stopPropagation();
+              if (e.shiftKey) {
+                if (anchor_selected_range) {
+                  const start = Math.min(anchor_selected_range, index);
+                  const end = Math.max(anchor_selected_range, index);
+                  selected_ranges = Array.from(
+                    { length: end - start + 1 },
+                    (_, i) => i + start,
+                  );
+                } else {
+                  selected_ranges = [index];
+                  anchor_selected_range = index;
+                }
+              } else if (e.ctrlKey || e.metaKey) {
                 anchor_selected_range = index;
+                const original_length = selected_ranges.length;
+                selected_ranges = selected_ranges.filter(
+                  (value) => value !== index,
+                );
+                if (selected_ranges.length === original_length)
+                  selected_ranges = [...selected_ranges, index];
+              } else {
+                selected_ranges = [];
+                const leaves = plugin.app.workspace.getLeavesOfType("markdown");
+                if (!leaves.length) return;
+                const lastActiveLeaf = leaves.reduce((a, b) =>
+                  a.activeTime > b.activeTime ? a : b,
+                );
+
+                const file = plugin.app.vault.getAbstractFileByPath(row.path);
+                if (!file) return;
+                const view = lastActiveLeaf.view;
+
+                if (file !== view.file) await lastActiveLeaf.openFile(file);
+
+                view.editor.setSelection(
+                  view.editor.offsetToPos(row.range.from),
+                  view.editor.offsetToPos(row.range.to),
+                );
               }
-            } else if (e.ctrlKey || e.metaKey) {
-              anchor_selected_range = index;
-              const original_length = selected_ranges.length;
-              selected_ranges = selected_ranges.filter(
-                (value) => value !== index,
-              );
-              if (selected_ranges.length === original_length)
-                selected_ranges = [...selected_ranges, index];
-            } else {
-              selected_ranges = [];
-              const leaves = plugin.app.workspace.getLeavesOfType("markdown");
-              if (!leaves.length) return;
-              const lastActiveLeaf = leaves.reduce((a, b) =>
-                a.activeTime > b.activeTime ? a : b,
-              );
+            }}
+            oncontextmenu={(e) => {
+              const menu = new Menu();
+              menu.addItem((item) => {
+                item
+                  .setTitle(
+                    "Accept" +
+                      (selected_ranges.length ? " selected changes" : " changes"),
+                  )
+                  .setIcon("check")
+                  .onClick(async () => editSelectedRanges(true, index));
+              });
+              menu.addItem((item) => {
+                item
+                  .setTitle(
+                    "Reject" +
+                      (selected_ranges.length ? " selected changes" : " changes"),
+                  )
+                  .setIcon("cross")
+                  .onClick(async () => editSelectedRanges(false, index));
+              });
 
-              const file = plugin.app.vault.getAbstractFileByPath(item.path);
-              if (!file) return;
-              const view = lastActiveLeaf.view;
-
-              if (file !== view.file) await lastActiveLeaf.openFile(file);
-
-              view.editor.setSelection(
-                view.editor.offsetToPos(item.range.from),
-                view.editor.offsetToPos(item.range.to),
-              );
-            }
-          }}
-          on:contextmenu={(e) => {
-            const menu = new Menu();
-            menu.addItem((item) => {
-              item
-                .setTitle(
-                  "Accept" +
-                    (selected_ranges.length ? " selected changes" : " changes"),
-                )
-                .setIcon("check")
-                .onClick(async () => editSelectedRanges(true, index));
-            });
-            menu.addItem((item) => {
-              item
-                .setTitle(
-                  "Reject" +
-                    (selected_ranges.length ? " selected changes" : " changes"),
-                )
-                .setIcon("cross")
-                .onClick(async () => editSelectedRanges(false, index));
-            });
-
-            menu.showAtMouseEvent(e);
-          }}
-        >
-          {#if hover_index === index}
-            <div style="position: relative">
-              <div class="criticmarkup-view-suggestion-buttons">
-                <Button
-                  icon="check"
-                  tooltip="Accept change"
-                  onClick={() => editSelectedRanges(true, index)}
-                />
-                <Button
-                  icon="cross"
-                  tooltip="Reject change"
-                  onClick={() => editSelectedRanges(false, index)}
-                />
-              </div>
-            </div>
-          {/if}
-
-          <!-- TODO: Only show path if folder/vault-wide filter is active -->
-          <div class="criticmarkup-view-range-top">
-            <Icon size={24} icon={SUGGESTION_ICON_MAPPER[item.range.type]} />
-            <div>
-              <span class="criticmarkup-view-range-title">{item.path}</span>
-              <div>
-                {#if item.range.fields.author}
-                  <span class="criticmarkup-view-range-author">
-                    {item.range.fields.author}
-                  </span>
-                {/if}
-
-                {#if item.range.fields.time}
-                  <span class="criticmarkup-view-range-time">
-                    {window.moment
-                      .unix(item.range.fields.time)
-                      .format("MMM DD YYYY, HH:mm")}
-                  </span>
-                {/if}
-              </div>
-            </div>
-          </div>
-
-          {#key item.range.text}
-            <div class="criticmarkup-view-range-text">
-              {#if item.range.empty()}
-                <span class="criticmarkup-view-range-empty"
-                  >This range is empty</span
-                >
-              {:else}
-                {@const parts = item.range.unwrap_parts()}
-                <MarkdownRenderer
-                  {plugin}
-                  text={parts[0]}
-                  source={item.path}
-                  class={item.range.fields.style}
-                />
-                {#if item.range.type === SuggestionType.SUBSTITUTION}
-                  <MarkdownRenderer
-                    {plugin}
-                    text={parts[1]}
-                    source={item.path}
+              menu.showAtMouseEvent(e);
+            }}
+          >
+            {#if hover_index === index}
+              <div style="position: relative">
+                <div class="criticmarkup-view-suggestion-buttons">
+                  <Button
+                    icon="check"
+                    tooltip="Accept change"
+                    onClick={() => editSelectedRanges(true, index)}
                   />
-                {/if}
-              {/if}
-            </div>
-          {/key}
+                  <Button
+                    icon="cross"
+                    tooltip="Reject change"
+                    onClick={() => editSelectedRanges(false, index)}
+                  />
+                </div>
+              </div>
+            {/if}
 
-          {#if item.range.replies.length}
-            {#each item.range.replies as reply}
-              <div class="criticmarkup-view-range-reply">
-                <div class="criticmarkup-view-range-reply-top">
-                  {#if reply.fields.author}
-                    <span class="criticmarkup-view-range-reply-author">
-                      {reply.fields.author}
+            <!-- TODO: Only show path if folder/vault-wide filter is active -->
+            <div class="criticmarkup-view-range-top">
+              <Icon size={24} icon={SUGGESTION_ICON_MAPPER[row.range.type]} />
+              <div>
+                <span class="criticmarkup-view-range-title">{row.path}</span>
+                <div>
+                  {#if row.range.fields.author}
+                    <span class="criticmarkup-view-range-author">
+                      {row.range.fields.author}
                     </span>
                   {/if}
-                  {#if reply.fields.time}
-                    <span class="criticmarkup-view-range-reply-time">
+
+                  {#if row.range.fields.time}
+                    <span class="criticmarkup-view-range-time">
                       {window.moment
-                        .unix(reply.fields.time)
+                        .unix(row.range.fields.time)
                         .format("MMM DD YYYY, HH:mm")}
                     </span>
                   {/if}
                 </div>
-                <div class="criticmarkup-view-range-reply-text">
+              </div>
+            </div>
+
+            {#key row.range.text}
+              <div class="criticmarkup-view-range-text">
+                {#if row.range.empty()}
+                  <span class="criticmarkup-view-range-empty"
+                    >This range is empty</span
+                  >
+                {:else}
+                  {@const parts = row.range.unwrap_parts()}
                   <MarkdownRenderer
                     {plugin}
-                    text={reply.unwrap()}
-                    source={item.path}
-                    class={reply.fields.style}
+                    text={parts[0]}
+                    source={row.path}
+                    class={row.range.fields.style}
                   />
-                </div>
+                  {#if row.range.type === SuggestionType.SUBSTITUTION}
+                    <MarkdownRenderer
+                      {plugin}
+                      text={parts[1]}
+                      source={row.path}
+                    />
+                  {/if}
+                {/if}
               </div>
-            {/each}
-          {/if}
-        </div>
+            {/key}
+
+            {#if row.range.replies.length}
+              {#each row.range.replies as reply}
+                <div class="criticmarkup-view-range-reply">
+                  <div class="criticmarkup-view-range-reply-top">
+                    {#if reply.fields.author}
+                      <span class="criticmarkup-view-range-reply-author">
+                        {reply.fields.author}
+                      </span>
+                    {/if}
+                    {#if reply.fields.time}
+                      <span class="criticmarkup-view-range-reply-time">
+                        {window.moment
+                          .unix(reply.fields.time)
+                          .format("MMM DD YYYY, HH:mm")}
+                      </span>
+                    {/if}
+                  </div>
+                  <div class="criticmarkup-view-range-reply-text">
+                    <MarkdownRenderer
+                      {plugin}
+                      text={reply.unwrap()}
+                      source={row.path}
+                      class={reply.fields.style}
+                    />
+                  </div>
+                </div>
+              {/each}
+            {/if}
+          </div>
+        {/snippet}
       </VirtualList>
     </div>
-  </svelte:fragment>
+  {/snippet}
 </View>
