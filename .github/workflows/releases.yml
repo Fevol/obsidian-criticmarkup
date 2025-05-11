@@ -13,27 +13,26 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           submodules: true
-      - name: Use Node.js
-        uses: actions/setup-node@v1
+      - uses: oven-sh/setup-bun@v1
         with:
-          node-version: "16.14"
-      - name: Build
+          bun-version: latest
+      - name: Build plugin
         id: build
         run: |
           cd ./src/editor/base/parser
-          npm i --force
-          npm run build --if-present
+          bun i --force
+          bun run build --if-present
           cd ../../../..
-          npm i --force
-          npm run build --if-present
+          bun i --force
+          bun run build --if-present
           mkdir ${{ env.PLUGIN_NAME }}
           cp main.js manifest.json styles.css ${{ env.PLUGIN_NAME }}
           zip -r ${{ env.PLUGIN_NAME }}.zip ${{ env.PLUGIN_NAME }}
           ls
-          npx rexreplace "^.*?#(#+\s\[.*?\n.*?)(?=\s*#+\s\[)" "_" -s -M -G -m -o "CHANGELOG.md" > release_notes.md
+          bunx rexreplace "^.*?#(#+\s\[.*?\n.*?)(?=\s*#+\s\[)" "_" -s -M -G -m -o "CHANGELOG.md" > release_notes.md
           echo "::set-output name=tag_name::$(git tag --sort version:refname | tail -n 1)"
       - name: Create Release
         id: create_release
