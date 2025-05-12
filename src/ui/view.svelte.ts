@@ -55,9 +55,10 @@ export class CriticMarkupView extends ItemView {
 	}
 
 	getState() {
+		const { plugin, ...props } = this.props;
 		return {
 			...super.getState(),
-			...this.props,
+			...props,
 		}
 	}
 
