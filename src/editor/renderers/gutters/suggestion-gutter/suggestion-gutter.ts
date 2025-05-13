@@ -13,6 +13,7 @@ import {
 	GutterView,
 	SingleGutterView,
 } from "../base";
+import { suggestionGutterCompartment } from "./index";
 
 const unfixGutters = Facet.define<boolean, boolean>({
 	combine: values => values.some(x => x),
@@ -23,6 +24,20 @@ const activeGutters = Facet.define<Required<GutterConfig>>();
 class SuggestionGutterView extends GutterView {
 	constructor(view: EditorView) {
 		super(view, unfixGutters, activeGutters);
+
+		// FIXME: this still causes a layout shift
+		if (!view.dom.parentElement!.classList.contains("markdown-source-view")) {
+			// Prevent gutter from appearing for a brief second (until setImmediate kicks in)
+			this.dom.style.display = 'none';
+			// Codemirror doesn't allow state changes during updates, so reconfiguration needs to be delayed
+			setImmediate(() => {
+				view.dispatch(view.state.update({
+					effects: [
+						suggestionGutterCompartment.reconfigure([])
+					]
+				}));
+			});
+		}
 	}
 
 	createGutters(view: EditorView) {

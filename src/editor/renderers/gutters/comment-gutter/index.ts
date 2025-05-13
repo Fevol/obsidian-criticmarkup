@@ -1,4 +1,4 @@
-import { EditorSelection, RangeSet, StateField } from "@codemirror/state";
+import { Compartment, EditorSelection, RangeSet, StateField } from "@codemirror/state";
 import { EditorView, ViewPlugin } from "@codemirror/view";
 import { App, editorInfoField } from "obsidian";
 import { CriticMarkupRange, SuggestionType } from "../../../base";
@@ -19,6 +19,9 @@ export const commentGutter: (
 		markers: v => v.state.field(commentGutterMarkers),
 	}) as [[ViewPlugin<CommentGutterView>], unknown],
 ];
+
+export const commentGutterCompartment = new Compartment();
+
 
 export function addCommentToView(editor: EditorView, range: CriticMarkupRange | undefined) {
 	const cursor = range ? range.full_range_back : editor.state.selection.main.head;

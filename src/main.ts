@@ -18,7 +18,7 @@ import {type CriticMarkupRange, getRangesInText, RANGE_PROTOTYPE_MAPPER, rangePa
 import {cmenuCommands, commands} from "./editor/uix";
 import {bracketMatcher, editorKeypressCatcher, rangeCorrecter} from "./editor/uix/extensions";
 
-import {commentGutter, suggestionGutter} from "./editor/renderers/gutters";
+import {commentGutter, commentGutterCompartment, suggestionGutter, suggestionGutterCompartment} from "./editor/renderers/gutters";
 import {commentRenderer, markupRenderer} from "./editor/renderers/live-preview";
 import {postProcess, postProcessorRerender, postProcessorUpdate} from "./editor/renderers/post-process";
 import {
@@ -119,15 +119,19 @@ export default class CommentatorPlugin extends Plugin {
 
 		if (this.settings.comment_style === "icon" || this.settings.comment_style === "block")
 			this.editorExtensions.push(Prec.low(commentRenderer(this.settings)));
-		if (this.settings.comment_style === "block")
-			this.editorExtensions.push(Prec.low(commentGutter(this.app) as Extension[]));
+		if (this.settings.comment_style === "block") {
+			this.editorExtensions.push(
+				commentGutterCompartment.of(Prec.low(commentGutter(this.app) as Extension[]))
+			);
+		}
 
 		if (this.settings.live_preview)
 			this.editorExtensions.push(Prec.low(markupRenderer(this.settings)));
 
 		// TODO: Rerender gutter on Ctrl+Scroll
-		if (this.settings.editor_gutter)
-			this.editorExtensions.push(suggestionGutter);
+		if (this.settings.editor_gutter) {
+			this.editorExtensions.push(suggestionGutterCompartment.of(suggestionGutter));
+		}
 
 		if (this.settings.tag_completion)
 			this.editorExtensions.push(bracketMatcher);

@@ -1,8 +1,9 @@
-import { suggestionGutterMarkers } from "./marker";
-
 import { Menu } from "obsidian";
+import { Compartment } from "@codemirror/state";
+
 import { acceptSuggestions, rejectSuggestions } from "../../../base";
 import { suggestion_gutter } from "./suggestion-gutter";
+import { suggestionGutterMarkers } from "./marker";
 
 export const suggestionGutter = /*(plugin: CommentatorPlugin) => */ [
 	suggestionGutterMarkers,
@@ -33,5 +34,8 @@ export const suggestionGutter = /*(plugin: CommentatorPlugin) => */ [
 		},
 	}),
 ];
+
+export const suggestionGutterCompartment = new Compartment();
+
 
 export { suggestionGutterMarkers };
