@@ -162,7 +162,18 @@ export class GutterElement {
 				const next = this.markers[iOld++];
 				if (next.toDOM) {
 					if (domPos) {
-						next.destroy(domPos!);
+						// FIXME: This if-check prevents a re-used Marker (specifically, a marker that is used
+						//  	 	in both a old _and_ a new GutterElement) from being completely removed from the DOM
+						//		    This needs to be done, as `CommentMarker`s are reused across multiple state updates
+						// 			via the `commentGutterMarkers` StateField. If the user changes a comment in
+						//			a single line (which encompasses a GutterElement), all CommentMarkers in this
+						//			element get removed, and then re-added to the new GutterElement.
+						//		A more sane solution would be to change the StateField to construct new Markers
+						//		for _all_ markers in a single line, but this requires much more effort.
+						if (!(next as any).preventUnload) {
+							next.destroy(domPos!);
+						}
+						(next as any).preventUnload = false;
 						const after = domPos.nextSibling;
 						domPos.remove();
 						domPos = after;

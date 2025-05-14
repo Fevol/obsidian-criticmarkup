@@ -178,6 +178,7 @@ class CommentNode extends Component {
 export class CommentMarker extends GutterMarker {
 	comment_thread!: HTMLElement;
 	component: Component = new Component();
+	preventUnload: boolean = false;
 
 	constructor(public comment_range: CommentRange, public view: EditorView, public itr = 0) {
 		super();
@@ -273,7 +274,9 @@ export const commentGutterMarkers = StateField.define<RangeSet<CommentMarker>>({
 			.map(tr.changes)
 			.update({
 				filter: (from, to, value) => {
-					return !deleted_threads.some(thread => thread.has_comment(value.comment_range));
+					const keep = !deleted_threads.some(thread => thread.has_comment(value.comment_range));
+					value.preventUnload = keep;
+					return keep;
 				},
 				add: createMarkers(tr.state, added_threads.map(range => range.thread[0])),
 			});
