@@ -116,6 +116,10 @@ class CommentNode extends Component {
 	renderPreview() {
 		if (this.currentMode === "preview") return;
 
+		// FIXME: On accepting a new comment (on mod+enter), this function gets called twice
+		//    Once for the immediate user event
+		//    And again when the comments get updated
+		//    -> This caused an issue where the range gets added twice, temporarily fixed by setting text to new text
 		this.comment_container.toggleClass("criticmarkup-gutter-comment-editing", false);
 		if (this.text === this.new_text || this.new_text === null) {
 			this.new_text = null;
@@ -127,6 +131,7 @@ class CommentNode extends Component {
 			MarkdownRenderer.render(COMMENTATOR_GLOBAL.app, this.text || "&nbsp;", this.comment_view, "", this);
 			this.currentMode = "preview";
 		} else {
+			this.text = this.new_text;
 			setTimeout(() =>
 				this.marker.view.dispatch({
 					changes: {
