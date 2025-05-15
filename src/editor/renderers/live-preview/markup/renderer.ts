@@ -138,8 +138,9 @@ function constructMarkings(
 			else if (range.type === SuggestionType.SUBSTITUTION) {
 				hideBracket(decorations, range, true, live_preview);
 				hideMetadata(decorations, range, live_preview);
-				markContents(decorations, range, "criticmarkup-accepted", true);
-				decorations.push(Decoration.replace({}).range((range as SubstitutionRange).middle, range.to));
+				decorations.push(Decoration.replace({}).range(range.range_start, (range as SubstitutionRange).middle + (live_preview ? 2 : 0)));
+				markContents(decorations, range, "criticmarkup-accepted", false);
+				hideBracket(decorations, range, false, live_preview);
 			} else {
 				hideSyntax(decorations, range, "", live_preview);
 			}
@@ -152,8 +153,10 @@ function constructMarkings(
 				markContents(decorations, range, "criticmarkup-accepted");
 				hideBracket(decorations, range, false, live_preview);
 			} else if (range.type === SuggestionType.SUBSTITUTION) {
-				decorations.push(Decoration.replace({}).range(range.from, (range as SubstitutionRange).middle + 2));
-				markContents(decorations, range, "criticmarkup-accepted", false);
+				hideBracket(decorations, range, true, live_preview);
+				hideMetadata(decorations, range, live_preview);
+				markContents(decorations, range, "criticmarkup-accepted", true);
+				decorations.push(Decoration.replace({}).range((range as SubstitutionRange).middle + (live_preview ? 0 : 2), range.to - 3));
 				hideBracket(decorations, range, false, live_preview);
 			} else {
 				hideSyntax(decorations, range, "", live_preview);

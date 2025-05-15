@@ -73,14 +73,23 @@ export abstract class CriticMarkupRange {
 		return this.text + this.replies.map(reply => reply.text).join("");
 	}
 
+	/**
+	 * Location: {**{"meta": "data"}@@░some;text**}, {**░some text**}
+	 */
 	get range_start() {
 		return this.metadata ? this.metadata + 2 : this.from + 3;
 	}
 
+	/**
+	 * Location: {**{"meta": "data"}░@@some;text**}, ░{**some text**}
+	 */
 	get range_front() {
 		return this.metadata ? this.metadata - 1 : this.from;
 	}
 
+	/**
+	 * Location: {**some;text**}{>>comment<<}░, {**some text**}░
+	 */
 	get full_range_back(): number {
 		return this.base_range.replies.length ?
 			this.base_range.replies[this.base_range.replies.length - 1].to :
