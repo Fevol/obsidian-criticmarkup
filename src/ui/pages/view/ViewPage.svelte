@@ -667,30 +667,32 @@
 
             {#if row.range.replies.length}
               {#each row.range.replies as reply}
-                <div class="criticmarkup-view-range-reply">
-                  <div class="criticmarkup-view-range-reply-top">
-                    {#if reply.fields.author}
-                      <span class="criticmarkup-view-range-reply-author">
-                        {reply.fields.author}
-                      </span>
-                    {/if}
-                    {#if reply.fields.time}
-                      <span class="criticmarkup-view-range-reply-time">
-                        {window.moment
-                          .unix(reply.fields.time)
-                          .format("MMM DD YYYY, HH:mm")}
-                      </span>
-                    {/if}
+                {#key reply.text}
+                  <div class="criticmarkup-view-range-reply">
+                    <div class="criticmarkup-view-range-reply-top">
+                      {#if reply.fields.author}
+                        <span class="criticmarkup-view-range-reply-author">
+                          {reply.fields.author}
+                        </span>
+                      {/if}
+                      {#if reply.fields.time}
+                        <span class="criticmarkup-view-range-reply-time">
+                          {window.moment
+                            .unix(reply.fields.time)
+                            .format("MMM DD YYYY, HH:mm")}
+                        </span>
+                      {/if}
+                    </div>
+                    <div class="criticmarkup-view-range-reply-text">
+                      <MarkdownRenderer
+                        {plugin}
+                        text={reply.unwrap()}
+                        source={row.path}
+                        class={reply.fields.style}
+                      />
+                    </div>
                   </div>
-                  <div class="criticmarkup-view-range-reply-text">
-                    <MarkdownRenderer
-                      {plugin}
-                      text={reply.unwrap()}
-                      source={row.path}
-                      class={reply.fields.style}
-                    />
-                  </div>
-                </div>
+                {/key}
               {/each}
             {/if}
           </div>
