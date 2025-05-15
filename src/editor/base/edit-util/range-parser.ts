@@ -18,15 +18,15 @@ import { COMMENTATOR_GLOBAL } from "../../../global";
 import { fullReloadEffect } from "../../settings";
 import { criticmarkupLanguage } from "../parser";
 
-export const rangeParser: StateField<
-	{
-		tree: Tree;
-		fragments: readonly TreeFragment[];
-		ranges: CriticMarkupRanges;
-		inserted_ranges: CriticMarkupRange[];
-		deleted_ranges: CriticMarkupRange[];
-	}
-> = StateField.define({
+interface ParserData {
+	tree: Tree;
+	fragments: readonly TreeFragment[];
+	ranges: CriticMarkupRanges;
+	inserted_ranges: CriticMarkupRange[];
+	deleted_ranges: CriticMarkupRange[];
+}
+
+export const rangeParser: StateField<ParserData> = StateField.define({
 	create(state) {
 		const text = state.doc.toString();
 		const tree = criticmarkupLanguage.parser.parse(text);
@@ -40,15 +40,14 @@ export const rangeParser: StateField<
 		};
 	},
 
-	// @ts-ignore (Not sure how to set fragments as readonly)
-	update(value, tr) {
+	update(value: ParserData, tr) {
 		if (tr.effects.some(effect => effect.is(fullReloadEffect)))
-			return this.create(tr.state);
+			return this.create(tr.state) as ParserData;
 
 		if (!tr.docChanged)
 			return value;
 
-		// Below times are based on stresstest (250.000 words, 56.167 ranges)
+		// The below times are based on stress-test (250.000 words, 56.167 ranges)
 		// get-changes: 0.01 - 0.05 ms
 		const changed_ranges: ChangedRange[] = [];
 		tr.changes.iterChangedRanges((from, to, fromB, toB) =>
@@ -93,7 +92,7 @@ export const rangeParser: StateField<
 
 		let cumulative_offset = 0;
 
-		// apply-offsets: 2.72 - 3.70 ms
+		// apply-offsets: 2.72-3.70 ms
 		const nil_node = value.ranges.tree.nil_node;
 		function visitNode(node: Node<CriticMarkupRange>) {
 			if (node != null && node != nil_node) {
@@ -178,7 +177,7 @@ export function cursorGenerateRanges(tree: Tree, text: string, start = 0, to = t
 	let previous_range: CriticMarkupRange | undefined = undefined;
 
 	const cursor = tree.cursor();
-	// Move into first range if it exists (otherwise stays in CriticMarkup node), negative offset to be left-inclusive
+	// Move into the first range if it exists (otherwise stays in CriticMarkup node), negative offset to be left-inclusive
 	cursor.childAfter(start - 1);
 	if (cursor.node.type.name === "CriticMarkup")
 		return ranges;
