@@ -185,7 +185,7 @@ export const application_commmands = (plugin: CommentatorPlugin): ECommand[] => 
 	},
 	{
 		id: "view",
-		name: "Open CriticMarkup view",
+		name: "Open global annotation view",
 		icon: "comment",
 		regular_callback: async () => {
 			await plugin.activateView();

@@ -10,7 +10,7 @@ export const cmenuCommands: (app: App) => EventRef = (app) =>
 		menu.addItem((item) => {
 			item.setTitle("Add comment")
 				.setIcon("message-square")
-				.setSection("criticmarkup")
+				.setSection("commentator")
 				.onClick(() => {
 					addCommentToView(editor.cm, ranges.at_cursor(editor.cm.state.selection.main.head));
 				});
@@ -20,7 +20,7 @@ export const cmenuCommands: (app: App) => EventRef = (app) =>
 			menu.addItem((item) => {
 				item.setTitle("Accept changes")
 					.setIcon("check")
-					.setSection("criticmarkup")
+					.setSection("commentator")
 					.onClick(() => {
 						const selections: SelectionRange[] = editor.cm.state.selection.ranges;
 						const changes = selections.map(selection =>
@@ -35,7 +35,7 @@ export const cmenuCommands: (app: App) => EventRef = (app) =>
 			menu.addItem((item) => {
 				item.setTitle("Reject changes")
 					.setIcon("cross")
-					.setSection("criticmarkup")
+					.setSection("commentator")
 					.onClick(() => {
 						const selections = editor.cm.state.selection.ranges;
 						// @ts-expect-error Somehow selections is any (while ranges is defined)
@@ -56,7 +56,7 @@ export const cmenuCommands: (app: App) => EventRef = (app) =>
 				menu.addItem((item) => {
 					const submenu = item.setTitle("Set metadata")
 						.setIcon("tags")
-						.setSection("criticmarkup")
+						.setSection("commentator")
 						.setSubmenu();
 
 					submenu.addItem((item) => {
