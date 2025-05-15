@@ -131,29 +131,11 @@
   padding-left: var(--size-4-6);
 }
 
-.criticmarkup-gutter-button {
-  position: absolute;
-  top: calc(var(--file-margins) + 20px);
-  z-index: 1000;
-  color: var(--text-faint);
-  transition:
-    color 200ms ease-in-out 0ms,
-    right 400ms ease-in-out,
-    rotate 200ms ease-in-out;
-}
-
-.criticmarkup-gutter-button:hover {
-  color: var(--text-normal);
-}
-
 .criticmarkup-folded-element .criticmarkup-gutter-comment {
   width: 0;
   overflow-y: hidden;
 }
 
-// ================================================
-// 	           Editor Gutter Styling
-// ================================================
 
 // ================================================
 //             Markdown-specific Fixes

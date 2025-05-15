@@ -45,6 +45,8 @@ import {
 import {
 	commentGutterFoldButton,
 	commentGutterFoldButtonState,
+	commentGutterResizeHandle,
+	commentGutterResizeHandleState,
 	commentGutterFolded,
 	commentGutterFoldedState,
 	commentGutterWidth,
@@ -63,7 +65,7 @@ import {
 import {getEditMode} from "./editor/uix/extensions/editing-modes";
 import {COMMENTATOR_GLOBAL} from "./global";
 import {type PluginSettings} from "./types";
-import {iterateAllCMInstances, updateAllCompartments, updateCompartment} from "./util/cm-util";
+import {debugRangeset, iterateAllCMInstances, updateAllCompartments, updateCompartment} from "./util/cm-util";
 import {objectDifference} from "./util/util";
 
 export default class CommentatorPlugin extends Plugin {
@@ -143,19 +145,22 @@ export default class CommentatorPlugin extends Plugin {
 		}));
 
 		this.editorExtensions.push(
-			hideEmptySuggestionGutter.of(hideEmptySuggestionGutterState.of(this.settings.suggestion_gutter_hide_empty)),
+			hideEmptySuggestionGutter.of(hideEmptySuggestionGutterState.of(this.settings.suggestion_gutter_hide_empty))
 		);
 		this.editorExtensions.push(
-			commentGutterWidth.of(commentGutterWidthState.of(this.settings.comment_gutter_width)),
+			commentGutterWidth.of(commentGutterWidthState.of(this.settings.comment_gutter_width))
 		);
 		this.editorExtensions.push(
-			hideEmptyCommentGutter.of(hideEmptyCommentGutterState.of(this.settings.comment_gutter_hide_empty)),
+			hideEmptyCommentGutter.of(hideEmptyCommentGutterState.of(this.settings.comment_gutter_hide_empty))
 		);
 		this.editorExtensions.push(
-			commentGutterFolded.of(commentGutterFoldedState.of(this.settings.comment_gutter_default_fold_state)),
+			commentGutterFolded.of(commentGutterFoldedState.of(this.settings.comment_gutter_default_fold_state))
 		);
 		this.editorExtensions.push(
-			commentGutterFoldButton.of(commentGutterFoldButtonState.of(this.settings.comment_gutter_fold_button)),
+			commentGutterFoldButton.of(commentGutterFoldButtonState.of(this.settings.comment_gutter_fold_button))
+		);
+		this.editorExtensions.push(
+			commentGutterResizeHandle.of(commentGutterResizeHandleState.of(this.settings.comment_gutter_resize_handle))
 		);
 
 
@@ -216,6 +221,7 @@ export default class CommentatorPlugin extends Plugin {
 			get tree() {
 				return this.app.workspace.activeEditor?.editor?.cm.state.field(rangeParser).ranges.tree;
 			},
+			debugRangeset
 		};
 
 		this.registerView(CRITICMARKUP_VIEW, (leaf) => new CriticMarkupView(leaf, this));
@@ -385,6 +391,16 @@ export default class CommentatorPlugin extends Plugin {
 				commentGutterFoldButton,
 				commentGutterFoldButtonState,
 				this.settings.comment_gutter_fold_button,
+			);
+		}
+
+		if (this.changed_settings.comment_gutter_resize_handle !== undefined) {
+			updateAllCompartments(
+				this.app,
+				this.editorExtensions,
+				commentGutterResizeHandle,
+				commentGutterResizeHandleState,
+				this.settings.comment_gutter_resize_handle,
 			);
 		}
 

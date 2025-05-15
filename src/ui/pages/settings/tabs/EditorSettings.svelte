@@ -237,6 +237,24 @@
 </SettingItem>
 
 <SettingItem
+        name="Comment gutter resize handle"
+        description="Display a handle bar next to the comment gutter to quickly set its width"
+        type="toggle"
+>
+  {#snippet control()}
+    <Toggle
+            value={plugin.settings.comment_gutter_resize_handle}
+            onChange={() => {
+        plugin.settings.comment_gutter_resize_handle =
+          !plugin.settings.comment_gutter_resize_handle;
+        plugin.saveSettings();
+      }}
+    />
+  {/snippet}
+</SettingItem>
+
+
+<SettingItem
   name="Hide comment gutter when empty"
   description="Gutter will not take up any space when there are no comments in the current note"
   type="toggle"

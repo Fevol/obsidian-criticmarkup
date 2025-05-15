@@ -23,6 +23,7 @@ export const DEFAULT_SETTINGS: PluginSettings = {
 	comment_gutter_hide_empty: false,
 	comment_gutter_default_fold_state: false,
 	comment_gutter_fold_button: true,
+	comment_gutter_resize_handle: true,
 
 	comment_gutter_width: 300,
 	comment_style: "block",

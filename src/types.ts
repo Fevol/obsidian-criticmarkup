@@ -99,6 +99,11 @@ export interface PluginSettings {
 	 */
 	comment_gutter_fold_button: boolean;
 	/**
+	 * Add a resize handle next to the comment gutter for quickly adjusting the gutter width
+	 */
+	comment_gutter_resize_handle: boolean;
+
+	/**
 	 * How much space the comment gutter should take up
 	 */
 	comment_gutter_width: number;

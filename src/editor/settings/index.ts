@@ -31,6 +31,10 @@ export const hideEmptyCommentGutter = new Compartment();
 export const commentGutterFoldButtonState = Facet.define<boolean, boolean>({ combine: values => values[0] });
 export const commentGutterFoldButton = new Compartment();
 
+export const commentGutterResizeHandleState = Facet.define<boolean, boolean>({ combine: values => values[0] });
+export const commentGutterResizeHandle = new Compartment();
+
+
 export const commentGutterWidthState = Facet.define<number, number>({ combine: values => values[0] });
 export const commentGutterWidth = new Compartment();
 

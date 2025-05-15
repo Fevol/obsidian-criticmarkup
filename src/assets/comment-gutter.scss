@@ -16,6 +16,14 @@
   transition: width 400ms ease-in-out;
 }
 
+.criticmarkup-gutter-moving .criticmarkup-comment-gutter {
+  transition: width 50ms ease-out;
+}
+
+.criticmarkup-gutter-moving.criticmarkup-gutter-button {
+  transition: right 50ms ease-out;
+}
+
 .criticmarkup-gutter-comment-thread {
   width: 100%;
 
@@ -108,4 +116,54 @@
 
 .criticmarkup-gutter-comment-editor.cm-editor {
   min-height: auto;
+}
+
+// ================================================
+// 	   Editor Comment Gutter Resize Bar Styling
+// ================================================
+
+.criticmarkup-gutter-resize-handle {
+  position: absolute;
+
+  background: transparent;
+  transition: background-color 200ms ease-in-out, border-color 200ms ease-in-out, opacity 200ms ease-in-out;
+
+  border: unset;
+  margin: 0;
+
+  height: 100%;
+  transform: translate(-10px, -40px);
+
+  border-inline-end-color: var(--divider-color);
+  border-inline-end-width: var(--divider-width);
+  border-inline-end-style: dashed;
+
+  width: var(--divider-width-hover);
+
+  cursor: col-resize;
+
+}
+
+.criticmarkup-gutter-resize-handle:hover, .criticmarkup-gutter-resize-handle-hover {
+  background: var(--divider-color-hover);
+  border-color: var(--divider-color-hover);
+}
+
+// ================================================
+// 	   Editor Comment Gutter Fold Button Styling
+// ================================================
+
+.criticmarkup-gutter-button {
+  position: absolute;
+  top: calc(var(--file-margins) + 20px);
+  z-index: 1000;
+  color: var(--text-faint);
+  transition:
+          color 200ms ease-in-out 0ms,
+          right 400ms ease-in-out,
+          rotate 200ms ease-in-out;
+}
+
+.criticmarkup-gutter-button:hover {
+  color: var(--text-normal);
 }

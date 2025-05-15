@@ -10,11 +10,13 @@
 import { type Extension, Facet } from "@codemirror/state";
 import { BlockInfo, EditorView, GutterMarker, ViewUpdate } from "@codemirror/view";
 
-import { setIcon } from "obsidian";
+import {debounce, setIcon} from "obsidian";
 import {
 	commentGutterFoldButtonState,
 	commentGutterFolded,
 	commentGutterFoldedState,
+	commentGutterResizeHandleState,
+	commentGutterWidth,
 	commentGutterWidthState,
 	hideEmptyCommentGutterState,
 } from "../../../settings";
@@ -30,6 +32,8 @@ import {
 } from "../base";
 import { commentGutterMarkers, CommentMarker } from "./marker";
 import { commentGutterCompartment } from "./index";
+
+const FOLD_BUTTON_OFFSET = 60;
 
 const unfixGutters = Facet.define<boolean, boolean>({
 	combine: values => values.some(x => x),
@@ -56,7 +60,7 @@ export class CommentGutterView extends GutterView {
 	}
 
 	createGutters(view: EditorView) {
-		return view.state.facet(activeGutters).map(conf => new CommentSingleGutterView(view, conf));
+		return view.state.facet(activeGutters).map(conf => new CommentSingleGutterView(view, conf, this.dom));
 	}
 
 	insertGutters(view: EditorView) {
@@ -242,9 +246,10 @@ class CommentUpdateContext extends UpdateContext {
 
 class CommentSingleGutterView extends SingleGutterView {
 	fold_button: HTMLElement | undefined = undefined;
+	resize_handle: HTMLElement | undefined = undefined;
 	declare elements: CommentGutterElement[];
 
-	constructor(public view: EditorView, public config: Required<GutterConfig>) {
+	constructor(public view: EditorView, public config: Required<GutterConfig>, private gutterDom: HTMLElement) {
 		super(view, config);
 
 		const folded = view.state.facet(commentGutterFoldedState);
@@ -259,6 +264,10 @@ class CommentSingleGutterView extends SingleGutterView {
 
 		if (view.state.facet(commentGutterFoldButtonState))
 			this.createFoldButton(folded);
+
+		if (view.state.facet(commentGutterResizeHandleState)) {
+			this.createResizeHandle();
+		}
 	}
 
 	createFoldButton(folded: boolean) {
@@ -276,23 +285,82 @@ class CommentSingleGutterView extends SingleGutterView {
 		this.fold_button!.style.display = this.view.state.field(commentGutterMarkers).size ? "" : "none";
 	}
 
-	setFoldButtonState(folded: boolean) {
+	createResizeHandle() {
+		if (this.gutterDom.children[0]?.classList.contains("criticmarkup-gutter-resize-handle")) {
+			this.resize_handle = this.gutterDom.children[0] as HTMLElement;
+		} else {
+			this.resize_handle = createEl("hr", { cls: ["criticmarkup-gutter-resize-handle"] });
+			this.gutterDom.appendChild(this.resize_handle);
+
+			this.resize_handle.addEventListener("mousedown", (e) => {
+				let initialPosition = e.clientX;
+
+				// NOTE: Prevent excessive state updates and DOM redraws
+				const setWidth = debounce((width: number) => {
+					this.dom.style.width = width + "px";
+					this.view.dispatch({
+						effects: commentGutterWidth.reconfigure(commentGutterWidthState.of(width)),
+					});
+					if (this.fold_button) {
+						this.fold_button.style.right = width + FOLD_BUTTON_OFFSET + "px";
+					}
+				}, 25);
+
+				this.resize_handle!.classList.toggle("criticmarkup-gutter-resize-handle-hover", true);
+				this.fold_button?.classList.toggle("criticmarkup-gutter-moving", true);
+				this.gutterDom.classList.toggle("criticmarkup-gutter-moving", true);
+
+				let currentWidth = parseInt(this.dom.style.width.slice(0, -2));
+				const onMouseMove = (evt: MouseEvent) => {
+					const deltaX = evt.clientX - initialPosition;
+					initialPosition = evt.clientX
+					currentWidth -= deltaX;
+					setWidth(currentWidth);
+
+					return true;
+				}
+
+				const onMouseStop = () => {
+					document.removeEventListener("mousemove", onMouseMove);
+					document.removeEventListener("mouseup", onMouseStop);
+					this.resize_handle!.classList.toggle("criticmarkup-gutter-resize-handle-hover", false);
+					this.fold_button?.classList.toggle("criticmarkup-gutter-moving", false);
+					this.gutterDom.classList.toggle("criticmarkup-gutter-moving", false);
+				}
+
+				document.addEventListener("mousemove", onMouseMove);
+				document.addEventListener("mouseup", onMouseStop);
+
+				return true;
+			});
+		}
+		this.resize_handle!.style.display = (this.view.state.field(commentGutterMarkers).size && !this.view.state.facet(commentGutterFoldedState)) ? "" : "none";
+	}
+
+	setFoldButtonState(folded: boolean, width?: number) {
 		if (folded) {
 			this.fold_button!.style.right = "20px";
 			this.fold_button!.style.rotate = "-180deg";
 			this.fold_button!.ariaLabel = "Unfold gutter";
+			if (this.resize_handle) {
+				this.resize_handle.style.display = 'none';
+			}
 		} else {
-			this.fold_button!.style.right = this.view.state.facet(commentGutterWidthState) + 60 + "px";
+			this.fold_button!.style.right = (width ?? this.view.state.facet(commentGutterWidthState)) + FOLD_BUTTON_OFFSET + "px";
 			this.fold_button!.style.rotate = "0deg";
 			this.fold_button!.ariaLabel = "Fold gutter";
+			if (this.resize_handle) {
+				this.resize_handle.style.display = '';
+			}
 		}
 	}
 
 	foldGutter() {
 		const folded = !this.view.state.facet(commentGutterFoldedState);
-		const gutterStart = this.view.state.facet(commentGutterWidthState);
-		if (this.fold_button)
-			this.setFoldButtonState(folded);
+		const gutterWidth = this.view.state.facet(commentGutterWidthState);
+		if (this.fold_button) {
+			this.setFoldButtonState(folded, gutterWidth);
+		}
 
 		// Set the gutter height for every element to fixed such that the element doesn't break the layout
 		if (folded) {
@@ -310,7 +378,7 @@ class CommentSingleGutterView extends SingleGutterView {
 				});
 			}, { once: true });
 		}
-		this.dom.style.width = folded ? "0" : gutterStart + "px";
+		this.dom.style.width = folded ? "0" : gutterWidth + "px";
 
 		this.view.dispatch({
 			effects: commentGutterFolded.reconfigure(commentGutterFoldedState.of(folded)),
@@ -323,6 +391,7 @@ class CommentSingleGutterView extends SingleGutterView {
 		const hideEmpty = update.state.facet(hideEmptyCommentGutterState);
 		const width = update.state.facet(commentGutterWidthState);
 		const foldButton = update.state.facet(commentGutterFoldButtonState);
+		const resizeHandle = update.state.facet(commentGutterResizeHandleState);
 		const folded = update.state.facet(commentGutterFoldedState);
 		const widgets = update.state.field(commentGutterMarkers);
 
@@ -341,17 +410,28 @@ class CommentSingleGutterView extends SingleGutterView {
 				this.fold_button.remove();
 				this.fold_button = undefined;
 			}
+		} else if (resizeHandle !== update.startState.facet(commentGutterResizeHandleState)) {
+			if (resizeHandle && !this.resize_handle)
+				this.createResizeHandle();
+			else if (!resizeHandle && this.resize_handle) {
+				this.resize_handle.remove();
+				this.resize_handle = undefined;
+			}
 		}
 
 		if (widgets.size !== update.startState.field(commentGutterMarkers).size) {
 			if (widgets.size === 0) {
 				if (this.fold_button)
 					this.fold_button.style.display = "none";
+				if (this.resize_handle)
+					this.resize_handle.style.display = "none";
 				if (hideEmpty)
 					this.dom.style.width = "0";
 			} else {
 				if (this.fold_button)
 					this.fold_button.style.display = "";
+				if (this.resize_handle)
+					this.resize_handle.style.display = "";
 				if (!folded)
 					this.dom.style.width = width + "px";
 			}
