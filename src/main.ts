@@ -18,7 +18,7 @@ import {type CriticMarkupRange, getRangesInText, RANGE_PROTOTYPE_MAPPER, rangePa
 import {cmenuCommands, commands} from "./editor/uix";
 import {bracketMatcher, editorKeypressCatcher, rangeCorrecter} from "./editor/uix/extensions";
 
-import {commentGutter, commentGutterCompartment, diffGutter, diffGutterCompartment} from "./editor/renderers/gutters";
+import {annotationGutter, annotationGutterCompartment, diffGutter, diffGutterCompartment} from "./editor/renderers/gutters";
 import {commentRenderer, markupRenderer} from "./editor/renderers/live-preview";
 import {postProcess, postProcessorRerender, postProcessorUpdate} from "./editor/renderers/post-process";
 import {
@@ -43,20 +43,20 @@ import {
 	REQUIRES_FULL_RELOAD,
 } from "./constants";
 import {
-	commentGutterFoldButton,
-	commentGutterFoldButtonState,
-	commentGutterResizeHandle,
-	commentGutterResizeHandleState,
-	commentGutterFolded,
-	commentGutterFoldedState,
-	commentGutterWidth,
-	commentGutterWidthState,
+	annotationGutterFoldButton,
+	annotationGutterFoldButtonState,
+	annotationGutterResizeHandle,
+	annotationGutterResizeHandleState,
+	annotationGutterFolded,
+	annotationGutterFoldedState,
+	annotationGutterWidth,
+	annotationGutterWidthState,
 	editMode,
 	editModeValue,
 	editModeValueState,
 	fullReloadEffect,
-	hideEmptyCommentGutter,
-	hideEmptyCommentGutterState,
+	hideEmptyAnnotationGutter,
+	hideEmptyAnnotationGutterState,
 	hideEmptyDiffGutter,
 	hideEmptyDiffGutterState,
 	previewMode,
@@ -123,7 +123,7 @@ export default class CommentatorPlugin extends Plugin {
 			this.editorExtensions.push(Prec.low(commentRenderer(this.settings)));
 		if (this.settings.comment_style === "block") {
 			this.editorExtensions.push(
-				commentGutterCompartment.of(Prec.low(commentGutter(this.app) as Extension[]))
+				annotationGutterCompartment.of(Prec.low(annotationGutter(this.app) as Extension[]))
 			);
 		}
 
@@ -148,19 +148,19 @@ export default class CommentatorPlugin extends Plugin {
 			hideEmptyDiffGutter.of(hideEmptyDiffGutterState.of(this.settings.diff_gutter_hide_empty))
 		);
 		this.editorExtensions.push(
-			commentGutterWidth.of(commentGutterWidthState.of(this.settings.comment_gutter_width))
+			annotationGutterWidth.of(annotationGutterWidthState.of(this.settings.annotation_gutter_width))
 		);
 		this.editorExtensions.push(
-			hideEmptyCommentGutter.of(hideEmptyCommentGutterState.of(this.settings.comment_gutter_hide_empty))
+			hideEmptyAnnotationGutter.of(hideEmptyAnnotationGutterState.of(this.settings.annotation_gutter_hide_empty))
 		);
 		this.editorExtensions.push(
-			commentGutterFolded.of(commentGutterFoldedState.of(this.settings.comment_gutter_default_fold_state))
+			annotationGutterFolded.of(annotationGutterFoldedState.of(this.settings.annotation_gutter_default_fold_state))
 		);
 		this.editorExtensions.push(
-			commentGutterFoldButton.of(commentGutterFoldButtonState.of(this.settings.comment_gutter_fold_button))
+			annotationGutterFoldButton.of(annotationGutterFoldButtonState.of(this.settings.annotation_gutter_fold_button))
 		);
 		this.editorExtensions.push(
-			commentGutterResizeHandle.of(commentGutterResizeHandleState.of(this.settings.comment_gutter_resize_handle))
+			annotationGutterResizeHandle.of(annotationGutterResizeHandleState.of(this.settings.annotation_gutter_resize_handle))
 		);
 
 
@@ -297,6 +297,11 @@ export default class CommentatorPlugin extends Plugin {
 					} else if (old_version.localeCompare("0.2.2", undefined, {numeric: true}) < 0) {
 						if ((new_settings as any).suggestion_gutter_hide_empty) {
 							this.settings.diff_gutter_hide_empty = (new_settings as any).suggestion_gutter_hide_empty;
+							this.settings.annotation_gutter_default_fold_state = (new_settings as any).comment_gutter_default_fold_state;
+							this.settings.annotation_gutter_fold_button = (new_settings as any).comment_gutter_fold_button;
+							this.settings.annotation_gutter_resize_handle = (new_settings as any).comment_gutter_resize_handle;
+							this.settings.annotation_gutter_width = (new_settings as any).comment_gutter_width;
+							this.settings.annotation_gutter_hide_empty = (new_settings as any).comment_gutter_hide_empty;
 						}
 					}
 					await this.setSettings();
@@ -362,23 +367,23 @@ export default class CommentatorPlugin extends Plugin {
 			postProcessorRerender(this.app);
 		}
 
-		if (this.changed_settings.comment_gutter_width !== undefined) {
+		if (this.changed_settings.annotation_gutter_width !== undefined) {
 			updateAllCompartments(
 				this.app,
 				this.editorExtensions,
-				commentGutterWidth,
-				commentGutterWidthState,
-				this.settings.comment_gutter_width,
+				annotationGutterWidth,
+				annotationGutterWidthState,
+				this.settings.annotation_gutter_width,
 			);
 		}
 
-		if (this.changed_settings.comment_gutter_hide_empty !== undefined) {
+		if (this.changed_settings.annotation_gutter_hide_empty !== undefined) {
 			updateAllCompartments(
 				this.app,
 				this.editorExtensions,
-				hideEmptyCommentGutter,
-				hideEmptyCommentGutterState,
-				this.settings.comment_gutter_hide_empty,
+				hideEmptyAnnotationGutter,
+				hideEmptyAnnotationGutterState,
+				this.settings.annotation_gutter_hide_empty,
 			);
 		}
 
@@ -392,23 +397,23 @@ export default class CommentatorPlugin extends Plugin {
 			);
 		}
 
-		if (this.changed_settings.comment_gutter_fold_button !== undefined) {
+		if (this.changed_settings.annotation_gutter_fold_button !== undefined) {
 			updateAllCompartments(
 				this.app,
 				this.editorExtensions,
-				commentGutterFoldButton,
-				commentGutterFoldButtonState,
-				this.settings.comment_gutter_fold_button,
+				annotationGutterFoldButton,
+				annotationGutterFoldButtonState,
+				this.settings.annotation_gutter_fold_button,
 			);
 		}
 
-		if (this.changed_settings.comment_gutter_resize_handle !== undefined) {
+		if (this.changed_settings.annotation_gutter_resize_handle !== undefined) {
 			updateAllCompartments(
 				this.app,
 				this.editorExtensions,
-				commentGutterResizeHandle,
-				commentGutterResizeHandleState,
-				this.settings.comment_gutter_resize_handle,
+				annotationGutterResizeHandle,
+				annotationGutterResizeHandleState,
+				this.settings.annotation_gutter_resize_handle,
 			);
 		}
 

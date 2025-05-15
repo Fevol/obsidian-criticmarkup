@@ -7,9 +7,9 @@ import { COMMENTATOR_GLOBAL } from "../../../../global";
 import { EmbeddableMarkdownEditor } from "../../../../ui/embeddable-editor";
 import { type CommentRange, CriticMarkupRange, rangeParser, SuggestionType } from "../../../base";
 import { create_range } from "../../../base/edit-util/range-create";
-import { addCommentToView, commentGutter } from "./index";
+import { addCommentToView, annotationGutter } from "./index";
 
-class CommentNode extends Component {
+class AnnotationNode extends Component {
 	text: string;
 	new_text: string | null = null;
 	comment_container: HTMLElement;
@@ -19,7 +19,7 @@ class CommentNode extends Component {
 	currentMode: "preview" | "source" | null = null;
 	editMode: EmbeddableMarkdownEditor | null = null;
 
-	constructor(public range: CommentRange, public marker: CommentMarker) {
+	constructor(public range: CommentRange, public marker: AnnotationMarker) {
 		super();
 
 		this.text = range.unwrap();
@@ -167,7 +167,7 @@ class CommentNode extends Component {
 			item.setTitle("Fold gutter")
 				.setIcon("arrow-right-from-line")
 				.onClick(() => {
-					this.marker.view.plugin(commentGutter(COMMENTATOR_GLOBAL.app)[1][0][0])!.foldGutter();
+					this.marker.view.plugin(annotationGutter(COMMENTATOR_GLOBAL.app)[1][0][0])!.foldGutter();
 				});
 		});
 
@@ -175,7 +175,7 @@ class CommentNode extends Component {
 	}
 }
 
-export class CommentMarker extends GutterMarker {
+export class AnnotationMarker extends GutterMarker {
 	comment_thread!: HTMLElement;
 	component: Component = new Component();
 	preventUnload: boolean = false;
@@ -184,7 +184,7 @@ export class CommentMarker extends GutterMarker {
 		super();
 	}
 
-	eq(other: CommentMarker) {
+	eq(other: AnnotationMarker) {
 		return this.itr === other.itr && this.comment_range.equals(other.comment_range);
 	}
 
@@ -193,7 +193,7 @@ export class CommentMarker extends GutterMarker {
 
 		setTimeout(() => {
 			const { app } = this.view.state.field(editorInfoField);
-			this.view.plugin(commentGutter(app)[1][0][0])!.moveGutter(this);
+			this.view.plugin(annotationGutter(app)[1][0][0])!.moveGutter(this);
 			this.view.scrollDOM.scrollTo({ top, behavior: "smooth" });
 		}, 200);
 
@@ -211,7 +211,7 @@ export class CommentMarker extends GutterMarker {
 		this.comment_thread.addEventListener("click", this.onCommentThreadClick.bind(this));
 
 		for (const range of this.comment_range.thread)
-			this.component.addChild(new CommentNode(range, this));
+			this.component.addChild(new AnnotationNode(range, this));
 		this.component.load();
 
 		return this.comment_thread;
@@ -237,23 +237,23 @@ export class CommentMarker extends GutterMarker {
 function createMarkers(state: EditorState, changed_ranges: CriticMarkupRange[]) {
 	const view = state.field(editorEditorField);
 
-	const cm_ranges: Range<CommentMarker>[] = [];
+	const cm_ranges: Range<AnnotationMarker>[] = [];
 	for (const range of changed_ranges) {
 		if (range.type !== SuggestionType.COMMENT || (range as CommentRange).reply_depth) continue;
 
 		// MODIFICATION: advanceCursor in base.ts required markers to be inserted into the rangeset at exactly
 		//      the positions where line starts, this caused some issues with correct adjustment of positions through updates,
 		//      so adjustment is that markers can now occur at any position before the start of the line
-		cm_ranges.push(new CommentMarker(range as CommentRange, view, itr).range(range.from, range.to));
+		cm_ranges.push(new AnnotationMarker(range as CommentRange, view, itr).range(range.from, range.to));
 	}
 
 	return cm_ranges;
 }
 
 let itr = 0;
-export const commentGutterMarkers = StateField.define<RangeSet<CommentMarker>>({
+export const annotationGutterMarkers = StateField.define<RangeSet<AnnotationMarker>>({
 	create(state) {
-		return RangeSet.of<CommentMarker>(createMarkers(state, state.field(rangeParser).ranges.ranges));
+		return RangeSet.of<AnnotationMarker>(createMarkers(state, state.field(rangeParser).ranges.ranges));
 	},
 
 	update(oldSet, tr) {

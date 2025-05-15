@@ -192,9 +192,9 @@
       min={100}
       max={500}
       step={50}
-      value={plugin.settings.comment_gutter_width}
+      value={plugin.settings.annotation_gutter_width}
       onChange={(value) => {
-        plugin.settings.comment_gutter_width = value;
+        plugin.settings.annotation_gutter_width = value;
         plugin.saveSettings();
       }}
     />
@@ -209,10 +209,10 @@
 >
   {#snippet control()}
     <Toggle
-      value={plugin.settings.comment_gutter_default_fold_state}
+      value={plugin.settings.annotation_gutter_default_fold_state}
       onChange={() => {
-        plugin.settings.comment_gutter_default_fold_state =
-          !plugin.settings.comment_gutter_default_fold_state;
+        plugin.settings.annotation_gutter_default_fold_state =
+          !plugin.settings.annotation_gutter_default_fold_state;
         plugin.saveSettings();
       }}
     />
@@ -226,10 +226,10 @@
 >
   {#snippet control()}
     <Toggle
-      value={plugin.settings.comment_gutter_fold_button}
+      value={plugin.settings.annotation_gutter_fold_button}
       onChange={() => {
-        plugin.settings.comment_gutter_fold_button =
-          !plugin.settings.comment_gutter_fold_button;
+        plugin.settings.annotation_gutter_fold_button =
+          !plugin.settings.annotation_gutter_fold_button;
         plugin.saveSettings();
       }}
     />
@@ -243,10 +243,10 @@
 >
   {#snippet control()}
     <Toggle
-            value={plugin.settings.comment_gutter_resize_handle}
+            value={plugin.settings.annotation_gutter_resize_handle}
             onChange={() => {
-        plugin.settings.comment_gutter_resize_handle =
-          !plugin.settings.comment_gutter_resize_handle;
+        plugin.settings.annotation_gutter_resize_handle =
+          !plugin.settings.annotation_gutter_resize_handle;
         plugin.saveSettings();
       }}
     />
@@ -261,11 +261,11 @@
 >
   {#snippet control()}
     <Toggle
-      value={plugin.settings.comment_gutter_hide_empty}
+      value={plugin.settings.annotation_gutter_hide_empty}
       onChange={() => {
         // TODO: Split up into two settings
-        plugin.settings.comment_gutter_hide_empty =
-          !plugin.settings.comment_gutter_hide_empty;
+        plugin.settings.annotation_gutter_hide_empty =
+          !plugin.settings.annotation_gutter_hide_empty;
         plugin.saveSettings();
       }}
     />

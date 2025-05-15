@@ -25,21 +25,21 @@ export function attachValue<T>(value: T, effect: StateEffectType<T>) {
 	return field;
 }
 
-export const hideEmptyCommentGutterState = Facet.define<boolean, boolean>({ combine: values => values[0] });
-export const hideEmptyCommentGutter = new Compartment();
+export const hideEmptyAnnotationGutterState = Facet.define<boolean, boolean>({ combine: values => values[0] });
+export const hideEmptyAnnotationGutter = new Compartment();
 
-export const commentGutterFoldButtonState = Facet.define<boolean, boolean>({ combine: values => values[0] });
-export const commentGutterFoldButton = new Compartment();
+export const annotationGutterFoldButtonState = Facet.define<boolean, boolean>({ combine: values => values[0] });
+export const annotationGutterFoldButton = new Compartment();
 
-export const commentGutterResizeHandleState = Facet.define<boolean, boolean>({ combine: values => values[0] });
-export const commentGutterResizeHandle = new Compartment();
+export const annotationGutterResizeHandleState = Facet.define<boolean, boolean>({ combine: values => values[0] });
+export const annotationGutterResizeHandle = new Compartment();
 
 
-export const commentGutterWidthState = Facet.define<number, number>({ combine: values => values[0] });
-export const commentGutterWidth = new Compartment();
+export const annotationGutterWidthState = Facet.define<number, number>({ combine: values => values[0] });
+export const annotationGutterWidth = new Compartment();
 
-export const commentGutterFoldedState = Facet.define<boolean, boolean>({ combine: values => values[0] });
-export const commentGutterFolded = new Compartment();
+export const annotationGutterFoldedState = Facet.define<boolean, boolean>({ combine: values => values[0] });
+export const annotationGutterFolded = new Compartment();
 
 export const hideEmptyDiffGutterState = Facet.define<boolean, boolean>({ combine: values => values[0] });
 export const hideEmptyDiffGutter = new Compartment();

@@ -12,8 +12,8 @@ import {
 	selectionContainsRanges,
 } from "../base";
 import { generateCriticMarkupPatchFromDiff } from "../base/edit-logic/text-diff";
-import { commentGutter } from "../renderers/gutters";
-import { addCommentToView } from "../renderers/gutters/comment-gutter";
+import { annotationGutter } from "../renderers/gutters";
+import { addCommentToView } from "../renderers/gutters/annotations-gutter";
 import {
 	editMode,
 	editModeValue,
@@ -110,12 +110,12 @@ export const editor_commands: (plugin: CommentatorPlugin) => ECommand[] = (plugi
 	},
 	{
 		id: "fold-gutter",
-		name: "Fold comment gutter",
+		name: "Fold annotation gutter",
 		icon: "arrow-right-from-line",
 		editor_context: true,
 		regular_callback: (editor: Editor, _) => {
 			const { app } = editor.cm.state.field(editorInfoField);
-			editor.cm.plugin(commentGutter(app)[1][0][0])!.foldGutter();
+			editor.cm.plugin(annotationGutter(app)[1][0][0])!.foldGutter();
 		},
 	},
 	{

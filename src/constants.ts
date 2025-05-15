@@ -20,12 +20,12 @@ export const DEFAULT_SETTINGS: PluginSettings = {
 
 	editor_styling: false,
 	diff_gutter_hide_empty: false,
-	comment_gutter_hide_empty: false,
-	comment_gutter_default_fold_state: false,
-	comment_gutter_fold_button: true,
-	comment_gutter_resize_handle: true,
+	annotation_gutter_hide_empty: false,
+	annotation_gutter_default_fold_state: false,
+	annotation_gutter_fold_button: true,
+	annotation_gutter_resize_handle: true,
 
-	comment_gutter_width: 300,
+	annotation_gutter_width: 300,
 	comment_style: "block",
 
 	tag_completion: true,

@@ -87,26 +87,26 @@ export interface PluginSettings {
 	diff_gutter_hide_empty: boolean;
 
 	/**
-	 * Hide comment gutter if no comments are present in the note
+	 * Hide the annotation gutter if no annotations are present in the note
 	 */
-	comment_gutter_hide_empty: boolean;
+	annotation_gutter_hide_empty: boolean;
 	/**
-	 * Determine whether the comment gutter should be folded by default
+	 * Determine whether the annotation gutter should be folded by default
 	 */
-	comment_gutter_default_fold_state: boolean;
+	annotation_gutter_default_fold_state: boolean;
 	/**
-	 * Add a button next to the comment gutter for quickly (un)folding the gutter
+	 * Add a button next to the annotation gutter for quickly (un)folding the gutter
 	 */
-	comment_gutter_fold_button: boolean;
+	annotation_gutter_fold_button: boolean;
 	/**
-	 * Add a resize handle next to the comment gutter for quickly adjusting the gutter width
+	 * Add a resize handle next to the annotation gutter for quickly adjusting the gutter width
 	 */
-	comment_gutter_resize_handle: boolean;
+	annotation_gutter_resize_handle: boolean;
 
 	/**
-	 * How much space the comment gutter should take up
+	 * How much space the annotation gutter should take up
 	 */
-	comment_gutter_width: number;
+	annotation_gutter_width: number;
 
 	/**
 	 * How comments should be rendered

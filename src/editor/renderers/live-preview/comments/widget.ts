@@ -4,8 +4,8 @@ import { Component, MarkdownRenderer, Menu, setIcon } from "obsidian";
 
 import { COMMENTATOR_GLOBAL } from "../../../../global";
 import { CM_All_Brackets, CommentRange, CriticMarkupRange } from "../../../base";
-import { commentGutterMarkers } from "../../gutters";
-import { addCommentToView } from "../../gutters/comment-gutter";
+import { annotationGutterMarkers } from "../../gutters";
+import { addCommentToView } from "../../gutters/annotations-gutter";
 
 export function renderCommentWidget(range: CommentRange, text?: string, unwrap = false) {
 	let str = text ?? range.text;
@@ -74,8 +74,8 @@ export class CommentIconWidget extends WidgetType {
 		}
 	}
 
-	focusComment(view: EditorView, e: Event) {
-		const gutterElements = view.state.field(commentGutterMarkers);
+	focusAnnotation(view: EditorView, e: Event) {
+		const gutterElements = view.state.field(annotationGutterMarkers);
 		e.preventDefault();
 		gutterElements.between(this.range.from, this.range.to, (from, to, widget) => {
 			if (this.range.equals(widget.comment_range)) {
@@ -98,22 +98,22 @@ export class CommentIconWidget extends WidgetType {
 		this.icon.classList.add("criticmarkup-comment-icon");
 		setIcon(this.icon, "message-square");
 
-		// DEBUG: Add line under icon to check alignment of comment gutter element with widget
+		// DEBUG: Add line under icon to check alignment of annotation gutter element with widget
 		// const line = document.createElement('div');
 		// line.classList.add('criticmarkup-debug-comment-line');
 		// this.icon.appendChild(line);
 
 		if (this.is_block) {
-			this.icon.onclick = (e) => this.focusComment(view, e);
+			this.icon.onclick = (e) => this.focusAnnotation(view, e);
 
 			this.icon.oncontextmenu = (e) => {
 				e.preventDefault();
 
 				const menu = new Menu();
 				menu.addItem((item) => {
-					item.setTitle("Focus comment")
+					item.setTitle("Focus annotation")
 						.setIcon("eye")
-						.onClick(this.focusComment.bind(this, view));
+						.onClick(this.focusAnnotation.bind(this, view));
 				});
 				menu.addItem((item) => {
 					item.setTitle("Add comment")

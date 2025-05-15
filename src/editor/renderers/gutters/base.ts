@@ -164,9 +164,9 @@ export class GutterElement {
 					if (domPos) {
 						// FIXME: This if-check prevents a re-used Marker (specifically, a marker that is used
 						//  	 	in both a old _and_ a new GutterElement) from being completely removed from the DOM
-						//		    This needs to be done, as `CommentMarker`s are reused across multiple state updates
-						// 			via the `commentGutterMarkers` StateField. If the user changes a comment in
-						//			a single line (which encompasses a GutterElement), all CommentMarkers in this
+						//		    This needs to be done, as `AnnotationMarker`s are reused across multiple state updates
+						// 			via the `annotationGutterMarkers` StateField. If the user changes a annotation in
+						//			a single line (which encompasses a GutterElement), all AnnotationMarkers in this
 						//			element get removed, and then re-added to the new GutterElement.
 						//		A more sane solution would be to change the StateField to construct new Markers
 						//		for _all_ markers in a single line, but this requires much more effort.
@@ -231,7 +231,7 @@ export class UpdateContext {
 		// advanceCursor will place all GutterMarkers between the last this.cursor position and line.from into localMarkers
 
 		// Widgets that are not part of the same 'viewport' block as the document line block will be skipped
-		// See comment-gutter.ts for a more eloquent, analytical and in-depth explanation
+		// See annotation-gutter.ts for a more eloquent, analytical and in-depth explanation
 		// MODIFICATION: Markers are collected up until the end of the block
 		advanceCursor(this.cursor, localMarkers, line.to);
 

@@ -1,7 +1,7 @@
 import type { App, EventRef } from "obsidian";
 import { COMMENTATOR_GLOBAL } from "../../global";
 import { acceptSuggestions, isCursor, rangeParser, rejectSuggestions } from "../base";
-import { addCommentToView } from "../renderers/gutters/comment-gutter";
+import { addCommentToView } from "../renderers/gutters/annotations-gutter";
 import type {SelectionRange} from "@codemirror/state";
 
 export const cmenuCommands: (app: App) => EventRef = (app) =>
