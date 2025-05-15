@@ -2,14 +2,14 @@ import { Menu } from "obsidian";
 import { Compartment } from "@codemirror/state";
 
 import { acceptSuggestions, rejectSuggestions } from "../../../base";
-import { suggestion_gutter } from "./suggestion-gutter";
-import { suggestionGutterMarkers } from "./marker";
+import { diff_gutter } from "./diff-gutter";
+import { diffGutterMarkers } from "./marker";
 
-export const suggestionGutter = /*(plugin: CommentatorPlugin) => */ [
-	suggestionGutterMarkers,
-	suggestion_gutter({
+export const diffGutter = /*(plugin: CommentatorPlugin) => */ [
+	diffGutterMarkers,
+	diff_gutter({
 		class: "criticmarkup-gutter", /* + (plugin.app.vault.getConfig('cssTheme') === 'Minimal' ? ' is-minimal' : '')*/
-		markers: v => v.plugin(suggestionGutterMarkers)!.markers,
+		markers: v => v.plugin(diffGutterMarkers)!.markers,
 		domEventHandlers: {
 			click: (view, line, event: Event) => {
 				const menu = new Menu();
@@ -35,7 +35,7 @@ export const suggestionGutter = /*(plugin: CommentatorPlugin) => */ [
 	}),
 ];
 
-export const suggestionGutterCompartment = new Compartment();
+export const diffGutterCompartment = new Compartment();
 
 
-export { suggestionGutterMarkers };
+export { diffGutterMarkers };

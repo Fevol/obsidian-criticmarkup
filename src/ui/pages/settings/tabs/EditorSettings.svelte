@@ -125,11 +125,11 @@
   {#snippet control()}
     <Toggle
       slot="control"
-      value={plugin.settings.suggestion_gutter_hide_empty}
+      value={plugin.settings.diff_gutter_hide_empty}
       onChange={() => {
         // TODO: Split up into two settings
-        plugin.settings.suggestion_gutter_hide_empty =
-          !plugin.settings.suggestion_gutter_hide_empty;
+        plugin.settings.diff_gutter_hide_empty =
+          !plugin.settings.diff_gutter_hide_empty;
         plugin.saveSettings();
       }}
     />

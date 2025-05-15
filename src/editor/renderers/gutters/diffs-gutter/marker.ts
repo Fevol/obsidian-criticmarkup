@@ -25,8 +25,8 @@ export class RangeMarker extends GutterMarker {
 	}
 }
 
-export const suggestionGutterMarkers = ViewPlugin.fromClass(
-	class suggestionGutterMarkers implements PluginValue {
+export const diffGutterMarkers = ViewPlugin.fromClass(
+	class diffGutterMarkers implements PluginValue {
 		markers: RangeSet<RangeMarker> = RangeSet.empty;
 
 		constructMarkers(view: EditorView) {

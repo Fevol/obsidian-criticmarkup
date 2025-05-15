@@ -82,9 +82,9 @@ export interface PluginSettings {
 	editor_styling: boolean;
 
 	/**
-	 * Hide suggestion gutter if no suggestions are present in the note
+	 * Hide the diff gutter if no suggestions are present in the note
 	 */
-	suggestion_gutter_hide_empty: boolean;
+	diff_gutter_hide_empty: boolean;
 
 	/**
 	 * Hide comment gutter if no comments are present in the note

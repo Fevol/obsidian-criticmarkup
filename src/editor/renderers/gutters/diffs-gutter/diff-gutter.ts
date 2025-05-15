@@ -5,7 +5,7 @@
 import { type Extension, Facet } from "@codemirror/state";
 import { EditorView, ViewUpdate } from "@codemirror/view";
 import { rangeParser } from "../../../base";
-import { hideEmptySuggestionGutterState } from "../../../settings";
+import { hideEmptyDiffGutterState } from "../../../settings";
 import {
 	createGutter,
 	createGutterViewPlugin,
@@ -13,7 +13,7 @@ import {
 	GutterView,
 	SingleGutterView,
 } from "../base";
-import { suggestionGutterCompartment } from "./index";
+import { diffGutterCompartment } from "./index";
 
 const unfixGutters = Facet.define<boolean, boolean>({
 	combine: values => values.some(x => x),
@@ -21,7 +21,7 @@ const unfixGutters = Facet.define<boolean, boolean>({
 
 const activeGutters = Facet.define<Required<GutterConfig>>();
 
-class SuggestionGutterView extends GutterView {
+class DiffGutterView extends GutterView {
 	constructor(view: EditorView) {
 		super(view, unfixGutters, activeGutters);
 
@@ -33,7 +33,7 @@ class SuggestionGutterView extends GutterView {
 			setImmediate(() => {
 				view.dispatch(view.state.update({
 					effects: [
-						suggestionGutterCompartment.reconfigure([])
+						diffGutterCompartment.reconfigure([])
 					]
 				}));
 			});
@@ -41,26 +41,26 @@ class SuggestionGutterView extends GutterView {
 	}
 
 	createGutters(view: EditorView) {
-		return view.state.facet(activeGutters).map(conf => new SuggestionSingleGutterView(view, conf));
+		return view.state.facet(activeGutters).map(conf => new DiffSingleGutterView(view, conf));
 	}
 }
 
-class SuggestionSingleGutterView extends SingleGutterView {
+class DiffSingleGutterView extends SingleGutterView {
 	hide_on_empty: boolean = false;
 	showing: boolean = true;
 
 	constructor(public view: EditorView, public config: Required<GutterConfig>) {
 		super(view, config);
 
-		if (view.state.facet(hideEmptySuggestionGutterState))
+		if (view.state.facet(hideEmptyDiffGutterState))
 			this.hide_on_empty = true;
 	}
 
 	update(update: ViewUpdate) {
 		const result = super.update(update);
 
-		const hide_on_empty = update.state.facet(hideEmptySuggestionGutterState);
-		if (hide_on_empty !== update.startState.facet(hideEmptySuggestionGutterState))
+		const hide_on_empty = update.state.facet(hideEmptyDiffGutterState);
+		if (hide_on_empty !== update.startState.facet(hideEmptyDiffGutterState))
 			this.hide_on_empty = hide_on_empty;
 
 		if (this.showing && this.hide_on_empty && update.state.field(rangeParser).ranges.empty()) {
@@ -75,8 +75,8 @@ class SuggestionSingleGutterView extends SingleGutterView {
 	}
 }
 
-const suggestionGutterView = createGutterViewPlugin(SuggestionGutterView);
+const markGutterView = createGutterViewPlugin(DiffGutterView);
 
-export function suggestion_gutter(config: GutterConfig): Extension {
-	return createGutter(suggestionGutterView, config, activeGutters, unfixGutters);
+export function diff_gutter(config: GutterConfig): Extension {
+	return createGutter(markGutterView, config, activeGutters, unfixGutters);
 }

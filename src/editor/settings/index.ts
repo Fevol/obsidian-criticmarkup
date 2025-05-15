@@ -41,8 +41,8 @@ export const commentGutterWidth = new Compartment();
 export const commentGutterFoldedState = Facet.define<boolean, boolean>({ combine: values => values[0] });
 export const commentGutterFolded = new Compartment();
 
-export const hideEmptySuggestionGutterState = Facet.define<boolean, boolean>({ combine: values => values[0] });
-export const hideEmptySuggestionGutter = new Compartment();
+export const hideEmptyDiffGutterState = Facet.define<boolean, boolean>({ combine: values => values[0] });
+export const hideEmptyDiffGutter = new Compartment();
 
 export const previewModeState = Facet.define<PreviewMode, PreviewMode>({ combine: values => values[0] });
 export const previewMode = new Compartment();

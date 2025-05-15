@@ -19,7 +19,7 @@ export const DEFAULT_SETTINGS: PluginSettings = {
 	editor_gutter: true,
 
 	editor_styling: false,
-	suggestion_gutter_hide_empty: false,
+	diff_gutter_hide_empty: false,
 	comment_gutter_hide_empty: false,
 	comment_gutter_default_fold_state: false,
 	comment_gutter_fold_button: true,

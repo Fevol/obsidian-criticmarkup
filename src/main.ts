@@ -18,7 +18,7 @@ import {type CriticMarkupRange, getRangesInText, RANGE_PROTOTYPE_MAPPER, rangePa
 import {cmenuCommands, commands} from "./editor/uix";
 import {bracketMatcher, editorKeypressCatcher, rangeCorrecter} from "./editor/uix/extensions";
 
-import {commentGutter, commentGutterCompartment, suggestionGutter, suggestionGutterCompartment} from "./editor/renderers/gutters";
+import {commentGutter, commentGutterCompartment, diffGutter, diffGutterCompartment} from "./editor/renderers/gutters";
 import {commentRenderer, markupRenderer} from "./editor/renderers/live-preview";
 import {postProcess, postProcessorRerender, postProcessorUpdate} from "./editor/renderers/post-process";
 import {
@@ -57,8 +57,8 @@ import {
 	fullReloadEffect,
 	hideEmptyCommentGutter,
 	hideEmptyCommentGutterState,
-	hideEmptySuggestionGutter,
-	hideEmptySuggestionGutterState,
+	hideEmptyDiffGutter,
+	hideEmptyDiffGutterState,
 	previewMode,
 	previewModeState,
 } from "./editor/settings";
@@ -132,7 +132,7 @@ export default class CommentatorPlugin extends Plugin {
 
 		// TODO: Rerender gutter on Ctrl+Scroll
 		if (this.settings.editor_gutter) {
-			this.editorExtensions.push(suggestionGutterCompartment.of(suggestionGutter));
+			this.editorExtensions.push(diffGutterCompartment.of(diffGutter));
 		}
 
 		if (this.settings.tag_completion)
@@ -145,7 +145,7 @@ export default class CommentatorPlugin extends Plugin {
 		}));
 
 		this.editorExtensions.push(
-			hideEmptySuggestionGutter.of(hideEmptySuggestionGutterState.of(this.settings.suggestion_gutter_hide_empty))
+			hideEmptyDiffGutter.of(hideEmptyDiffGutterState.of(this.settings.diff_gutter_hide_empty))
 		);
 		this.editorExtensions.push(
 			commentGutterWidth.of(commentGutterWidthState.of(this.settings.comment_gutter_width))
@@ -284,17 +284,25 @@ export default class CommentatorPlugin extends Plugin {
 		else {
 			const old_version = new_settings?.version;
 			// EXPL: Migration code for upgrading to new version
-			if (old_version !== DEFAULT_SETTINGS.version) {
-				if (!old_version) {
-					this.app.workspace.onLayoutReady(async () => {
-						new Notice("Commentator: rebuilding database for new version", 5000);
-						new Notice(
-							"Commentator: metadata and replies features are now available, you can opt-in to these features in the settings",
-							0,
-						);
-					});
+			try {
+				if (old_version !== DEFAULT_SETTINGS.version) {
+					if (!old_version) {
+						this.app.workspace.onLayoutReady(async () => {
+							new Notice("Commentator: rebuilding database for new version", 5000);
+							new Notice(
+								"Commentator: metadata and replies features are now available, you can opt-in to these features in the settings",
+								0,
+							);
+						});
+					} else if (old_version.localeCompare("0.2.2", undefined, {numeric: true}) < 0) {
+						if ((new_settings as any).suggestion_gutter_hide_empty) {
+							this.settings.diff_gutter_hide_empty = (new_settings as any).suggestion_gutter_hide_empty;
+						}
+					}
+					await this.setSettings();
 				}
-				await this.setSettings();
+			} catch (e) {
+				new Notice("Commentator: Migration to new settings failed, using the default settings provided by the plugin", 0);
 			}
 		}
 	}
@@ -374,13 +382,13 @@ export default class CommentatorPlugin extends Plugin {
 			);
 		}
 
-		if (this.changed_settings.suggestion_gutter_hide_empty !== undefined) {
+		if (this.changed_settings.diff_gutter_hide_empty !== undefined) {
 			updateAllCompartments(
 				this.app,
 				this.editorExtensions,
-				hideEmptySuggestionGutter,
-				hideEmptySuggestionGutterState,
-				this.settings.suggestion_gutter_hide_empty,
+				hideEmptyDiffGutter,
+				hideEmptyDiffGutterState,
+				this.settings.diff_gutter_hide_empty,
 			);
 		}
 
