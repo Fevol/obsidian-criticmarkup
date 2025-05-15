@@ -70,7 +70,7 @@ export class MetadataStatusBarButton {
 					else
 						item.setChecked(this.plugin.settings[setting] as boolean);
 				});
-				item.dom.addClass("criticmarkup-submenu-nested");
+				item.dom.addClass("cmtr-submenu-nested");
 			});
 		}
 		menu.showAtMouseEvent(e);

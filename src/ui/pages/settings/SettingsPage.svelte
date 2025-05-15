@@ -50,7 +50,7 @@
 
 <div>
   <nav
-    class="criticmarkup-settings-navigation-bar"
+    class="cmtr-settings-navigation-bar"
     tabindex="0"
     onkeydown={(e) => {
       if (e.key === "Tab") {
@@ -67,8 +67,8 @@
   >
     {#each tabs as { id, name, icon }, index}
       <div
-        class:criticmarkup-settings-navigation-selected-item={tab_idx === index}
-        class="criticmarkup-settings-navigation-item"
+        class:cmtr-settings-navigation-selected-item={tab_idx === index}
+        class="cmtr-settings-navigation-item"
         aria-label={`${name} settings`}
         onclick={() => {
           changedTabs(index);
@@ -78,8 +78,8 @@
           <Icon {icon} />
         </div>
         <div
-          class="criticmarkup-settings-navigation-item-text"
-          class:criticmarkup-settings-navigation-selected-item-text={tab_idx !==
+          class="cmtr-settings-navigation-item-text"
+          class:cmtr-settings-navigation-selected-item-text={tab_idx !==
             index}
         >
           {name}

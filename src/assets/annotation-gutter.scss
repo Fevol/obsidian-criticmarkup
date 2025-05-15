@@ -1,30 +1,30 @@
 .cm-gutters.cm-gutters.cm-gutters.cm-gutters:has(
-    .is-minimal.criticmarkup-comment-gutter
+    .is-minimal.cmtr-anno-gutter
   ) {
   position: sticky !important;
 }
 
 // Removes additional padding to the right of the gutter
-.cm-gutters.cm-gutters:has(> .criticmarkup-comment-gutter) {
+.cm-gutters.cm-gutters:has(> .cmtr-anno-gutter) {
   padding-inline-end: 0;
   margin-inline-end: 0;
   margin-inline-start: 24px;
 }
 
-.criticmarkup-comment-gutter {
+.cmtr-anno-gutter {
   width: 100%;
   transition: width 400ms ease-in-out;
 }
 
-.criticmarkup-gutter-moving .criticmarkup-comment-gutter {
+.cmtr-anno-gutter-moving .cmtr-anno-gutter {
   transition: width 50ms ease-out;
 }
 
-.criticmarkup-gutter-moving.criticmarkup-gutter-button {
+.cmtr-anno-gutter-moving.cmtr-anno-gutter-button {
   transition: right 50ms ease-out;
 }
 
-.criticmarkup-gutter-comment-thread {
+.cmtr-anno-gutter-thread {
   width: 100%;
 
   border: 2px solid var(--background-modifier-border);
@@ -39,11 +39,11 @@
     background-color 200ms ease-in-out 0ms;
 }
 
-.criticmarkup-gutter-comment-thread-highlight {
-  animation: criticmarkup-gutter-comment-thread-highlight 2s infinite;
+.cmtr-anno-gutter-thread-highlight {
+  animation: cmtr-anno-gutter-thread-highlight 2s infinite;
 }
 
-@keyframes criticmarkup-gutter-comment-thread-highlight {
+@keyframes cmtr-anno-gutter-thread-highlight {
   0% {
     border-color: var(--background-modifier-border);
   }
@@ -55,7 +55,7 @@
   }
 }
 
-.criticmarkup-gutter-comment {
+.cmtr-anno-gutter-annotation {
   width: 100%;
   max-height: 150px;
 
@@ -67,43 +67,43 @@
   word-wrap: break-word;
 }
 
-.criticmarkup-gutter-comment:first-child {
+.cmtr-anno-gutter-annotation:first-child {
   border-top-left-radius: var(--radius-l);
   border-top-right-radius: var(--radius-l);
 }
 
-.criticmarkup-gutter-comment:last-child {
+.cmtr-anno-gutter-annotation:last-child {
   border-bottom-left-radius: var(--radius-l);
   border-bottom-right-radius: var(--radius-l);
 }
 
-.criticmarkup-gutter-comment:not(:last-child) {
+.cmtr-anno-gutter-annotation:not(:last-child) {
   border-bottom: 1px dashed var(--background-modifier-border);
 }
 
-.criticmarkup-comment-gutter .cm-gutterElement {
+.cmtr-anno-gutter .cm-gutterElement {
   transition: margin 200ms ease-in-out;
 }
 
-.criticmarkup-gutter-comment-view > * {
+.cmtr-anno-gutter-annotation-view > * {
   margin-block-start: 0.25em;
   margin-block-end: 0.25em;
 }
 
-.criticmarkup-gutter-comment:hover {
+.cmtr-anno-gutter-annotation:hover {
   box-shadow: 0 0 0 2px var(--interactive-accent);
   background-color: var(--background-secondary);
   z-index: 20;
 }
 
-.criticmarkup-gutter-comment:focus,
-.criticmarkup-gutter-comment-editing.criticmarkup-gutter-comment-editing {
+.cmtr-anno-gutter-annotation:focus,
+.cmtr-anno-gutter-annotation-editing.cmtr-anno-gutter-annotation-editing {
   box-shadow: 0 0 0 2px var(--comment-border-color);
   background-color: var(--background-secondary);
   z-index: 25;
 }
 
-.criticmarkup-gutter-comment-metadata {
+.cmtr-anno-gutter-annotation-metadata {
   font-size: var(--font-smallest);
   color: var(--text-faint);
 
@@ -114,7 +114,7 @@
   padding: 2px 0;
 }
 
-.criticmarkup-gutter-comment-editor.cm-editor {
+.cmtr-anno-gutter-annotation-editor.cm-editor {
   min-height: auto;
 }
 
@@ -122,7 +122,7 @@
 // 	   Editor Comment Gutter Resize Bar Styling
 // ================================================
 
-.criticmarkup-gutter-resize-handle {
+.cmtr-anno-gutter-resize-handle {
   position: absolute;
 
   background: transparent;
@@ -144,7 +144,7 @@
 
 }
 
-.criticmarkup-gutter-resize-handle:hover, .criticmarkup-gutter-resize-handle-hover {
+.cmtr-anno-gutter-resize-handle:hover, .cmtr-anno-gutter-resize-handle-hover {
   background: var(--divider-color-hover);
   border-color: var(--divider-color-hover);
 }
@@ -153,7 +153,7 @@
 // 	   Editor Comment Gutter Fold Button Styling
 // ================================================
 
-.criticmarkup-gutter-button {
+.cmtr-anno-gutter-button {
   position: absolute;
   top: calc(var(--file-margins) + 20px);
   z-index: 1000;
@@ -164,6 +164,6 @@
           rotate 200ms ease-in-out;
 }
 
-.criticmarkup-gutter-button:hover {
+.cmtr-anno-gutter-button:hover {
   color: var(--text-normal);
 }

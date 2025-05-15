@@ -5,8 +5,9 @@
 @import "editor";
 @import "modal";
 
-@import "comment-gutter";
-@import "criticicmarkup-gutter";
+// NOTE: Always abbreviated as "anno-gutter"
+@import "annotation-gutter";
+@import "diff-gutter";
 
 .theme-light {
   --addition-color: var(--color-green);
@@ -58,16 +59,7 @@
   --highlight-color: var(--text-highlight-bg);
 }
 
-.my-custom-markup {
-  color: red;
-  letter-spacing: 0.9px;
-  text-decoration: underline;
-  text-decoration-thickness: 0.5px;
-  text-decoration-style: dotted;
-  font-variant: all-small-caps;
-}
-
-.criticmarkup-fail > button {
+.cmtr-fail > button {
   background-color: var(--color-red);
   color: var(--text-on-accent);
 }
@@ -80,7 +72,7 @@ DEFAULT: hidden
   display: none;
 }
 
-.criticmarkup-debug-comment-line {
+.cmtr-debug-comment-line {
   width: 100%;
   border-bottom: 1px dashed red;
 }

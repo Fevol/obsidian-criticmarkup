@@ -8,7 +8,7 @@ import { diffGutterMarkers } from "./marker";
 export const diffGutter = /*(plugin: CommentatorPlugin) => */ [
 	diffGutterMarkers,
 	diff_gutter({
-		class: "criticmarkup-gutter", /* + (plugin.app.vault.getConfig('cssTheme') === 'Minimal' ? ' is-minimal' : '')*/
+		class: "cmtr-diff-gutter", /* + (plugin.app.vault.getConfig('cssTheme') === 'Minimal' ? ' is-minimal' : '')*/
 		markers: v => v.plugin(diffGutterMarkers)!.markers,
 		domEventHandlers: {
 			click: (view, line, event: Event) => {

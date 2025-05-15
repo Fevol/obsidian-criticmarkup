@@ -11,15 +11,15 @@ export class RangeMarker extends GutterMarker {
 	toDOM() {
 		let class_list = "";
 		if (this.type.has(SuggestionType.ADDITION))
-			class_list += "criticmarkup-gutter-addition ";
+			class_list += "cmtr-diff-gutter-addition ";
 		if (this.type.has(SuggestionType.DELETION))
-			class_list += "criticmarkup-gutter-deletion ";
+			class_list += "cmtr-diff-gutter-deletion ";
 		if (this.type.has(SuggestionType.SUBSTITUTION))
-			class_list += "criticmarkup-gutter-substitution ";
+			class_list += "cmtr-diff-gutter-substitution ";
 		if (this.top)
-			class_list += "criticmarkup-gutter-top ";
+			class_list += "cmtr-diff-gutter-top ";
 		if (this.bottom)
-			class_list += "criticmarkup-gutter-bottom ";
+			class_list += "cmtr-diff-gutter-bottom ";
 
 		return createDiv({ cls: class_list });
 	}

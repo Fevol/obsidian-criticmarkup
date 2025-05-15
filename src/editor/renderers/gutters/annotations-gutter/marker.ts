@@ -24,7 +24,7 @@ class AnnotationNode extends Component {
 
 		this.text = range.unwrap();
 
-		this.comment_container = this.marker.comment_thread.createDiv({ cls: "criticmarkup-gutter-comment" });
+		this.comment_container = this.marker.comment_thread.createDiv({ cls: "cmtr-anno-gutter-annotation" });
 		this.comment_container.addEventListener("blur", this.renderPreview.bind(this));
 		this.comment_container.addEventListener("dblclick", this.renderSource.bind(this));
 		this.comment_container.addEventListener("contextmenu", this.onCommentContextmenu.bind(this));
@@ -32,7 +32,7 @@ class AnnotationNode extends Component {
 		if (this.range.metadata)
 			this.renderMetadata();
 
-		this.comment_view = this.comment_container.createDiv({ cls: "criticmarkup-gutter-comment-view" });
+		this.comment_view = this.comment_container.createDiv({ cls: "cmtr-anno-gutter-annotation-view" });
 		this.renderPreview();
 	}
 
@@ -48,16 +48,16 @@ class AnnotationNode extends Component {
 	}
 
 	renderMetadata() {
-		this.metadata_view = this.comment_container.createDiv({ cls: "criticmarkup-gutter-comment-metadata" });
+		this.metadata_view = this.comment_container.createDiv({ cls: "cmtr-anno-gutter-annotation-metadata" });
 		if (this.range.fields.author) {
 			const authorLabel = createSpan({
-				cls: "criticmarkup-gutter-comment-author-label",
+				cls: "cmtr-anno-gutter-annotation-author-label",
 				text: "Author: ",
 			});
 			this.metadata_view.appendChild(authorLabel);
 
 			const author = createSpan({
-				cls: "criticmarkup-gutter-comment-author-name",
+				cls: "cmtr-anno-gutter-annotation-author-name",
 				text: this.range.fields.author,
 			});
 			this.metadata_view.appendChild(author);
@@ -66,20 +66,20 @@ class AnnotationNode extends Component {
 		if (this.range.fields.time) {
 			if (this.metadata_view.children.length > 0) {
 				const separator = createSpan({
-					cls: "criticmarkup-gutter-comment-metadata-separator",
+					cls: "cmtr-anno-gutter-annotation-metadata-separator",
 					text: " • ",
 				});
 				this.metadata_view.appendChild(separator);
 			}
 
 			const timeLabel = createSpan({
-				cls: "criticmarkup-gutter-comment-time-label",
+				cls: "cmtr-anno-gutter-annotation-time-label",
 				text: "Updated at: ",
 			});
 			this.metadata_view.appendChild(timeLabel);
 
 			const time = createSpan({
-				cls: "criticmarkup-gutter-comment-time",
+				cls: "cmtr-anno-gutter-annotation-time",
 				text: window.moment.unix(this.range.fields.time!).format("MMM DD YYYY, HH:mm"),
 			});
 			this.metadata_view.appendChild(time);
@@ -90,7 +90,7 @@ class AnnotationNode extends Component {
 		e?.stopPropagation();
 		if (this.currentMode === "source") return;
 
-		this.comment_container.toggleClass("criticmarkup-gutter-comment-editing", true);
+		this.comment_container.toggleClass("cmtr-anno-gutter-annotation-editing", true);
 		if (this.range.fields.author && this.range.fields.author !== COMMENTATOR_GLOBAL.PLUGIN_SETTINGS.author) {
 			new Notice("You cannot edit comments from other authors.");
 			return;
@@ -100,7 +100,7 @@ class AnnotationNode extends Component {
 		this.editMode = this.addChild(
 			new EmbeddableMarkdownEditor(COMMENTATOR_GLOBAL.app, this.comment_view, {
 				value: this.text,
-				cls: "criticmarkup-gutter-comment-editor",
+				cls: "cmtr-anno-gutter-annotation-editor",
 				onSubmit: (editor) => {
 					this.new_text = editor.get();
 					this.renderPreview();
@@ -120,7 +120,7 @@ class AnnotationNode extends Component {
 		//    Once for the immediate user event
 		//    And again when the comments get updated
 		//    -> This caused an issue where the range gets added twice, temporarily fixed by setting text to new text
-		this.comment_container.toggleClass("criticmarkup-gutter-comment-editing", false);
+		this.comment_container.toggleClass("cmtr-anno-gutter-annotation-editing", false);
 		if (this.text === this.new_text || this.new_text === null) {
 			this.new_text = null;
 			if (this.editMode) {
@@ -198,16 +198,16 @@ export class AnnotationMarker extends GutterMarker {
 		}, 200);
 
 		if (Math.abs(this.view.scrollDOM.scrollTop - top) > 10) {
-			this.comment_thread.classList.add("criticmarkup-gutter-comment-thread-highlight");
+			this.comment_thread.classList.add("cmtr-anno-gutter-thread-highlight");
 			setTimeout(
-				() => this.comment_thread.classList.remove("criticmarkup-gutter-comment-thread-highlight"),
+				() => this.comment_thread.classList.remove("cmtr-anno-gutter-thread-highlight"),
 				4000,
 			);
 		}
 	}
 
 	toDOM() {
-		this.comment_thread = createDiv({ cls: "criticmarkup-gutter-comment-thread" });
+		this.comment_thread = createDiv({ cls: "cmtr-anno-gutter-thread" });
 		this.comment_thread.addEventListener("click", this.onCommentThreadClick.bind(this));
 
 		for (const range of this.comment_range.thread)

@@ -51,11 +51,11 @@ function markContents(
 	const offset = inclusive ? 0 : 3;
 
 	if (range.replies.length)
-		cls += " criticmarkup-has-reply";
+		cls += " cmtr-has-reply";
 
 	const attributes = {
 		"data-contents": "string",
-		"data-type": "criticmarkup-" + range.repr.toLowerCase(),
+		"data-type": "cmtr-" + range.repr.toLowerCase(),
 		"class": cls,
 		"style": apply_styling && range.fields.color ? `background-color: #${range.fields.color};` : "",
 	};
@@ -102,7 +102,7 @@ function constructMarkings(
 				range.partially_in_range(sel_range.from, sel_range.to)
 			);
 
-			const style = `criticmarkup-editing criticmarkup-inline criticmarkup-${range.repr.toLowerCase()} ` +
+			const style = `cmtr-editing cmtr-inline cmtr-${range.repr.toLowerCase()} ` +
 				(range.fields.style || "");
 
 			if (suggest_mode === EditMode.SUGGEST && in_range) {
@@ -117,7 +117,7 @@ function constructMarkings(
 			} else if (range.type === SuggestionType.SUBSTITUTION) {
 				hideBracket(decorations, range, true, live_preview);
 				hideMetadata(decorations, range, live_preview);
-				markContents(decorations, range, style + " criticmarkup-deletion", true);
+				markContents(decorations, range, style + " cmtr-deletion", true);
 				if (live_preview) {
 					decorations.push(
 						Decoration.replace({
@@ -125,21 +125,21 @@ function constructMarkings(
 						}).range((range as SubstitutionRange).middle, (range as SubstitutionRange).middle + 2),
 					);
 				}
-				markContents(decorations, range, style + " criticmarkup-addition", false);
+				markContents(decorations, range, style + " cmtr-addition", false);
 				hideBracket(decorations, range, false, live_preview);
 			} else {
 				hideSyntax(decorations, range, style, live_preview);
 			}
 		} else if (preview_mode === PreviewMode.ACCEPT) {
 			if (range.type === SuggestionType.ADDITION)
-				hideSyntax(decorations, range, "criticmarkup-accepted", live_preview);
+				hideSyntax(decorations, range, "cmtr-accepted", live_preview);
 			else if (range.type === SuggestionType.DELETION)
 				hideRange(decorations, range);
 			else if (range.type === SuggestionType.SUBSTITUTION) {
 				hideBracket(decorations, range, true, live_preview);
 				hideMetadata(decorations, range, live_preview);
 				decorations.push(Decoration.replace({}).range(range.range_start, (range as SubstitutionRange).middle + (live_preview ? 2 : 0)));
-				markContents(decorations, range, "criticmarkup-accepted", false);
+				markContents(decorations, range, "cmtr-accepted", false);
 				hideBracket(decorations, range, false, live_preview);
 			} else {
 				hideSyntax(decorations, range, "", live_preview);
@@ -150,12 +150,12 @@ function constructMarkings(
 			else if (range.type === SuggestionType.DELETION) {
 				hideBracket(decorations, range, true, live_preview);
 				hideMetadata(decorations, range, live_preview);
-				markContents(decorations, range, "criticmarkup-accepted");
+				markContents(decorations, range, "cmtr-accepted");
 				hideBracket(decorations, range, false, live_preview);
 			} else if (range.type === SuggestionType.SUBSTITUTION) {
 				hideBracket(decorations, range, true, live_preview);
 				hideMetadata(decorations, range, live_preview);
-				markContents(decorations, range, "criticmarkup-accepted", true);
+				markContents(decorations, range, "cmtr-accepted", true);
 				decorations.push(Decoration.replace({}).range((range as SubstitutionRange).middle + (live_preview ? 0 : 2), range.to - 3));
 				hideBracket(decorations, range, false, live_preview);
 			} else {

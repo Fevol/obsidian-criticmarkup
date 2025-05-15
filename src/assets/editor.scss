@@ -2,28 +2,28 @@
 //           CriticMarkup Editor Styles
 // ================================================
 
-.criticmarkup-editing {
+.cmtr-editing {
 }
 
-.criticmarkup-inline {
+.cmtr-inline {
 }
 
-.criticmarkup-accepted {
+.cmtr-accepted {
 }
 
-.criticmarkup-rejected {
+.cmtr-rejected {
   display: none;
 }
 
 // ================================================
 //        CriticMarkup Main Suggestion Styles
 // ================================================
-.criticmarkup-addition {
+.cmtr-addition {
   color: var(--addition-color);
 }
 
-.criticmarkup-has-reply .criticmarkup-addition,
-.criticmarkup-has-reply.criticmarkup-addition {
+.cmtr-has-reply .cmtr-addition,
+.cmtr-has-reply.cmtr-addition {
   color: var(--text-on-accent) !important;
   background-color: var(--addition-color);
   box-shadow: 0 0 0 2px var(--addition-color);
@@ -37,8 +37,8 @@
   }
 }
 
-.criticmarkup-has-reply .criticmarkup-deletion,
-.criticmarkup-has-reply.criticmarkup-deletion {
+.cmtr-has-reply .cmtr-deletion,
+.cmtr-has-reply.cmtr-deletion {
   color: var(--text-on-accent);
   background-color: var(--deletion-color);
   box-shadow: 0 0 0 2px var(--deletion-color);
@@ -50,8 +50,8 @@
   }
 }
 
-.criticmarkup-has-reply .criticmarkup-substitution,
-.criticmarkup-has-reply.criticmarkup-substitution {
+.cmtr-has-reply .cmtr-substitution,
+.cmtr-has-reply.cmtr-substitution {
   color: var(--text-on-accent);
   background-color: var(--substitution-color);
   box-shadow: 0 0 0 2px var(--substitution-color);
@@ -63,34 +63,34 @@
   }
 }
 
-.criticmarkup-deletion {
+.cmtr-deletion {
   text-decoration: var(--deletion-color) 2px line-through;
 }
 
-.criticmarkup-comment {
+.cmtr-comment {
   background-color: var(--comment-color);
   border-bottom: 2px solid var(--comment-border-color);
 }
 
-.criticmarkup-comment-icon {
+.cmtr-comment-icon {
   padding: 0 0 var(--size-4-2) 0;
 }
 
-.criticmarkup-comment-icon:hover {
+.cmtr-comment-icon:hover {
   cursor: pointer;
 }
 
-.criticmarkup-comment-icon svg {
+.cmtr-comment-icon svg {
   color: var(--comment-border-color);
   stroke-width: 4px;
   transition: stroke-width 150ms ease-in-out;
 }
 
-.criticmarkup-comment-icon:hover svg {
+.cmtr-comment-icon:hover svg {
   stroke-width: 5px;
 }
 
-.criticmarkup-comment-tooltip {
+.cmtr-comment-tooltip {
   max-height: var(--popover-height);
   max-width: var(--popover-width);
   overflow-y: scroll;
@@ -108,12 +108,12 @@
   border-radius: var(--radius-l);
 }
 
-.criticmarkup-comment-tooltip * {
+.cmtr-comment-tooltip * {
   margin-block-start: 0.25em;
   margin-block-end: 0.25em;
 }
 
-.criticmarkup-highlight {
+.cmtr-highlight {
   background-color: var(--highlight-color);
 }
 
@@ -121,17 +121,17 @@
 //            Editor UIX Elements Styling
 // ================================================
 
-.criticmarkup-suggestion-status {
+.cmtr-suggestion-status {
   font-size: var(--font-smallest);
   color: var(--text-faint);
   margin-right: var(--size-2-1);
 }
 
-.criticmarkup-submenu-nested {
+.cmtr-submenu-nested {
   padding-left: var(--size-4-6);
 }
 
-.criticmarkup-folded-element .criticmarkup-gutter-comment {
+.cmtr-folded-element .cmtr-anno-gutter-annotation {
   width: 0;
   overflow-y: hidden;
 }
@@ -141,16 +141,16 @@
 //             Markdown-specific Fixes
 // ================================================
 
-span.cm-strikethrough:has([data-type="criticmarkup-substitution"]) {
+span.cm-strikethrough:has([data-type="cmtr-substitution"]) {
   text-decoration: unset;
 }
 
-span.cm-highlight:has([data-type="criticmarkup-highlight"]) {
+span.cm-highlight:has([data-type="cmtr-highlight"]) {
   background-color: unset;
 }
 
 //
-//.cm-line:has(>.criticmarkup-inline) ~ .cm-line.cm-strikethrough {
+//.cm-line:has(>.cmtr-inline) ~ .cm-line.cm-strikethrough {
 //  text-decoration: unset;
 //  color: var(--color-red);
 //}
@@ -159,23 +159,23 @@ span.cm-highlight:has([data-type="criticmarkup-highlight"]) {
 //           Markdown-specific Styling
 // ================================================
 
-.criticmarkup-addition .list-bullet::after {
+.cmtr-addition .list-bullet::after {
   background-color: var(--addition-color);
 }
 
-.criticmarkup-addition img {
+.cmtr-addition img {
   border: 4px solid var(--addition-color);
   border-radius: 12px;
 }
 
-.criticmarkup-addition hr {
+.cmtr-addition hr {
   border-color: var(--addition-color);
 }
 
-.criticmarkup-addition .callout {
+.cmtr-addition .callout {
   border: 4px dashed var(--addition-color);
 }
-.criticmarkup-addition:has(.markdown-embed) {
+.cmtr-addition:has(.markdown-embed) {
   border: 4px dotted var(--addition-color);
 
   .markdown-embed {
@@ -183,7 +183,7 @@ span.cm-highlight:has([data-type="criticmarkup-highlight"]) {
   }
 }
 
-.criticmarkup-deletion img {
+.cmtr-deletion img {
   border: 4px solid var(--deletion-color) !important;
   border-radius: 12px;
 }

@@ -32,7 +32,7 @@ export class CriticMarkupView extends ItemView {
 
 	async onOpen(): Promise<void> {
 		this.containerEl.empty();
-		this.containerEl.classList.add("criticmarkup-view");
+		this.containerEl.classList.add("cmtr-view");
 	}
 
 	async onClose(): Promise<void> {

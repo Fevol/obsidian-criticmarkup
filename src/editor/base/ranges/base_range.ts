@@ -303,7 +303,7 @@ export abstract class CriticMarkupRange {
 			else
 				str = this.unwrap();
 		}
-		return `<${tag} class='criticmarkup-${this.repr.toLowerCase()}'>${str}</${tag}>`;
+		return `<${tag} class='cmtr-${this.repr.toLowerCase()}'>${str}</${tag}>`;
 	}
 
 	apply_offset(offset: number) {

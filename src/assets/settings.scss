@@ -2,7 +2,7 @@
 //            Settings Navbar Styling
 // ================================================
 
-.criticmarkup-settings-navigation-bar {
+.cmtr-settings-navigation-bar {
   display: flex;
   flex-direction: row;
   overflow-x: auto;
@@ -17,7 +17,7 @@
   border-radius: var(--radius-l);
 }
 
-.criticmarkup-settings-navigation-item {
+.cmtr-settings-navigation-item {
   cursor: pointer;
   border-radius: 100px;
 
@@ -47,17 +47,17 @@
   height: fit-content;
 }
 
-.criticmarkup-settings-selected-element {
+.cmtr-settings-selected-element {
   color: var(--color-accent);
   transition: color 0.5s ease-in-out;
 }
 
-.criticmarkup-settings-navigation-item:hover {
+.cmtr-settings-navigation-item:hover {
   background-color: var(--background-primary);
   outline: 3px solid var(--text-accent);
 }
 
-.criticmarkup-settings-navigation-selected-item {
+.cmtr-settings-navigation-selected-item {
   outline: unset !important;
   background-color: var(--text-accent);
   color: var(--text-on-accent);
@@ -70,23 +70,23 @@
     max-width 0.45s cubic-bezier(0.57, 0.04, 0.58, 1) 0.2s;
 }
 
-.criticmarkup-settings-navigation-selected-item:hover {
+.cmtr-settings-navigation-selected-item:hover {
   background-color: var(--text-accent-hover);
 }
 
-.criticmarkup-settings-navigation-item-text {
+.cmtr-settings-navigation-item-text {
   height: 18px;
 }
 
-.criticmarkup-settings-navigation-selected-item-text {
+.cmtr-settings-navigation-selected-item-text {
   color: transparent;
   overflow: clip;
   flex: 0;
   transition: flex 0.4s ease-in;
 }
 
-.criticmarkup-settings-navigation-selected-item
-  .criticmarkup-settings-navigation-item-text {
+.cmtr-settings-navigation-selected-item
+  .cmtr-settings-navigation-item-text {
   flex: 1;
 }
 
@@ -94,7 +94,7 @@
 //           Settings Content Styling
 // ================================================
 
-.criticmarkup-important-buttons {
+.cmtr-important-buttons {
   position: absolute;
   display: flex;
   right: var(--size-4-6);

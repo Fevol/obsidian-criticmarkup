@@ -15,7 +15,7 @@ export const annotationGutter: (
 ) => [StateField<RangeSet<AnnotationMarker>>, [[ViewPlugin<AnnotationGutterView>], unknown]] = (app: App) => [
 	annotationGutterMarkers,
 	annotation_gutter({
-		class: "criticmarkup-comment-gutter" + (app.vault.getConfig("cssTheme") === "Minimal" ? " is-minimal" : ""),
+		class: "cmtr-anno-gutter" + (app.vault.getConfig("cssTheme") === "Minimal" ? " is-minimal" : ""),
 		markers: v => v.state.field(annotationGutterMarkers),
 	}) as [[ViewPlugin<AnnotationGutterView>], unknown],
 ];

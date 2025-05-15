@@ -13,7 +13,7 @@ export class DaterangeModal extends Modal {
 		private callback: (string: string | string[] | null) => void,
 	) {
 		super(plugin.app);
-		this.contentEl.parentElement!.addClass("criticmarkup-daterange-picker-modal");
+		this.contentEl.parentElement!.addClass("cmtr-daterange-picker-modal");
 	}
 
 	async onOpen() {

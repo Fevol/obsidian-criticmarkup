@@ -11,7 +11,7 @@
 
 </script>
 
-<div class="criticmarkup-daterange-picker">
+<div class="cmtr-daterange-picker">
   <SveltyPicker
     pickerOnly
     isRange

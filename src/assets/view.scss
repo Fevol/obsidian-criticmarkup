@@ -1,9 +1,9 @@
-.criticmarkup-view-container {
+.cmtr-view-container {
   padding: 0 0 0 var(--size-4-4);
   height: 95%;
 }
 
-.criticmarkup-view-range {
+.cmtr-view-range {
   border: 1px solid var(--background-modifier-border);
   border-radius: var(--radius-l);
   background: var(--background-primary);
@@ -13,7 +13,7 @@
   word-wrap: break-word;
 }
 
-.criticmarkup-view-range-top {
+.cmtr-view-range-top {
   display: flex;
   align-items: center;
   gap: var(--size-4-2);
@@ -24,72 +24,72 @@
   background-color: inherit;
 }
 
-.criticmarkup-view-range-text {
+.cmtr-view-range-text {
   padding: 0 var(--size-4-1);
   padding-left: 30px;
 }
 
-.criticmarkup-view-range-completed {
+.cmtr-view-range-completed {
   background: var(--background-primary-alt);
   color: var(--text-muted);
   border-style: dashed;
 }
 
-.criticmarkup-view-range-author {
+.cmtr-view-range-author {
   font-size: var(--font-smallest);
   color: var(--text-faint);
 }
 
-.criticmarkup-view-range-time {
+.cmtr-view-range-time {
   font-size: var(--font-smallest);
   color: var(--text-faint);
 }
 
-.criticmarkup-view-range:hover {
+.cmtr-view-range:hover {
   box-shadow: unset;
   outline: 2px dashed var(--interactive-accent-hover);
 }
 
-.criticmarkup-view-range-selected {
+.cmtr-view-range-selected {
   box-shadow: 0 0 0 2px var(--interactive-accent);
 }
 
-.criticmarkup-view-range-icon {
+.cmtr-view-range-icon {
 }
 
-.criticmarkup-view-range-title {
+.cmtr-view-range-title {
   font-variant: all-small-caps;
   font-weight: var(--bold-weight);
 }
 
-.criticmarkup-view-range-empty {
+.cmtr-view-range-empty {
   color: var(--text-faint);
 }
 
-.criticmarkup-view-range-reply {
+.cmtr-view-range-reply {
   border-top: 1px dashed var(--background-modifier-border);
 }
 
-.criticmarkup-view-range-reply-top {
+.cmtr-view-range-reply-top {
   padding: 0 var(--size-4-1);
 }
 
-.criticmarkup-view-range-reply-text {
+.cmtr-view-range-reply-text {
   padding: 0 var(--size-4-1);
   padding-left: 30px;
 }
 
-.criticmarkup-view-range-reply-author {
+.cmtr-view-range-reply-author {
   font-size: var(--font-smallest);
   color: var(--text-faint);
 }
 
-.criticmarkup-view-range-reply-time {
+.cmtr-view-range-reply-time {
   font-size: var(--font-smallest);
   color: var(--text-faint);
 }
 
-.criticmarkup-view-suggestion-buttons {
+.cmtr-view-suggestion-buttons {
   // Display in the top right corner
   position: fixed;
   right: 0;
@@ -105,7 +105,7 @@
   border-radius: var(--radius-s);
 }
 
-.criticmarkup-view-suggestion-buttons > button {
+.cmtr-view-suggestion-buttons > button {
   background: unset;
   box-shadow: unset;
   border-radius: unset;
@@ -113,11 +113,11 @@
   padding: var(--size-4-1);
 }
 
-.criticmarkup-view-suggestion-buttons > button:hover {
+.cmtr-view-suggestion-buttons > button:hover {
   background-color: var(--background-secondary-alt);
 }
 
-.criticmarkup-view-info {
+.cmtr-view-info {
   color: var(--text-muted);
   font-size: var(--font-smallest);
 }

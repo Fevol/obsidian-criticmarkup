@@ -159,7 +159,7 @@
   {/snippet}
 </SettingItem>
 
-<div class="criticmarkup-important-buttons criticmarkup-fail">
+<div class="cmtr-important-buttons cmtr-fail">
   <Button
     class="translator-fail"
     text="REPORT BUG"

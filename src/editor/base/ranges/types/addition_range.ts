@@ -30,9 +30,9 @@ export class AdditionRange extends CriticMarkupRange {
 				str = this.unwrap();
 		}
 
-		let cls = "criticmarkup-preview";
+		let cls = "cmtr-preview";
 		if (previewMode === PreviewMode.ALL)
-			cls += " criticmarkup-addition";
+			cls += " cmtr-addition";
 		else if (previewMode === PreviewMode.REJECT)
 			str = "";
 

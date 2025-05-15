@@ -326,7 +326,7 @@
   {#snippet header()}
     <NavHeader>
       {#snippet container()}
-        <div class="commentator-view-search search-input-container">
+        <div class="cmtr-view-search search-input-container">
           <Input
             value={search_filter}
             type="text"
@@ -506,7 +506,7 @@
             {/if}
           {/if}
         </div>
-        <div class="criticmarkup-view-info">
+        <div class="cmtr-view-info">
           <span>{description_blurb}</span
           >
           {#if selected_ranges.length}
@@ -519,7 +519,7 @@
 
   {#snippet view()}
     <div
-      class="criticmarkup-view-container"
+      class="cmtr-view-container"
       tabindex="-1"
       onclick={onClickOutside}
       onkeydown={handleKey}
@@ -527,9 +527,9 @@
       <VirtualList items={filtered_items}>
         {#snippet item(row, index)}
           <div
-            class="criticmarkup-view-range"
-            class:criticmarkup-view-range-completed={row.range.fields.done}
-            class:criticmarkup-view-range-selected={selected_ranges.some(
+            class="cmtr-view-range"
+            class:cmtr-view-range-completed={row.range.fields.done}
+            class:cmtr-view-range-selected={selected_ranges.some(
               (value) => value === index,
             )}
             onmouseenter={() => (hover_index = index)}
@@ -602,7 +602,7 @@
           >
             {#if hover_index === index}
               <div style="position: relative">
-                <div class="criticmarkup-view-suggestion-buttons">
+                <div class="cmtr-view-suggestion-buttons">
                   <Button
                     icon="check"
                     tooltip="Accept change"
@@ -618,19 +618,19 @@
             {/if}
 
             <!-- TODO: Only show path if folder/vault-wide filter is active -->
-            <div class="criticmarkup-view-range-top">
+            <div class="cmtr-view-range-top">
               <Icon size={24} icon={SUGGESTION_ICON_MAPPER[row.range.type]} />
               <div>
-                <span class="criticmarkup-view-range-title">{row.path}</span>
+                <span class="cmtr-view-range-title">{row.path}</span>
                 <div>
                   {#if row.range.fields.author}
-                    <span class="criticmarkup-view-range-author">
+                    <span class="cmtr-view-range-author">
                       {row.range.fields.author}
                     </span>
                   {/if}
 
                   {#if row.range.fields.time}
-                    <span class="criticmarkup-view-range-time">
+                    <span class="cmtr-view-range-time">
                       {window.moment
                         .unix(row.range.fields.time)
                         .format("MMM DD YYYY, HH:mm")}
@@ -641,9 +641,9 @@
             </div>
 
             {#key row.range.text}
-              <div class="criticmarkup-view-range-text">
+              <div class="cmtr-view-range-text">
                 {#if row.range.empty()}
-                  <span class="criticmarkup-view-range-empty"
+                  <span class="cmtr-view-range-empty"
                     >This range is empty</span
                   >
                 {:else}
@@ -668,22 +668,22 @@
             {#if row.range.replies.length}
               {#each row.range.replies as reply}
                 {#key reply.text}
-                  <div class="criticmarkup-view-range-reply">
-                    <div class="criticmarkup-view-range-reply-top">
+                  <div class="cmtr-view-range-reply">
+                    <div class="cmtr-view-range-reply-top">
                       {#if reply.fields.author}
-                        <span class="criticmarkup-view-range-reply-author">
+                        <span class="cmtr-view-range-reply-author">
                           {reply.fields.author}
                         </span>
                       {/if}
                       {#if reply.fields.time}
-                        <span class="criticmarkup-view-range-reply-time">
+                        <span class="cmtr-view-range-reply-time">
                           {window.moment
                             .unix(reply.fields.time)
                             .format("MMM DD YYYY, HH:mm")}
                         </span>
                       {/if}
                     </div>
-                    <div class="criticmarkup-view-range-reply-text">
+                    <div class="cmtr-view-range-reply-text">
                       <MarkdownRenderer
                         {plugin}
                         text={reply.unwrap()}

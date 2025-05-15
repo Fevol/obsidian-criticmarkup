@@ -30,9 +30,9 @@ export class DeletionRange extends CriticMarkupRange {
 				str = this.unwrap();
 		}
 
-		let cls = "criticmarkup-preview";
+		let cls = "cmtr-preview";
 		if (previewMode === PreviewMode.ALL)
-			cls += " criticmarkup-deletion";
+			cls += " cmtr-deletion";
 		else if (previewMode === PreviewMode.ACCEPT)
 			str = "";
 

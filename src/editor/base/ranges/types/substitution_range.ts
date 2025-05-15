@@ -161,7 +161,7 @@ export class SubstitutionRange extends CriticMarkupRange {
 				parts = this.unwrap_parts();
 		}
 
-		const cls = "criticmarkup-preview";
+		const cls = "cmtr-preview";
 		if (parts.length === 1) {
 			parts[+(left as boolean)] = parts[0];
 			parts[+!left] = "";
@@ -170,9 +170,9 @@ export class SubstitutionRange extends CriticMarkupRange {
 		str = "";
 		if (previewMode === PreviewMode.ALL) {
 			if (parts[0].length)
-				str += `<${tag} class='${cls} criticmarkup-deletion'>${parts[0]}</${tag}>`;
+				str += `<${tag} class='${cls} cmtr-deletion'>${parts[0]}</${tag}>`;
 			if (parts[1].length)
-				str += `<${tag} class='${cls} criticmarkup-addition'>${parts[1]}</${tag}>`;
+				str += `<${tag} class='${cls} cmtr-addition'>${parts[1]}</${tag}>`;
 		} else {
 			if (previewMode === PreviewMode.ACCEPT) {
 				if (parts[1].length)

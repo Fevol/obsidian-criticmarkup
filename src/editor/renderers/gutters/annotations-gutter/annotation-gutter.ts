@@ -271,10 +271,10 @@ class AnnotationSingleGutterView extends SingleGutterView {
 	}
 
 	createFoldButton(folded: boolean) {
-		if (this.view.dom.children[0].classList.contains("criticmarkup-gutter-button"))
+		if (this.view.dom.children[0].classList.contains("cmtr-anno-gutter-button"))
 			this.fold_button = this.view.dom.children[0] as HTMLElement;
 		else {
-			this.fold_button = createEl("a", { cls: ["criticmarkup-gutter-button", "view-action"] });
+			this.fold_button = createEl("a", { cls: ["cmtr-anno-gutter-button", "view-action"] });
 			this.view.dom.prepend(this.fold_button);
 			setIcon(this.fold_button, "arrow-right-from-line");
 			this.fold_button.setAttribute("data-tooltip-position", "left");
@@ -286,10 +286,10 @@ class AnnotationSingleGutterView extends SingleGutterView {
 	}
 
 	createResizeHandle() {
-		if (this.gutterDom.children[0]?.classList.contains("criticmarkup-gutter-resize-handle")) {
+		if (this.gutterDom.children[0]?.classList.contains("cmtr-anno-gutter-resize-handle")) {
 			this.resize_handle = this.gutterDom.children[0] as HTMLElement;
 		} else {
-			this.resize_handle = createEl("hr", { cls: ["criticmarkup-gutter-resize-handle"] });
+			this.resize_handle = createEl("hr", { cls: ["cmtr-anno-gutter-resize-handle"] });
 			this.gutterDom.appendChild(this.resize_handle);
 
 			this.resize_handle.addEventListener("mousedown", (e) => {
@@ -306,9 +306,9 @@ class AnnotationSingleGutterView extends SingleGutterView {
 					}
 				}, 25);
 
-				this.resize_handle!.classList.toggle("criticmarkup-gutter-resize-handle-hover", true);
-				this.fold_button?.classList.toggle("criticmarkup-gutter-moving", true);
-				this.gutterDom.classList.toggle("criticmarkup-gutter-moving", true);
+				this.resize_handle!.classList.toggle("cmtr-anno-gutter-resize-handle-hover", true);
+				this.fold_button?.classList.toggle("cmtr-anno-gutter-moving", true);
+				this.gutterDom.classList.toggle("cmtr-anno-gutter-moving", true);
 
 				let currentWidth = parseInt(this.dom.style.width.slice(0, -2));
 				const onMouseMove = (evt: MouseEvent) => {
@@ -323,9 +323,9 @@ class AnnotationSingleGutterView extends SingleGutterView {
 				const onMouseStop = () => {
 					document.removeEventListener("mousemove", onMouseMove);
 					document.removeEventListener("mouseup", onMouseStop);
-					this.resize_handle!.classList.toggle("criticmarkup-gutter-resize-handle-hover", false);
-					this.fold_button?.classList.toggle("criticmarkup-gutter-moving", false);
-					this.gutterDom.classList.toggle("criticmarkup-gutter-moving", false);
+					this.resize_handle!.classList.toggle("cmtr-anno-gutter-resize-handle-hover", false);
+					this.fold_button?.classList.toggle("cmtr-anno-gutter-moving", false);
+					this.gutterDom.classList.toggle("cmtr-anno-gutter-moving", false);
 				}
 
 				document.addEventListener("mousemove", onMouseMove);
@@ -365,14 +365,14 @@ class AnnotationSingleGutterView extends SingleGutterView {
 		// Set the gutter height for every element to fixed such that the element doesn't break the layout
 		if (folded) {
 			this.elements.forEach(element => {
-				Array.from(element.dom.getElementsByClassName("criticmarkup-gutter-comment")).forEach(comment => {
+				Array.from(element.dom.getElementsByClassName("cmtr-anno-gutter-annotation")).forEach(comment => {
 					comment.setAttribute("style", `max-height: ${comment.clientHeight}px; overflow: hidden;`);
 				});
 			});
 		} else {
 			this.dom.addEventListener("transitionend", () => {
 				this.elements.forEach(element => {
-					Array.from(element.dom.getElementsByClassName("criticmarkup-gutter-comment")).forEach(comment => {
+					Array.from(element.dom.getElementsByClassName("cmtr-anno-gutter-annotation")).forEach(comment => {
 						comment.setAttribute("style", ``);
 					});
 				});

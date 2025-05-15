@@ -17,7 +17,7 @@ export function renderCommentWidget(range: CommentRange, text?: string, unwrap =
 	}
 
 	const icon = document.createElement("span");
-	icon.classList.add("criticmarkup-comment-icon");
+	icon.classList.add("cmtr-comment-icon");
 	setIcon(icon, "message-square");
 	let tooltip: HTMLElement | null = null;
 	const component = new Component();
@@ -25,7 +25,7 @@ export function renderCommentWidget(range: CommentRange, text?: string, unwrap =
 		if (tooltip) return;
 
 		tooltip = document.createElement("div");
-		tooltip.classList.add("criticmarkup-comment-tooltip");
+		tooltip.classList.add("cmtr-comment-tooltip");
 		MarkdownRenderer.render(COMMENTATOR_GLOBAL.app, str, tooltip, "", component);
 		component.load();
 		icon!.appendChild(tooltip);
@@ -62,7 +62,7 @@ export class CommentIconWidget extends WidgetType {
 	renderTooltip() {
 		if (!this.tooltip) {
 			this.tooltip = document.createElement("div");
-			this.tooltip.classList.add("criticmarkup-comment-tooltip");
+			this.tooltip.classList.add("cmtr-comment-tooltip");
 			MarkdownRenderer.render(COMMENTATOR_GLOBAL.app, this.range.text, this.tooltip, "", this.component);
 			this.component.load();
 			this.icon!.appendChild(this.tooltip);
@@ -95,12 +95,12 @@ export class CommentIconWidget extends WidgetType {
 
 	toDOM(view: EditorView): HTMLElement {
 		this.icon = document.createElement("span");
-		this.icon.classList.add("criticmarkup-comment-icon");
+		this.icon.classList.add("cmtr-comment-icon");
 		setIcon(this.icon, "message-square");
 
 		// DEBUG: Add line under icon to check alignment of annotation gutter element with widget
 		// const line = document.createElement('div');
-		// line.classList.add('criticmarkup-debug-comment-line');
+		// line.classList.add('cmtr-debug-comment-line');
 		// this.icon.appendChild(line);
 
 		if (this.is_block) {

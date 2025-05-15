@@ -1,8 +1,8 @@
-.criticmarkup-daterange-picker-modal {
+.cmtr-daterange-picker-modal {
   width: auto;
 }
 
-.criticmarkup-daterange-picker {
+.cmtr-daterange-picker {
   margin-top: var(--size-4-2);
   display: flex;
   --sdt-bg-main: var(--background-primary);
@@ -34,21 +34,21 @@
   --sdt-clear-hover-bg: var(--background-modifier-error);
 }
 
-.criticmarkup-daterange-picker.criticmarkup-daterange-picker.criticmarkup-daterange-picker
+.cmtr-daterange-picker.cmtr-daterange-picker.cmtr-daterange-picker
   .sdt-widget
   + .sdt-widget:before {
   background-color: var(--background-modifier-border);
 }
 
-.criticmarkup-daterange-picker button {
+.cmtr-daterange-picker button {
   box-shadow: unset;
 }
 
-.criticmarkup-daterange-picker div.sdt-calendar-wrap.sdt-calendar-wrap.sdt-calendar-wrap {
+.cmtr-daterange-picker div.sdt-calendar-wrap.sdt-calendar-wrap.sdt-calendar-wrap {
   box-shadow: unset;
 }
 
 // Target td children of last tr in table and add padding-bottom 2px
-.criticmarkup-daterange-picker table tr:last-child td {
+.cmtr-daterange-picker table tr:last-child td {
   padding-bottom: var(--size-4-1) !important;
 }
