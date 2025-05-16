@@ -4,9 +4,9 @@ import { mount, unmount } from "svelte";
 import { ViewPage } from "./pages/view";
 import type CommentatorPlugin from "../main";
 
-export const CRITICMARKUP_VIEW = "criticmarkup-view";
+export const COMMENTATOR_ANNOTATIONS_VIEW = "commentator-annotations-view";
 
-interface CriticMarkupViewState {
+interface CommentatorAnnotationsViewState {
 	range_type_filter: number;
 	location_filter: number;
 	content_filter: number;
@@ -14,9 +14,9 @@ interface CriticMarkupViewState {
 	date_filter: number[];
 }
 
-export class CriticMarkupView extends ItemView {
+export class CommentatorAnnotationsView extends ItemView {
 	view: ReturnType<typeof ViewPage> | null = null;
-	props: Partial<CriticMarkupViewState> & { plugin: CommentatorPlugin } = $state({
+	props: Partial<CommentatorAnnotationsViewState> & { plugin: CommentatorPlugin } = $state({
 		plugin: undefined!,
 		range_type_filter: undefined,
 		location_filter: undefined,
@@ -43,7 +43,7 @@ export class CriticMarkupView extends ItemView {
 	}
 
 	getViewType(): string {
-		return CRITICMARKUP_VIEW;
+		return COMMENTATOR_ANNOTATIONS_VIEW;
 	}
 
 	getDisplayText(): string {
@@ -62,7 +62,7 @@ export class CriticMarkupView extends ItemView {
 		}
 	}
 
-	async setState(state: Partial<CriticMarkupViewState>, result: ViewStateResult): Promise<void> {
+	async setState(state: Partial<CommentatorAnnotationsViewState>, result: ViewStateResult): Promise<void> {
 		if (!this.view) {
 			this.props.plugin = this.plugin;
 			this.view = mount(ViewPage, {

@@ -31,7 +31,7 @@ import {
 import {type HeaderButton, editModeHeaderButton, previewModeHeaderButton} from "./editor/view-header";
 
 import {CommentatorSettings} from "./ui/settings";
-import {CRITICMARKUP_VIEW, CriticMarkupView} from "./ui/view.svelte";
+import {COMMENTATOR_ANNOTATIONS_VIEW, CommentatorAnnotationsView} from "./ui/view.svelte";
 
 import {Database} from "./database";
 
@@ -218,7 +218,7 @@ export default class CommentatorPlugin extends Plugin {
 			debugRangeset
 		};
 
-		this.registerView(CRITICMARKUP_VIEW, (leaf) => new CriticMarkupView(leaf, this));
+		this.registerView(COMMENTATOR_ANNOTATIONS_VIEW, (leaf) => new CommentatorAnnotationsView(leaf, this));
 
 		await this.migrateSettings(await this.loadData());
 
@@ -447,15 +447,15 @@ export default class CommentatorPlugin extends Plugin {
 	}
 
 	async activateView() {
-		this.app.workspace.detachLeavesOfType(CRITICMARKUP_VIEW);
+		this.app.workspace.detachLeavesOfType(COMMENTATOR_ANNOTATIONS_VIEW);
 
 		await this.app.workspace.getRightLeaf(false)!.setViewState({
-			type: CRITICMARKUP_VIEW,
+			type: COMMENTATOR_ANNOTATIONS_VIEW,
 			active: true,
 		});
 
 		await this.app.workspace.revealLeaf(
-			this.app.workspace.getLeavesOfType(CRITICMARKUP_VIEW)[0],
+			this.app.workspace.getLeavesOfType(COMMENTATOR_ANNOTATIONS_VIEW)[0],
 		);
 	}
 
