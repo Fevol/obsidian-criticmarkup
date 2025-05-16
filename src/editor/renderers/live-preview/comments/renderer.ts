@@ -32,7 +32,7 @@ export const commentRenderer = (settings: PluginSettings) =>
 			if (is_livepreview) {
 				for (const range of ranges.ranges) {
 					if (range.type === SuggestionType.COMMENT) {
-						if (!(range as CommentRange).reply_depth) {
+						if (range.base_range === range) {
 							builder.add(
 								range.from,
 								range.to,
