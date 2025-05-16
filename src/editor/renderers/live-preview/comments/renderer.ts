@@ -37,7 +37,7 @@ export const commentRenderer = (settings: PluginSettings) =>
 								range.from,
 								range.to,
 								Decoration.replace({
-									widget: new CommentIconWidget(range, settings.comment_style === "block"),
+									widget: new CommentIconWidget(range, settings.annotation_gutter),
 								}),
 							);
 						} else {

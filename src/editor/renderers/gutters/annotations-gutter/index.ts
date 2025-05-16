@@ -37,7 +37,7 @@ export function addCommentToView(editor: EditorView, range: CriticMarkupRange | 
 	const gutter = editor.plugin(annotationGutter(app)[1][0][0]);
 	if (gutter) {
 		setTimeout(() => {
-			gutter.focusAnnotationThread((range ? range.base_range.from : cursor) + 1);
+			gutter.focusAnnotationThread(cursor + 1);
 		});
 	}
 }

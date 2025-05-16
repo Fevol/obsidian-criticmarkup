@@ -1,6 +1,7 @@
 import { around } from "monkey-around";
 import { Menu, MenuItem, setIcon } from "obsidian";
 import type CommentatorPlugin from "../../main";
+import {keepContextMenuOpen} from "../../patches";
 
 export class MetadataStatusBarButton {
 	button: HTMLElement | null = null;
@@ -21,23 +22,7 @@ export class MetadataStatusBarButton {
 	showMenu(e: MouseEvent) {
 		// NOTE: This disables the menu closing after clicking on a single menu item, allowing you to toggle multiple items at once
 		// 			The menu can still be exited by clicking outside of it or pressing escape
-		const patch = around(Menu.prototype, {
-			onEnter: (oldMethod) => {
-				return function(this: Menu, e: KeyboardEvent) {
-					const selectedItem = this.items[this.selected];
-					return selectedItem && selectedItem instanceof MenuItem && (selectedItem.handleEvent(e)) || true;
-				};
-			},
-			onMenuClick: (oldMethod) => {
-				return () => {};
-			},
-			hide: (oldMethod) => {
-				return function(this: Menu) {
-					patch();
-					return oldMethod && oldMethod.apply(this);
-				};
-			},
-		});
+		keepContextMenuOpen();
 
 		const menu = new Menu();
 

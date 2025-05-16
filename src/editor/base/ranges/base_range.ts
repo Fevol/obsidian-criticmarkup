@@ -61,6 +61,10 @@ export abstract class CriticMarkupRange {
 		return this;
 	}
 
+	get full_thread(): CriticMarkupRange[] {
+		return [this, ...this.replies];
+	}
+
 	get thread(): CommentRange[] {
 		return [...this.replies];
 	}
@@ -145,8 +149,8 @@ export abstract class CriticMarkupRange {
 		}
 	}
 
-	has_comment(comment: CommentRange): boolean {
-		return this.thread.includes(comment);
+	has_comment(range: CriticMarkupRange): boolean {
+		return this.thread.includes(range as CommentRange);
 	}
 
 	copy(): CriticMarkupRange {

@@ -10,6 +10,7 @@
     InterfaceSettings,
     AdvancedSettings,
     MetadataSettings,
+    GutterSettings,
   } from "./tabs";
 
   let { plugin }: { plugin: CommentatorPlugin } = $props();
@@ -19,6 +20,7 @@
     { id: "general", name: "General", icon: "settings" },
     { id: "editor", name: "Editor", icon: "pencil" },
     { id: "interface", name: "Interface", icon: "layout" },
+    { id: "gutter", name: "Gutters", icon: "sticky-note" },
     { id: "metadata", name: "Metadata", icon: "tags" },
     { id: "advanced", name: "Advanced", icon: "shield-alert" },
   ];
@@ -30,6 +32,8 @@
         return GeneralSettings;
       case "editor":
         return EditorSettings;
+      case "gutter":
+        return GutterSettings;
       case "advanced":
         return AdvancedSettings;
       case "interface":

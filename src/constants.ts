@@ -16,17 +16,20 @@ export const DEFAULT_SETTINGS: PluginSettings = {
 	default_edit_mode: EditMode.CORRECTED,
 	default_preview_mode: PreviewMode.ALL,
 
-	editor_gutter: true,
+	diff_gutter: true,
 
 	editor_styling: false,
 	diff_gutter_hide_empty: false,
+
+	annotation_gutter: true,
+	annotation_gutter_included_types: 31,
 	annotation_gutter_hide_empty: false,
 	annotation_gutter_default_fold_state: false,
 	annotation_gutter_fold_button: true,
 	annotation_gutter_resize_handle: true,
 
 	annotation_gutter_width: 300,
-	comment_style: "block",
+	comment_style: "icon",
 
 	tag_completion: true,
 	tag_correcter: true,
@@ -83,7 +86,8 @@ export const DEFAULT_SETTINGS: PluginSettings = {
 
 export const REQUIRES_FULL_RELOAD: Set<string> = new Set([
 	"live_preview",
-	"editor_gutter",
+	"diff_gutter",
+	"annotation_gutter",
 	"comment_style",
 	"tag_completion",
 	"tag_correcter",
@@ -96,3 +100,11 @@ export const REQUIRES_EDITOR_RELOAD: Set<string> = new Set([
 export const REQUIRES_DATABASE_REINDEX: Set<string> = new Set([
 	"enable_metadata",
 ]);
+
+export enum AnnotationInclusionType {
+	ADDITION = 1 << 0,
+	DELETION = 1 << 1,
+	SUBSTITUTION = 1 << 2,
+	HIGHLIGHT = 1 << 3,
+	COMMENT = 1 << 4,
+}

@@ -1,38 +1,41 @@
-import { type EditorState, Range, RangeSet, StateField } from "@codemirror/state";
-import { EditorView, GutterMarker } from "@codemirror/view";
+import {type EditorState, Range, RangeSet, StateField} from "@codemirror/state";
+import {EditorView, GutterMarker} from "@codemirror/view";
 
-import { Component, editorEditorField, editorInfoField, MarkdownRenderer, Menu, Notice } from "obsidian";
+import {Component, editorEditorField, editorInfoField, MarkdownRenderer, Menu, Notice} from "obsidian";
 
-import { COMMENTATOR_GLOBAL } from "../../../../global";
-import { EmbeddableMarkdownEditor } from "../../../../ui/embeddable-editor";
-import { type CommentRange, CriticMarkupRange, rangeParser, SuggestionType } from "../../../base";
-import { create_range } from "../../../base/edit-util/range-create";
-import { addCommentToView, annotationGutter } from "./index";
+import {COMMENTATOR_GLOBAL} from "../../../../global";
+import {EmbeddableMarkdownEditor} from "../../../../ui/embeddable-editor";
+import {CriticMarkupRange, rangeParser, SuggestionType} from "../../../base";
+import {create_range} from "../../../base/edit-util/range-create";
+import {addCommentToView, annotationGutter} from "./index";
+import {AnnotationInclusionType} from "../../../../constants";
+import {annotationGutterIncludedTypesState} from "../../../settings";
+import {debugRangeset} from "../../../../util/cm-util";
 
 class AnnotationNode extends Component {
 	text: string;
 	new_text: string | null = null;
-	comment_container: HTMLElement;
+	annotation_container: HTMLElement;
 	metadata_view: HTMLElement | null = null;
-	comment_view: HTMLElement;
+	annotation_view: HTMLElement;
 
 	currentMode: "preview" | "source" | null = null;
 	editMode: EmbeddableMarkdownEditor | null = null;
 
-	constructor(public range: CommentRange, public marker: AnnotationMarker) {
+	constructor(public range: CriticMarkupRange, public marker: AnnotationMarker) {
 		super();
 
 		this.text = range.unwrap();
 
-		this.comment_container = this.marker.comment_thread.createDiv({ cls: "cmtr-anno-gutter-annotation" });
-		this.comment_container.addEventListener("blur", this.renderPreview.bind(this));
-		this.comment_container.addEventListener("dblclick", this.renderSource.bind(this));
-		this.comment_container.addEventListener("contextmenu", this.onCommentContextmenu.bind(this));
+		this.annotation_container = this.marker.annotation_thread.createDiv({ cls: "cmtr-anno-gutter-annotation" });
+		this.annotation_container.addEventListener("blur", this.renderPreview.bind(this));
+		this.annotation_container.addEventListener("dblclick", this.renderSource.bind(this));
+		this.annotation_container.addEventListener("contextmenu", this.onCommentContextmenu.bind(this));
 
 		if (this.range.metadata)
 			this.renderMetadata();
 
-		this.comment_view = this.comment_container.createDiv({ cls: "cmtr-anno-gutter-annotation-view" });
+		this.annotation_view = this.annotation_container.createDiv({ cls: "cmtr-anno-gutter-annotation-view" });
 		this.renderPreview();
 	}
 
@@ -43,12 +46,12 @@ class AnnotationNode extends Component {
 	onunload() {
 		super.onunload();
 
-		this.comment_container.remove();
+		this.annotation_container.remove();
 		this.editMode = null;
 	}
 
 	renderMetadata() {
-		this.metadata_view = this.comment_container.createDiv({ cls: "cmtr-anno-gutter-annotation-metadata" });
+		this.metadata_view = this.annotation_container.createDiv({ cls: "cmtr-anno-gutter-annotation-metadata" });
 		if (this.range.fields.author) {
 			const authorLabel = createSpan({
 				cls: "cmtr-anno-gutter-annotation-author-label",
@@ -87,30 +90,35 @@ class AnnotationNode extends Component {
 	}
 
 	renderSource(e?: MouseEvent) {
-		e?.stopPropagation();
-		if (this.currentMode === "source") return;
+		if (this.range.type !== SuggestionType.COMMENT) {
+			// TODO: Should editing non-comments within the annotation gutter be allowed?
+			new Notice("[Commentator] You can only edit comments.")
+		} else {
+			e?.stopPropagation();
+			if (this.currentMode === "source") return;
 
-		this.comment_container.toggleClass("cmtr-anno-gutter-annotation-editing", true);
-		if (this.range.fields.author && this.range.fields.author !== COMMENTATOR_GLOBAL.PLUGIN_SETTINGS.author) {
-			new Notice("You cannot edit comments from other authors.");
-			return;
+			this.annotation_container.toggleClass("cmtr-anno-gutter-annotation-editing", true);
+			if (this.range.fields.author && this.range.fields.author !== COMMENTATOR_GLOBAL.PLUGIN_SETTINGS.author) {
+				new Notice("[Commentator] You cannot edit comments from other authors.");
+				return;
+			}
+
+			this.annotation_view.empty();
+			this.editMode = this.addChild(
+				new EmbeddableMarkdownEditor(COMMENTATOR_GLOBAL.app, this.annotation_view, {
+					value: this.text,
+					cls: "cmtr-anno-gutter-annotation-editor",
+					onSubmit: (editor) => {
+						this.new_text = editor.get();
+						this.renderPreview();
+					},
+					// TODO: Get a reference to the plugin somehow
+					filteredExtensions: [COMMENTATOR_GLOBAL.app.plugins.plugins["commentator"].editorExtensions],
+					onBlur: this.renderPreview.bind(this),
+				}),
+			);
+			this.currentMode = "source";
 		}
-
-		this.comment_view.empty();
-		this.editMode = this.addChild(
-			new EmbeddableMarkdownEditor(COMMENTATOR_GLOBAL.app, this.comment_view, {
-				value: this.text,
-				cls: "cmtr-anno-gutter-annotation-editor",
-				onSubmit: (editor) => {
-					this.new_text = editor.get();
-					this.renderPreview();
-				},
-				// TODO: Get a reference to the plugin somehow
-				filteredExtensions: [COMMENTATOR_GLOBAL.app.plugins.plugins["commentator"].editorExtensions],
-				onBlur: this.renderPreview.bind(this),
-			}),
-		);
-		this.currentMode = "source";
 	}
 
 	renderPreview() {
@@ -120,17 +128,38 @@ class AnnotationNode extends Component {
 		//    Once for the immediate user event
 		//    And again when the comments get updated
 		//    -> This caused an issue where the range gets added twice, temporarily fixed by setting text to new text
-		this.comment_container.toggleClass("cmtr-anno-gutter-annotation-editing", false);
+		this.annotation_container.toggleClass("cmtr-anno-gutter-annotation-editing", false);
+
+		// EXPL: Regular (re-)rendering of the annotation
 		if (this.text === this.new_text || this.new_text === null) {
 			this.new_text = null;
 			if (this.editMode) {
 				this.removeChild(this.editMode);
 				this.editMode = null;
 			}
-			this.comment_view.empty();
-			MarkdownRenderer.render(COMMENTATOR_GLOBAL.app, this.text || "&nbsp;", this.comment_view, "", this);
+			this.annotation_view.empty();
+			MarkdownRenderer.render(COMMENTATOR_GLOBAL.app, this.text || "&nbsp;", this.annotation_view, "", this);
+			switch (this.range.type) {
+				case SuggestionType.ADDITION:
+					this.annotation_view.children[0].prepend(createSpan({ cls: "cmtr-anno-gutter-annotation-desc", text: "Added: " }));
+					break;
+				case SuggestionType.DELETION:
+					this.annotation_view.children[0].prepend(createSpan({ cls: "cmtr-anno-gutter-annotation-desc", text: "Deleted: " }));
+					break;
+				case SuggestionType.SUBSTITUTION:
+					this.annotation_view.children[0].prepend(createSpan({ cls: "cmtr-anno-gutter-annotation-desc", text: "Changed: " }));
+					break;
+				case SuggestionType.HIGHLIGHT:
+					break;
+				case SuggestionType.COMMENT:
+					break;
+			}
+			this.annotation_view.addClass("cmtr-anno-gutter-annotation-" + this.range.type);
 			this.currentMode = "preview";
-		} else {
+		}
+
+		// EXPL: The annotation gets updated with new text
+		else {
 			this.text = this.new_text;
 			setTimeout(() =>
 				this.marker.view.dispatch({
@@ -176,20 +205,20 @@ class AnnotationNode extends Component {
 }
 
 export class AnnotationMarker extends GutterMarker {
-	comment_thread!: HTMLElement;
+	annotation_thread!: HTMLElement;
 	component: Component = new Component();
 	preventUnload: boolean = false;
 
-	constructor(public comment_range: CommentRange, public view: EditorView, public itr = 0) {
+	constructor(public annotation: CriticMarkupRange, public annotations: CriticMarkupRange[], public view: EditorView, public itr = 0) {
 		super();
 	}
 
 	eq(other: AnnotationMarker) {
-		return this.itr === other.itr && this.comment_range.equals(other.comment_range);
+		return this.itr === other.itr && this.annotations === other.annotations && this.annotations[0].equals(other.annotations[0]);
 	}
 
 	onCommentThreadClick() {
-		const top = this.view.lineBlockAt(this.comment_range.from).top - 100;
+		const top = this.view.lineBlockAt(this.annotations[0].from).top - 100;
 
 		setTimeout(() => {
 			const { app } = this.view.state.field(editorInfoField);
@@ -198,53 +227,83 @@ export class AnnotationMarker extends GutterMarker {
 		}, 200);
 
 		if (Math.abs(this.view.scrollDOM.scrollTop - top) > 10) {
-			this.comment_thread.classList.add("cmtr-anno-gutter-thread-highlight");
+			this.annotation_thread.classList.add("cmtr-anno-gutter-thread-highlight");
 			setTimeout(
-				() => this.comment_thread.classList.remove("cmtr-anno-gutter-thread-highlight"),
+				() => this.annotation_thread.classList.remove("cmtr-anno-gutter-thread-highlight"),
 				4000,
 			);
 		}
 	}
 
 	toDOM() {
-		this.comment_thread = createDiv({ cls: "cmtr-anno-gutter-thread" });
-		this.comment_thread.addEventListener("click", this.onCommentThreadClick.bind(this));
+		this.annotation_thread = createDiv({ cls: "cmtr-anno-gutter-thread" });
+		this.annotation_thread.addEventListener("click", this.onCommentThreadClick.bind(this));
 
-		for (const range of this.comment_range.thread)
+		for (const range of this.annotations)
 			this.component.addChild(new AnnotationNode(range, this));
 		this.component.load();
 
-		return this.comment_thread;
+		return this.annotation_thread;
 	}
 
 	focus() {
-		this.comment_thread.focus();
+		this.annotation_thread.focus();
 	}
 
-	focus_comment(index: number = -1) {
+	focus_annotation(index: number = -1) {
 		if (index === -1)
-			index = this.comment_thread.children.length - 1;
-		this.comment_thread.children.item(index)!.dispatchEvent(new MouseEvent("dblclick"));
+			index = this.annotation_thread.children.length - 1;
+		this.annotation_thread.children.item(index)!.dispatchEvent(new MouseEvent("dblclick"));
 	}
 
 	destroy(dom: HTMLElement) {
 		this.component.unload();
-		this.comment_thread.remove();
+		this.annotation_thread.remove();
 		super.destroy(dom);
 	}
 }
 
-function createMarkers(state: EditorState, changed_ranges: CriticMarkupRange[]) {
+function createMarkers(state: EditorState, changed_ranges: CriticMarkupRange[], types: number) {
 	const view = state.field(editorEditorField);
+
+	const includeAdditions = (types & AnnotationInclusionType.ADDITION) !== 0;
+	const includeDeletions = (types & AnnotationInclusionType.DELETION) !== 0;
+	const includeSubstitutions = (types & AnnotationInclusionType.SUBSTITUTION) !== 0;
+	const includeHighlights = (types & AnnotationInclusionType.HIGHLIGHT) !== 0;
+	const includeComments = (types & AnnotationInclusionType.COMMENT) !== 0;
 
 	const cm_ranges: Range<AnnotationMarker>[] = [];
 	for (const range of changed_ranges) {
-		if (range.type !== SuggestionType.COMMENT || (range as CommentRange).reply_depth) continue;
+		let full_thread = range.full_thread;
 
-		// MODIFICATION: advanceCursor in base.ts required markers to be inserted into the rangeset at exactly
-		//      the positions where line starts, this caused some issues with correct adjustment of positions through updates,
-		//      so adjustment is that markers can now occur at any position before the start of the line
-		cm_ranges.push(new AnnotationMarker(range as CommentRange, view, itr).range(range.from, range.to));
+		if (!includeComments) {
+			full_thread = full_thread.slice(0, 1);
+		}
+
+		switch (range.type) {
+			case SuggestionType.ADDITION:
+				if (!includeAdditions) full_thread.shift();
+				break;
+			case SuggestionType.DELETION:
+				if (!includeDeletions) full_thread.shift();
+				break;
+			case SuggestionType.SUBSTITUTION:
+				if (!includeSubstitutions) full_thread.shift();
+				break;
+			case SuggestionType.HIGHLIGHT:
+				if (!includeHighlights) full_thread.shift();
+				break;
+			case SuggestionType.COMMENT:
+				if (!includeComments) full_thread.shift();
+				break;
+		}
+
+		if (full_thread.length) {
+			// MODIFICATION: advanceCursor in base.ts required markers to be inserted into the rangeset at exactly
+			//      the positions where line starts, this caused some issues with correct adjustment of positions through updates,
+			//      so adjustment is that markers can now occur at any position before the start of the line
+			cm_ranges.push(new AnnotationMarker(range, full_thread, view, itr).range(range.from, range.to));
+		}
 	}
 
 	return cm_ranges;
@@ -253,32 +312,62 @@ function createMarkers(state: EditorState, changed_ranges: CriticMarkupRange[]) 
 let itr = 0;
 export const annotationGutterMarkers = StateField.define<RangeSet<AnnotationMarker>>({
 	create(state) {
-		return RangeSet.of<AnnotationMarker>(createMarkers(state, state.field(rangeParser).ranges.ranges));
+		const ranges = state.field(rangeParser).ranges.ranges.reduce((acc, range) => {
+			const base = range.base_range;
+			if (!acc.includes(base))
+				acc.push(base);
+			return acc;
+		}, [] as CriticMarkupRange[]);
+
+		return RangeSet.of<AnnotationMarker>(
+			createMarkers(
+				state,
+				ranges,
+				state.facet(annotationGutterIncludedTypesState)
+			)
+		);
 	},
 
 	update(oldSet, tr) {
-		if (!tr.docChanged)
+		const includedTypes = tr.state.facet(annotationGutterIncludedTypesState);
+
+		// NOTE: While it is *slightly* inefficient to recreate all markers (since the existing markers could be re-used),
+		//       the included types are barely ever changed, so the impact is negligible
+		if (tr.startState.facet(annotationGutterIncludedTypesState) !== includedTypes) {
+			return this.create(tr.state);
+		}
+
+		if (!tr.docChanged) {
 			return oldSet;
+		}
 
 		itr += 1;
 
-		const added_threads: CriticMarkupRange[] = [];
+		const added_ranges: CriticMarkupRange[] = [];
 		for (const range of tr.state.field(rangeParser).inserted_ranges) {
-			if (range.type === SuggestionType.COMMENT && !added_threads.includes(range.base_range))
-				added_threads.push(range.base_range);
+			if (!added_ranges.includes(range.base_range))
+				added_ranges.push(range.base_range);
 		}
-		const deleted_threads = tr.state.field(rangeParser).deleted_ranges
-			.filter(range => range.type === SuggestionType.COMMENT) as CommentRange[];
+		const deleted_ranges = tr.state.field(rangeParser).deleted_ranges
+			.map(range => range.base_range);
 
-		return oldSet
+		const test= oldSet
 			.map(tr.changes)
 			.update({
 				filter: (from, to, value) => {
-					const keep = !deleted_threads.some(thread => thread.has_comment(value.comment_range));
-					value.preventUnload = keep;
-					return keep;
+					// const keep = !deleted_ranges.some(range =>
+					// 	range.type === SuggestionType.COMMENT && range.has_comment(value.annotation)
+					// );
+					// value.preventUnload = keep;
+					// return keep;
+
+					return !deleted_ranges.includes(value.annotation);
 				},
-				add: createMarkers(tr.state, added_threads.map(range => range.thread[0])),
+				add: createMarkers(tr.state, added_ranges.map(range => range.full_thread[0]), includedTypes),
 			});
+		console.log("ADDED: ", added_ranges)
+		console.log("DELET: ", deleted_ranges)
+		console.log("FINAL: ", debugRangeset(test))
+		return test;
 	},
 });

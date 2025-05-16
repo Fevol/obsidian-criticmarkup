@@ -15,7 +15,7 @@ import {around} from "monkey-around";
 
 import {type CriticMarkupRange, getRangesInText, RANGE_PROTOTYPE_MAPPER, rangeParser, text_copy} from "./editor/base";
 
-import {cmenuCommands, commands} from "./editor/uix";
+import {cmenuGlobalCommands, cmenuViewportCommands, commands} from "./editor/uix";
 import {bracketMatcher, editorKeypressCatcher, rangeCorrecter} from "./editor/uix/extensions";
 
 import {annotationGutter, annotationGutterCompartment, diffGutter, diffGutterCompartment} from "./editor/renderers/gutters";
@@ -43,24 +43,16 @@ import {
 	REQUIRES_FULL_RELOAD,
 } from "./constants";
 import {
-	annotationGutterFoldButton,
-	annotationGutterFoldButtonState,
-	annotationGutterResizeHandle,
-	annotationGutterResizeHandleState,
-	annotationGutterFolded,
-	annotationGutterFoldedState,
-	annotationGutterWidth,
-	annotationGutterWidthState,
-	editMode,
-	editModeValue,
-	editModeValueState,
+	annotationGutterFoldButton, annotationGutterFoldButtonState,
+	annotationGutterResizeHandle, annotationGutterResizeHandleState,
+	annotationGutterFolded, annotationGutterFoldedState,
+	annotationGutterWidth, annotationGutterWidthState,
+	annotationGutterIncludedTypes, annotationGutterIncludedTypesState,
+	editMode, editModeValue, editModeValueState,
 	fullReloadEffect,
-	hideEmptyAnnotationGutter,
-	hideEmptyAnnotationGutterState,
-	hideEmptyDiffGutter,
-	hideEmptyDiffGutterState,
-	previewMode,
-	previewModeState,
+	hideEmptyAnnotationGutter, hideEmptyAnnotationGutterState,
+	hideEmptyDiffGutter, hideEmptyDiffGutterState,
+	previewMode, previewModeState,
 } from "./editor/settings";
 import {getEditMode} from "./editor/uix/extensions/editing-modes";
 import {COMMENTATOR_GLOBAL} from "./global";
@@ -119,9 +111,9 @@ export default class CommentatorPlugin extends Plugin {
 
 		this.editorExtensions.push(rangeParser);
 
-		if (this.settings.comment_style === "icon" || this.settings.comment_style === "block")
+		if (this.settings.comment_style === "icon")
 			this.editorExtensions.push(Prec.low(commentRenderer(this.settings)));
-		if (this.settings.comment_style === "block") {
+		if (this.settings.annotation_gutter) {
 			this.editorExtensions.push(
 				annotationGutterCompartment.of(Prec.low(annotationGutter(this.app) as Extension[]))
 			);
@@ -131,7 +123,7 @@ export default class CommentatorPlugin extends Plugin {
 			this.editorExtensions.push(Prec.low(markupRenderer(this.settings)));
 
 		// TODO: Rerender gutter on Ctrl+Scroll
-		if (this.settings.editor_gutter) {
+		if (this.settings.diff_gutter) {
 			this.editorExtensions.push(diffGutterCompartment.of(diffGutter));
 		}
 
@@ -162,7 +154,9 @@ export default class CommentatorPlugin extends Plugin {
 		this.editorExtensions.push(
 			annotationGutterResizeHandle.of(annotationGutterResizeHandleState.of(this.settings.annotation_gutter_resize_handle))
 		);
-
+		this.editorExtensions.push(
+			annotationGutterIncludedTypes.of(annotationGutterIncludedTypesState.of(this.settings.annotation_gutter_included_types))
+		);
 
 		this.editorExtensions.push(previewMode.of(previewModeState.of(this.settings.default_preview_mode)));
 		this.editorExtensions.push(editModeValue.of(editModeValueState.of(this.settings.default_edit_mode)));
@@ -257,7 +251,8 @@ export default class CommentatorPlugin extends Plugin {
 			postProcessorRerender(this.app);
 		}
 
-		this.registerEvent(cmenuCommands(this.app));
+		this.registerEvent(cmenuGlobalCommands(this.app));
+		this.registerEvent(cmenuViewportCommands(this.app));
 		for (const command of commands(this))
 			this.addCommand(command);
 
@@ -283,7 +278,7 @@ export default class CommentatorPlugin extends Plugin {
 			await this.setSettings();
 		else {
 			const old_version = new_settings?.version;
-			// EXPL: Migration code for upgrading to new version
+			// EXPL: Migration code for upgrading to a new version
 			try {
 				if (old_version !== DEFAULT_SETTINGS.version) {
 					if (!old_version) {
@@ -296,7 +291,10 @@ export default class CommentatorPlugin extends Plugin {
 						});
 					} else if (old_version.localeCompare("0.2.2", undefined, {numeric: true}) < 0) {
 						if ((new_settings as any).suggestion_gutter_hide_empty) {
+							this.settings.diff_gutter = (new_settings as any).suggestion_gutter;
 							this.settings.diff_gutter_hide_empty = (new_settings as any).suggestion_gutter_hide_empty;
+
+							this.settings.annotation_gutter = (new_settings as any).comment_style === "block";
 							this.settings.annotation_gutter_default_fold_state = (new_settings as any).comment_gutter_default_fold_state;
 							this.settings.annotation_gutter_fold_button = (new_settings as any).comment_gutter_fold_button;
 							this.settings.annotation_gutter_resize_handle = (new_settings as any).comment_gutter_resize_handle;

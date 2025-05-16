@@ -41,6 +41,9 @@ export const annotationGutterWidth = new Compartment();
 export const annotationGutterFoldedState = Facet.define<boolean, boolean>({ combine: values => values[0] });
 export const annotationGutterFolded = new Compartment();
 
+export const annotationGutterIncludedTypesState = Facet.define<number, number>({ combine: values => values[0] });
+export const annotationGutterIncludedTypes = new Compartment();
+
 export const hideEmptyDiffGutterState = Facet.define<boolean, boolean>({ combine: values => values[0] });
 export const hideEmptyDiffGutter = new Compartment();
 

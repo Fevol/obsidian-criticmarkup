@@ -75,7 +75,7 @@ export interface PluginSettings {
 	/**
 	 * Render a gutter marking locations of ranges in the document
 	 */
-	editor_gutter: boolean;
+	diff_gutter: boolean;
 	/**
 	 * Keep styling ranges even if cursor is inside it
 	 */
@@ -86,6 +86,14 @@ export interface PluginSettings {
 	 */
 	diff_gutter_hide_empty: boolean;
 
+	/**
+	 * Show the annotation gutter in the editor
+ 	 */
+	annotation_gutter: boolean;
+	/**
+	 * Determine which annotations are included by default
+	 */
+	annotation_gutter_included_types: number;
 	/**
 	 * Hide the annotation gutter if no annotations are present in the note
 	 */
@@ -111,7 +119,7 @@ export interface PluginSettings {
 	/**
 	 * How comments should be rendered
 	 */
-	comment_style: "inline" | "icon" | "block";
+	comment_style: "inline" | "icon";
 
 	/**
 	 * Complete criticmarkup tags when they're being entered in

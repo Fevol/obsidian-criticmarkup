@@ -122,6 +122,7 @@ export const rangeParser: StateField<ParserData> = StateField.define({
 				dangling_comments.set(range.from, range as CommentRange);
 		}
 
+		// FIXME: Rare cases of comment ranges in threads being duplicated due to editor changes
 		if (dangling_comments.size) {
 			const comment_threads: CommentRange[][] = [];
 			let last_range: CommentRange | undefined = undefined;

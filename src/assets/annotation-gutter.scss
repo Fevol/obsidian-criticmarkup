@@ -85,6 +85,10 @@
   transition: margin 200ms ease-in-out;
 }
 
+.cmtr-anno-gutter-annotation-desc {
+  font-weight: var(--font-bold);
+}
+
 .cmtr-anno-gutter-annotation-view > * {
   margin-block-start: 0.25em;
   margin-block-end: 0.25em;

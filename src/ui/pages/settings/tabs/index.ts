@@ -5,6 +5,7 @@ import InterfaceSettings from "./InterfaceSettings.svelte";
 import MetadataSettings from "./MetadataSettings.svelte";
 import StyleSettings from "./StyleSettings.svelte";
 import SuggestionSettings from "./SuggestionSettings.svelte";
+import GutterSettings from "./GutterSettings.svelte";
 
 export {
 	AdvancedSettings,
@@ -14,4 +15,5 @@ export {
 	MetadataSettings,
 	StyleSettings,
 	SuggestionSettings,
+	GutterSettings,
 };

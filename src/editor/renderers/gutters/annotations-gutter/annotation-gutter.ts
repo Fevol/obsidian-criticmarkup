@@ -120,7 +120,7 @@ export class AnnotationGutterView extends GutterView {
 	}
 
 	public focusAnnotationThread(position: number, index: number = -1) {
-		// Find element with range in it
+		// EXPL: Find element with range in it
 		const element = this.gutters[0].elements.find(
 			element =>
 				(element as AnnotationGutterElement).block!.from <= position &&
@@ -129,12 +129,12 @@ export class AnnotationGutterView extends GutterView {
 
 		if (element) {
 			const marker = element.markers.find(marker => {
-				return position >= (marker as AnnotationMarker).comment_range.from &&
-					position <= (marker as AnnotationMarker).comment_range.full_range_back;
+				return position >= (marker as AnnotationMarker).annotation.from &&
+					position <= (marker as AnnotationMarker).annotation.full_range_back;
 			}) as AnnotationMarker | undefined;
 			if (!marker) return;
 
-			marker.focus_comment(index);
+			marker.focus_annotation(index);
 		}
 	}
 }
@@ -181,7 +181,7 @@ class AnnotationUpdateContext extends UpdateContext {
 		 */
 		// FIXME: Marker without comment_range issue
 		// NOTE: This may be addresses used startSide bias in gutterMarker (warning: update concern)
-		(markers as AnnotationMarker[]).sort((a, b) => a.comment_range.from - b.comment_range.from);
+		(markers as unknown as AnnotationMarker[]).sort((a, b) => a.annotation.from - b.annotation.from);
 
 		const UNKNOWN_HEIGHT = 36;
 

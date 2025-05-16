@@ -54,7 +54,7 @@ export class CommentIconWidget extends WidgetType {
 	component: Component;
 	focused = false;
 
-	constructor(public range: CriticMarkupRange, public is_block = false) {
+	constructor(public range: CriticMarkupRange, public annotation_gutter = false) {
 		super();
 		this.component = new Component();
 	}
@@ -78,8 +78,8 @@ export class CommentIconWidget extends WidgetType {
 		const gutterElements = view.state.field(annotationGutterMarkers);
 		e.preventDefault();
 		gutterElements.between(this.range.from, this.range.to, (from, to, widget) => {
-			if (this.range.equals(widget.comment_range)) {
-				widget.comment_thread!.dispatchEvent(new MouseEvent("click"));
+			if (this.range.equals(widget.annotation)) {
+				widget.annotation_thread!.dispatchEvent(new MouseEvent("click"));
 				return false;
 			}
 		});
@@ -103,7 +103,7 @@ export class CommentIconWidget extends WidgetType {
 		// line.classList.add('cmtr-debug-comment-line');
 		// this.icon.appendChild(line);
 
-		if (this.is_block) {
+		if (this.annotation_gutter) {
 			this.icon.onclick = (e) => this.focusAnnotation(view, e);
 
 			this.icon.oncontextmenu = (e) => {
