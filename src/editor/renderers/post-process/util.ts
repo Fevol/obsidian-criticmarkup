@@ -25,14 +25,15 @@ export function codeBlockPostProcessorUpdate(app: App, language: string) {
 export function postProcessorUpdate(app: App) {
 	// Credits to depose/dp0z/@Profile8647 for finding this code
 	for (const leaf of app.workspace.getLeavesOfType("markdown")) {
-		const view = <MarkdownView> leaf.view;
-		for (
-			const section of view.previewMode.renderer.sections.filter(s => s.el.querySelector(".criticmarkup-preview"))
-		) {
-			section.rendered = false;
-			section.html = "";
+		if (leaf.view instanceof MarkdownView) {
+			for (
+				const section of leaf.view.previewMode.renderer.sections.filter(s => s.el.querySelector(".commentator-preview"))
+				) {
+				section.rendered = false;
+				section.html = "";
+			}
+			leaf.view.previewMode.renderer.queueRender();
 		}
-		view.previewMode.renderer.queueRender();
 	}
 }
 
