@@ -10,7 +10,6 @@ import {create_range} from "../../../base/edit-util/range-create";
 import {addCommentToView, annotationGutter} from "./index";
 import {AnnotationInclusionType} from "../../../../constants";
 import {annotationGutterIncludedTypesState} from "../../../settings";
-import {debugRangeset} from "../../../../util/cm-util";
 
 class AnnotationNode extends Component {
 	text: string;
@@ -351,7 +350,7 @@ export const annotationGutterMarkers = StateField.define<RangeSet<AnnotationMark
 		const deleted_ranges = tr.state.field(rangeParser).deleted_ranges
 			.map(range => range.base_range);
 
-		const test= oldSet
+		return oldSet
 			.map(tr.changes)
 			.update({
 				filter: (from, to, value) => {
@@ -365,9 +364,5 @@ export const annotationGutterMarkers = StateField.define<RangeSet<AnnotationMark
 				},
 				add: createMarkers(tr.state, added_ranges.map(range => range.full_thread[0]), includedTypes),
 			});
-		console.log("ADDED: ", added_ranges)
-		console.log("DELET: ", deleted_ranges)
-		console.log("FINAL: ", debugRangeset(test))
-		return test;
 	},
 });
