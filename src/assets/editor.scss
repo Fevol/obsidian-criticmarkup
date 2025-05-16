@@ -43,6 +43,7 @@
   background-color: var(--deletion-color);
   box-shadow: 0 0 0 2px var(--deletion-color);
   transition: background-color 200ms ease-in-out 0ms;
+  text-decoration: unset;
 
   &:hover {
     box-shadow: 0 0 0 2px var(--deletion-color-alt);
