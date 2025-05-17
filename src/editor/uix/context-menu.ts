@@ -101,11 +101,9 @@ export const cmenuGlobalCommands: (app: App) => EventRef = (app) =>
 
 export const cmenuViewportCommands: (app: App) => EventRef = (app) =>
 	app.workspace.on("markdown-viewport-menu", (menu, view, sectionName, menuItem) => {
-		// FIXME: I presume there needs to be a better (safer) way to check if annotation gutter exists
 		// FIXME: Wait till next update of obsidian-typings
-		const editor_cm = (view as unknown as MarkdownView).editor.cm;
-		const annotation_gutter = editor_cm.plugin(annotationGutter(app)[1][0][0]);
-		if (annotation_gutter) {
+		if (app.plugins.plugins.commentator.settings.annotation_gutter) {
+			const editor_cm = (view as unknown as MarkdownView).editor.cm;
 			let current_settings = editor_cm.state.field(annotationGutterIncludedTypesState);
 			keepContextMenuOpen(true);
 			menu.addItem((item) => {

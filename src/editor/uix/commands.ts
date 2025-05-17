@@ -115,6 +115,7 @@ export const editor_commands: (plugin: CommentatorPlugin) => ECommand[] = (plugi
 		editor_context: true,
 		regular_callback: (editor: Editor, _) => {
 			const { app } = editor.cm.state.field(editorInfoField);
+			// FIXME: Remove direct access of gutter, prefer fold annotation?
 			editor.cm.plugin(annotationGutter(app)[1][0][0])!.foldGutter();
 		},
 	},

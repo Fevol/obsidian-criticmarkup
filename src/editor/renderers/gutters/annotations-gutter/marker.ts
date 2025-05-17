@@ -196,6 +196,7 @@ class AnnotationNode extends Component {
 			item.setTitle("Fold gutter")
 				.setIcon("arrow-right-from-line")
 				.onClick(() => {
+					// FIXME: Remove direct access of gutter, prefer fold annotation?
 					this.marker.view.plugin(annotationGutter(COMMENTATOR_GLOBAL.app)[1][0][0])!.foldGutter();
 				});
 		});
@@ -224,6 +225,7 @@ export class AnnotationMarker extends GutterMarker {
 		// NOTE: This is very dirty access of the annotation gutter plugin, but the alternative
 		// 		 is that we create an annotation for both moving the gutter (containing this marker),
 		// 		 as well as a focus annotation, which seems far too roundabout
+		// FIXME: Remove direct access of gutter, prefer annotation?
 		const gutter = this.view.plugin(annotationGutter(app)[1][0][0]) as AnnotationGutterView;
 		gutter.unfocusAnnotation();
 		gutter.focusAnnotation(this, -1, true);
