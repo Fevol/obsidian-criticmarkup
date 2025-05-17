@@ -10,6 +10,7 @@ import {create_range} from "../../../base/edit-util/range-create";
 import {addCommentToView, annotationGutter} from "./index";
 import {AnnotationInclusionType} from "../../../../constants";
 import {annotationGutterIncludedTypesState} from "../../../settings";
+import type {AnnotationGutterView} from "./annotation-gutter";
 
 class AnnotationNode extends Component {
 	text: string;
@@ -217,21 +218,17 @@ export class AnnotationMarker extends GutterMarker {
 	}
 
 	onCommentThreadClick() {
-		const top = this.view.lineBlockAt(this.annotations[0].from).top - 100;
+		const { app } = this.view.state.field(editorInfoField);
+		// EXPL: When the annotation gets focused, ensure that it is aligned to the block it is attached to,
+		// 		 pushing other annotations up/down
+		// NOTE: This is very dirty access of the annotation gutter plugin, but the alternative
+		// 		 is that we create an annotation for both moving the gutter (containing this marker),
+		// 		 as well as a focus annotation, which seems far too roundabout
+		const gutter = this.view.plugin(annotationGutter(app)[1][0][0]) as AnnotationGutterView;
+		gutter.unfocusAnnotation();
+		gutter.focusAnnotation(this, -1, true);
 
-		setTimeout(() => {
-			const { app } = this.view.state.field(editorInfoField);
-			this.view.plugin(annotationGutter(app)[1][0][0])!.moveGutter(this);
-			this.view.scrollDOM.scrollTo({ top, behavior: "smooth" });
-		}, 200);
-
-		if (Math.abs(this.view.scrollDOM.scrollTop - top) > 10) {
-			this.annotation_thread.classList.add("cmtr-anno-gutter-thread-highlight");
-			setTimeout(
-				() => this.annotation_thread.classList.remove("cmtr-anno-gutter-thread-highlight"),
-				4000,
-			);
-		}
+		this.annotation_thread.classList.toggle("cmtr-anno-gutter-thread-highlight", true);
 	}
 
 	toDOM() {
@@ -249,10 +246,27 @@ export class AnnotationMarker extends GutterMarker {
 		this.annotation_thread.focus();
 	}
 
-	focus_annotation(index: number = -1) {
-		if (index === -1)
-			index = this.annotation_thread.children.length - 1;
-		this.annotation_thread.children.item(index)!.dispatchEvent(new MouseEvent("dblclick"));
+	focus_annotation(index: number = -1, scroll: boolean = false) {
+		if (index === -1) {
+			this.annotation_thread.classList.toggle("cmtr-anno-gutter-thread-highlight", true);
+		} else {
+			this.annotation_thread.children.item(index)!.dispatchEvent(new MouseEvent("dblclick"));
+		}
+
+		if (scroll) {
+			setTimeout(() => {
+				const top = this.view.lineBlockAt(this.annotations[0].from).top - 100;
+				this.view.scrollDOM.scrollTo({top, behavior: "smooth"});
+			}, 200);
+		}
+	}
+
+	unfocus_annotation(index: number = -1) {
+		if (index === -1) {
+			this.annotation_thread.classList.toggle("cmtr-anno-gutter-thread-highlight", false);
+		} else {
+			this.annotation_thread.children.item(index)!.classList.toggle("cmtr-anno-gutter-thread-highlight", false);
+		}
 	}
 
 	destroy(dom: HTMLElement) {

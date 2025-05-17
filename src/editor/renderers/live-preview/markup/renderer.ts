@@ -50,8 +50,9 @@ function markContents(
 ) {
 	const offset = inclusive ? 0 : 3;
 
-	if (range.replies.length)
+	if (range.replies.length) {
 		cls += " cmtr-has-reply";
+	}
 
 	const attributes = {
 		"data-contents": "string",

@@ -4,8 +4,7 @@ import { Component, MarkdownRenderer, Menu, setIcon } from "obsidian";
 
 import { COMMENTATOR_GLOBAL } from "../../../../global";
 import { CM_All_Brackets, CommentRange, CriticMarkupRange } from "../../../base";
-import { annotationGutterMarkers } from "../../gutters";
-import { addCommentToView } from "../../gutters/annotations-gutter";
+import {addCommentToView, annotationGutterFocusAnnotation} from "../../gutters/annotations-gutter";
 
 export function renderCommentWidget(range: CommentRange, text?: string, unwrap = false) {
 	let str = text ?? range.text;
@@ -75,14 +74,10 @@ export class CommentIconWidget extends WidgetType {
 	}
 
 	focusAnnotation(view: EditorView, e: Event) {
-		const gutterElements = view.state.field(annotationGutterMarkers);
-		e.preventDefault();
-		gutterElements.between(this.range.from, this.range.to, (from, to, widget) => {
-			if (this.range.equals(widget.annotation)) {
-				widget.annotation_thread!.dispatchEvent(new MouseEvent("click"));
-				return false;
-			}
-		});
+		// TODO: Check if this is (much) worse than directly invoking the focus annotation function from the gutter plugin instance
+		//      The other options can piggy-back on already existing transactions, and just annotating them
+		//      However, this one doesn't have one (except if clicking on the widget _is_ a transaction)
+		view.dispatch({ annotations: [ annotationGutterFocusAnnotation.of({ cursor: this.range.from }) ] });
 	}
 
 	unrenderTooltip() {

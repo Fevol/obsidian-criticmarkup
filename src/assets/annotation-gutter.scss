@@ -35,24 +35,12 @@
   color: var(--text-muted);
 
   transition:
-    border-color 200ms ease-in-out 0ms,
-    background-color 200ms ease-in-out 0ms;
+    border-color 100ms ease-in-out 0ms,
+    background-color 100ms ease-in-out 0ms;
 }
 
 .cmtr-anno-gutter-thread-highlight {
-  animation: cmtr-anno-gutter-thread-highlight 2s infinite;
-}
-
-@keyframes cmtr-anno-gutter-thread-highlight {
-  0% {
-    border-color: var(--background-modifier-border);
-  }
-  50% {
-    border-color: var(--interactive-accent);
-  }
-  100% {
-    border-color: var(--background-modifier-border);
-  }
+  border-color: var(--interactive-accent)
 }
 
 .cmtr-anno-gutter-annotation {

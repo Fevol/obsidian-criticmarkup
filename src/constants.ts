@@ -27,6 +27,7 @@ export const DEFAULT_SETTINGS: PluginSettings = {
 	annotation_gutter_default_fold_state: false,
 	annotation_gutter_fold_button: true,
 	annotation_gutter_resize_handle: true,
+	annotation_gutter_focus_on_click: true,
 
 	annotation_gutter_width: 300,
 	comment_style: "icon",
@@ -88,6 +89,7 @@ export const REQUIRES_FULL_RELOAD: Set<string> = new Set([
 	"live_preview",
 	"diff_gutter",
 	"annotation_gutter",
+	"annotation_gutter_focus_on_click",
 	"comment_style",
 	"tag_completion",
 	"tag_correcter",

@@ -4,10 +4,10 @@
  *  1. Gutter is inserted next to the contentDOM (instead of before)
  *  2. Height of gutterElement is not specified
  *  3. GutterElement can be of arbitrary height
- *  4. Exposed method for moving the gutter up/down to align with the block it is attached to
+ *  4. Added annotation listeners for focusing GutterMarkers
  *  5. Gutter *can* be zero-width if there are no markers in the document
  */
-import { type Extension, Facet } from "@codemirror/state";
+import {Annotation, type Extension, Facet} from "@codemirror/state";
 import { BlockInfo, EditorView, GutterMarker, ViewUpdate } from "@codemirror/view";
 
 import { debounce, setIcon } from "obsidian";
@@ -41,7 +41,12 @@ const unfixGutters = Facet.define<boolean, boolean>({
 
 const activeGutters = Facet.define<Required<GutterConfig>>();
 
+export const annotationGutterFocusAnnotation = Annotation.define<{ cursor: number, index?: number, scroll?: boolean }>();
+// export const annotationGutterSyncGutter = Annotation.define<boolean>;
+
 export class AnnotationGutterView extends GutterView {
+	previously_focused: AnnotationMarker | undefined = undefined;
+
 	constructor(view: EditorView) {
 		super(view, unfixGutters, activeGutters);
 		// FIXME: this still causes a layout shift
@@ -77,39 +82,77 @@ export class AnnotationGutterView extends GutterView {
 		);
 	}
 
+	unfocusAnnotation() {
+		this.previously_focused?.unfocus_annotation();
+		this.previously_focused = undefined;
+	}
+
+	focusAnnotation(marker: AnnotationMarker, index: number, scroll: boolean = false) {
+		this.previously_focused = marker;
+		this.moveGutter(marker);
+		marker.focus_annotation(index, scroll);
+	}
+
 	updateGutters(update: ViewUpdate): boolean {
+		// EXPL: Check all transactions, figure out if they have been annotated with a focus shift annotation
+		// TODO: Is there a better way to check the annotations of a ViewUpdate?
+		const annotation = update.transactions.flatMap(tr => tr.annotation(annotationGutterFocusAnnotation)).find(e => e);
+		if (annotation || update.startState.selection !== update.state.selection) {
+			this.unfocusAnnotation();
+		}
+
+		if (annotation) {
+			const { cursor, index = -1, scroll = false } = annotation;
+
+			// EXPL: Find a GutterElement and then GutterMarker that contains the cursor
+			// NOTE: In a previous version of this code, AnnotationGutterElement's `block.to` was used
+			//       in order to find the GutterMarker that contains the cursor, however,
+			//       the block only represents the starting line of the GutterElement, and does not work
+			//       for markers that span multiple lines
+			// TODO: Improve the performance of this code, I am not a big fan of linearly searching like this
+			// NOTE: Did you know you can label loops? I didn't. Neat huh?
+			outer_loop:
+			for (const element of this.gutters[0].elements as AnnotationGutterElement[]) {
+				if (cursor >= element.block!.from) {
+					for (const marker of element.markers as AnnotationMarker[]) {
+						if (cursor >= marker.annotation.from && cursor <= marker.annotation.full_range_back) {
+							this.focusAnnotation(marker, index, scroll);
+							break outer_loop;
+						}
+					}
+				} else if (cursor < element.block!.from) {
+					break;
+				}
+			}
+		}
+
 		return super.updateGutters(update);
 	}
 
 	/**
-	 * Moves gutter element up/down to align with block
-	 * @param marker - Marker to align the gutter to
+	 * Moves the initial GutterElement of the gutter up or down to align provided marker with its block
+	 * @param marker - Marker to align the gutter by
 	 */
 	public moveGutter(marker: GutterMarker) {
-		// We only need to deal with one gutter
+		// We only need to consider one gutter for the annotations gutter
 		const activeGutter = this.gutters[0];
 
 		// Given the marker, fetch the gutterElement it belongs to
-		const elementIdx = activeGutter.elements.findIndex(element => element.markers.includes(marker));
-		if (elementIdx === -1) return;
+		const element = activeGutter.elements.find(element => element.markers.includes(marker)) as AnnotationGutterElement | undefined;
+		if (!element) return;
 
-		const gutterElement = activeGutter.elements[elementIdx] as AnnotationGutterElement;
-		const widgetIndex = gutterElement.markers.indexOf(marker);
+		const widgetIndex = element.markers.indexOf(marker);
 
-		/**
-		 * Where the gutter element should be located (i.e. flush with the top of the block)
-		 */
-		const desiredLocation = gutterElement.block!.top;
-		/**
-		 * Where the gutter element is currently located (possibly pushed down by other gutter elements)
-		 */
-		const currentLocation = (gutterElement.dom.children[widgetIndex] as HTMLElement).offsetTop;
+		 // Where the gutter element should be located (i.e. flush with the top of the block)
+		const desiredLocation = element.block!.top;
+		 // Where the gutter element is currently located (possibly pushed down by other gutter elements)
+		const currentLocation = (element.dom.children[widgetIndex] as HTMLElement).offsetTop;
 
 		// Determine the offset between the current location and the desired location
 		let offset = desiredLocation - currentLocation;
 
-		if (Math.abs(offset) < 10) offset = 0;
-		if (offset) {
+		// EXPL: It is preferred not to make micro-adjustments
+		if (Math.abs(offset) >= 10 && offset) {
 			const element = activeGutter.elements[0];
 			element.dom.style.marginTop = parseInt(element.dom.style.marginTop || "0") + offset + "px";
 		}
@@ -117,25 +160,6 @@ export class AnnotationGutterView extends GutterView {
 
 	public foldGutter() {
 		(this.gutters[0] as AnnotationSingleGutterView).foldGutter();
-	}
-
-	public focusAnnotationThread(position: number, index: number = -1) {
-		// EXPL: Find element with range in it
-		const element = this.gutters[0].elements.find(
-			element =>
-				(element as AnnotationGutterElement).block!.from <= position &&
-				position <= (element as AnnotationGutterElement).block!.to,
-		);
-
-		if (element) {
-			const marker = element.markers.find(marker => {
-				return position >= (marker as AnnotationMarker).annotation.from &&
-					position <= (marker as AnnotationMarker).annotation.full_range_back;
-			}) as AnnotationMarker | undefined;
-			if (!marker) return;
-
-			marker.focus_annotation(index);
-		}
 	}
 }
 
@@ -448,6 +472,9 @@ class AnnotationGutterElement extends GutterElement {
 		height: number,
 		above: number,
 		markers: readonly GutterMarker[],
+		// IMPORTANT: The `block` variable represents the _starting_ line this GutterElement may belong to
+		//		the annotations _may_ cover multiple lines, but the block will ONLY account for the first line
+		//		In practice, this means that block.to IS NOT the end of the marker
 		public block: BlockInfo | null = null,
 	) {
 		super(view, height, above, markers);

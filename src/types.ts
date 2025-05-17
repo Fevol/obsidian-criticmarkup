@@ -110,6 +110,10 @@ export interface PluginSettings {
 	 * Add a resize handle next to the annotation gutter for quickly adjusting the gutter width
 	 */
 	annotation_gutter_resize_handle: boolean;
+	/**
+	 * When clicking on an annotation in the _editor_, focus its corresponding annotation in the gutter - if it exists
+	 */
+	annotation_gutter_focus_on_click: boolean;
 
 	/**
 	 * How much space the annotation gutter should take up

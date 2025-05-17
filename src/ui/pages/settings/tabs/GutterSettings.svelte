@@ -105,23 +105,24 @@
             {/snippet}
         </SettingItem>
 {/each}
-<!--    <SettingItem-->
-<!--            name="Addition"-->
-<!--            type="toggle"-->
-<!--            depth={2}-->
-<!--    >-->
-<!--        {#snippet control()}-->
-<!--            <Toggle-->
-<!--                value={(plugin.settings.annotation_gutter_included_types & AnnotationInclusionType.ADDITION) !== 0}-->
-<!--                onChange={() => {-->
-<!--                    plugin.settings.annotation_gutter_resize_handle =-->
-<!--                      !plugin.settings.annotation_gutter_resize_handle;-->
-<!--                    plugin.saveSettings();-->
-<!--                }}-->
-<!--            />-->
-<!--        {/snippet}-->
-<!--    </SettingItem>-->
 
+<SettingItem
+        name="Focus annotation on selection"
+        description="When selecting an annotation in the editor, the corresponding annotation in the gutter will be focused"
+        type="toggle"
+        depth={1}
+>
+    {#snippet control()}
+        <Toggle
+                value={plugin.settings.annotation_gutter_focus_on_click}
+                onChange={() => {
+                plugin.settings.annotation_gutter_focus_on_click =
+                  !plugin.settings.annotation_gutter_focus_on_click;
+                plugin.saveSettings();
+            }}
+        />
+    {/snippet}
+</SettingItem>
 
 <SettingItem
         name="Width"
@@ -131,14 +132,14 @@
 >
     {#snippet control()}
         <Slider
-                min={100}
-                max={500}
-                step={50}
-                value={plugin.settings.annotation_gutter_width}
-                onChange={(value) => {
-        plugin.settings.annotation_gutter_width = value;
-        plugin.saveSettings();
-      }}
+            min={100}
+            max={500}
+            step={50}
+            value={plugin.settings.annotation_gutter_width}
+            onChange={(value) => {
+                plugin.settings.annotation_gutter_width = value;
+                plugin.saveSettings();
+            }}
         />
     {/snippet}
 </SettingItem>
@@ -151,8 +152,8 @@
 >
     {#snippet control()}
         <Toggle
-                value={plugin.settings.annotation_gutter_resize_handle}
-                onChange={() => {
+            value={plugin.settings.annotation_gutter_resize_handle}
+            onChange={() => {
                 plugin.settings.annotation_gutter_resize_handle =
                   !plugin.settings.annotation_gutter_resize_handle;
                 plugin.saveSettings();
@@ -207,12 +208,12 @@
 >
     {#snippet control()}
         <Toggle
-                value={plugin.settings.annotation_gutter_hide_empty}
-                onChange={() => {
+            value={plugin.settings.annotation_gutter_hide_empty}
+            onChange={() => {
                 plugin.settings.annotation_gutter_hide_empty =
                   !plugin.settings.annotation_gutter_hide_empty;
                 plugin.saveSettings();
-          }}
+            }}
         />
     {/snippet}
 </SettingItem>

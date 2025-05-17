@@ -59,6 +59,7 @@ import {COMMENTATOR_GLOBAL} from "./global";
 import {type PluginSettings} from "./types";
 import {debugRangeset, iterateAllCMInstances, updateAllCompartments, updateCompartment} from "./util/cm-util";
 import {objectDifference} from "./util/util";
+import {focusAnnotation} from "./editor/uix/extensions/focus-annotation";
 
 export default class CommentatorPlugin extends Plugin {
 	editorExtensions: Extension[] = [];
@@ -117,6 +118,9 @@ export default class CommentatorPlugin extends Plugin {
 			this.editorExtensions.push(
 				annotationGutterCompartment.of(Prec.low(annotationGutter(this.app) as Extension[]))
 			);
+			if (this.settings.annotation_gutter_focus_on_click) {
+				this.editorExtensions.push(focusAnnotation);
+			}
 		}
 
 		if (this.settings.live_preview)
