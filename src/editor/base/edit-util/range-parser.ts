@@ -44,8 +44,11 @@ export const rangeParser: StateField<ParserData> = StateField.define({
 		if (tr.effects.some(effect => effect.is(fullReloadEffect)))
 			return this.create(tr.state) as ParserData;
 
-		if (!tr.docChanged)
+		if (!tr.docChanged) {
+			value.inserted_ranges = [];
+			value.deleted_ranges = [];
 			return value;
+		}
 
 		// The below times are based on stress-test (250.000 words, 56.167 ranges)
 		// get-changes: 0.01 - 0.05 ms

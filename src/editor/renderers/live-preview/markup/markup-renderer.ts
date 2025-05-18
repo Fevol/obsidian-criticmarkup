@@ -177,7 +177,22 @@ function constructMarkings(
 export const markupRenderer = (settings: PluginSettings) =>
 	StateField.define<DecorationSet>({
 		create(state): DecorationSet {
-			return Decoration.none;
+			const livepreview = state.field(editorLivePreviewField);
+			const preview_mode = state.facet(previewModeState);
+			const suggest_mode = state.facet(editModeValueState);
+
+			const parsed_ranges = state.field(rangeParser);
+
+			return RangeSet.of<Decoration>(
+				constructMarkings(
+					parsed_ranges.ranges.ranges,
+					state.selection,
+					livepreview,
+					preview_mode,
+					suggest_mode,
+					settings,
+				),
+			);
 		},
 
 		update(oldSet: DecorationSet, tr: Transaction) {
@@ -187,8 +202,9 @@ export const markupRenderer = (settings: PluginSettings) =>
 
 			const parsed_ranges = tr.state.field(rangeParser);
 			if (
-				(!tr.docChanged) || livepreview !== tr.startState.field(editorLivePreviewField) ||
-				preview_mode !== tr.startState.facet(previewModeState) || tr.effects.some(e => e.is(fullReloadEffect))
+				livepreview !== tr.startState.field(editorLivePreviewField) ||
+				preview_mode !== tr.startState.facet(previewModeState) ||
+				tr.effects.some(e => e.is(fullReloadEffect))
 			) {
 				return RangeSet.of<Decoration>(
 					constructMarkings(
