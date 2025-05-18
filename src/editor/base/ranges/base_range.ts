@@ -92,6 +92,13 @@ export abstract class CriticMarkupRange {
 	}
 
 	/**
+	 * Location: ░{**some;text**}{>>comment<<}, ░{**some text**}
+	 */
+	get full_range_front(): number {
+		return this.base_range.from;
+	}
+
+	/**
 	 * Location: {**some;text**}{>>comment<<}░, {**some text**}░
 	 */
 	get full_range_back(): number {

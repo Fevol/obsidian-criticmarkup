@@ -228,7 +228,7 @@ export class AnnotationMarker extends GutterMarker {
 		// FIXME: Remove direct access of gutter, prefer annotation?
 		const gutter = this.view.plugin(annotationGutter(app)[1][0][0]) as AnnotationGutterView;
 		gutter.unfocusAnnotation();
-		gutter.focusAnnotation(this, -1, true);
+		gutter.focusAnnotation(this, -1, true, true);
 
 		this.annotation_thread.classList.toggle("cmtr-anno-gutter-thread-highlight", true);
 	}

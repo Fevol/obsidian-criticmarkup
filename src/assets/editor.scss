@@ -15,11 +15,19 @@
   display: none;
 }
 
+.cmtr-focused { }
+
+
 // ================================================
 //        CriticMarkup Main Suggestion Styles
 // ================================================
+
+
 .cmtr-addition {
   color: var(--addition-color);
+  .cmtr-focused {
+    text-decoration: underline 3px solid var(--addition-color);
+  }
 }
 
 .cmtr-has-reply .cmtr-addition,
@@ -31,9 +39,22 @@
     background-color 200ms ease-in-out 0ms,
     box-shadow 200ms ease-in-out 0ms;
 
+  .cmtr-focused {
+    text-decoration: unset;
+    background-color: var(--addition-color-alt);
+  }
+
   &:hover {
     box-shadow: 0 0 0 2px var(--addition-color-alt);
     background-color: var(--addition-color-alt);
+  }
+}
+
+.cmtr-deletion {
+  text-decoration: var(--deletion-color) 2px line-through;
+
+  &:has(.cmtr-focused) {
+    text-decoration: var(--deletion-color) 2px line-through dashed;
   }
 }
 
@@ -44,6 +65,10 @@
   box-shadow: 0 0 0 2px var(--deletion-color);
   transition: background-color 200ms ease-in-out 0ms;
   text-decoration: unset;
+
+  .cmtr-focused {
+    background-color: var(--deletion-color-alt);
+  }
 
   &:hover {
     box-shadow: 0 0 0 2px var(--deletion-color-alt);
@@ -58,20 +83,34 @@
   box-shadow: 0 0 0 2px var(--substitution-color);
   transition: background-color 200ms ease-in-out 0ms;
 
+  .cmtr-focused {
+      background-color: var(--substitution-color-alt);
+  }
+
   &:hover {
     box-shadow: 0 0 0 2px var(--substitution-color-alt);
     background-color: var(--substitution-color-alt);
   }
 }
 
-.cmtr-deletion {
-  text-decoration: var(--deletion-color) 2px line-through;
+.cmtr-highlight {
+  background-color: var(--highlight-color);
+
+  .cmtr-focused {
+    background-color: var(--highlight-color-alt);
+  }
 }
 
 .cmtr-comment {
   background-color: var(--comment-color);
   border-bottom: 2px solid var(--comment-border-color);
 }
+
+
+// ================================================
+//       Editor Comment Icon Widget Rendering
+// ================================================
+
 
 .cmtr-comment-icon {
   padding: 0 0 var(--size-4-2) 0;
@@ -112,10 +151,6 @@
 .cmtr-comment-tooltip * {
   margin-block-start: 0.25em;
   margin-block-end: 0.25em;
-}
-
-.cmtr-highlight {
-  background-color: var(--highlight-color);
 }
 
 // ================================================

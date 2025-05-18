@@ -34,7 +34,8 @@ export function addCommentToView(editor: EditorView, range: CriticMarkupRange | 
 		selection: EditorSelection.cursor(cursor),
 		annotations: [
 			annotationGutterFocusAnnotation.of({
-				cursor: cursor,
+				from: cursor,
+				to: cursor,
 				index: range ? range.full_thread.length : -1,
 			}),
 		]

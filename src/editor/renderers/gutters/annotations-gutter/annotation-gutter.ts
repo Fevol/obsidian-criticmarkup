@@ -32,6 +32,7 @@ import {
 } from "../base";
 import { annotationGutterMarkers, AnnotationMarker } from "./marker";
 import { annotationGutterCompartment } from "./index";
+import { markupFocusEffect } from "../../live-preview";
 
 const FOLD_BUTTON_OFFSET = 60;
 
@@ -41,7 +42,7 @@ const unfixGutters = Facet.define<boolean, boolean>({
 
 const activeGutters = Facet.define<Required<GutterConfig>>();
 
-export const annotationGutterFocusAnnotation = Annotation.define<{ cursor: number, index?: number, scroll?: boolean }>();
+export const annotationGutterFocusAnnotation = Annotation.define<{ from: number, to: number, index?: number, scroll?: boolean }>();
 // export const annotationGutterSyncGutter = Annotation.define<boolean>;
 
 export class AnnotationGutterView extends GutterView {
@@ -87,10 +88,25 @@ export class AnnotationGutterView extends GutterView {
 		this.previously_focused = undefined;
 	}
 
-	focusAnnotation(marker: AnnotationMarker, index: number, scroll: boolean = false) {
+	focusAnnotation(marker: AnnotationMarker, index: number, scroll: boolean = false, focus_markup = false) {
 		this.previously_focused = marker;
 		this.moveGutter(marker);
 		marker.focus_annotation(index, scroll);
+
+		if (focus_markup) {
+			setTimeout(() => {
+				this.view.dispatch(
+					this.view.state.update({
+						effects: [
+							markupFocusEffect.of({
+								from: marker.annotation.from,
+								to: marker.annotation.full_range_back
+							})
+						]
+					})
+				);
+			});
+		}
 	}
 
 	updateGutters(update: ViewUpdate): boolean {
@@ -102,7 +118,7 @@ export class AnnotationGutterView extends GutterView {
 		}
 
 		if (annotation) {
-			const { cursor, index = -1, scroll = false } = annotation;
+			const { from, to, index = -1, scroll = false } = annotation;
 
 			// EXPL: Find a GutterElement and then GutterMarker that contains the cursor
 			// NOTE: In a previous version of this code, AnnotationGutterElement's `block.to` was used
@@ -113,14 +129,14 @@ export class AnnotationGutterView extends GutterView {
 			// NOTE: Did you know you can label loops? I didn't. Neat huh?
 			outer_loop:
 			for (const element of this.gutters[0].elements as AnnotationGutterElement[]) {
-				if (cursor >= element.block!.from) {
+				if (from >= element.block!.from) {
 					for (const marker of element.markers as AnnotationMarker[]) {
-						if (cursor >= marker.annotation.from && cursor <= marker.annotation.full_range_back) {
+						if (from >= marker.annotation.from && to <= marker.annotation.full_range_back) {
 							this.focusAnnotation(marker, index, scroll);
 							break outer_loop;
 						}
 					}
-				} else if (cursor < element.block!.from) {
+				} else if (from < element.block!.from) {
 					break;
 				}
 			}
@@ -141,12 +157,12 @@ export class AnnotationGutterView extends GutterView {
 		const element = activeGutter.elements.find(element => element.markers.includes(marker)) as AnnotationGutterElement | undefined;
 		if (!element) return;
 
-		const widgetIndex = element.markers.indexOf(marker);
+		const markerIndex = element.markers.indexOf(marker);
 
 		 // Where the gutter element should be located (i.e. flush with the top of the block)
 		const desiredLocation = element.block!.top;
 		 // Where the gutter element is currently located (possibly pushed down by other gutter elements)
-		const currentLocation = (element.dom.children[widgetIndex] as HTMLElement).offsetTop;
+		const currentLocation = (element.dom.children[markerIndex] as HTMLElement).offsetTop;
 
 		// Determine the offset between the current location and the desired location
 		let offset = desiredLocation - currentLocation;

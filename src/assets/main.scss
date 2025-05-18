@@ -16,22 +16,31 @@
     var(--addition-color),
     black 15%
   );
+
   --deletion-color: var(--color-red);
   --deletion-color-alt: color-mix(
     in srgb-linear,
     var(--deletion-color),
     black 15%
   );
+
   --substitution-color: var(--color-orange);
   --substitution-color-alt: color-mix(
     in srgb-linear,
     var(--substitution-color),
     black 15%
   );
+
+  --highlight-color: var(--text-highlight-bg);
+  --highlight-color-alt: color-mix(
+    in srgb-linear,
+    var(--text-highlight-bg),
+    black 15%
+  );
+
   --comment-color: #bacff4;
   --comment-border-color: #679af4;
   --comment-inverse-color: #445f8f;
-  --highlight-color: var(--text-highlight-bg);
 }
 
 .theme-dark {
@@ -41,22 +50,31 @@
     var(--addition-color),
     white 10%
   );
+
   --deletion-color: var(--color-red);
   --deletion-color-alt: color-mix(
     in srgb-linear,
     var(--deletion-color),
     white 10%
   );
+
   --substitution-color: var(--color-orange);
   --substitution-color-alt: color-mix(
     in srgb-linear,
     var(--substitution-color),
     white 10%
   );
+
+  --highlight-color: var(--text-highlight-bg);
+  --highlight-color-alt: color-mix(
+    in srgb-linear,
+    var(--text-highlight-bg),
+    white 10%
+  );
+
   --comment-color: #445f8f;
   --comment-border-color: #679af4;
   --comment-inverse-color: #bacff4;
-  --highlight-color: var(--text-highlight-bg);
 }
 
 .cmtr-fail > button {

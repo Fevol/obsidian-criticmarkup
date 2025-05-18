@@ -77,7 +77,7 @@ export class CommentIconWidget extends WidgetType {
 		// TODO: Check if this is (much) worse than directly invoking the focus annotation function from the gutter plugin instance
 		//      The other options can piggy-back on already existing transactions, and just annotating them
 		//      However, this one doesn't have one (except if clicking on the widget _is_ a transaction)
-		view.dispatch({ annotations: [ annotationGutterFocusAnnotation.of({ cursor: this.range.from }) ] });
+		view.dispatch({ annotations: [ annotationGutterFocusAnnotation.of({ from: this.range.from, to: this.range.to }) ] });
 	}
 
 	unrenderTooltip() {

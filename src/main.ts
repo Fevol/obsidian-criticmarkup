@@ -19,7 +19,7 @@ import {cmenuGlobalCommands, cmenuViewportCommands, commands} from "./editor/uix
 import {bracketMatcher, editorKeypressCatcher, rangeCorrecter} from "./editor/uix/extensions";
 
 import {annotationGutter, annotationGutterCompartment, diffGutter, diffGutterCompartment} from "./editor/renderers/gutters";
-import {commentRenderer, markupRenderer} from "./editor/renderers/live-preview";
+import {commentRenderer, markupRenderer, focusRenderer, markupFocusState} from "./editor/renderers/live-preview";
 import {postProcess, postProcessorRerender, postProcessorUpdate} from "./editor/renderers/post-process";
 import {
 	type MetadataStatusBarButton,
@@ -107,6 +107,9 @@ export default class CommentatorPlugin extends Plugin {
 
 		this.editorExtensions.length = 0;
 
+		this.editorExtensions.push(markupFocusState);
+		this.editorExtensions.push(Prec.highest(focusRenderer));
+		this.editorExtensions.push(focusAnnotation(this.settings));
 		this.editorExtensions.push(Prec.highest(editorKeypressCatcher));
 		this.editorExtensions.push(editMode.of(getEditMode(this.settings.default_edit_mode, this.settings)));
 
@@ -118,9 +121,6 @@ export default class CommentatorPlugin extends Plugin {
 			this.editorExtensions.push(
 				annotationGutterCompartment.of(Prec.low(annotationGutter(this.app) as Extension[]))
 			);
-			if (this.settings.annotation_gutter_focus_on_click) {
-				this.editorExtensions.push(focusAnnotation);
-			}
 		}
 
 		if (this.settings.live_preview)

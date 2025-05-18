@@ -1,3 +1,4 @@
-import { markupRenderer } from "./renderer";
+import { focusRenderer, markupFocusState, markupFocusEffect } from "./focus-renderer";
+import { markupRenderer } from "./markup-renderer";
 
-export { markupRenderer };
+export { focusRenderer, markupFocusState, markupFocusEffect, markupRenderer };

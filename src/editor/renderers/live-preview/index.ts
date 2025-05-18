@@ -1,4 +1,4 @@
 import { CommentIconWidget, commentRenderer } from "./comments";
-import { markupRenderer } from "./markup";
+import { focusRenderer, markupFocusState, markupFocusEffect, markupRenderer } from "./markup";
 
-export { CommentIconWidget, commentRenderer, markupRenderer };
+export { CommentIconWidget, commentRenderer, focusRenderer, markupFocusState, markupFocusEffect, markupRenderer };
