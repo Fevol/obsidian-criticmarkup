@@ -224,16 +224,17 @@ class AnnotationUpdateContext extends UpdateContext {
 		 * @todo Investigate whether the markers can be sorted earlier in the pipeline
 		 */
 		// FIXME: Marker without comment_range issue
-		// NOTE: This may be addresses used startSide bias in gutterMarker (warning: update concern)
-		(markers as unknown as AnnotationMarker[]).sort((a, b) => a.annotation.from - b.annotation.from);
+		// NOTE: This may be addresses by using the startSide bias in gutterMarker (warning: update concern)
+		(markers as unknown as AnnotationMarker[])
+			.sort((a, b) => a.annotation.from - b.annotation.from);
 
 		const UNKNOWN_HEIGHT = 36;
 
 		/**
-		 * Complete height of the GUTTERELEMENT, including BOTTOM margin (i.e. spacing between gutter elements)
+		 * Complete height of the GutterElement, including BOTTOM margin (i.e. spacing between gutter elements)
 		 * @remark The reason *why* this is an absolutely essential value, is that it ensures that no elements can overlap,
-		 *     if estimated height is lower than actual height, then gutterelements of two blocks risk overlapping
-		 *     if estimated height is higher than actual height, then gutterelements will have an unnecessarily large gap between them
+		 *     if estimated height is lower than actual height, then GutterElements of two blocks risk overlapping
+		 *     if estimated height is higher than actual height, then GutterElements will have an unnecessarily large gap between them
 		 *   however, we cannot directly grab the height of the element, as it is not yet rendered, so we need to either:
 		 *   	1. Estimate the height of the element (clunky, and error-prone with different styles)
 		 *   	2. Wait till element is rendered, grab height from rendered element
@@ -246,14 +247,14 @@ class AnnotationUpdateContext extends UpdateContext {
 		 */
 		const height = this.gutter.elements[this.i]?.dom.clientHeight || UNKNOWN_HEIGHT;
 
-		let element_idx = -1;
-		for (let i = this.i; i < this.gutter.elements.length; i++) {
-			if (sameMarkers(this.gutter.elements[i].markers, markers)) {
-				element_idx = i;
-				break;
-			}
-		}
 
+		// EXPL: Search for an existing GutterElement with the same markers
+		const element_idx = this.gutter.elements
+			.findIndex(e => sameMarkers(e.markers, markers));
+
+		// EXPL: If a GutterElement already exists, and it has the exact same markers,
+		//      remove all the GutterElements before this element
+		//    	and re-insert all the newly added elements before this element
 		if (element_idx !== -1) {
 			const element = this.gutter.elements[element_idx];
 			for (let i = this.i; i < element_idx; i++) {
@@ -268,7 +269,10 @@ class AnnotationUpdateContext extends UpdateContext {
 			this.i = element_idx + 1;
 			this.new_gutter_elements.push(element);
 			element.update(view, height, above, markers, block);
-		} else {
+		}
+
+		// EXPL: Otherwise, if the GutterElement does not exist, create a new one and it to the gutter later
+		else {
 			this.added_elements.push(new AnnotationGutterElement(view, height, above, markers, block));
 		}
 
@@ -276,12 +280,16 @@ class AnnotationUpdateContext extends UpdateContext {
 	}
 
 	finish() {
+		// EXPL: Finally, at the end of the update, remove all remaining GutterElements
 		for (let i = this.i; i < this.gutter.elements.length; i++) {
 			this.gutter.dom.removeChild(this.gutter.elements[i].dom);
 			this.gutter.elements[i].destroy();
 		}
-		for (const added_element of this.added_elements)
+
+		// EXPL: Add all the remaining added GutterElements to the gutter
+		for (const added_element of this.added_elements) {
 			this.gutter.dom.appendChild(added_element.dom);
+		}
 		this.gutter.elements = [...this.new_gutter_elements, ...this.added_elements];
 		this.new_gutter_elements = [];
 		this.added_elements = [];

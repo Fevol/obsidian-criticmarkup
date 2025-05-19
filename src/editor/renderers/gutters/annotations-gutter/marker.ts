@@ -317,7 +317,9 @@ function createMarkers(state: EditorState, changed_ranges: CriticMarkupRange[], 
 			// MODIFICATION: advanceCursor in base.ts required markers to be inserted into the rangeset at exactly
 			//      the positions where line starts, this caused some issues with correct adjustment of positions through updates,
 			//      so adjustment is that markers can now occur at any position before the start of the line
-			cm_ranges.push(new AnnotationMarker(range, full_thread, view, itr).range(range.from, range.to));
+			const marker = new AnnotationMarker(range, full_thread, view, itr);
+			marker.preventUnload = true;
+			cm_ranges.push(marker.range(range.from, range.to));
 		}
 	}
 
@@ -370,13 +372,13 @@ export const annotationGutterMarkers = StateField.define<RangeSet<AnnotationMark
 			.map(tr.changes)
 			.update({
 				filter: (from, to, value) => {
-					// const keep = !deleted_ranges.some(range =>
-					// 	range.type === SuggestionType.COMMENT && range.has_comment(value.annotation)
-					// );
-					// value.preventUnload = keep;
-					// return keep;
+					// EXPL: This code prevents AnnotationMarkers in existing GutterMarkers from being unloaded
+					//       when the marker is moved from one GutterElement to another
+					const keep = !deleted_ranges.includes(value.annotation);
+					value.preventUnload = keep;
+					return keep;
 
-					return !deleted_ranges.includes(value.annotation);
+					// return !deleted_ranges.includes(value.annotation);
 				},
 				add: createMarkers(tr.state, added_ranges.map(range => range.full_thread[0]), includedTypes),
 			});

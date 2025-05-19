@@ -148,7 +148,7 @@ export class GutterElement {
 				const c = marker.elementClass;
 				if (c) cls += " " + c;
 				for (let i = iOld; i < this.markers.length; i++) {
-					// @ts-ignore (compare does exist on marker)
+					// @ts-expect-error (compare does exist on marker)
 					if (this.markers[i].compare(marker)) {
 						skipTo = i;
 						matched = true;
@@ -162,6 +162,7 @@ export class GutterElement {
 				const next = this.markers[iOld++];
 				if (next.toDOM) {
 					if (domPos) {
+						// MODF: Prevents unloading of a marker if it used in both old and new GutterElement
 						// FIXME: This if-check prevents a re-used Marker (specifically, a marker that is used
 						//  	 	in both a old _and_ a new GutterElement) from being completely removed from the DOM
 						//		    This needs to be done, as `AnnotationMarker`s are reused across multiple state updates
@@ -174,6 +175,7 @@ export class GutterElement {
 							next.destroy(domPos!);
 						}
 						(next as any).preventUnload = false;
+						// ORIGINAL: next.destroy(domPos!)
 						const after = domPos.nextSibling;
 						domPos.remove();
 						domPos = after;
