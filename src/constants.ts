@@ -7,7 +7,7 @@ import {
 	RANGE_CURSOR_MOVEMENT_OPTION,
 } from "./types";
 
-export const PLUGIN_VERSION = "0.2.1";
+export const PLUGIN_VERSION = "0.2.3";
 export const DATABASE_VERSION = 4;
 
 export const DEFAULT_SETTINGS: PluginSettings = {

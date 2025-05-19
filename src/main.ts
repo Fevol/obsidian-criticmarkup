@@ -272,9 +272,9 @@ export default class CommentatorPlugin extends Plugin {
 	}
 
 	async migrateSettings(new_settings: PluginSettings) {
-		const old_settings = this.settings;
+		const original_settings = this.settings;
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, new_settings);
-		this.previous_settings = Object.assign(old_settings, this.settings);
+		this.previous_settings = Object.assign({}, original_settings, this.settings);
 		COMMENTATOR_GLOBAL.PLUGIN_SETTINGS = this.settings;
 
 		// EXPL: Do not migrate new installs, immediately save settings
@@ -285,6 +285,7 @@ export default class CommentatorPlugin extends Plugin {
 			// EXPL: Migration code for upgrading to a new version
 			try {
 				if (old_version !== DEFAULT_SETTINGS.version) {
+					// EXPL: Migrate settings from 0.1.x, where the settings did not contain a version field
 					if (!old_version) {
 						this.app.workspace.onLayoutReady(async () => {
 							new Notice("Commentator: rebuilding database for new version", 5000);
@@ -293,19 +294,37 @@ export default class CommentatorPlugin extends Plugin {
 								0,
 							);
 						});
-					} else if (old_version.localeCompare("0.2.2", undefined, {numeric: true}) < 0) {
-						if ((new_settings as any).suggestion_gutter_hide_empty) {
-							this.settings.diff_gutter = (new_settings as any).suggestion_gutter;
-							this.settings.diff_gutter_hide_empty = (new_settings as any).suggestion_gutter_hide_empty;
+					}
 
-							this.settings.annotation_gutter = (new_settings as any).comment_style === "block";
-							this.settings.annotation_gutter_default_fold_state = (new_settings as any).comment_gutter_default_fold_state;
-							this.settings.annotation_gutter_fold_button = (new_settings as any).comment_gutter_fold_button;
-							this.settings.annotation_gutter_resize_handle = (new_settings as any).comment_gutter_resize_handle;
-							this.settings.annotation_gutter_width = (new_settings as any).comment_gutter_width;
-							this.settings.annotation_gutter_hide_empty = (new_settings as any).comment_gutter_hide_empty;
+					// EXPL: Migrate settings from 0.2.x to 0.2.3, suggestion and comment gutter settings were renamed
+					if (old_version.localeCompare("0.2.3", undefined, {numeric: true}) < 0) {
+						if ((new_settings as any).suggestion_gutter_hide_empty) {
+							const settings_migrations = [
+								["suggestion_gutter", "diff_gutter"],
+								["suggestion_gutter_hide_empty", "diff_gutter_hide_empty"],
+
+								["comment_gutter_default_fold_state", "annotation_gutter_default_fold_state"],
+								["comment_gutter_fold_button", "annotation_gutter_fold_button"],
+								["comment_gutter_resize_handle", "annotation_gutter_resize_handle"],
+								["comment_gutter_width", "annotation_gutter_width"],
+								["comment_gutter_hide_empty", "annotation_gutter_hide_empty"],
+							] as (keyof typeof new_settings)[][];
+
+							for (const [old_key, new_key] of settings_migrations) {
+								if (old_key in this.settings) {
+									(this.settings as unknown as any)[new_key] = this.settings[old_key];
+									delete this.settings[old_key];
+								}
+							}
+
+							if (this.settings.comment_style as any === "block") {
+								this.settings.comment_style = "icon";
+								this.settings.annotation_gutter = true;
+							}
 						}
 					}
+
+					this.settings.version = DEFAULT_SETTINGS.version;
 					await this.setSettings();
 				}
 			} catch (e) {
