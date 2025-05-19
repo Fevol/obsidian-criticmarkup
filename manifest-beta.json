@@ -1,7 +1,7 @@
 {
     "id": "commentator",
     "name": "Commentator",
-    "version": "0.2.2",
+    "version": "0.2.3",
     "minAppVersion": "1.5.0",
     "description": "Add review comments to your notes using CriticMarkup syntax",
     "author": "kometenstaub and Fevol",
