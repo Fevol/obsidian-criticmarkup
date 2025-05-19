@@ -28,12 +28,12 @@ export const focusRenderer = StateField.define<DecorationSet>({
         const markupStartFocus = tr.startState.field(markupFocusState);
         const markupEndFocus = tr.state.field(markupFocusState);
 
-        if (markupStartFocus !== markupEndFocus) {
-            const ranges= tr.state.field(rangeParser).ranges.ranges_in_range(tr.selection!.main.from, tr.selection!.main.to);
+        if (tr.selection && markupStartFocus !== markupEndFocus) {
+            const ranges= tr.state.field(rangeParser).ranges.ranges_in_range(tr.selection.main.from, tr.selection.main.to);
             if (
                 ranges.length &&
                 ranges[0].base_range === ranges.at(-1)?.base_range &&
-                tr.selection!.main.from >= ranges[0].from && tr.selection!.main.to <= ranges.at(-1)!.to
+                tr.selection.main.from >= ranges[0].from && tr.selection.main.to <= ranges.at(-1)!.to
             ) {
                 return RangeSet.of<Decoration>(
                     [
