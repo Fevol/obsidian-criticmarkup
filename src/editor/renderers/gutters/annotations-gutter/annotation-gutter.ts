@@ -65,6 +65,10 @@ export class AnnotationGutterView extends GutterView {
 		}
 	}
 
+	// EXPL: When moving a selection inside the editor, multiple moveGutter calls are triggered,
+	//       causing wonkyness and ever greater up/downwards movement
+	debouncedMoveGutter = debounce(this.moveGutter.bind(this), 200);
+
 	createGutters(view: EditorView) {
 		return view.state.facet(activeGutters).map(conf => new AnnotationSingleGutterView(view, conf, this.dom));
 	}
@@ -90,7 +94,7 @@ export class AnnotationGutterView extends GutterView {
 
 	focusAnnotation(marker: AnnotationMarker, index: number, scroll: boolean = false, focus_markup = false) {
 		this.previously_focused = marker;
-		this.moveGutter(marker);
+		this.debouncedMoveGutter(marker);
 		marker.focus_annotation(index, scroll);
 
 		if (focus_markup) {
