@@ -33,7 +33,9 @@ export class HeaderButton {
 		this.has_label = render;
 
 		for (const leaf of this.plugin.app.workspace.getLeavesOfType("markdown")) {
-			const view = leaf.view as MarkdownView;
+			if (!(leaf.view instanceof MarkdownView)) continue;
+			const { view } = leaf;
+
 			const { text } = this.states[this.getvalue(view)];
 			const elements = this.active_mapping.get(view);
 			if (!elements) continue;
@@ -72,9 +74,8 @@ export class HeaderButton {
 			this.changeEvent = this.plugin.app.workspace.on("layout-change", this.attachButtons.bind(this));
 
 		for (const leaf of this.plugin.app.workspace.getLeavesOfType("markdown")) {
-			// Check if the view is deferred
-			let { view } = leaf;
-			if (!(view instanceof MarkdownView)) continue;
+			if (!(leaf.view instanceof MarkdownView)) continue;
+			const { view } = leaf;
 
 			if (this.active_mapping.has(view)) continue;
 			const event = leaf.on("history-change", () => {
@@ -137,8 +138,10 @@ export class HeaderButton {
 	detachButtons() {
 		if (!this.changeEvent) return;
 
-		for (const leaf of this.plugin.app.workspace.getLeavesOfType("markdown"))
+		for (const leaf of this.plugin.app.workspace.getLeavesOfType("markdown")) {
+			if (!(leaf.view instanceof MarkdownView)) continue;
 			this.detachButton(leaf);
+		}
 		this.plugin.app.workspace.offref(this.changeEvent!);
 		this.changeEvent = null;
 	}

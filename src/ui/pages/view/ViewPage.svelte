@@ -566,6 +566,8 @@
 
                 const file = plugin.app.vault.getAbstractFileByPath(row.path);
                 if (!file) return;
+
+                await plugin.app.workspace.revealLeaf(lastActiveLeaf);
                 const view = lastActiveLeaf.view;
 
                 if (file !== view.file) await lastActiveLeaf.openFile(file);
