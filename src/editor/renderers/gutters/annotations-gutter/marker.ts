@@ -139,22 +139,29 @@ class AnnotationNode extends Component {
 				this.editMode = null;
 			}
 			this.annotation_view.empty();
-			MarkdownRenderer.render(COMMENTATOR_GLOBAL.app, this.text || "&nbsp;", this.annotation_view, "", this);
-			switch (this.range.type) {
-				case SuggestionType.ADDITION:
-					this.annotation_view.children[0].prepend(createSpan({ cls: "cmtr-anno-gutter-annotation-desc", text: "Added: " }));
-					break;
-				case SuggestionType.DELETION:
-					this.annotation_view.children[0].prepend(createSpan({ cls: "cmtr-anno-gutter-annotation-desc", text: "Deleted: " }));
-					break;
-				case SuggestionType.SUBSTITUTION:
-					this.annotation_view.children[0].prepend(createSpan({ cls: "cmtr-anno-gutter-annotation-desc", text: "Changed: " }));
-					break;
-				case SuggestionType.HIGHLIGHT:
-					break;
-				case SuggestionType.COMMENT:
-					break;
+			if (this.range.type !== SuggestionType.SUBSTITUTION) {
+				MarkdownRenderer.render(COMMENTATOR_GLOBAL.app, this.text || "&nbsp;", this.annotation_view, "", this);
+				switch (this.range.type) {
+					case SuggestionType.ADDITION:
+						this.annotation_view.children[0].prepend(createSpan({ cls: "cmtr-anno-gutter-annotation-desc", text: "Added: " }));
+						break;
+					case SuggestionType.DELETION:
+						this.annotation_view.children[0].prepend(createSpan({ cls: "cmtr-anno-gutter-annotation-desc", text: "Deleted: " }));
+						break;
+					case SuggestionType.HIGHLIGHT:
+						break;
+					case SuggestionType.COMMENT:
+						break;
+				}
+			} else {
+				const text_slices = this.range.unwrap_parts();
+				MarkdownRenderer.render(COMMENTATOR_GLOBAL.app, text_slices[0] || "&nbsp;", this.annotation_view, "", this);
+				this.annotation_view.children[0].prepend(createSpan({ cls: "cmtr-anno-gutter-annotation-desc", text: "Changed: " }));
+				const childIdx = this.annotation_view.children.length;
+				MarkdownRenderer.render(COMMENTATOR_GLOBAL.app, text_slices[1] || "&nbsp;", this.annotation_view, "", this);
+				this.annotation_view.children[childIdx].prepend(createSpan({ cls: "cmtr-anno-gutter-annotation-desc", text: "To: " }));
 			}
+
 			this.annotation_view.addClass("cmtr-anno-gutter-annotation-" + this.range.type);
 			this.currentMode = "preview";
 		}
