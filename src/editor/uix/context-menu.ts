@@ -106,9 +106,21 @@ export const cmenuViewportCommands: (app: App) => EventRef = (app) =>
 			const editor_cm = (view as unknown as MarkdownView).editor.cm;
 			let current_settings = editor_cm.state.field(annotationGutterIncludedTypesState);
 			keepContextMenuOpen(true);
+
+			menu.addItem((item) => {
+				item.setTitle("Fold gutter")
+					.setIcon("arrow-right-from-line")
+					.setSection("commentator")
+					.onClick(() => {
+						// FIXME: Remove direct access of gutter, prefer fold annotation?
+						editor_cm.plugin(annotationGutter(app)[1][0][0])!.foldGutter();
+					});
+			});
+
 			menu.addItem((item) => {
 				const submenu = item.setTitle("Included annotations")
 										.setIcon("eye")
+										.setSection("commentator")
 										.setSubmenu();
 
 				for (const { title, icon, value } of [

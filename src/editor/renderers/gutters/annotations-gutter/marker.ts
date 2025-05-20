@@ -9,8 +9,9 @@ import {CriticMarkupRange, rangeParser, SuggestionType} from "../../../base";
 import {create_range} from "../../../base/edit-util/range-create";
 import {addCommentToView, annotationGutter} from "./index";
 import {AnnotationInclusionType} from "../../../../constants";
-import {annotationGutterIncludedTypesState} from "../../../settings";
+import {annotationGutterIncludedTypes, annotationGutterIncludedTypesState} from "../../../settings";
 import type {AnnotationGutterView} from "./annotation-gutter";
+import {keepContextMenuOpen} from "../../../../patches";
 
 class AnnotationNode extends Component {
 	text: string;
@@ -177,6 +178,8 @@ class AnnotationNode extends Component {
 		e.preventDefault();
 		e.stopPropagation();
 
+		keepContextMenuOpen(true);
+
 		const menu = new Menu();
 		menu.addItem((item) => {
 			item.setTitle("Edit comment")
@@ -199,6 +202,40 @@ class AnnotationNode extends Component {
 					// FIXME: Remove direct access of gutter, prefer fold annotation?
 					this.marker.view.plugin(annotationGutter(COMMENTATOR_GLOBAL.app)[1][0][0])!.foldGutter();
 				});
+		});
+		menu.addItem((item) => {
+			const submenu = item.setTitle("Included annotations")
+				.setIcon("eye")
+				.setSubmenu();
+
+			let current_settings = this.marker.view.state.facet(annotationGutterIncludedTypesState);
+
+			for (const { title, icon, value } of [
+				{ title: "Additions", icon: "plus-circle", value: AnnotationInclusionType.ADDITION },
+				{ title: "Deletions", icon: "minus-square", value: AnnotationInclusionType.DELETION },
+				{ title: "Substitutions", icon: "replace", value: AnnotationInclusionType.SUBSTITUTION },
+				{ title: "Highlights", icon: "highlighter", value: AnnotationInclusionType.HIGHLIGHT },
+				{ title: "Comments", icon: "message-square", value: AnnotationInclusionType.COMMENT },
+			]) {
+				submenu.addItem((item) => {
+					item.setTitle(title)
+						.setIcon(icon)
+						.setChecked((current_settings & value) !== 0)
+						.onClick(() => {
+							current_settings ^= value;
+							const is_active = (current_settings & value) !== 0;
+							// FIXME: After calling .setChecked(false) once, the icon will not show up again when calling .setChecked(true)
+							// 		the code below bypasses this issue by just hiding it via display style
+							if (item.checkIconEl)
+								item.checkIconEl.style.display = is_active ? "flex" : "none";
+							else
+								item.setChecked(is_active);
+							this.marker.view.dispatch(this.marker.view.state.update({
+								effects: [annotationGutterIncludedTypes.reconfigure(annotationGutterIncludedTypesState.of(current_settings))],
+							}));
+						});
+				});
+			}
 		});
 
 		menu.showAtPosition(e);
