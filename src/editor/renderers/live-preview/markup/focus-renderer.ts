@@ -25,7 +25,7 @@ export const focusRenderer = StateField.define<DecorationSet>({
     },
 
     update(oldSet: DecorationSet, tr) {
-        const markupStartFocus = tr.startState.field(markupFocusState);
+        const markupStartFocus = tr.startState.field(markupFocusState, false);
         const markupEndFocus = tr.state.field(markupFocusState);
 
         if (markupStartFocus !== markupEndFocus) {
