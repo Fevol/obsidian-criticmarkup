@@ -7,6 +7,9 @@ import { EditMode, type PluginSettings, PreviewMode } from "../../../../types";
 import { CriticMarkupRange, rangeParser, SubstitutionRange, SuggestionType } from "../../../base";
 import { editModeValueState, fullReloadEffect, previewModeState } from "../../../settings";
 
+
+const hideMarkupDecoration = Decoration.replace({});
+
 function hideBracket(
 	decorations: Range<Decoration>[],
 	range: CriticMarkupRange,
@@ -14,30 +17,21 @@ function hideBracket(
 	is_livepreview: boolean,
 ) {
 	if (!is_livepreview) return;
-	const decoration = Decoration.replace({
-		attributes: { "data-contents": "string" },
-	});
 
 	if (left)
-		decorations.push(decoration.range(range.from, range.from + 3));
+		decorations.push(hideMarkupDecoration.range(range.from, range.from + 3));
 	else
-		decorations.push(decoration.range(range.to - 3, range.to));
+		decorations.push(hideMarkupDecoration.range(range.to - 3, range.to));
 }
 
 function hideMetadata(decorations: Range<Decoration>[], range: CriticMarkupRange, is_livepreview: boolean = false) {
 	if (!range.metadata || !is_livepreview) return;
 
-	decorations.push(
-		Decoration.replace({
-			attributes: { "data-contents": "string" },
-		}).range(range.from + 3, range.metadata + 2),
-	);
+	decorations.push(hideMarkupDecoration.range(range.from + 3, range.metadata + 2));
 }
 
 function hideRange(decorations: Range<Decoration>[], range: CriticMarkupRange) {
-	decorations.push(
-		Decoration.replace({}).range(range.from, range.to),
-	);
+	decorations.push(hideMarkupDecoration.range(range.from, range.to));
 }
 
 function markContents(
@@ -103,10 +97,9 @@ function constructMarkings(
 				range.partially_in_range(sel_range.from, sel_range.to)
 			);
 
-			const style = `cmtr-editing cmtr-inline cmtr-${range.repr.toLowerCase()} ` +
-				(range.fields.style || "");
+			const style = `cmtr-inline cmtr-${range.repr.toLowerCase()} ` + (range.fields.style || "");
 
-			if (suggest_mode === EditMode.SUGGEST && in_range) {
+			if (in_range) {
 				markContents(
 					decorations,
 					range,
@@ -121,9 +114,7 @@ function constructMarkings(
 				markContents(decorations, range, style + " cmtr-deletion", true);
 				if (live_preview) {
 					decorations.push(
-						Decoration.replace({
-							attributes: { "data-contents": "string" },
-						}).range((range as SubstitutionRange).middle, (range as SubstitutionRange).middle + 2),
+						hideMarkupDecoration.range((range as SubstitutionRange).middle, (range as SubstitutionRange).middle + 2),
 					);
 				}
 				markContents(decorations, range, style + " cmtr-addition", false);
@@ -139,7 +130,7 @@ function constructMarkings(
 			else if (range.type === SuggestionType.SUBSTITUTION) {
 				hideBracket(decorations, range, true, live_preview);
 				hideMetadata(decorations, range, live_preview);
-				decorations.push(Decoration.replace({}).range(range.range_start, (range as SubstitutionRange).middle + (live_preview ? 2 : 0)));
+				decorations.push(hideMarkupDecoration.range(range.range_start, (range as SubstitutionRange).middle + (live_preview ? 2 : 0)));
 				markContents(decorations, range, "cmtr-accepted", false);
 				hideBracket(decorations, range, false, live_preview);
 			} else {
@@ -157,7 +148,7 @@ function constructMarkings(
 				hideBracket(decorations, range, true, live_preview);
 				hideMetadata(decorations, range, live_preview);
 				markContents(decorations, range, "cmtr-accepted", true);
-				decorations.push(Decoration.replace({}).range((range as SubstitutionRange).middle + (live_preview ? 0 : 2), range.to - 3));
+				decorations.push(hideMarkupDecoration.range((range as SubstitutionRange).middle + (live_preview ? 0 : 2), range.to - 3));
 				hideBracket(decorations, range, false, live_preview);
 			} else {
 				hideSyntax(decorations, range, "", live_preview);
@@ -199,8 +190,9 @@ export const markupRenderer = (settings: PluginSettings) =>
 			const livepreview = tr.state.field(editorLivePreviewField);
 			const preview_mode = tr.state.facet(previewModeState);
 			const suggest_mode = tr.state.facet(editModeValueState);
+			const parsed_cm_ranges = tr.state.field(rangeParser);
 
-			const parsed_ranges = tr.state.field(rangeParser);
+			// EXPL: All decorations need to be reloaded (switching between LP and source, switching annotation preview mode and settings change)
 			if (
 				livepreview !== tr.startState.field(editorLivePreviewField) ||
 				preview_mode !== tr.startState.facet(previewModeState) ||
@@ -208,7 +200,7 @@ export const markupRenderer = (settings: PluginSettings) =>
 			) {
 				return RangeSet.of<Decoration>(
 					constructMarkings(
-						parsed_ranges.ranges.ranges,
+						parsed_cm_ranges.ranges.ranges,
 						tr.state.selection,
 						livepreview,
 						preview_mode,
@@ -216,14 +208,17 @@ export const markupRenderer = (settings: PluginSettings) =>
 						settings,
 					),
 				);
-			} else if (tr.docChanged || (!tr.docChanged && parsed_ranges.inserted_ranges.length)) {
+			}
+
+			// EXPL: Only the decorations that are in the changed range need to be reloaded (typing, deleting, etc.)
+			else if (tr.docChanged || (!tr.docChanged && parsed_cm_ranges.inserted_ranges.length)) {
 				return oldSet.map(tr.changes)
 					.update({
 						filter: (from, to, value) => {
 							return !tr.changes.touchesRange(from, to);
 						},
 						add: constructMarkings(
-							parsed_ranges.inserted_ranges,
+							parsed_cm_ranges.inserted_ranges,
 							tr.state.selection,
 							livepreview,
 							preview_mode,
@@ -231,7 +226,35 @@ export const markupRenderer = (settings: PluginSettings) =>
 							settings,
 						),
 					});
-			} else {
+			}
+
+			// EXPL: Only decorations that are in the old and new selection need to be reloaded (selection change)
+			else if (tr.newSelection !== tr.startState.selection) {
+				let all_selection_ranges = tr.newSelection;
+				for (const range of tr.startState.selection.ranges) {
+					all_selection_ranges = all_selection_ranges.addRange(range);
+				}
+				// PERF: 2-6ms for every selectionchange on stresstest (redrawing all decorations takes 12ms)
+				//		 0.01-0.05ms for regular small notes
+				const cm_ranges_in_selections = parsed_cm_ranges.ranges.ranges_in_ranges(all_selection_ranges.ranges as unknown as { from: number, to: number }[]);
+				return oldSet.map(tr.changes)
+					.update({
+						filter: (from, to, value) => {
+							return !cm_ranges_in_selections.some(range => from <= range.to && range.from <= to);
+						},
+						add: constructMarkings(
+							cm_ranges_in_selections,
+							tr.newSelection,
+							livepreview,
+							preview_mode,
+							suggest_mode,
+							settings,
+						),
+					});
+			}
+
+			// EXPL: No changes to the decorations
+			else {
 				return oldSet;
 			}
 		},
