@@ -16,14 +16,14 @@ export const DEFAULT_SETTINGS: PluginSettings = {
 	default_edit_mode: EditMode.CORRECTED,
 	default_preview_mode: PreviewMode.ALL,
 
-	diff_gutter: true,
-
 	editor_styling: false,
-	diff_gutter_hide_empty: false,
+
+	diff_gutter: true,
+	diff_gutter_hide_empty: true,
 
 	annotation_gutter: true,
 	annotation_gutter_included_types: 31,
-	annotation_gutter_hide_empty: false,
+	annotation_gutter_hide_empty: true,
 	annotation_gutter_default_fold_state: false,
 	annotation_gutter_fold_button: true,
 	annotation_gutter_resize_handle: true,
