@@ -29,7 +29,7 @@ export function postProcessorUpdate(app: App) {
 	for (const leaf of app.workspace.getLeavesOfType("markdown")) {
 		if (leaf.view instanceof MarkdownView) {
 			for (
-				const section of leaf.view.previewMode.renderer.sections.filter(s => s.el.querySelector(".commentator-preview"))
+				const section of leaf.view.previewMode.renderer.sections.filter(s => s.el.querySelector(".cmtr-preview"))
 				) {
 				section.rendered = false;
 				section.html = "";
