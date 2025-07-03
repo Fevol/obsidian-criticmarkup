@@ -77,8 +77,6 @@ export default class CommentatorPlugin extends Plugin {
 
 	defaultEditModeExtension: Extension[] = [];
 
-	remove_monkeys: (() => void)[] = [];
-
 	settings_tab = "general";
 
 	database: Database<CriticMarkupRange[]> = new Database(
@@ -171,7 +169,7 @@ export default class CommentatorPlugin extends Plugin {
 		// // 	Originally: onload of plugin
 		// 		// @ts-expect-error
 		// 		const proto = Object.getPrototypeOf(new MarkdownView(this.app.workspace));
-		// 		this.remove_monkeys.push(around(proto, {
+		// 		this.register(around(proto, {
 		// 			setState: (oldMethod) => {
 		// 				return async function (viewState: ViewState, eState?: any){
 		// 					// @ts-expect-error This is a shadowed variable, cursed, don't do this.
@@ -260,7 +258,7 @@ export default class CommentatorPlugin extends Plugin {
 		for (const command of commands(this))
 			this.addCommand(command);
 
-		this.remove_monkeys.push(around(this.app.plugins, {
+		this.register(around(this.app.plugins, {
 			uninstallPlugin: (oldMethod) => {
 				return async (id: string) => {
 					oldMethod && await oldMethod.apply(this.app.plugins, [id]);
@@ -342,8 +340,6 @@ export default class CommentatorPlugin extends Plugin {
 		this.editModeHeaderModeButton.detachButtons();
 
 		MarkdownPreviewRenderer.unregisterPostProcessor(this.postProcessor);
-
-		for (const monkey of this.remove_monkeys) monkey();
 
 		this.database.unload();
 
