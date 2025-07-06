@@ -1,5 +1,5 @@
 import { decodeHTML, DecodingMode } from "entities";
-import { type MarkdownPostProcessorContext } from "obsidian";
+import {type MarkdownPostProcessorContext, MarkdownView} from "obsidian";
 
 import { type PluginSettings, PreviewMode } from "../../../types";
 
@@ -12,8 +12,9 @@ import {
 	SubstitutionRange,
 	SuggestionType,
 } from "../../base";
-import { renderCommentWidget } from "../live-preview/comments/widget";
 import { renderCommentWidget } from "../live-preview";
+import {COMMENTATOR_GLOBAL} from "../../../global";
+import {previewModeState} from "../../settings";
 
 // FIXME: Extracted due to renderCommentWidget function importing obsidian package, which could not be marked as external in the inlinepluginworker
 // FIXME: Extracted due to renderCommentWidget function importing obsidian package, which could not be marked as external in the inlinepluginworker
@@ -39,7 +40,16 @@ export async function postProcess(el: HTMLElement, ctx: MarkdownPostProcessorCon
 	// Undo HTML encoding of specific characters
 	let element_contents = decodeHTML(el.innerHTML, DecodingMode.Strict);
 
+	let preview_mode = settings.default_preview_mode;
 	if (ctx) {
+		// FIXME: Temporarily getting preview mode from the leaf editor state
+		if (COMMENTATOR_GLOBAL.app.workspace.activeLeaf?.view instanceof MarkdownView) {
+			const view = COMMENTATOR_GLOBAL.app.workspace.activeLeaf.view;
+			if (view.previewMode.docId === ctx.docId) {
+				preview_mode = view.editor.cm.state.field(previewModeState);
+			}
+		}
+
 		const lines = ctx.getSectionInfo(el);
 		if (lines) {
 			const all_ranges = getRangesInText(lines.text);
@@ -99,7 +109,7 @@ export async function postProcess(el: HTMLElement, ctx: MarkdownPostProcessorCon
 					const new_el = rangePostProcess(
 						range,
 						false,
-						settings.default_preview_mode,
+						preview_mode,
 						"div",
 						left,
 						element_contents,
@@ -162,7 +172,7 @@ export async function postProcess(el: HTMLElement, ctx: MarkdownPostProcessorCon
 	if (missing_range && left_outside && right_outside && missing_range.type === SuggestionType.SUBSTITUTION) {
 		const missing_range_middle = element_contents.indexOf(CM_All_Brackets[SuggestionType.SUBSTITUTION][1]);
 		const TempRange = new SubstitutionRange(-Infinity, missing_range_middle, Infinity, element_contents);
-		el.innerHTML = rangePostProcess(TempRange, true, settings.default_preview_mode, "span") as string;
+		el.innerHTML = rangePostProcess(TempRange, true, preview_mode, "span") as string;
 		return;
 	}
 
@@ -182,14 +192,14 @@ export async function postProcess(el: HTMLElement, ctx: MarkdownPostProcessorCon
 		} else {
 			TempRange = new RANGE_PROTOTYPE_MAPPER[missing_range.type](-Infinity, missing_range_end, element_contents);
 		}
-		new_element.push(rangePostProcess(TempRange, true, settings.default_preview_mode, "span"));
+		new_element.push(rangePostProcess(TempRange, true, preview_mode, "span"));
 		previous_start = TempRange.to;
 	}
 
 	// DEFAULT: Ranges get processed as normal (ranges which exists completely within the block)
 	for (const range of element_ranges) {
 		new_element.push(element_contents.slice(previous_start, range.from));
-		new_element.push(rangePostProcess(range, true, settings.default_preview_mode, "span"));
+		new_element.push(rangePostProcess(range, true, preview_mode, "span"));
 		previous_start = range.to;
 	}
 

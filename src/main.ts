@@ -496,12 +496,21 @@ export default class CommentatorPlugin extends Plugin {
 	}
 
 	setPreviewMode(view: MarkdownFileInfo | null, mode: number) {
-		if (view && view.editor) {
-			view.editor.cm.dispatch(view.editor.cm.state.update({
-				effects: [
-					previewMode.reconfigure(previewModeState.of(mode)),
-				],
-			}));
+		if (view && view instanceof MarkdownView) {
+			if (view.editor) {
+				view.editor.cm.dispatch(view.editor.cm.state.update({
+					effects: [
+						previewMode.reconfigure(previewModeState.of(mode)),
+					],
+				}));
+			}
+
+			if (view.previewMode) {
+				view.previewMode.rerender(true);
+
+				// FIXME: Surgical rerendering is broken
+				// postProcessorUpdate(this.app);
+			}
 
 			this.previewModeStatusBarButton.updateButton(mode);
 			this.previewModeHeaderButton.updateButton(view as MarkdownView, mode);
