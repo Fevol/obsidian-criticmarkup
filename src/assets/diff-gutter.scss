@@ -1,3 +1,7 @@
+.cm-gutters.cm-gutters:has(+.cm-gutters) {
+  margin-right: var(--size-4-2);
+}
+
 .cm-gutters.cm-gutters:has(> .cmtr-diff-gutter) {
   // How far away the gutter should be removed from the text
   //padding-inline-end: 1em;

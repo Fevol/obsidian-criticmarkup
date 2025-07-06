@@ -127,7 +127,9 @@ export default class CommentatorPlugin extends Plugin {
 
 		// TODO: Rerender gutter on Ctrl+Scroll
 		if (this.settings.diff_gutter) {
-			this.editorExtensions.push(diffGutterCompartment.of(diffGutter));
+			// NOTE: Prec.low moves the gutter to the right of the line numbers gutter
+			//		This is consistent with how IDE's display diffs
+			this.editorExtensions.push(Prec.low(diffGutterCompartment.of(diffGutter)));
 		}
 
 		if (this.settings.tag_completion)
