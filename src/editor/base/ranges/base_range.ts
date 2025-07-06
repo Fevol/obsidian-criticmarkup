@@ -210,6 +210,10 @@ export abstract class CriticMarkupRange {
 		return !(start > this.to || end < this.from);
 	}
 
+	partially_in_full_range(start: number, end: number) {
+		return !(start > this.full_range_back || end < this.full_range_front);
+	}
+
 	encloses_range(start: number, end: number, strict = false) {
 		if (strict) return this.from < start && this.to > end;
 		return this.from <= start && this.to >= end;

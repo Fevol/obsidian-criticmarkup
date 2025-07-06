@@ -74,14 +74,20 @@ export class CriticMarkupRanges {
 		return this.tree.search([start, end]) as CriticMarkupRange[];
 	}
 
-	ranges_in_ranges(ranges: { from: number; to: number }[]) {
+	ranges_in_intervals(intervals: { from: number; to: number }[]) {
 		const unique_ranges = new Set<CriticMarkupRange>();
-		for (const range of ranges) {
+		for (const range of intervals) {
 			for (const found_range of this.tree.search([range.from, range.to]) as CriticMarkupRange[]) {
 				unique_ranges.add(found_range);
+				if (found_range.base_range) {
+					unique_ranges.add(found_range.base_range);
+					for (const reply of found_range.base_range.replies) {
+						unique_ranges.add(reply);
+					}
+				}
 			}
 		}
-		return Array.from(unique_ranges);
+		return Array.from(unique_ranges).sort((a, b) => a.from - b.from);
 	}
 
 	// ranges_fully_in_range(start: number, end: number) {

@@ -1,6 +1,6 @@
 import {type Extension, RangeSet, StateEffect, StateField} from "@codemirror/state";
 import {Decoration, type DecorationSet, EditorView} from "@codemirror/view";
-import {rangeParser} from "../../../base";
+import {rangeParser} from "../../base";
 
 type MarkupFocus = { from: number; to: number; unfocus?: boolean };
 export const markupFocusEffect = StateEffect.define<MarkupFocus>();

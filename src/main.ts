@@ -19,7 +19,7 @@ import {cmenuGlobalCommands, cmenuViewportCommands, commands} from "./editor/uix
 import {bracketMatcher, editorKeypressCatcher, rangeCorrecter} from "./editor/uix/extensions";
 
 import {annotationGutter, annotationGutterCompartment, diffGutter, diffGutterCompartment} from "./editor/renderers/gutters";
-import {commentRenderer, markupRenderer, focusRenderer, markupFocusState} from "./editor/renderers/live-preview";
+import {livepreviewRenderer, focusRenderer, markupFocusState} from "./editor/renderers/live-preview";
 import {postProcess, postProcessorRerender, postProcessorUpdate} from "./editor/renderers/post-process";
 import {
 	type MetadataStatusBarButton,
@@ -113,16 +113,17 @@ export default class CommentatorPlugin extends Plugin {
 
 		this.editorExtensions.push(rangeParser);
 
-		if (this.settings.comment_style === "icon")
-			this.editorExtensions.push(Prec.low(commentRenderer(this.settings)));
 		if (this.settings.annotation_gutter) {
 			this.editorExtensions.push(
 				annotationGutterCompartment.of(Prec.low(annotationGutter(this.app) as Extension[]))
 			);
 		}
 
-		if (this.settings.live_preview)
-			this.editorExtensions.push(Prec.low(markupRenderer(this.settings)));
+		if (this.settings.live_preview) {
+			this.editorExtensions.push(
+				Prec.low(livepreviewRenderer(this.settings)),
+			);
+		}
 
 		// TODO: Rerender gutter on Ctrl+Scroll
 		if (this.settings.diff_gutter) {
@@ -372,6 +373,8 @@ export default class CommentatorPlugin extends Plugin {
 		this.editModeStatusBarButton.setRendering(this.changed_settings.status_bar_edit_button);
 		this.metadataStatusBarButton.setRendering(this.changed_settings.status_bar_metadata_button);
 
+		// TODO: Is it guaranteed that only one configuration will always be changed?
+		//		If so, then this can be reduced to a switch statement
 		if (this.changed_settings.post_processor !== undefined) {
 			if (this.changed_settings.post_processor) {
 				this.postProcessor = this.registerMarkdownPostProcessor(

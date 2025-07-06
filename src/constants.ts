@@ -15,8 +15,31 @@ export const DEFAULT_SETTINGS: PluginSettings = {
 
 	default_edit_mode: EditMode.CORRECTED,
 	default_preview_mode: PreviewMode.ALL,
-
+	comment_style: "icon",
 	editor_styling: false,
+	markup_focus: {
+		[EditMode.OFF]: {
+			show_styling: true,
+			show_syntax: true,
+			show_metadata: true,
+			focus_annotation: true,
+			show_comment: true,
+		},
+		[EditMode.CORRECTED]: {
+			show_styling: true,
+			show_syntax: false,
+			show_metadata: false,
+			focus_annotation: true,
+			show_comment: false,
+		},
+		[EditMode.SUGGEST]: {
+			show_styling: true,
+			show_syntax: false,
+			show_metadata: false,
+			focus_annotation: true,
+			show_comment: false,
+		},
+	},
 
 	diff_gutter: true,
 	diff_gutter_hide_empty: true,
@@ -28,9 +51,7 @@ export const DEFAULT_SETTINGS: PluginSettings = {
 	annotation_gutter_fold_button: true,
 	annotation_gutter_resize_handle: true,
 	annotation_gutter_focus_on_click: true,
-
 	annotation_gutter_width: 300,
-	comment_style: "icon",
 
 	tag_completion: true,
 	tag_correcter: true,

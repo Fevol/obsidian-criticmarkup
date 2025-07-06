@@ -13,6 +13,7 @@ import {
 	SuggestionType,
 } from "../../base";
 import { renderCommentWidget } from "../live-preview/comments/widget";
+import { renderCommentWidget } from "../live-preview";
 
 // FIXME: Extracted due to renderCommentWidget function importing obsidian package, which could not be marked as external in the inlinepluginworker
 // FIXME: Extracted due to renderCommentWidget function importing obsidian package, which could not be marked as external in the inlinepluginworker

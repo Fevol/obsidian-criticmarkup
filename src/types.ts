@@ -51,6 +51,29 @@ export type CursorOptionsMap = Record<SuggestionType, RANGE_CURSOR_MOVEMENT_OPTI
 
 export type BracketOptionsMap = Record<SuggestionType, RANGE_BRACKET_MOVEMENT_OPTION>;
 
+export interface FocusModeSettings {
+	/**
+	 * Whether the range should still be styled when it is focused
+	 */
+	show_styling: boolean;
+	/**
+	 * Whether the syntax of the range should be shown when it is focused
+	 */
+	show_syntax: boolean;
+	/**
+	 * Whether the metadata of the range should be shown when it is focused
+	 */
+	show_metadata: boolean;
+	/**
+	 * Whether the annotation in the annotations gutter should be focused when the range is focused
+	 */
+	focus_annotation: boolean;
+	/**
+	 * Whether comments hidden as icons should be shown when the range is focused
+	 */
+	show_comment: boolean;
+}
+
 export interface PluginSettings {
 	/**
 	 * String to store the version of the plugin settings (used for migrations)
@@ -71,16 +94,25 @@ export interface PluginSettings {
 	 * - 2: Visualise 'reject' action (only show regular text and Deletion Ranges)
 	 */
 	default_preview_mode: PreviewMode;
+	/**
+	 * How comments should be rendered while in live-preview mode
+	 * - "inline": Show comments like all other markup, all text of the comment is visible inside the note itself
+	 * - "icon": Comments are hidden away and replaced with a comment icon, hovering over the comment reveals the text
+	 */
+	comment_style: "inline" | "icon";
+	/**
+	 * Keep styling ranges even if cursor is inside it
+	 */
+	editor_styling: boolean;
+	/**
+	 * Settings for every edit mode determining how a range should be displayed when it is focused in the editor
+	 */
+	markup_focus: Record<EditMode, FocusModeSettings>;
 
 	/**
 	 * Render a gutter marking locations of ranges in the document
 	 */
 	diff_gutter: boolean;
-	/**
-	 * Keep styling ranges even if cursor is inside it
-	 */
-	editor_styling: boolean;
-
 	/**
 	 * Hide the diff gutter if no suggestions are present in the note
 	 */
@@ -114,16 +146,10 @@ export interface PluginSettings {
 	 * When clicking on an annotation in the _editor_, focus its corresponding annotation in the gutter - if it exists
 	 */
 	annotation_gutter_focus_on_click: boolean;
-
 	/**
 	 * How much space the annotation gutter should take up
 	 */
 	annotation_gutter_width: number;
-
-	/**
-	 * How comments should be rendered
-	 */
-	comment_style: "inline" | "icon";
 
 	/**
 	 * Complete criticmarkup tags when they're being entered in
