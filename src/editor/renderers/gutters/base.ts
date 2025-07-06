@@ -237,8 +237,9 @@ export class UpdateContext {
 		// MODIFICATION: Markers are collected up until the end of the block
 		advanceCursor(this.cursor, localMarkers, line.to);
 
-		// Never happens (related to lineClass)
-		if (extraMarkers.length) localMarkers = localMarkers.concat(extraMarkers);
+		// MODIFICATION: Disabled adding extraMarkers, this particularly breaks when using the line-numbers gutter
+		// TODO: Verify whether having cm-active is desirable (and to use it without causing issues for the gutters)
+		// if (extraMarkers.length) localMarkers = localMarkers.concat(extraMarkers);
 
 		// Only happens when we set lineMarker in config
 		const forLine = this.gutter.config.lineMarker(view, line, localMarkers);
