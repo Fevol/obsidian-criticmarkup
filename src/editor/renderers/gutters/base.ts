@@ -340,7 +340,9 @@ export class GutterView {
 		this.prevViewport = view.viewport;
 		this.dom = document.createElement("div");
 		this.dom.className = "cm-gutters";
-		this.dom.setAttribute("aria-hidden", "true");
+		// TODO: Check if there is a way to respect this attribute
+		// MODIFICATION: Removed aria-hidden attribute, since annotations can claim focus (on their inputs)
+		// this.dom.setAttribute("aria-hidden", "true");
 		this.dom.style.minHeight = (this.view.contentHeight /** / this.view.scaleY*/) + "px";
 		this.gutters = this.createGutters(view);
 		for (const gutter of this.gutters) this.dom.appendChild(gutter.dom);
