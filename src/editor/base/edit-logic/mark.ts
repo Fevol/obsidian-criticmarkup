@@ -113,7 +113,7 @@ function mark_range(
 	type: MarkType,
 	metadata_fields?: MetadataFields,
 ): EditorSuggestion | undefined {
-	const in_range = ranges.ranges_in_range(from, to);
+	const in_range = ranges.ranges_in_interval(from, to);
 
 	const left_range = ranges.at_cursor(from, false);
 	const right_range = ranges.at_cursor(to, true);
@@ -447,7 +447,7 @@ export function mark_ranges(
 	metadata_fields?: MetadataFields,
 	force = false,
 ): EditorSuggestion[] {
-	const in_range = ranges.ranges_in_range(from, to);
+	const in_range = ranges.ranges_in_interval(from, to);
 	const left_range = in_range.at(0);
 	const right_range = in_range.at(-1);
 

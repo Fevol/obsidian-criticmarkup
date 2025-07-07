@@ -7,7 +7,7 @@ import { CriticMarkupRange, SuggestionType } from "../ranges";
 
 export function acceptSuggestions(state: EditorState, from?: number, to?: number): ChangeSpec[] {
 	const range_field = state.field(rangeParser).ranges;
-	return ((from || to) ? range_field.ranges_in_range(from ?? 0, to ?? Infinity) : range_field.ranges)
+	return ((from || to) ? range_field.ranges_in_interval(from ?? 0, to ?? Infinity) : range_field.ranges)
 		.filter(range =>
 			range.type === SuggestionType.ADDITION || range.type === SuggestionType.DELETION ||
 			range.type === SuggestionType.SUBSTITUTION
@@ -26,7 +26,7 @@ export async function acceptSuggestionsInFile(app: App, file: TFile, ranges: Cri
 
 export function rejectSuggestions(state: EditorState, from?: number, to?: number): ChangeSpec[] {
 	const range_field = state.field(rangeParser).ranges;
-	return ((from || to) ? range_field.ranges_in_range(from ?? 0, to ?? Infinity) : range_field.ranges)
+	return ((from || to) ? range_field.ranges_in_interval(from ?? 0, to ?? Infinity) : range_field.ranges)
 		.filter(range =>
 			range.type === SuggestionType.ADDITION || range.type === SuggestionType.DELETION ||
 			range.type === SuggestionType.SUBSTITUTION

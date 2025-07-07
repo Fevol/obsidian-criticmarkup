@@ -70,7 +70,7 @@ export class CriticMarkupRanges {
 		return undefined;
 	}
 
-	ranges_in_range(start: number, end: number) {
+	ranges_in_interval(start: number, end: number) {
 		return this.tree.search([start, end]) as CriticMarkupRange[];
 	}
 
@@ -108,7 +108,7 @@ export class CriticMarkupRanges {
 		let front_range: undefined | CriticMarkupRange, back_range: undefined | CriticMarkupRange;
 
 		if (!ranges)
-			ranges = this.ranges_in_range(from, to);
+			ranges = this.ranges_in_interval(from, to);
 
 		if (ranges.length === 0)
 			return { output: doc.sliceString(from, to), from, to };

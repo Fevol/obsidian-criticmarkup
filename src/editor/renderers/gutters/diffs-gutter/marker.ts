@@ -35,7 +35,7 @@ export const diffGutterMarkers = ViewPlugin.fromClass(
 
 			const line_markers: Record<number, { isStart: boolean; isEnd: boolean; types: Set<SuggestionType> }> = {};
 
-			for (const range of ranges.ranges_in_range(view.viewport.from, view.viewport.to)) {
+			for (const range of ranges.ranges_in_interval(view.viewport.from, view.viewport.to)) {
 				const range_line_start = view.state.doc.lineAt(range.from).number;
 				const range_line_end = view.state.doc.lineAt(range.to).number;
 				const lines = Array.from(

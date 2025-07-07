@@ -29,7 +29,7 @@ export const focusRenderer = StateField.define<DecorationSet>({
         const markupEndFocus = tr.state.field(markupFocusState);
 
         if (markupStartFocus !== markupEndFocus) {
-            const ranges= tr.state.field(rangeParser).ranges.ranges_in_range(markupEndFocus.from, markupEndFocus.to);
+            const ranges= tr.state.field(rangeParser).ranges.ranges_in_interval(markupEndFocus.from, markupEndFocus.to);
             if (
                 ranges.length &&
                 ranges[0].base_range === ranges.at(-1)?.base_range &&

@@ -15,8 +15,8 @@ function compareChanges(previous: CriticMarkupRanges, current: CriticMarkupRange
 
 	for (const change of changes) {
 		const current_offset = change.offset.added - change.offset.removed;
-		const ranges_affected = previous.ranges_in_range(change.from, change.to);
-		const new_ranges = current.ranges_in_range(change.from + offset, change.to + current_offset + offset);
+		const ranges_affected = previous.ranges_in_interval(change.from, change.to);
+		const new_ranges = current.ranges_in_interval(change.from + offset, change.to + current_offset + offset);
 
 		if (ranges_affected.length)
 			removed.push(...ranges_affected);

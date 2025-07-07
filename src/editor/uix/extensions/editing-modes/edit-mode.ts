@@ -59,7 +59,7 @@ function applyCorrectedEdit(tr: Transaction, settings: PluginSettings): Transact
 			// NOTE: This change exists to make sure that most regular operations will still function as expected
 			//       Duplicate ranges (caused by bolding) will get filtered away automatically,
 			//       bolding over range is problematic though
-			const ranges_in_range = ranges.ranges_in_range(editor_change.from, editor_change.to);
+			const ranges_in_range = ranges.ranges_in_interval(editor_change.from, editor_change.to);
 			if (!ranges_in_range.length) {
 				changes.push({ from: editor_change.from, to: editor_change.to, insert: editor_change.inserted });
 				selections.push(tr.newSelection.ranges[0]);
