@@ -25,6 +25,7 @@ export const annotationGutterCompartment = new Compartment();
 
 export function addCommentToView(editor: EditorView, range: CriticMarkupRange | undefined) {
 	const cursor = range ? range.full_range_back : editor.state.selection.main.head;
+	const reply_idx = range ? range.full_thread.length : -1;
 	editor.dispatch(editor.state.update({
 		changes: {
 			from: cursor,
@@ -43,7 +44,7 @@ export function addCommentToView(editor: EditorView, range: CriticMarkupRange | 
 			annotationGutterFocusAnnotation.of({
 				from: cursor,
 				to: cursor,
-				index: range ? range.full_thread.length : -1,
+				index: reply_idx,
 			}),
 		]
 	}))});

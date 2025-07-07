@@ -295,8 +295,10 @@ export class AnnotationMarker extends GutterMarker {
 	focus_annotation(index: number = -1, scroll: boolean = false) {
 		if (index === -1) {
 			this.annotation_thread.classList.toggle("cmtr-anno-gutter-thread-highlight", true);
-		} else {
+		} else if (index >= 0 && index < this.annotation_thread.children.length) {
 			this.annotation_thread.children.item(index)!.dispatchEvent(new MouseEvent("dblclick"));
+		} else {
+			console.error("[Commentator] Invalid index for focusing annotation:", index);
 		}
 
 		if (scroll) {
