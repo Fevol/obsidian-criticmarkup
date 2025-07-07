@@ -32,6 +32,13 @@ export function addCommentToView(editor: EditorView, range: CriticMarkupRange | 
 			insert: create_range(SuggestionType.COMMENT, ""),
 		},
 		selection: EditorSelection.cursor(cursor),
+	}));
+
+	// EXPL: This code ensures that the input of a new comment is focused on when created
+	// FIXME: A more canonical way is required to wait till the CM state update (the new comment element needs to be rendered)
+	//   Some attempts that did not work:
+	//    - using `sequential` in the `update` method
+	setTimeout(() => { editor.dispatch(editor.state.update({
 		annotations: [
 			annotationGutterFocusAnnotation.of({
 				from: cursor,
@@ -39,5 +46,5 @@ export function addCommentToView(editor: EditorView, range: CriticMarkupRange | 
 				index: range ? range.full_thread.length : -1,
 			}),
 		]
-	}));
+	}))});
 }
