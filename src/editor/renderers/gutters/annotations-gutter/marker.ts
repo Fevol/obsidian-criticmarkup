@@ -5,7 +5,7 @@ import {Component, editorEditorField, editorInfoField, MarkdownRenderer, Menu, N
 
 import {COMMENTATOR_GLOBAL} from "../../../../global";
 import {EmbeddableMarkdownEditor} from "../../../../ui/embeddable-editor";
-import {CriticMarkupRange, rangeParser, SuggestionType} from "../../../base";
+import {acceptSuggestions, CriticMarkupRange, rangeParser, rejectSuggestions, SuggestionType} from "../../../base";
 import {create_range} from "../../../base/edit-util/range-create";
 import {addCommentToView, annotationGutter} from "./index";
 import {AnnotationInclusionType} from "../../../../constants";
@@ -189,21 +189,86 @@ class AnnotationNode extends Component {
 
 		const menu = new Menu();
 		menu.addItem((item) => {
-			item.setTitle("Edit comment")
-				.setIcon("pencil")
-				.onClick(() => {
-					this.renderSource();
-				});
-		});
-		menu.addItem((item) => {
-			item.setTitle("Reply to comment")
+			item.setTitle("Add reply")
+				.setSection("range-controls")
 				.setIcon("reply")
 				.onClick(() => {
 					addCommentToView(this.marker.view, this.range);
 				});
 		});
+
+		if (this.range.type === SuggestionType.COMMENT) {
+			menu.addItem((item) => {
+				item.setTitle("Edit comment")
+					.setIcon("pencil")
+					.setSection("range-controls")
+					.onClick(() => {
+						this.renderSource();
+					});
+			});
+			// TODO: When removing comments, use a handler function that determines whether it should be archived or not
+			menu.addItem((item) => {
+				item.setTitle("Remove comment")
+					.setIcon("cross")
+					.setSection("range-controls")
+					.onClick(() => {
+						this.marker.view.dispatch({ changes: { from: this.range.from, to: this.range.to, insert: "" } });
+					});
+			});
+			if (this.range.replies.length > 0) {
+				menu.addItem((item) => {
+					item.setTitle("Remove comment thread")
+						.setIcon("trash")
+						.setSection("range-controls")
+						.onClick(() => {
+							this.marker.view.dispatch({
+								changes: {
+									from: this.range.full_range_front,
+									to: this.range.full_range_back,
+									insert: "",
+								},
+							});
+						});
+				});
+			}
+		} else if (this.range.type !== SuggestionType.HIGHLIGHT) {
+			menu.addItem((item) => {
+				item.setTitle("Accept changes")
+					.setIcon("check")
+					.setSection("range-controls")
+					.onClick(() => {
+						this.marker.view.dispatch({ changes: acceptSuggestions(this.marker.view.state, this.range.from, this.range.to) });
+					});
+			});
+			menu.addItem((item) => {
+				item.setTitle("Reject changes")
+					.setIcon("cross")
+					.setSection("range-controls")
+					.onClick(() => {
+						this.marker.view.dispatch({ changes: rejectSuggestions(this.marker.view.state, this.range.from, this.range.to) });
+					});
+			});
+			if (this.range.replies.length > 0) {
+				menu.addItem((item) => {
+					item.setTitle("Remove all comments")
+						.setIcon("trash")
+						.setSection("range-controls")
+						.onClick(() => {
+							this.marker.view.dispatch({
+								changes: {
+									from: this.range.replies[0].from,
+									to: this.range.replies[this.range.replies.length - 1].to,
+									insert: "",
+								},
+							});
+						});
+				});
+			}
+		}
+
 		menu.addItem((item) => {
 			item.setTitle("Fold gutter")
+				.setSection("gutter-controls")
 				.setIcon("arrow-right-from-line")
 				.onClick(() => {
 					// FIXME: Remove direct access of gutter, prefer fold annotation?
@@ -213,6 +278,7 @@ class AnnotationNode extends Component {
 		menu.addItem((item) => {
 			const submenu = item.setTitle("Included annotations")
 				.setIcon("eye")
+				.setSection("gutter-controls")
 				.setSubmenu();
 
 			let current_settings = this.marker.view.state.facet(annotationGutterIncludedTypesState);

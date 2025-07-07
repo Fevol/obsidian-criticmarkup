@@ -5,14 +5,15 @@ import type { App, TFile } from "obsidian";
 import { applyToText, rangeParser } from "../edit-util";
 import { CriticMarkupRange, SuggestionType } from "../ranges";
 
-export function acceptSuggestions(state: EditorState, from?: number, to?: number): ChangeSpec[] {
+// TODO: More sophisticated removal handling
+export function acceptSuggestions(state: EditorState, from?: number, to?: number, remove_attached_comments: boolean = true): ChangeSpec[] {
 	const range_field = state.field(rangeParser).ranges;
 	return ((from || to) ? range_field.ranges_in_interval(from ?? 0, to ?? Infinity) : range_field.ranges)
 		.filter(range =>
 			range.type === SuggestionType.ADDITION || range.type === SuggestionType.DELETION ||
 			range.type === SuggestionType.SUBSTITUTION
 		)
-		.map(range => ({ from: range.from, to: range.to, insert: range.accept() }));
+		.map(range => ({ from: range.from, to: remove_attached_comments ? range.full_range_back : range.to, insert: range.accept() }));
 }
 
 export async function acceptSuggestionsInFile(app: App, file: TFile, ranges: CriticMarkupRange[]) {
@@ -24,14 +25,14 @@ export async function acceptSuggestionsInFile(app: App, file: TFile, ranges: Cri
 	await app.vault.modify(file, output);
 }
 
-export function rejectSuggestions(state: EditorState, from?: number, to?: number): ChangeSpec[] {
+export function rejectSuggestions(state: EditorState, from?: number, to?: number, remove_attached_comments: boolean = true): ChangeSpec[] {
 	const range_field = state.field(rangeParser).ranges;
 	return ((from || to) ? range_field.ranges_in_interval(from ?? 0, to ?? Infinity) : range_field.ranges)
 		.filter(range =>
 			range.type === SuggestionType.ADDITION || range.type === SuggestionType.DELETION ||
 			range.type === SuggestionType.SUBSTITUTION
 		)
-		.map(range => ({ from: range.from, to: range.to, insert: range.reject() }));
+		.map(range => ({ from: range.from, to: remove_attached_comments ? range.full_range_back : range.to, insert: range.reject() }));
 }
 
 export async function rejectSuggestionsInFile(app: App, file: TFile, ranges: CriticMarkupRange[]) {
