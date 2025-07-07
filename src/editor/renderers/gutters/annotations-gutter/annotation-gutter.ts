@@ -166,6 +166,7 @@ export class AnnotationGutterView extends GutterView {
 		 // Where the gutter element should be located (i.e. flush with the top of the block)
 		const desiredLocation = element.block!.top;
 		 // Where the gutter element is currently located (possibly pushed down by other gutter elements)
+		// FIXME: offsetTop not defined error (repr: when interacting in phantom comment note)
 		const currentLocation = (element.dom.children[markerIndex] as HTMLElement).offsetTop;
 
 		// Determine the offset between the current location and the desired location
@@ -491,6 +492,13 @@ class AnnotationSingleGutterView extends SingleGutterView {
 
 		// Boolean returns true only if markers have changed within the viewport (so outside markers don't count)
 		return result;
+	}
+
+	destroy() {
+		this.fold_button?.remove();
+		this.resize_handle?.remove();
+
+		super.destroy();
 	}
 }
 
