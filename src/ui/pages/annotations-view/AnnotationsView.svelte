@@ -21,6 +21,8 @@
         content_filter?: ContentFilter;
         author_filter?: AuthorFilter;
         date_filter?: number[] | undefined;
+
+        sync_props: (args: Record<string, unknown>[]) => void;
     }
 
     let {
@@ -30,6 +32,8 @@
         content_filter = ContentFilter.ALL,
         author_filter = AuthorFilter.ALL,
         date_filter = undefined,
+
+        sync_props
     }: Props = $props();
 
     let search_filter: string = $state("");
@@ -104,7 +108,19 @@
     const debouncedUpdate = debounce(filterRanges, 500);
 
     const save_view_state = debounce(
-        () => plugin.app.workspace.requestSaveLayout(),
+        () => {
+            sync_props(
+                {
+                    range_type_filter,
+                    location_filter,
+                    content_filter,
+                    author_filter,
+                    date_filter,
+                    search_filter,
+                }
+            );
+            plugin.app.workspace.requestSaveLayout();
+        },
         2500,
     );
 

@@ -63,19 +63,27 @@ export class CommentatorAnnotationsView extends ItemView {
 	}
 
 	async setState(state: Partial<CommentatorAnnotationsViewState>, result: ViewStateResult): Promise<void> {
-		if (!this.view) {
-			this.props.plugin = this.plugin;
-			this.view = mount(AnnotationsViewPage, {
-				target: this.containerEl,
-				props: this.props,
-			});
-		}
-
 		this.props.range_type_filter = state.range_type_filter || 0;
 		this.props.location_filter = state.location_filter || 0;
 		this.props.content_filter = state.content_filter || 0;
 		this.props.author_filter = state.author_filter || 0;
 		this.props.date_filter = state.date_filter || undefined;
+
+		if (!this.view) {
+			this.props.plugin = this.plugin;
+			this.view = mount(AnnotationsViewPage, {
+				target: this.containerEl,
+				props: {
+					...this.props,
+					// TODO: Find a more canonical way to get props synced from the view to the mounter
+					sync_props: (props: Record<string, unknown>[]) => {
+						for (const [key, value] of Object.entries(props)) {
+							this.props[key as keyof typeof this.props] = value as unknown as any;
+						}
+					}
+				},
+			});
+		}
 
 		await super.setState(state, result);
 	}
