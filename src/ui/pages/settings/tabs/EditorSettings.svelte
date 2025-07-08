@@ -10,7 +10,7 @@
     inline:
       "Comments receive a background color and are fully visible (similar to suggestions)",
     icon: "Comments are displayed as icons and can be hovered over to reveal the comment",
-    block: "Comments are displayed in the right-margin of the editor",
+    none: "Comments are not rendered in the editor, use this with the annotation gutter",
   };
 </script>
 
@@ -126,6 +126,7 @@
       options={[
         { value: "inline", text: "Inline" },
         { value: "icon", text: "Icon" },
+        { value: "none", text: "Hidden" },
       ]}
       value={comment_rendering_mode}
       onChange={(value) => {

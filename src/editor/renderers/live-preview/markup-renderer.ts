@@ -123,15 +123,16 @@ export function constructDecorations(
                 range_show_styling = in_range ? show_styling : undefined;
 
 
-            if (!(show_comment && in_range) && range.type === SuggestionType.COMMENT && settings.comment_style === "icon") {
-                // EXPL: Comment ranges are only shown as icons in live preview mode
-                if (range.base_range === range) {
+            if (!(show_comment && in_range) && range.type === SuggestionType.COMMENT && settings.comment_style !== "inline") {
+                if (settings.comment_style === "icon" && range.base_range === range) {
+                    // EXPL: Comment ranges are only shown as icons in live preview mode
                     decorations.push(
                         Decoration.replace({
                             widget: new CommentIconWidget(range, settings.annotation_gutter),
                         }).range(range.from, range.to),
                     );
                 } else {
+                    // EXPL: Either the comment is not the top of a range, or it is hidden by comment_style = "none"
                     decorations.push(
                         Decoration.replace({}).range(range.from, range.to),
                     );

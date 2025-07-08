@@ -98,8 +98,9 @@ export interface PluginSettings {
 	 * How comments should be rendered while in live-preview mode
 	 * - "inline": Show comments like all other markup, all text of the comment is visible inside the note itself
 	 * - "icon": Comments are hidden away and replaced with a comment icon, hovering over the comment reveals the text
+	 * - "none": Do not show comments in live preview mode, they are only visible in the gutter or global comment view
 	 */
-	comment_style: "inline" | "icon";
+	comment_style: "inline" | "icon" | "none";
 	/**
 	 * Keep styling ranges even if cursor is inside it
 	 */
