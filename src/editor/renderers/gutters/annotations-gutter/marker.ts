@@ -188,38 +188,31 @@ class AnnotationNode extends Component {
 		keepContextMenuOpen(true);
 
 		const menu = new Menu();
-		menu.addItem((item) => {
-			item.setTitle("Add reply")
-				.setSection("range-controls")
-				.setIcon("reply")
-				.onClick(() => {
-					addCommentToView(this.marker.view, this.range);
-				});
-		});
+		if (this.range.type !== SuggestionType.COMMENT && this.range.type !== SuggestionType.HIGHLIGHT) {
+			menu.addItem((item) => {
+				item.setTitle("Accept changes")
+					.setIcon("check")
+					.setSection("close-annotation")
+					.onClick(() => {
+						this.marker.view.dispatch({ changes: acceptSuggestions(this.marker.view.state, this.range.from, this.range.to) });
+					});
+			});
+			menu.addItem((item) => {
+				item.setTitle("Reject changes")
+					.setIcon("cross")
+					.setSection("close-annotation")
+					.onClick(() => {
+						this.marker.view.dispatch({ changes: rejectSuggestions(this.marker.view.state, this.range.from, this.range.to) });
+					});
+			});
+		}
 
 		if (this.range.type === SuggestionType.COMMENT) {
-			menu.addItem((item) => {
-				item.setTitle("Edit comment")
-					.setIcon("pencil")
-					.setSection("range-controls")
-					.onClick(() => {
-						this.renderSource();
-					});
-			});
-			// TODO: When removing comments, use a handler function that determines whether it should be archived or not
-			menu.addItem((item) => {
-				item.setTitle("Remove comment")
-					.setIcon("cross")
-					.setSection("range-controls")
-					.onClick(() => {
-						this.marker.view.dispatch({ changes: { from: this.range.from, to: this.range.to, insert: "" } });
-					});
-			});
 			if (this.range.replies.length > 0) {
 				menu.addItem((item) => {
-					item.setTitle("Remove comment thread")
-						.setIcon("trash")
-						.setSection("range-controls")
+					item.setTitle("Close comment thread")
+						.setIcon("message-square-off")
+						.setSection("close-annotation")
 						.onClick(() => {
 							this.marker.view.dispatch({
 								changes: {
@@ -231,28 +224,49 @@ class AnnotationNode extends Component {
 						});
 				});
 			}
+
+			menu.addItem((item) => {
+				item.setTitle("Add reply")
+					.setSection("comment-handling")
+					.setIcon("reply")
+					.onClick(() => {
+						addCommentToView(this.marker.view, this.range);
+					});
+			});
+
+			menu.addItem((item) => {
+				item.setTitle("Edit comment")
+					.setIcon("pencil")
+					.setSection("comment-handling")
+					.onClick(() => {
+						this.renderSource();
+					});
+			});
+
+			// TODO: When removing comments, use a handler function that determines whether it should be archived or not
+			menu.addItem((item) => {
+				item.setTitle("Remove comment")
+					.setIcon("cross")
+					.setSection("comment-handling")
+					.onClick(() => {
+						this.marker.view.dispatch({ changes: { from: this.range.from, to: this.range.to, insert: "" } });
+					});
+			});
 		} else if (this.range.type !== SuggestionType.HIGHLIGHT) {
 			menu.addItem((item) => {
-				item.setTitle("Accept changes")
-					.setIcon("check")
-					.setSection("range-controls")
+				item.setTitle("Add reply")
+					.setSection("comment-handling")
+					.setIcon("reply")
 					.onClick(() => {
-						this.marker.view.dispatch({ changes: acceptSuggestions(this.marker.view.state, this.range.from, this.range.to) });
+						addCommentToView(this.marker.view, this.range);
 					});
 			});
-			menu.addItem((item) => {
-				item.setTitle("Reject changes")
-					.setIcon("cross")
-					.setSection("range-controls")
-					.onClick(() => {
-						this.marker.view.dispatch({ changes: rejectSuggestions(this.marker.view.state, this.range.from, this.range.to) });
-					});
-			});
+
 			if (this.range.replies.length > 0) {
 				menu.addItem((item) => {
 					item.setTitle("Remove all comments")
-						.setIcon("trash")
-						.setSection("range-controls")
+						.setIcon("message-square-x")
+						.setSection("comment-handling")
 						.onClick(() => {
 							this.marker.view.dispatch({
 								changes: {
@@ -264,7 +278,18 @@ class AnnotationNode extends Component {
 						});
 				});
 			}
+		} else {
+			menu.addItem((item) => {
+				item.setTitle("Add reply")
+					.setSection("comment-handling")
+					.setIcon("reply")
+					.onClick(() => {
+						addCommentToView(this.marker.view, this.range);
+					});
+			});
 		}
+
+
 
 		menu.addItem((item) => {
 			item.setTitle("Fold gutter")
