@@ -29,7 +29,7 @@ function compareChanges(previous: CriticMarkupRanges, current: CriticMarkupRange
 	return { removed, added };
 }
 
-export function applyToText(
+export function  applyToText(
 	text: string,
 	fn: (range: CriticMarkupRange, text: string) => string,
 	ranges: CriticMarkupRange[],

@@ -13,6 +13,22 @@ export class CommentRange extends CriticMarkupRange {
 		return this.attached_comment ? [...this.attached_comment.thread] : [this, ...this.replies];
 	}
 
+	accept(removeComments: boolean = true): string {
+		if (removeComments) {
+			return "";
+		} else {
+			return this.unwrap();
+		}
+	}
+
+	reject(removeComments: boolean = true): string {
+		if (removeComments) {
+			return "";
+		} else {
+			return this.unwrap();
+		}
+	}
+
 	clear_references() {
 		this.attached_comment = null;
 		this.reply_depth = 0;

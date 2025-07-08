@@ -71,12 +71,13 @@
 }
 
 .cmtr-view-range-reply-top {
-  padding: 0 var(--size-4-1);
+  padding: 0 var(--size-4-1) 0 30px;
 }
 
 .cmtr-view-range-reply-text {
   padding: 0 var(--size-4-1);
   padding-left: 30px;
+  min-height: 2em;
 }
 
 .cmtr-view-range-reply-author {
@@ -120,4 +121,24 @@
 .cmtr-view-info {
   color: var(--text-muted);
   font-size: var(--font-smallest);
+}
+
+.cmtr-view-action-container {
+  display: flex;
+  align-items: center;
+}
+
+.cmtr-view-action {
+  height: min-content;
+}
+
+.cmtr-view-action-sep {
+  height: 24px;
+  border-left: 1px solid var(--background-modifier-border-hover);
+}
+
+.cmtr-view-suggestion-button-sep {
+  height: 26px;
+  border-left: 1px solid var(--background-modifier-border-hover);
+  margin: 0 var(--size-4-1);
 }

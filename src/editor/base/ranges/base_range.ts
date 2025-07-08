@@ -20,6 +20,8 @@ export interface MetadataFields {
 	[prop: string]: any;
 }
 
+export type CriticMarkupRangeEntry = { path: string, range: CriticMarkupRange };
+
 export abstract class CriticMarkupRange {
 	fields: MetadataFields = {};
 	replies: CommentRange[] = [];
@@ -223,11 +225,11 @@ export abstract class CriticMarkupRange {
 		return this.encloses_range(start, end);
 	}
 
-	accept() {
+	accept(removeComments = true) {
 		return this.text;
 	}
 
-	reject() {
+	reject(removeComments = true) {
 		return this.text;
 	}
 

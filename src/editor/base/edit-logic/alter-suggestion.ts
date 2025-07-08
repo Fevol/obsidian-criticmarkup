@@ -16,15 +16,6 @@ export function acceptSuggestions(state: EditorState, from?: number, to?: number
 		.map(range => ({ from: range.from, to: remove_attached_comments ? range.full_range_back : range.to, insert: range.accept() }));
 }
 
-export async function acceptSuggestionsInFile(app: App, file: TFile, ranges: CriticMarkupRange[]) {
-	ranges.sort((a, b) => a.from - b.from);
-	const text = await app.vault.cachedRead(file);
-
-	const output = applyToText(text, (range, text) => range.accept()!, ranges);
-
-	await app.vault.modify(file, output);
-}
-
 export function rejectSuggestions(state: EditorState, from?: number, to?: number, remove_attached_comments: boolean = true): ChangeSpec[] {
 	const range_field = state.field(rangeParser).ranges;
 	return ((from || to) ? range_field.ranges_in_interval(from ?? 0, to ?? Infinity) : range_field.ranges)
@@ -35,11 +26,16 @@ export function rejectSuggestions(state: EditorState, from?: number, to?: number
 		.map(range => ({ from: range.from, to: remove_attached_comments ? range.full_range_back : range.to, insert: range.reject() }));
 }
 
-export async function rejectSuggestionsInFile(app: App, file: TFile, ranges: CriticMarkupRange[]) {
+export async function applyToFile(
+	applyFn: (range: CriticMarkupRange, text: string) => string,
+	app: App,
+	file: TFile,
+	ranges: CriticMarkupRange[],
+): Promise<void> {
 	ranges.sort((a, b) => a.from - b.from);
-	const text = await app.vault.cachedRead(file);
+	const text = await app.vault.read(file);
 
-	const output = applyToText(text, (range, text) => range.reject()!, ranges);
+	const output = applyToText(text, applyFn, ranges);
 
 	await app.vault.modify(file, output);
 }

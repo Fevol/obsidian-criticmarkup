@@ -3,8 +3,8 @@ import { EditorView, WidgetType } from "@codemirror/view";
 import { Component, MarkdownRenderer, Menu, setIcon } from "obsidian";
 
 import { COMMENTATOR_GLOBAL } from "../../../global";
-import { CM_All_Brackets, CommentRange, CriticMarkupRange } from "../../base";
-import {addCommentToView, annotationGutterFocusAnnotation} from "../gutters/annotations-gutter";
+import { addCommentToView, CM_All_Brackets, CommentRange, CriticMarkupRange } from "../../base";
+import { annotationGutterFocusAnnotation } from "../gutters/annotations-gutter";
 
 export function renderCommentWidget(range: CommentRange, text?: string, unwrap = false) {
 	let str = text ?? range.text;

@@ -1,7 +1,7 @@
 import { SettingsPage } from "./settings";
-import { ViewPage } from "./view";
+import { AnnotationsViewPage } from "./annotations-view";
 
 export {
 	SettingsPage,
-	ViewPage,
+	AnnotationsViewPage,
 };

@@ -1,7 +1,7 @@
 import type {App, EventRef, MarkdownView} from "obsidian";
 import { COMMENTATOR_GLOBAL } from "../../global";
-import { acceptSuggestions, isCursor, rangeParser, rejectSuggestions } from "../base";
-import {addCommentToView, annotationGutter} from "../renderers/gutters/annotations-gutter";
+import { acceptSuggestions, addCommentToView, isCursor, rangeParser, rejectSuggestions } from "../base";
+import { annotationGutter} from "../renderers/gutters/annotations-gutter";
 import type {SelectionRange} from "@codemirror/state";
 import {
 	annotationGutterIncludedTypes,

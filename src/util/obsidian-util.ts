@@ -1,4 +1,4 @@
-import { apiVersion, App, Platform } from "obsidian";
+import {apiVersion, App, Notice, Platform} from "obsidian";
 
 /**
  * Helper function for opening the settings tab of the plugin
@@ -120,4 +120,39 @@ export function getViewPrototype<T>(
 		leaf.detach();
 	}
 	return prototype;
+}
+
+/**
+ * Show a progress bar notice in Obsidian, supports ratio's
+ * @param initialMessage - The initial message to display in the notice
+ * @param finishedMessage - The message to display when the progress is complete
+ * @param numOperations - The total number of operations to track progress for
+ * @param duration - The duration in milliseconds to keep the notice visible after completion (default is 300ms)
+ * @param description - Optional small description to display in the notice
+ */
+export function showProgressBarNotice(initialMessage: string, finishedMessage: string, numOperations: number = 100, duration: number = 3000, description?: string) {
+	const notice = new Notice("", 0);
+	notice.messageEl.appendChild(createEl("span", { text: initialMessage }));
+
+	if (description) {
+		notice.messageEl.appendChild(createEl("br"));
+		notice.messageEl.appendChild(createEl("span", { cls: "u-small", text: description }));
+	}
+
+	let progressBar = createEl("progress");
+	progressBar.value = 0;
+	progressBar.max = numOperations;
+	notice.messageEl.appendChild(progressBar);
+
+	return (val: number) => {
+		if (val >= numOperations) {
+			notice.setMessage(finishedMessage);
+			notice.noticeEl.addClass("mod-success");
+			setTimeout(() => {
+				notice.hide();
+			}, duration);
+		} else {
+			progressBar.value = Math.round(val);
+		}
+	}
 }

@@ -97,6 +97,10 @@ export default class CommentatorPlugin extends Plugin {
 		},
 		() => this.settings,
 	);
+	file_history: {
+		mtime: number,
+		changes: Record<string, string>,
+	}[] = [];
 
 	postProcessor!: MarkdownPostProcessor;
 
@@ -258,8 +262,9 @@ export default class CommentatorPlugin extends Plugin {
 
 		this.registerEvent(cmenuGlobalCommands(this.app));
 		this.registerEvent(cmenuViewportCommands(this.app));
-		for (const command of commands(this))
+		for (const command of commands(this)) {
 			this.addCommand(command);
+		}
 
 		this.register(around(this.app.plugins, {
 			uninstallPlugin: (oldMethod) => {

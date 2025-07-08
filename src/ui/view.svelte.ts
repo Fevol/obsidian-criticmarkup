@@ -1,7 +1,7 @@
 import { ItemView, type ViewStateResult, WorkspaceLeaf } from "obsidian";
 
 import { mount, unmount } from "svelte";
-import { ViewPage } from "./pages/view";
+import { AnnotationsViewPage } from "./pages/annotations-view";
 import type CommentatorPlugin from "../main";
 
 export const COMMENTATOR_ANNOTATIONS_VIEW = "commentator-annotations-view";
@@ -15,7 +15,7 @@ interface CommentatorAnnotationsViewState {
 }
 
 export class CommentatorAnnotationsView extends ItemView {
-	view: ReturnType<typeof ViewPage> | null = null;
+	view: ReturnType<typeof AnnotationsViewPage> | null = null;
 	props: Partial<CommentatorAnnotationsViewState> & { plugin: CommentatorPlugin } = $state({
 		plugin: undefined!,
 		range_type_filter: undefined,
@@ -65,7 +65,7 @@ export class CommentatorAnnotationsView extends ItemView {
 	async setState(state: Partial<CommentatorAnnotationsViewState>, result: ViewStateResult): Promise<void> {
 		if (!this.view) {
 			this.props.plugin = this.plugin;
-			this.view = mount(ViewPage, {
+			this.view = mount(AnnotationsViewPage, {
 				target: this.containerEl,
 				props: this.props,
 			});

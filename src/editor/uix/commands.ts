@@ -11,9 +11,8 @@ import {
 	rejectSuggestions,
 	selectionContainsRanges,
 } from "../base";
-import { generateCriticMarkupPatchFromDiff } from "../base/edit-logic/text-diff";
+import { addCommentToView, generateCriticMarkupPatchFromDiff } from "../base";
 import { annotationGutter } from "../renderers/gutters";
-import { addCommentToView } from "../renderers/gutters/annotations-gutter";
 import {
 	editMode,
 	editModeValue,
@@ -176,14 +175,6 @@ export const editor_commands: (plugin: CommentatorPlugin) => ECommand[] = (plugi
 ];
 
 export const application_commmands = (plugin: CommentatorPlugin): ECommand[] => [
-	{
-		id: "toggle-vim",
-		name: "(DEBUG) Toggle Vim mode",
-		icon: "comment",
-		regular_callback: async () => {
-			plugin.app.vault.setConfig("vimMode", !plugin.app.vault.getConfig("vimMode"));
-		},
-	},
 	{
 		id: "view",
 		name: "Open global annotation view",
