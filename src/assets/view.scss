@@ -142,3 +142,7 @@
   border-left: 1px solid var(--background-modifier-border-hover);
   margin: 0 var(--size-4-1);
 }
+
+.cmtr-view-search.search-input-container input {
+  padding-inline-end: 8px;
+}

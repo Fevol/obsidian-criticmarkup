@@ -29,28 +29,28 @@
 		{#if entry.range.type === SuggestionType.COMMENT}
 			{#if entry.range.replies.length}
 				<Button
-						icon="message-square-off"
-						tooltip={"Delete comment thread"}
-						onClick={() => applyRangeEditsToVault(plugin, [entry], applyToFile.bind(null, (range, _) => range.accept()))}
+                    icon="message-square-off"
+                    tooltip={"Delete comment thread"}
+                    onClick={() => applyRangeEditsToVault(plugin, [entry], applyToFile.bind(null, (range, _) => range.accept()))}
 				/>
 			{:else}
 				<Button
-						icon="cross"
-						tooltip={"Delete comment"}
-						onClick={() => applyRangeEditsToVault(plugin, [entry], applyToFile.bind(null, (range, _) => range.accept()))}
+                    icon="cross"
+                    tooltip={"Delete comment"}
+                    onClick={() => applyRangeEditsToVault(plugin, [entry], applyToFile.bind(null, (range, _) => range.accept()))}
 				/>
 			{/if}
 
 		{:else if entry.range.type !== SuggestionType.HIGHLIGHT}
 			<Button
-					icon="check"
-					tooltip={"Accept change" + (entry.range.replies.length ? " (and delete thread)" : "")}
-					onClick={() => applyRangeEditsToVault(plugin, [entry], applyToFile.bind(null, (range, _) => range.accept()))}
+                icon="check"
+                tooltip={"Accept change" + (entry.range.replies.length ? " (and delete thread)" : "")}
+                onClick={() => applyRangeEditsToVault(plugin, [entry], applyToFile.bind(null, (range, _) => range.accept()))}
 			/>
 			<Button
-					icon="cross"
-					tooltip={"Reject change" + (entry.range.replies.length ? " (and delete thread)" : "")}
-					onClick={() => applyRangeEditsToVault(plugin, [entry], applyToFile.bind(null, (range, _) => range.reject()))}
+                icon="cross"
+                tooltip={"Reject change" + (entry.range.replies.length ? " (and delete thread)" : "")}
+                onClick={() => applyRangeEditsToVault(plugin, [entry], applyToFile.bind(null, (range, _) => range.reject()))}
 			/>
 		{/if}
 
@@ -58,19 +58,19 @@
 
 
 		<Button
-				icon="eye"
-				tooltip="View in note"
-				onClick={async () => { await openNoteAtRangeEntry(plugin, entry) }}
+            icon="eye"
+            tooltip="View in note"
+            onClick={async () => { await openNoteAtRangeEntry(plugin, entry) }}
 		/>
 
 		<Button
-				icon="more-vertical"
-				tooltip="More options"
-				onClick={(evt) => {
-					menu_open = true;
-					const menu = moreOptionsMenu(plugin, evt, [entry]);
-					menu.onHide(() => { menu_open = false });
-				}}
+            icon="more-vertical"
+            tooltip="More options"
+            onClick={(evt) => {
+                menu_open = true;
+                const menu = moreOptionsMenu(plugin, evt, [entry]);
+                menu.onHide(() => { menu_open = false });
+            }}
 		/>
 	</div>
 </div>

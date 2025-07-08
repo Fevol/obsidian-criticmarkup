@@ -1,4 +1,4 @@
-import {apiVersion, App, Notice, Platform} from "obsidian";
+import {apiVersion, App, type Menu, Notice, Platform} from "obsidian";
 
 /**
  * Helper function for opening the settings tab of the plugin
@@ -154,5 +154,33 @@ export function showProgressBarNotice(initialMessage: string, finishedMessage: s
 		} else {
 			progressBar.value = Math.round(val);
 		}
+	}
+}
+
+export function menuSingleChoiceExclusive<T>(
+	menu: Menu,
+	current_value: T,
+	options: { icon: string, value: T, tooltip: string}[],
+	onChange: (value: T) => void,
+) {
+	for (const { icon, tooltip, value} of options) {
+		menu.addItem((item) => {
+			item
+				.setTitle(tooltip)
+				.setIcon(icon)
+				.setChecked(current_value === value)
+				.onClick(() => {
+					onChange(value);
+					for (const subitem of menu.items) {
+						const is_active = subitem === item;
+						subitem.dom.classList.toggle("mod-checked", is_active);
+						if (subitem.checkIconEl) {
+							subitem.checkIconEl.style.display = is_active ? "flex" : "none";
+						} else {
+							subitem.setChecked(is_active);
+						}
+					}
+				});
+		});
 	}
 }

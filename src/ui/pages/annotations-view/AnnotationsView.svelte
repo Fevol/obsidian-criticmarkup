@@ -13,6 +13,8 @@
     import {openNoteAtRangeEntry, undoRangeEditsToVault} from "../../../editor/uix";
     import {type CriticMarkupRange, type CriticMarkupRangeEntry} from "../../../editor/base";
     import {filterRanges, AuthorFilter, ContentFilter, LocationFilter, SuggestionTypeFilter} from "./filter-ranges";
+    import {keepContextMenuOpen} from "../../../patches";
+    import {menuSingleChoiceExclusive} from "../../../util/obsidian-util";
 
     interface Props {
         plugin: CommentatorPlugin;
@@ -52,12 +54,12 @@
     let anchor_selected_range: number | null = $state(null);
 
     const range_filters = [
-        {icon: "asterisk", tooltip: "All markup"},
-        {icon: "plus-circle", tooltip: "Addition markup"},
-        {icon: "minus-square", tooltip: "Deletion markup"},
-        {icon: "replace", tooltip: "Substitution markup"},
-        {icon: "highlighter", tooltip: "Highlight markup"},
-        {icon: "message-square", tooltip: "Comment markup"},
+        {icon: "asterisk", tooltip: "All markup", value: SuggestionTypeFilter.ALL},
+        {icon: "plus-circle", tooltip: "Addition markup", value: SuggestionTypeFilter.ADDITION},
+        {icon: "minus-square", tooltip: "Deletion markup", value: SuggestionTypeFilter.DELETION},
+        {icon: "replace", tooltip: "Substitution markup", value: SuggestionTypeFilter.SUBSTITUTION},
+        {icon: "highlighter", tooltip: "Highlight markup", value: SuggestionTypeFilter.HIGHLIGHT},
+        {icon: "message-square", tooltip: "Comment markup", value: SuggestionTypeFilter.COMMENT},
     ];
 
     const filter_names = [
@@ -70,21 +72,21 @@
     ];
 
     const location_filters = [
-        {icon: "vault", tooltip: "Entire vault"},
-        {icon: "folder-closed", tooltip: "Current folder"},
-        {icon: "file", tooltip: "Current file"},
+        {icon: "vault", tooltip: "Entire vault", value: LocationFilter.VAULT},
+        {icon: "folder-closed", tooltip: "Current folder", value: LocationFilter.FOLDER},
+        {icon: "file", tooltip: "Current file", value: LocationFilter.FILE},
     ];
 
     const content_filters = [
-        {icon: "maximize", tooltip: "All suggestions"},
-        {icon: "square", tooltip: "Only suggestions with content"},
-        {icon: "box-select", tooltip: "Only empty suggestions"},
+        {icon: "maximize", tooltip: "All suggestions", value: ContentFilter.ALL},
+        {icon: "square", tooltip: "Suggestions with content", value: ContentFilter.CONTENT},
+        {icon: "box-select", tooltip: "Empty suggestions", value: ContentFilter.EMPTY},
     ];
 
     const author_filters = [
-        {icon: "users", tooltip: "All authors"},
-        {icon: "user", tooltip: "Only my suggestions"},
-        {icon: "user-x", tooltip: "Only others' suggestions"},
+        {icon: "users", tooltip: "All suggestions", value: AuthorFilter.ALL},
+        {icon: "user", tooltip: "Own suggestions", value: AuthorFilter.SELF},
+        {icon: "user-x", tooltip: "Others' suggestions", value: AuthorFilter.OTHERS},
     ];
 
     onMount(() => {
@@ -368,16 +370,128 @@
 						{/if}
 					{/if}
 
-					<div class="cmtr-view-action-sep"></div>
+					<!--<div class="cmtr-view-action-sep"></div>-->
 
 					<Button
 							class="clickable-icon nav-action-button cmtr-view-action"
-							icon="lasso"
-							tooltip="Select all annotations"
-							onClick={() => {
-						  selected_ranges = [...filtered_items];
-						  anchor_selected_range = 0;
-						}}
+							icon="more-vertical"
+							tooltip="More options"
+							onClick={(evt) => {
+							  	keepContextMenuOpen(true);
+                                const menu = new Menu();
+
+								menu.addItem((item) => {
+									item
+										.setTitle("Clear filters")
+										.setIcon("filter-x")
+										.setSection("filter-actions")
+										.onClick(() => {
+											range_type_filter = SuggestionTypeFilter.ALL;
+											location_filter = LocationFilter.VAULT;
+											content_filter = ContentFilter.ALL;
+											author_filter = AuthorFilter.ALL;
+											date_filter = undefined;
+											search_filter = "";
+										});
+								});
+
+								menu.addItem((item) => {
+									const submenu = item
+										.setTitle("Filter by author")
+										.setIcon("user-search")
+										.setSection("filter-actions")
+										.setSubmenu();
+                                    menuSingleChoiceExclusive(submenu, author_filter, author_filters, (value) => { author_filter = value; });
+								});
+
+                                menu.addItem((item) => {
+								  	const submenu = item
+										.setTitle("Filter by type")
+										.setIcon("space")
+										.setSection("filter-actions")
+										.setSubmenu();
+									menuSingleChoiceExclusive(submenu, range_type_filter, range_filters, (value) => { range_type_filter = value; });
+								});
+
+                                menu.addItem((item) => {
+								  	const submenu = item
+										.setTitle("Filter by location")
+										.setIcon("locate")
+										.setSection("filter-actions")
+										.setSubmenu();
+									menuSingleChoiceExclusive(submenu, location_filter, location_filters, (value) => { location_filter = value; });
+								});
+
+                                menu.addItem((item) => {
+								  	item
+										.setTitle("Filter by date")
+										.setIcon("calendar")
+										.setSection("filter-actions")
+										.onClick(() => {
+											new DaterangeModal(plugin, date_filter, (val) => {
+												date_filter = val?.map((date) =>
+													date
+														? window.moment(date, "YYYY-MM-DD HH:mm:ss").unix()
+														: 0,
+												);
+											}).open();
+										});
+								});
+
+								menu.addItem((item) => {
+								  item
+									  .setTitle("Select all")
+									  .setIcon("circle")
+									  .setSection("selection-actions")
+									  .onClick(async () => {
+										  selected_ranges = [...filtered_items];
+										  anchor_selected_range = 0;
+									  });
+								});
+								menu.addItem((item) => {
+								  item
+									  .setTitle("Clear selection")
+									  .setIcon("circle-dashed")
+									  .setSection("selection-actions")
+									  .onClick(() => {
+										  selected_ranges = [];
+										  anchor_selected_range = null;
+									  });
+								});
+								menu.addItem((item) => {
+								  item
+									  .setTitle("Invert selection")
+									  .setIcon("circle-alert")
+									  .setSection("selection-actions")
+									  .onClick(() => {
+										  const sorted_ranges = [...selected_ranges].sort((a, b) => { a.range.from - b.range.from; });
+										  const new_selection = [];
+										  let current_idx = 0;
+										  for (const [idx, row] of filtered_items.entries()) {
+											  if (current_idx < sorted_ranges.length && row.path === sorted_ranges[current_idx].path && row.range.from === sorted_ranges[current_idx].range.from) {
+												  current_idx++;
+											  } else {
+												  new_selection.push(row);
+											  }
+										  }
+										  selected_ranges = new_selection;
+										  anchor_selected_range = null;
+									  });
+								});
+
+                                	menu.addItem((item) => {
+								  item
+									  .setTitle("Undo change")
+									  .setIcon("undo")
+									  .setSection("history-actions")
+									  .setDisabled(!plugin.file_history.length)
+									  .onClick(() => {
+										  undoRangeEditsToVault(plugin);
+									  });
+								});
+
+								menu.showAtMouseEvent(evt);
+							}}
 					/>
 				</div>
 				<div class="cmtr-view-info">
