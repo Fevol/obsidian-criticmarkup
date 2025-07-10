@@ -211,21 +211,26 @@ export default class CommentatorPlugin extends Plugin {
 	}
 
 	async onload() {
+		if (process.env.NODE_ENV === "development") {
+			console.log("Commentator plugin loaded in debug mode");
+
+			// NOTE: debug options only accessible via main Obsidian window
+			// @ts-expect-error (Assigning to window)
+			window["COMMENTATOR_DEBUG"] = {
+				plugin: this,
+				database: this.database,
+				get ranges() {
+					return this.app.workspace.activeEditor?.editor?.cm.state.field(rangeParser).ranges.ranges;
+				},
+				get tree() {
+					return this.app.workspace.activeEditor?.editor?.cm.state.field(rangeParser).ranges.tree;
+				},
+				debugRangeset
+			};
+		}
+
 		COMMENTATOR_GLOBAL.app = this.app;
 
-		// Note: debug options only accessible via main Obsidian window
-		// @ts-ignore (Assigning to window)
-		window["COMMENTATOR_DEBUG"] = {
-			plugin: this,
-			database: this.database,
-			get ranges() {
-				return this.app.workspace.activeEditor?.editor?.cm.state.field(rangeParser).ranges.ranges;
-			},
-			get tree() {
-				return this.app.workspace.activeEditor?.editor?.cm.state.field(rangeParser).ranges.tree;
-			},
-			debugRangeset
-		};
 
 		this.registerView(COMMENTATOR_ANNOTATIONS_VIEW, (leaf) => new CommentatorAnnotationsView(leaf, this));
 
@@ -351,8 +356,10 @@ export default class CommentatorPlugin extends Plugin {
 
 		this.database.unload();
 
-		// @ts-expect-error Add debug variable to window
-		window["COMMENTATOR_DEBUG"] = undefined;
+		if (process.env.NODE_ENV === "development") {
+			// @ts-expect-error Add debug variable to window
+			window["COMMENTATOR_DEBUG"] = undefined;
+		}
 	}
 
 	async loadSettings() {
