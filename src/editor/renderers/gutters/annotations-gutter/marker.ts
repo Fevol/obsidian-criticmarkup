@@ -12,7 +12,7 @@ import { AnnotationInclusionType } from "../../../../constants";
 import { annotationGutterIncludedTypes, annotationGutterIncludedTypesState } from "../../../settings";
 import { annotationGutterFocusThreadAnnotation, annotationGutterFoldAnnotation } from "./annotation-gutter";
 
-import { keepContextMenuOpen } from "../../../../patches";
+import { stickyContextMenuPatch } from "../../../../patches";
 
 class AnnotationNode extends Component {
 	text: string;
@@ -188,7 +188,7 @@ class AnnotationNode extends Component {
 		e.preventDefault();
 		e.stopPropagation();
 
-		keepContextMenuOpen(true);
+		stickyContextMenuPatch(true);
 
 		const menu = new Menu();
 		if (this.range.type !== SuggestionType.COMMENT && this.range.type !== SuggestionType.HIGHLIGHT) {

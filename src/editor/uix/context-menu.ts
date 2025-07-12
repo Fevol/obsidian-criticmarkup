@@ -8,7 +8,7 @@ import { annotationGutterIncludedTypes, annotationGutterIncludedTypesState } fro
 import { annotationGutterFoldAnnotation } from "../renderers/gutters";
 import { AnnotationInclusionType } from "../../constants";
 
-import { keepContextMenuOpen } from "../../patches";
+import { stickyContextMenuPatch } from "../../patches";
 
 export const cmenuGlobalCommands: (app: App) => EventRef = (app) =>
 	app.workspace.on("editor-menu", (menu, editor) => {
@@ -103,7 +103,7 @@ export const cmenuViewportCommands: (app: App) => EventRef = (app) =>
 		if (app.plugins.plugins.commentator.settings.annotation_gutter) {
 			const editor_cm = (view as unknown as MarkdownView).editor.cm;
 			let current_settings = editor_cm.state.field(annotationGutterIncludedTypesState);
-			keepContextMenuOpen(true);
+			stickyContextMenuPatch(true);
 
 			menu.addItem((item) => {
 				item.setTitle("Fold gutter")

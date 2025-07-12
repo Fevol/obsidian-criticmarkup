@@ -13,7 +13,7 @@
     import {openNoteAtRangeEntry, undoRangeEditsToVault} from "../../../editor/uix";
     import {type CriticMarkupRange, type CriticMarkupRangeEntry} from "../../../editor/base";
     import {filterRanges, AuthorFilter, ContentFilter, LocationFilter, SuggestionTypeFilter} from "./filter-ranges";
-    import {keepContextMenuOpen} from "../../../patches";
+    import {stickyContextMenuPatch} from "../../../patches";
     import {menuSingleChoiceExclusive} from "../../../util/obsidian-util";
 
     interface Props {
@@ -377,7 +377,7 @@
 							icon="more-vertical"
 							tooltip="More options"
 							onClick={(evt) => {
-							  	keepContextMenuOpen(true);
+							  	stickyContextMenuPatch(true);
                                 const menu = new Menu();
 
 								menu.addItem((item) => {

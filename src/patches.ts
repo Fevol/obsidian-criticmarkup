@@ -8,7 +8,7 @@ import {annotationGutterView} from "./editor/renderers/gutters";
  * Keep the context menu open after clicking on a menu item.
  * @param onSubmenu - Only keep the menu open if the item is a submenu.
  */
-export const keepContextMenuOpen = (onSubmenu = false) => {
+export const stickyContextMenuPatch = (onSubmenu = false) => {
     const patch = around(Menu.prototype, {
         onEnter: (oldMethod) => {
             return function(this: Menu, e: KeyboardEvent) {
