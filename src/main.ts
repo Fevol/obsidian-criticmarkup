@@ -240,14 +240,8 @@ export default class CommentatorPlugin extends Plugin {
 			this.addCommand(command);
 		}
 
-		this.register(around(this.app.plugins, {
-			uninstallPlugin: (oldMethod) => {
-				return async (id: string) => {
-					oldMethod && await oldMethod.apply(this.app.plugins, [id]);
-					if (id === "commentator")
-						await this.database.dropDatabase();
-				};
-			},
+		this.register(beforePluginUninstallPatch(this, "commentator", () => {
+			return this.database.dropDatabase();
 		}));
 	}
 

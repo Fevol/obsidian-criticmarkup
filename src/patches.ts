@@ -114,3 +114,29 @@ export const syncEditorPersistentState = (plugin: CommentatorPlugin) => {
     });
 }
 
+/**
+ * This patch hooks into the Plugins class, and executes functionality before the plugin is uninstalled via the UI.
+ * @param plugin - The Commentator plugin instance.
+ * @param id - The ID of the plugin to be uninstalled.
+ * @param cb - The callback function to be executed before the plugin is uninstalled.
+ * @remarks If the plugin gets uninstalled via any other way (e.g. file system deletion, custom plugin API, ...),
+ *          no guarantees can be made that the functionality will be executed.
+ */
+export const beforePluginUninstallPatch = (plugin: Plugin, id: string, cb: () => void | Promise<void>) => {
+    return around(plugin.app.plugins, {
+        uninstallPlugin: (oldMethod) => {
+            return async (...args) => {
+                try {
+                    // NOTE: This is a safe check, if something changes in the future, this will just be ignored
+                    if (args[0] === id) {
+                        await cb();
+                    }
+                } catch (e) {
+                    console.error("Error while executing beforePluginUninstallPatch callback:", e);
+                }
+                oldMethod && await oldMethod.apply(plugin.app.plugins, args);
+            };
+        },
+    });
+}
+
