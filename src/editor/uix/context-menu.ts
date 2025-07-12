@@ -1,16 +1,14 @@
-import type {App, EventRef, MarkdownView} from "obsidian";
+import type { App, EventRef, MarkdownView } from "obsidian";
+import type { SelectionRange } from "@codemirror/state";
+
 import { COMMENTATOR_GLOBAL } from "../../global";
 import { acceptSuggestions, addCommentToView, isCursor, rangeParser, rejectSuggestions } from "../base";
-import { annotationGutter} from "../renderers/gutters/annotations-gutter";
-import type {SelectionRange} from "@codemirror/state";
-import {
-	annotationGutterIncludedTypes,
-	annotationGutterIncludedTypesState,
-	editModeValue,
-	editModeValueState
-} from "../settings";
-import {AnnotationInclusionType} from "../../constants";
-import {keepContextMenuOpen} from "../../patches";
+
+import { annotationGutterIncludedTypes, annotationGutterIncludedTypesState } from "../settings";
+import { annotationGutterFoldAnnotation } from "../renderers/gutters";
+import { AnnotationInclusionType } from "../../constants";
+
+import { keepContextMenuOpen } from "../../patches";
 
 export const cmenuGlobalCommands: (app: App) => EventRef = (app) =>
 	app.workspace.on("editor-menu", (menu, editor) => {
@@ -101,7 +99,7 @@ export const cmenuGlobalCommands: (app: App) => EventRef = (app) =>
 
 export const cmenuViewportCommands: (app: App) => EventRef = (app) =>
 	app.workspace.on("markdown-viewport-menu", (menu, view, sectionName, menuItem) => {
-		// FIXME: Wait till next update of obsidian-typings
+		// FIXME: Wait till next update of obsidian-typings (I forgot what I had to wait for :w )
 		if (app.plugins.plugins.commentator.settings.annotation_gutter) {
 			const editor_cm = (view as unknown as MarkdownView).editor.cm;
 			let current_settings = editor_cm.state.field(annotationGutterIncludedTypesState);
@@ -112,8 +110,9 @@ export const cmenuViewportCommands: (app: App) => EventRef = (app) =>
 					.setIcon("arrow-right-from-line")
 					.setSection("commentator")
 					.onClick(() => {
-						// FIXME: Remove direct access of gutter, prefer fold annotation?
-						editor_cm.plugin(annotationGutter(app)[1][0][0])!.foldGutter();
+						editor_cm.dispatch(editor_cm.state.update({
+							annotations: [ annotationGutterFoldAnnotation.of(null) ]
+						}));
 					});
 			});
 

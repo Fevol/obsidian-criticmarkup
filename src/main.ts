@@ -18,7 +18,11 @@ import {type CriticMarkupRange, getRangesInText, RANGE_PROTOTYPE_MAPPER, rangePa
 import {cmenuGlobalCommands, cmenuViewportCommands, commands} from "./editor/uix";
 import {bracketMatcher, editorKeypressCatcher, rangeCorrecter} from "./editor/uix/extensions";
 
-import {annotationGutter, annotationGutterCompartment, diffGutter, diffGutterCompartment} from "./editor/renderers/gutters";
+import {
+	annotationGutter, annotationGutterCompartment, diffGutter, diffGutterCompartment,
+	annotationGutterFoldButtonAnnotation, annotationGutterResizeHandleAnnotation, annotationGutterWidthAnnotation,
+	annotationGutterHideEmptyAnnotation,
+} from "./editor/renderers/gutters";
 import {livepreviewRenderer, focusRenderer, markupFocusState} from "./editor/renderers/live-preview";
 import {postProcess, postProcessorRerender, postProcessorUpdate} from "./editor/renderers/post-process";
 import {
@@ -43,23 +47,19 @@ import {
 	REQUIRES_FULL_RELOAD,
 } from "./constants";
 import {
-	annotationGutterFoldButton, annotationGutterFoldButtonState,
-	annotationGutterResizeHandle, annotationGutterResizeHandleState,
-	annotationGutterFolded, annotationGutterFoldedState,
-	annotationGutterWidth, annotationGutterWidthState,
 	annotationGutterIncludedTypes, annotationGutterIncludedTypesState,
 	editMode, editModeValue, editModeValueState,
 	fullReloadEffect,
-	hideEmptyAnnotationGutter, hideEmptyAnnotationGutterState,
 	hideEmptyDiffGutter, hideEmptyDiffGutterState,
 	previewMode, previewModeState,
 } from "./editor/settings";
 import {getEditMode} from "./editor/uix/extensions/editing-modes";
 import {COMMENTATOR_GLOBAL} from "./global";
 import {type PluginSettings} from "./types";
-import {debugRangeset, iterateAllCMInstances, updateAllCompartments, updateCompartment} from "./util/cm-util";
+import {debugRangeset, iterateAllCMInstances, sendAnnotationToAllCMInstances, updateAllCompartments, updateCompartment} from "./util/cm-util";
 import {objectDifference} from "./util/util";
 import {focusAnnotation} from "./editor/uix/extensions/focus-annotation";
+import {syncEditorPersistentState} from "./patches";
 
 export default class CommentatorPlugin extends Plugin {
 	editorExtensions: Extension[] = [];
@@ -104,9 +104,11 @@ export default class CommentatorPlugin extends Plugin {
 
 	postProcessor!: MarkdownPostProcessor;
 
-	loadEditorExtensions() {
-		// REMINDER: .init(() => ...) can be used to initialise a statefield
+	// EXPL: Global configuration for annotation gutter, used as a bodge to communicate the initial width and fold state
+	//		 to annotation gutter(s), even if the codemirror instance has not been set up yet
+	annotation_gutter_config?: { width: number; foldState: boolean } = undefined;
 
+	loadEditorExtensions() {
 		this.editorExtensions.length = 0;
 
 		this.editorExtensions.push(markupFocusState);
@@ -118,9 +120,10 @@ export default class CommentatorPlugin extends Plugin {
 		this.editorExtensions.push(rangeParser);
 
 		if (this.settings.annotation_gutter) {
-			this.editorExtensions.push(
-				annotationGutterCompartment.of(Prec.low(annotationGutter(this.app) as Extension[]))
-			);
+			const annotation_gutter = annotationGutter(this);
+			// FIXME: Bad. Bad. Bad. This is drivel of the highest degree.
+			this.annotation_gutter_config = (annotation_gutter as unknown as any)[1][1].value;
+			this.editorExtensions.push(annotationGutterCompartment.of(Prec.low(annotation_gutter)));
 		}
 
 		if (this.settings.live_preview) {
@@ -148,50 +151,16 @@ export default class CommentatorPlugin extends Plugin {
 		this.editorExtensions.push(
 			hideEmptyDiffGutter.of(hideEmptyDiffGutterState.of(this.settings.diff_gutter_hide_empty))
 		);
-		this.editorExtensions.push(
-			annotationGutterWidth.of(annotationGutterWidthState.of(this.settings.annotation_gutter_width))
-		);
-		this.editorExtensions.push(
-			hideEmptyAnnotationGutter.of(hideEmptyAnnotationGutterState.of(this.settings.annotation_gutter_hide_empty))
-		);
-		this.editorExtensions.push(
-			annotationGutterFolded.of(annotationGutterFoldedState.of(this.settings.annotation_gutter_default_fold_state))
-		);
-		this.editorExtensions.push(
-			annotationGutterFoldButton.of(annotationGutterFoldButtonState.of(this.settings.annotation_gutter_fold_button))
-		);
-		this.editorExtensions.push(
-			annotationGutterResizeHandle.of(annotationGutterResizeHandleState.of(this.settings.annotation_gutter_resize_handle))
-		);
+
+		this.editorExtensions.push(previewMode.of(previewModeState.of(this.settings.default_preview_mode)));
+		this.editorExtensions.push(editModeValue.of(editModeValueState.of(this.settings.default_edit_mode)));
 		this.editorExtensions.push(
 			annotationGutterIncludedTypes.of(annotationGutterIncludedTypesState.of(this.settings.annotation_gutter_included_types))
 		);
 
-		this.editorExtensions.push(previewMode.of(previewModeState.of(this.settings.default_preview_mode)));
-		this.editorExtensions.push(editModeValue.of(editModeValueState.of(this.settings.default_edit_mode)));
-
-		// // TODO: inherit previous preview/edit mode states from leaf
-		// //  1. Onload of MarkdownView (and getState): update facet correspondingly
-		// //    (does the header adapt too)
-		// // 	Originally: onload of plugin
-		// 		// @ts-expect-error
-		// 		const proto = Object.getPrototypeOf(new MarkdownView(this.app.workspace));
-		// 		this.register(around(proto, {
-		// 			setState: (oldMethod) => {
-		// 				return async function (viewState: ViewState, eState?: any){
-		// 					// @ts-expect-error This is a shadowed variable, cursed, don't do this.
-		// 					const context = this as MarkdownView;
-		// 					// Make sure this is caught
-		// 					const result = oldMethod && oldMethod.apply(context, [viewState, eState]);
-		// 					console.log("setViewState", viewState, eState);
-		// 					console.log(context, context.editor.cm)
-		// 					// The preview/edit mode value needs to be RETRIEVED from STATE and ASSIGNED to a FACET
-		// 					//      Problem:
-		// 					//         - Facet does not exist at this moment (we need to assign the value later (HOW?))
-		// 					return result;
-		// 				};
-		// 			}
-		// 		}));
+		// EXPL: Attach extra variables to the editor state to be persisted across reloads
+		//		 If this plugin gets uninstalled or disabled, the state automatically gets cleared on future reloads
+		this.register(syncEditorPersistentState(this));
 	}
 
 	async updateEditorExtension() {
@@ -402,23 +371,11 @@ export default class CommentatorPlugin extends Plugin {
 		}
 
 		if (this.changed_settings.annotation_gutter_width !== undefined) {
-			updateAllCompartments(
-				this.app,
-				this.editorExtensions,
-				annotationGutterWidth,
-				annotationGutterWidthState,
-				this.settings.annotation_gutter_width,
-			);
+			sendAnnotationToAllCMInstances(this.app, annotationGutterWidthAnnotation.of(this.settings.annotation_gutter_width));
 		}
 
 		if (this.changed_settings.annotation_gutter_hide_empty !== undefined) {
-			updateAllCompartments(
-				this.app,
-				this.editorExtensions,
-				hideEmptyAnnotationGutter,
-				hideEmptyAnnotationGutterState,
-				this.settings.annotation_gutter_hide_empty,
-			);
+			sendAnnotationToAllCMInstances(this.app, annotationGutterHideEmptyAnnotation.of(this.settings.annotation_gutter_hide_empty));
 		}
 
 		if (this.changed_settings.diff_gutter_hide_empty !== undefined) {
@@ -432,23 +389,11 @@ export default class CommentatorPlugin extends Plugin {
 		}
 
 		if (this.changed_settings.annotation_gutter_fold_button !== undefined) {
-			updateAllCompartments(
-				this.app,
-				this.editorExtensions,
-				annotationGutterFoldButton,
-				annotationGutterFoldButtonState,
-				this.settings.annotation_gutter_fold_button,
-			);
+			sendAnnotationToAllCMInstances(this.app, annotationGutterFoldButtonAnnotation.of(this.settings.annotation_gutter_fold_button));
 		}
 
 		if (this.changed_settings.annotation_gutter_resize_handle !== undefined) {
-			updateAllCompartments(
-				this.app,
-				this.editorExtensions,
-				annotationGutterResizeHandle,
-				annotationGutterResizeHandleState,
-				this.settings.annotation_gutter_resize_handle,
-			);
+			sendAnnotationToAllCMInstances(this.app, annotationGutterResizeHandleAnnotation.of(this.settings.annotation_gutter_resize_handle));
 		}
 
 		if (this.changed_settings.default_preview_mode !== undefined) {

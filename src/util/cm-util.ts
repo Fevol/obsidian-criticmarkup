@@ -1,4 +1,4 @@
-import { Compartment, type Extension, Facet, RangeSet, RangeValue } from "@codemirror/state";
+import {type Annotation, Compartment, type Extension, Facet, RangeSet, RangeValue } from "@codemirror/state";
 import type { EditorView } from "@codemirror/view";
 import { App, MarkdownView } from "obsidian";
 
@@ -54,10 +54,26 @@ export function debugRangeset<Type extends RangeValue>(
 
 export function iterateAllCMInstances(app: App, callback: (cm: EditorView) => void) {
 	app.workspace.iterateAllLeaves((leaf) => {
-		// @ts-ignore
+		// TODO: Check if source check is needed
+		// @ts-expect-error
 		if (leaf.view instanceof MarkdownView && leaf.view.currentMode.type === "source") {
-			// @ts-ignore
 			callback(leaf.view.editor.cm);
 		}
 	});
+}
+
+export function sendAnnotationToAllCMInstances<T>(
+	app: App,
+	annotation: Annotation<T>,
+) {
+	for (const cm of app.workspace.getLeavesOfType("markdown")) {
+		// TODO: Check if source check is needed
+		// @ts-expect-error
+		if (cm.view instanceof MarkdownView && cm.view.currentMode.type === "source") {
+			cm.view.editor.cm.dispatch({
+				annotations: [annotation],
+			});
+		}
+	}
+
 }

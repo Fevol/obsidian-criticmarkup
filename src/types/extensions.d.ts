@@ -24,6 +24,13 @@ declare module "@flatten-js/interval-tree" {
 	}
 }
 
+declare module "obsidian" {
+	interface MarkdownEditView {
+		annotationGutterFolded: boolean;
+		annotationGutterWidth: number;
+	}
+}
+
 declare module "obsidian-typings" {
 	interface PluginsPluginsRecord {
 		commentator: CommentatorPlugin;

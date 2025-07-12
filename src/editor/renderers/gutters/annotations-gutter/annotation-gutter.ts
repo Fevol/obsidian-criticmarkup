@@ -10,16 +10,7 @@
 import {Annotation, type Extension, Facet} from "@codemirror/state";
 import { BlockInfo, EditorView, GutterMarker, ViewUpdate } from "@codemirror/view";
 
-import { debounce, setIcon } from "obsidian";
-import {
-	annotationGutterFoldButtonState,
-	annotationGutterFolded,
-	annotationGutterFoldedState,
-	annotationGutterResizeHandleState,
-	annotationGutterWidth,
-	annotationGutterWidthState,
-	hideEmptyAnnotationGutterState,
-} from "../../../settings";
+import { debounce, editorInfoField, setIcon } from "obsidian";
 import {
 	createGutter,
 	createGutterViewPlugin,
@@ -40,12 +31,19 @@ const unfixGutters = Facet.define<boolean, boolean>({
 	combine: values => values.some(x => x),
 });
 
-const activeGutters = Facet.define<Required<GutterConfig>>();
+const activeGutters = Facet.define<Required<AnnotationGutterConfig>>();
 
 export const annotationGutterFocusAnnotation = Annotation.define<{ from: number, to: number, index?: number, scroll?: boolean }>();
-// export const annotationGutterSyncGutter = Annotation.define<boolean>;
+export const annotationGutterFoldAnnotation = Annotation.define<boolean | null>();
+export const annotationGutterFocusThreadAnnotation = Annotation.define<{ marker: AnnotationMarker, index: number, scroll?: boolean, focus_markup?: boolean }>();
+export const annotationGutterWidthAnnotation = Annotation.define<number>();
+export const annotationGutterHideEmptyAnnotation = Annotation.define<boolean>();
+export const annotationGutterFoldButtonAnnotation = Annotation.define<boolean>();
+export const annotationGutterResizeHandleAnnotation = Annotation.define<boolean>();
 
 export class AnnotationGutterView extends GutterView {
+	declare gutters: AnnotationSingleGutterView[];
+
 	previously_focused: AnnotationMarker | undefined = undefined;
 
 	constructor(view: EditorView) {
@@ -85,6 +83,18 @@ export class AnnotationGutterView extends GutterView {
 		return (this.gutters as AnnotationSingleGutterView[]).map(gutter =>
 			new AnnotationUpdateContext(gutter, this.view.viewport, -this.view.documentPadding.top)
 		);
+	}
+
+	update(update: ViewUpdate) {
+		for (const transaction of update.transactions) {
+			const thread_focus = transaction.annotation(annotationGutterFocusThreadAnnotation);
+			if (thread_focus) {
+				const { marker, index, scroll = false, focus_markup = false } = thread_focus;
+				this.unfocusAnnotation();
+				this.focusAnnotation(marker, index, scroll, focus_markup);
+			}
+		}
+		super.update(update);
 	}
 
 	unfocusAnnotation() {
@@ -184,9 +194,37 @@ export class AnnotationGutterView extends GutterView {
 	}
 }
 
-const annotationGutterView = createGutterViewPlugin(AnnotationGutterView);
+export const annotationGutterView = createGutterViewPlugin(AnnotationGutterView);
 
-export function annotation_gutter(config: GutterConfig): Extension {
+export interface AnnotationGutterConfig extends GutterConfig {
+	/**
+	 * Whether the gutter should be folded by default
+	 */
+	foldState: boolean;
+
+	/**
+	 * The width of the gutter in pixels
+	 */
+	width: number;
+
+	/**
+	 * Whether the gutter should be hidden when empty
+	 */
+	hideOnEmpty: boolean;
+
+	/**
+	 * Whether the gutter should include a fold button
+	 */
+	includeFoldButton: boolean;
+
+	/**
+	 * Whether the gutter should include a resize handle
+	 */
+	includeResizeHandle: boolean;
+}
+
+
+export function annotation_gutter(config: AnnotationGutterConfig): Extension {
 	return createGutter(annotationGutterView, config, activeGutters, unfixGutters);
 }
 
@@ -298,32 +336,41 @@ class AnnotationUpdateContext extends UpdateContext {
 }
 
 class AnnotationSingleGutterView extends SingleGutterView {
+	folded: boolean = false;
+	hide_on_empty: boolean = false;
+	width: number = 0;
+	include_fold_button: boolean = false;
+	include_resize_handle: boolean = false;
+
 	fold_button: HTMLElement | undefined = undefined;
 	resize_handle: HTMLElement | undefined = undefined;
 	declare elements: AnnotationGutterElement[];
 
-	constructor(public view: EditorView, public config: Required<GutterConfig>, private gutterDom: HTMLElement) {
+	constructor(public view: EditorView, public config: Required<AnnotationGutterConfig>, private gutterDom: HTMLElement) {
 		super(view, config);
 
-		const folded = view.state.facet(annotationGutterFoldedState);
-		if (
-			(view.state.facet(hideEmptyAnnotationGutterState) && view.state.field(annotationGutterMarkers).size === 0) ||
-			folded
-		) {
+		this.folded = config.foldState;
+		this.width = config.width;
+		this.hide_on_empty = config.hideOnEmpty;
+		this.include_fold_button = config.includeFoldButton;
+		this.include_resize_handle = config.includeResizeHandle;
+
+		if ((this.hide_on_empty && view.state.field(annotationGutterMarkers).size === 0) || this.folded) {
 			this.dom.style.width = "0";
 		} else {
-			this.dom.style.width = view.state.facet(annotationGutterWidthState) + "px";
+			this.dom.style.width = this.width + "px";
 		}
 
-		if (view.state.facet(annotationGutterFoldButtonState))
-			this.createFoldButton(folded);
+		if (this.include_fold_button) {
+			this.createFoldButton();
+		}
 
-		if (view.state.facet(annotationGutterResizeHandleState)) {
+		if (this.include_resize_handle) {
 			this.createResizeHandle();
 		}
 	}
 
-	createFoldButton(folded: boolean) {
+	createFoldButton() {
 		if (this.view.dom.children[0].classList.contains("cmtr-anno-gutter-button"))
 			this.fold_button = this.view.dom.children[0] as HTMLElement;
 		else {
@@ -333,8 +380,12 @@ class AnnotationSingleGutterView extends SingleGutterView {
 			this.fold_button.setAttribute("data-tooltip-position", "left");
 		}
 
-		this.setFoldButtonState(folded);
-		this.fold_button.onclick = this.foldGutter.bind(this);
+		this.setFoldButtonState();
+		this.fold_button.onclick = () => {
+			this.folded = !this.folded;
+			this.view.state.field(editorInfoField).app.workspace.requestSaveLayout();
+			this.foldGutter();
+		}
 		this.fold_button!.style.display = this.view.state.field(annotationGutterMarkers).size ? "" : "none";
 	}
 
@@ -348,14 +399,13 @@ class AnnotationSingleGutterView extends SingleGutterView {
 			this.resize_handle.addEventListener("mousedown", (e) => {
 				let initialPosition = e.clientX;
 
-				// NOTE: Prevent excessive state updates and DOM redraws
+				// EXPL: Debounce to prevent excessive state updates and DOM redraws while dragging the handle
 				const setWidth = debounce((width: number) => {
-					this.dom.style.width = width + "px";
-					this.view.dispatch({
-						effects: annotationGutterWidth.reconfigure(annotationGutterWidthState.of(width)),
-					});
+					this.width = width;
+					this.view.state.field(editorInfoField).app.workspace.requestSaveLayout();
+					this.dom.style.width = this.width + "px";
 					if (this.fold_button) {
-						this.fold_button.style.right = width + FOLD_BUTTON_OFFSET + "px";
+						this.fold_button.style.right = this.width + FOLD_BUTTON_OFFSET + "px";
 					}
 				}, 25);
 
@@ -387,11 +437,11 @@ class AnnotationSingleGutterView extends SingleGutterView {
 				return true;
 			});
 		}
-		this.resize_handle!.style.display = (this.view.state.field(annotationGutterMarkers).size && !this.view.state.facet(annotationGutterFoldedState)) ? "" : "none";
+		this.resize_handle!.style.display = (this.view.state.field(annotationGutterMarkers).size && !this.folded) ? "" : "none";
 	}
 
-	setFoldButtonState(folded: boolean, width?: number) {
-		if (folded) {
+	setFoldButtonState(width?: number) {
+		if (this.folded) {
 			this.fold_button!.style.right = "20px";
 			this.fold_button!.style.rotate = "-180deg";
 			this.fold_button!.ariaLabel = "Unfold gutter";
@@ -399,7 +449,7 @@ class AnnotationSingleGutterView extends SingleGutterView {
 				this.resize_handle.style.display = 'none';
 			}
 		} else {
-			this.fold_button!.style.right = (width ?? this.view.state.facet(annotationGutterWidthState)) + FOLD_BUTTON_OFFSET + "px";
+			this.fold_button!.style.right = (width ?? this.width) + FOLD_BUTTON_OFFSET + "px";
 			this.fold_button!.style.rotate = "0deg";
 			this.fold_button!.ariaLabel = "Fold gutter";
 			if (this.resize_handle) {
@@ -409,14 +459,12 @@ class AnnotationSingleGutterView extends SingleGutterView {
 	}
 
 	foldGutter() {
-		const folded = !this.view.state.facet(annotationGutterFoldedState);
-		const gutterWidth = this.view.state.facet(annotationGutterWidthState);
 		if (this.fold_button) {
-			this.setFoldButtonState(folded, gutterWidth);
+			this.setFoldButtonState(this.width);
 		}
 
-		// Set the gutter height for every element to fixed such that the element doesn't break the layout
-		if (folded) {
+		// EXPL: Set the gutter height for every element to fixed such that the element doesn't break the layout
+		if (this.folded) {
 			this.elements.forEach(element => {
 				Array.from(element.dom.getElementsByClassName("cmtr-anno-gutter-annotation")).forEach(comment => {
 					comment.setAttribute("style", `max-height: ${comment.clientHeight}px; overflow: hidden;`);
@@ -431,45 +479,63 @@ class AnnotationSingleGutterView extends SingleGutterView {
 				});
 			}, { once: true });
 		}
-		this.dom.style.width = folded ? "0" : gutterWidth + "px";
-
-		this.view.dispatch({
-			effects: annotationGutterFolded.reconfigure(annotationGutterFoldedState.of(folded)),
-		});
+		this.dom.style.width = this.folded ? "0" : this.width + "px";
 	}
 
 	update(update: ViewUpdate) {
 		const result = super.update(update);
-
-		const hideEmpty = update.state.facet(hideEmptyAnnotationGutterState);
-		const width = update.state.facet(annotationGutterWidthState);
-		const foldButton = update.state.facet(annotationGutterFoldButtonState);
-		const resizeHandle = update.state.facet(annotationGutterResizeHandleState);
-		const folded = update.state.facet(annotationGutterFoldedState);
 		const widgets = update.state.field(annotationGutterMarkers);
 
-		if (hideEmpty !== update.startState.facet(hideEmptyAnnotationGutterState)) {
-			if (hideEmpty && update.state.field(annotationGutterMarkers).size === 0)
-				this.dom.style.width = "0";
-			else
-				this.dom.style.width = update.state.facet(annotationGutterWidthState) + "px";
-		} else if (width !== update.startState.facet(annotationGutterWidthState)) {
-			if (!hideEmpty && !folded)
-				this.dom.style.width = width + "px";
-		} else if (foldButton !== update.startState.facet(annotationGutterFoldButtonState)) {
-			if (foldButton && !this.fold_button)
-				this.createFoldButton(folded);
-			else if (!foldButton && this.fold_button) {
-				this.fold_button.remove();
-				this.fold_button = undefined;
+		for (const transaction of update.transactions) {
+			const fold_status = transaction.annotation(annotationGutterFoldAnnotation);
+			const width = transaction.annotation(annotationGutterWidthAnnotation);
+			const hide_empty = transaction.annotation(annotationGutterHideEmptyAnnotation);
+			const fold_button = transaction.annotation(annotationGutterFoldButtonAnnotation);
+			const resize_handle = transaction.annotation(annotationGutterResizeHandleAnnotation);
+			if (width !== undefined) {
+				this.width = width;
+				if (!this.hide_on_empty && !this.folded) {
+					this.dom.style.width = width + "px";
+				}
 			}
-		} else if (resizeHandle !== update.startState.facet(annotationGutterResizeHandleState)) {
-			if (resizeHandle && !this.resize_handle)
-				this.createResizeHandle();
-			else if (!resizeHandle && this.resize_handle) {
-				this.resize_handle.remove();
-				this.resize_handle = undefined;
+			if (fold_status !== undefined) {
+				if (fold_status === null) {
+					this.folded = !this.folded;
+					this.view.state.field(editorInfoField).app.workspace.requestSaveLayout();
+				} else {
+					this.folded = fold_status;
+				}
+				this.foldGutter();
 			}
+			if (hide_empty !== undefined) {
+				this.hide_on_empty = hide_empty;
+				if (this.hide_on_empty && widgets.size === 0) {
+					this.dom.style.width = "0";
+				} else {
+					this.dom.style.width = this.width + "px";
+				}
+			}
+			if (fold_button !== undefined) {
+				this.include_fold_button = fold_button;
+				if (this.include_fold_button && !this.fold_button) {
+					this.createFoldButton();
+				} else if (!this.include_fold_button && this.fold_button) {
+					this.fold_button.remove();
+					this.fold_button = undefined;
+				}
+				this.setFoldButtonState();
+			}
+			if (resize_handle !== undefined) {
+				this.include_resize_handle = resize_handle;
+				if (this.include_resize_handle && !this.resize_handle) {
+					this.createResizeHandle();
+				} else if (!this.include_resize_handle && this.resize_handle) {
+					this.resize_handle.remove();
+					this.resize_handle = undefined;
+				}
+			}
+
+
 		}
 
 		if (widgets.size !== update.startState.field(annotationGutterMarkers).size) {
@@ -478,19 +544,19 @@ class AnnotationSingleGutterView extends SingleGutterView {
 					this.fold_button.style.display = "none";
 				if (this.resize_handle)
 					this.resize_handle.style.display = "none";
-				if (hideEmpty)
+				if (this.hide_on_empty)
 					this.dom.style.width = "0";
 			} else {
 				if (this.fold_button)
 					this.fold_button.style.display = "";
 				if (this.resize_handle)
 					this.resize_handle.style.display = "";
-				if (!folded)
-					this.dom.style.width = width + "px";
+				if (!this.folded)
+					this.dom.style.width = this.width + "px";
 			}
 		}
 
-		// Boolean returns true only if markers have changed within the viewport (so outside markers don't count)
+		// NOTE: Boolean returns true only if markers have changed within the viewport (so outside markers don't count)
 		return result;
 	}
 

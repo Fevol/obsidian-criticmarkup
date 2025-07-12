@@ -1,4 +1,4 @@
-import { type Editor, editorInfoField, type MarkdownView, Platform } from "obsidian";
+import { type Editor, type MarkdownView, Platform } from "obsidian";
 
 import { type ECommand, EditMode } from "../../types";
 
@@ -12,7 +12,6 @@ import {
 	selectionContainsRanges,
 } from "../base";
 import { addCommentToView, generateCriticMarkupPatchFromDiff } from "../base";
-import { annotationGutter } from "../renderers/gutters";
 import {
 	editMode,
 	editModeValue,
@@ -22,6 +21,7 @@ import {
 } from "../settings";
 import { getEditMode } from "./extensions/editing-modes";
 import { showProgressBarNotice } from "../../util/obsidian-util";
+import { annotationGutterFoldAnnotation } from "../renderers/gutters";
 
 export const debug_application_commands = (plugin: CommentatorPlugin) => [
 	{
@@ -137,9 +137,11 @@ export const editor_commands: (plugin: CommentatorPlugin) => ECommand[] = (plugi
 		icon: "arrow-right-from-line",
 		editor_context: true,
 		regular_callback: (editor: Editor, _) => {
-			const { app } = editor.cm.state.field(editorInfoField);
-			// FIXME: Remove direct access of gutter, prefer fold annotation?
-			editor.cm.plugin(annotationGutter(app)[1][0][0])!.foldGutter();
+			editor.cm.dispatch({
+				annotations: [
+					annotationGutterFoldAnnotation.of(null)
+				]
+			});
 		},
 	},
 	{

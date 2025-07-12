@@ -1,4 +1,2 @@
-import { annotationGutter, annotationGutterCompartment, annotationGutterMarkers } from "./annotations-gutter";
-import { diffGutter, diffGutterCompartment, diffGutterMarkers } from "./diffs-gutter";
-
-export { annotationGutter, annotationGutterCompartment, annotationGutterMarkers, diffGutter, diffGutterCompartment, diffGutterMarkers };
+export * from "./annotations-gutter";
+export * from "./diffs-gutter";

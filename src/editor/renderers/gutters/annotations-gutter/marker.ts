@@ -1,17 +1,18 @@
-import {type EditorState, Range, RangeSet, StateField} from "@codemirror/state";
-import {EditorView, GutterMarker} from "@codemirror/view";
+import { type EditorState, Range, RangeSet, StateField } from "@codemirror/state";
+import { EditorView, GutterMarker } from "@codemirror/view";
 
-import {Component, editorEditorField, editorInfoField, MarkdownRenderer, Menu, Notice} from "obsidian";
+import { Component, editorEditorField, editorInfoField, MarkdownRenderer, Menu, Notice } from "obsidian";
 
-import {COMMENTATOR_GLOBAL} from "../../../../global";
-import {EmbeddableMarkdownEditor} from "../../../../ui/embeddable-editor";
-import {acceptSuggestions, addCommentToView, CriticMarkupRange, rangeParser, rejectSuggestions, SuggestionType} from "../../../base";
-import {create_range} from "../../../base/edit-util/range-create";
-import {annotationGutter} from "./index";
-import {AnnotationInclusionType} from "../../../../constants";
-import {annotationGutterIncludedTypes, annotationGutterIncludedTypesState} from "../../../settings";
-import type {AnnotationGutterView} from "./annotation-gutter";
-import {keepContextMenuOpen} from "../../../../patches";
+import { EmbeddableMarkdownEditor } from "../../../../ui/embeddable-editor";
+
+import { acceptSuggestions, addCommentToView, CriticMarkupRange, rangeParser, rejectSuggestions, SuggestionType } from "../../../base";
+import { create_range } from "../../../base/edit-util/range-create";
+
+import { AnnotationInclusionType } from "../../../../constants";
+import { annotationGutterIncludedTypes, annotationGutterIncludedTypesState } from "../../../settings";
+import { annotationGutterFocusThreadAnnotation, annotationGutterFoldAnnotation } from "./annotation-gutter";
+
+import { keepContextMenuOpen } from "../../../../patches";
 
 class AnnotationNode extends Component {
 	text: string;
@@ -98,15 +99,16 @@ class AnnotationNode extends Component {
 			e?.stopPropagation();
 			if (this.currentMode === "source") return;
 
+			const { app } = this.marker.view.state.field(editorInfoField);
 			this.annotation_container.toggleClass("cmtr-anno-gutter-annotation-editing", true);
-			if (this.range.fields.author && this.range.fields.author !== COMMENTATOR_GLOBAL.PLUGIN_SETTINGS.author) {
+			if (this.range.fields.author && this.range.fields.author !== app.plugins.plugins.commentator.settings.author) {
 				new Notice("[Commentator] You cannot edit comments from other authors.");
 				return;
 			}
 
 			this.annotation_view.empty();
 			this.editMode = this.addChild(
-				new EmbeddableMarkdownEditor(COMMENTATOR_GLOBAL.app, this.annotation_view, {
+				new EmbeddableMarkdownEditor(app, this.annotation_view, {
 					value: this.text,
 					cls: "cmtr-anno-gutter-annotation-editor",
 					onSubmit: (editor) => {
@@ -114,7 +116,7 @@ class AnnotationNode extends Component {
 						this.renderPreview();
 					},
 					// TODO: Get a reference to the plugin somehow
-					filteredExtensions: [COMMENTATOR_GLOBAL.app.plugins.plugins["commentator"].editorExtensions],
+					filteredExtensions: [app.plugins.plugins["commentator"].editorExtensions],
 					onBlur: this.renderPreview.bind(this),
 				}),
 			);
@@ -133,6 +135,7 @@ class AnnotationNode extends Component {
 
 		// EXPL: Regular (re-)rendering of the annotation
 		if (this.text === this.new_text || this.new_text === null) {
+			const { app } = this.marker.view.state.field(editorInfoField);
 			this.new_text = null;
 			if (this.editMode) {
 				this.removeChild(this.editMode);
@@ -140,7 +143,7 @@ class AnnotationNode extends Component {
 			}
 			this.annotation_view.empty();
 			if (this.range.type !== SuggestionType.SUBSTITUTION) {
-				MarkdownRenderer.render(COMMENTATOR_GLOBAL.app, this.text || "&nbsp;", this.annotation_view, "", this);
+				MarkdownRenderer.render(app, this.text || "&nbsp;", this.annotation_view, "", this);
 				switch (this.range.type) {
 					case SuggestionType.ADDITION:
 						this.annotation_view.children[0].prepend(createSpan({ cls: "cmtr-anno-gutter-annotation-desc", text: "Added: " }));
@@ -155,10 +158,10 @@ class AnnotationNode extends Component {
 				}
 			} else {
 				const text_slices = this.range.unwrap_parts();
-				MarkdownRenderer.render(COMMENTATOR_GLOBAL.app, text_slices[0] || "&nbsp;", this.annotation_view, "", this);
+				MarkdownRenderer.render(app, text_slices[0] || "&nbsp;", this.annotation_view, "", this);
 				this.annotation_view.children[0].prepend(createSpan({ cls: "cmtr-anno-gutter-annotation-desc", text: "Changed: " }));
 				const childIdx = this.annotation_view.children.length;
-				MarkdownRenderer.render(COMMENTATOR_GLOBAL.app, text_slices[1] || "&nbsp;", this.annotation_view, "", this);
+				MarkdownRenderer.render(app, text_slices[1] || "&nbsp;", this.annotation_view, "", this);
 				this.annotation_view.children[childIdx].prepend(createSpan({ cls: "cmtr-anno-gutter-annotation-desc", text: "To: " }));
 			}
 
@@ -296,8 +299,9 @@ class AnnotationNode extends Component {
 				.setSection("gutter-controls")
 				.setIcon("arrow-right-from-line")
 				.onClick(() => {
-					// FIXME: Remove direct access of gutter, prefer fold annotation?
-					this.marker.view.plugin(annotationGutter(COMMENTATOR_GLOBAL.app)[1][0][0])!.foldGutter();
+					this.marker.view.dispatch({
+						annotations: [ annotationGutterFoldAnnotation.of(null) ]
+					});
 				});
 		});
 		menu.addItem((item) => {
@@ -354,16 +358,18 @@ export class AnnotationMarker extends GutterMarker {
 	}
 
 	onCommentThreadClick() {
-		const { app } = this.view.state.field(editorInfoField);
 		// EXPL: When the annotation gets focused, ensure that it is aligned to the block it is attached to,
 		// 		 pushing other annotations up/down
-		// NOTE: This is very dirty access of the annotation gutter plugin, but the alternative
-		// 		 is that we create an annotation for both moving the gutter (containing this marker),
-		// 		 as well as a focus annotation, which seems far too roundabout
-		// FIXME: Remove direct access of gutter, prefer annotation?
-		const gutter = this.view.plugin(annotationGutter(app)[1][0][0]) as AnnotationGutterView;
-		gutter.unfocusAnnotation();
-		gutter.focusAnnotation(this, -1, true, true);
+		this.view.dispatch({
+			annotations: [
+				annotationGutterFocusThreadAnnotation.of({
+					marker: this,
+					index: -1,
+					scroll: true,
+					focus_markup: true,
+				}),
+			],
+		});
 
 		this.annotation_thread.classList.toggle("cmtr-anno-gutter-thread-highlight", true);
 	}

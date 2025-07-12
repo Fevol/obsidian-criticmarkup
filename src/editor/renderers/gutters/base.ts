@@ -72,9 +72,8 @@ export interface GutterConfig {
 
 export const defaults = {
 	class: "",
-	width: 300,
 	renderEmptyElements: false,
-	elementStyle: "",
+	// elementStyle: "",
 	markers: () => RangeSet.empty,
 	lineMarker: () => null,
 	widgetMarker: () => null,
@@ -82,7 +81,7 @@ export const defaults = {
 	initialSpacer: null,
 	updateSpacer: null,
 	domEventHandlers: {},
-};
+} satisfies Required<GutterConfig>;
 
 // export function gutter(config: GutterConfig): Extension {
 // 	return [gutters(), activeGutters.of({ ...defaults, ...config })];
@@ -508,7 +507,7 @@ export class GutterView {
 	}
 }
 
-export function createGutterViewPlugin(cls: { new(view: EditorView): GutterView }) {
+export function createGutterViewPlugin<T extends GutterView>(cls: { new(view: EditorView): T }) {
 	return ViewPlugin.fromClass(cls, {
 		provide: plugin =>
 			EditorView.scrollMargins.of(view => {
