@@ -339,11 +339,11 @@ class AnnotationSingleGutterView extends SingleGutterView {
 	folded: boolean = false;
 	hide_on_empty: boolean = false;
 	width: number = 0;
-	include_fold_button: boolean = false;
-	include_resize_handle: boolean = false;
+	add_fold_button: boolean = false;
+	add_resize_handle: boolean = false;
 
-	fold_button: HTMLElement | undefined = undefined;
-	resize_handle: HTMLElement | undefined = undefined;
+	fold_button_el: HTMLElement | undefined = undefined;
+	resize_handle_el: HTMLElement | undefined = undefined;
 	declare elements: AnnotationGutterElement[];
 
 	constructor(public view: EditorView, public config: Required<AnnotationGutterConfig>, private gutterDom: HTMLElement) {
@@ -352,8 +352,8 @@ class AnnotationSingleGutterView extends SingleGutterView {
 		this.folded = config.foldState;
 		this.width = config.width;
 		this.hide_on_empty = config.hideOnEmpty;
-		this.include_fold_button = config.includeFoldButton;
-		this.include_resize_handle = config.includeResizeHandle;
+		this.add_fold_button = config.includeFoldButton;
+		this.add_resize_handle = config.includeResizeHandle;
 
 		if ((this.hide_on_empty && view.state.field(annotationGutterMarkers).size === 0) || this.folded) {
 			this.dom.style.width = "0";
@@ -361,109 +361,100 @@ class AnnotationSingleGutterView extends SingleGutterView {
 			this.dom.style.width = this.width + "px";
 		}
 
-		if (this.include_fold_button) {
+		if (this.add_fold_button) {
 			this.createFoldButton();
 		}
 
-		if (this.include_resize_handle) {
+		if (this.add_resize_handle) {
 			this.createResizeHandle();
 		}
 	}
 
 	createFoldButton() {
-		if (this.view.dom.children[0].classList.contains("cmtr-anno-gutter-button"))
-			this.fold_button = this.view.dom.children[0] as HTMLElement;
-		else {
-			this.fold_button = createEl("a", { cls: ["cmtr-anno-gutter-button", "view-action"] });
-			this.view.dom.prepend(this.fold_button);
-			setIcon(this.fold_button, "arrow-right-from-line");
-			this.fold_button.setAttribute("data-tooltip-position", "left");
-		}
-
-		this.setFoldButtonState();
-		this.fold_button.onclick = () => {
+		this.fold_button_el = createEl("a", { cls: ["cmtr-anno-gutter-button", "view-action"] });
+		setIcon(this.fold_button_el, "arrow-right-from-line");
+		this.fold_button_el.setAttribute("data-tooltip-position", "left");
+		this.fold_button_el.style.display = this.view.state.field(annotationGutterMarkers).size ? "" : "none";
+		this.fold_button_el.onclick = () => {
 			this.folded = !this.folded;
 			this.view.state.field(editorInfoField).app.workspace.requestSaveLayout();
 			this.foldGutter();
 		}
-		this.fold_button!.style.display = this.view.state.field(annotationGutterMarkers).size ? "" : "none";
+
+		this.setFoldButtonState();
+		this.view.dom.prepend(this.fold_button_el);
 	}
 
 	createResizeHandle() {
-		if (this.gutterDom.children[0]?.classList.contains("cmtr-anno-gutter-resize-handle")) {
-			this.resize_handle = this.gutterDom.children[0] as HTMLElement;
-		} else {
-			this.resize_handle = createEl("hr", { cls: ["cmtr-anno-gutter-resize-handle"] });
-			this.gutterDom.appendChild(this.resize_handle);
+		this.resize_handle_el = createEl("hr", { cls: ["cmtr-anno-gutter-resize-handle"] });
+		this.resize_handle_el.style.display = (this.view.state.field(annotationGutterMarkers).size && !this.folded) ? "" : "none";
+		this.resize_handle_el.addEventListener("mousedown", (e) => {
+			let initialPosition = e.clientX;
 
-			this.resize_handle.addEventListener("mousedown", (e) => {
-				let initialPosition = e.clientX;
-
-				// EXPL: Debounce to prevent excessive state updates and DOM redraws while dragging the handle
-				const setWidth = debounce((width: number) => {
-					this.width = width;
-					this.view.state.field(editorInfoField).app.workspace.requestSaveLayout();
-					this.dom.style.width = this.width + "px";
-					if (this.fold_button) {
-						this.fold_button.style.right = this.width + FOLD_BUTTON_OFFSET + "px";
-					}
-				}, 25);
-
-				this.resize_handle!.classList.toggle("cmtr-anno-gutter-resize-handle-hover", true);
-				this.fold_button?.classList.toggle("cmtr-anno-gutter-moving", true);
-				this.gutterDom.classList.toggle("cmtr-anno-gutter-moving", true);
-
-				let currentWidth = parseInt(this.dom.style.width.slice(0, -2));
-				const onMouseMove = (evt: MouseEvent) => {
-					const deltaX = evt.clientX - initialPosition;
-					initialPosition = evt.clientX
-					currentWidth -= deltaX;
-					setWidth(currentWidth);
-
-					return true;
+			// EXPL: Debounce to prevent excessive state updates and DOM redraws while dragging the handle
+			const setWidth = debounce((width: number) => {
+				this.width = width;
+				this.view.state.field(editorInfoField).app.workspace.requestSaveLayout();
+				this.dom.style.width = this.width + "px";
+				if (this.fold_button_el) {
+					this.fold_button_el.style.right = this.width + FOLD_BUTTON_OFFSET + "px";
 				}
+			}, 25);
 
-				const onMouseStop = () => {
-					document.removeEventListener("mousemove", onMouseMove);
-					document.removeEventListener("mouseup", onMouseStop);
-					this.resize_handle!.classList.toggle("cmtr-anno-gutter-resize-handle-hover", false);
-					this.fold_button?.classList.toggle("cmtr-anno-gutter-moving", false);
-					this.gutterDom.classList.toggle("cmtr-anno-gutter-moving", false);
-				}
+			this.resize_handle_el!.classList.toggle("cmtr-anno-gutter-resize-handle-hover", true);
+			this.fold_button_el?.classList.toggle("cmtr-anno-gutter-moving", true);
+			this.gutterDom.classList.toggle("cmtr-anno-gutter-moving", true);
 
-				document.addEventListener("mousemove", onMouseMove);
-				document.addEventListener("mouseup", onMouseStop);
-
+			let currentWidth = parseInt(this.dom.style.width.slice(0, -2));
+			const onMouseMove = (evt: MouseEvent) => {
+				const deltaX = evt.clientX - initialPosition;
+				initialPosition = evt.clientX
+				currentWidth -= deltaX;
+				setWidth(currentWidth);
 				return true;
-			});
-		}
-		this.resize_handle!.style.display = (this.view.state.field(annotationGutterMarkers).size && !this.folded) ? "" : "none";
+			}
+
+			const onMouseStop = () => {
+				document.removeEventListener("mousemove", onMouseMove);
+				document.removeEventListener("mouseup", onMouseStop);
+				this.resize_handle_el!.classList.toggle("cmtr-anno-gutter-resize-handle-hover", false);
+				this.fold_button_el?.classList.toggle("cmtr-anno-gutter-moving", false);
+				this.gutterDom.classList.toggle("cmtr-anno-gutter-moving", false);
+			}
+
+			document.addEventListener("mousemove", onMouseMove);
+			document.addEventListener("mouseup", onMouseStop);
+
+			return true;
+		});
+
+		this.gutterDom.appendChild(this.resize_handle_el);
 	}
 
-	setFoldButtonState(width?: number) {
-		if (this.folded) {
-			this.fold_button!.style.right = "20px";
-			this.fold_button!.style.rotate = "-180deg";
-			this.fold_button!.ariaLabel = "Unfold gutter";
-			if (this.resize_handle) {
-				this.resize_handle.style.display = 'none';
-			}
-		} else {
-			this.fold_button!.style.right = (width ?? this.width) + FOLD_BUTTON_OFFSET + "px";
-			this.fold_button!.style.rotate = "0deg";
-			this.fold_button!.ariaLabel = "Fold gutter";
-			if (this.resize_handle) {
-				this.resize_handle.style.display = '';
+	setFoldButtonState() {
+		if (this.fold_button_el) {
+			if (this.folded) {
+				this.fold_button_el.style.right = "20px";
+				this.fold_button_el.style.rotate = "-180deg";
+				this.fold_button_el.ariaLabel = "Unfold gutter";
+				if (this.resize_handle_el) {
+					this.resize_handle_el.style.display = 'none';
+				}
+			} else {
+				this.fold_button_el.style.right = this.width + FOLD_BUTTON_OFFSET + "px";
+				this.fold_button_el.style.rotate = "0deg";
+				this.fold_button_el.ariaLabel = "Fold gutter";
+				if (this.resize_handle_el) {
+					this.resize_handle_el.style.display = '';
+				}
 			}
 		}
 	}
 
 	foldGutter() {
-		if (this.fold_button) {
-			this.setFoldButtonState(this.width);
-		}
+		this.setFoldButtonState();
 
-		// EXPL: Set the gutter height for every element to fixed such that the element doesn't break the layout
+		// EXPL: Set the height for every marker to fixed so that they won't resize while the gutter is changing width
 		if (this.folded) {
 			this.elements.forEach(element => {
 				Array.from(element.dom.getElementsByClassName("cmtr-anno-gutter-annotation")).forEach(comment => {
@@ -496,6 +487,7 @@ class AnnotationSingleGutterView extends SingleGutterView {
 				this.width = width;
 				if (!this.hide_on_empty && !this.folded) {
 					this.dom.style.width = width + "px";
+					this.setFoldButtonState();
 				}
 			}
 			if (fold_status !== undefined) {
@@ -516,43 +508,47 @@ class AnnotationSingleGutterView extends SingleGutterView {
 				}
 			}
 			if (fold_button !== undefined) {
-				this.include_fold_button = fold_button;
-				if (this.include_fold_button && !this.fold_button) {
+				this.add_fold_button = fold_button;
+				if (this.add_fold_button && !this.fold_button_el) {
 					this.createFoldButton();
-				} else if (!this.include_fold_button && this.fold_button) {
-					this.fold_button.remove();
-					this.fold_button = undefined;
+				} else if (!this.add_fold_button && this.fold_button_el) {
+					this.fold_button_el.remove();
+					this.fold_button_el = undefined;
 				}
 				this.setFoldButtonState();
 			}
 			if (resize_handle !== undefined) {
-				this.include_resize_handle = resize_handle;
-				if (this.include_resize_handle && !this.resize_handle) {
+				this.add_resize_handle = resize_handle;
+				if (this.add_resize_handle && !this.resize_handle_el) {
 					this.createResizeHandle();
-				} else if (!this.include_resize_handle && this.resize_handle) {
-					this.resize_handle.remove();
-					this.resize_handle = undefined;
+				} else if (!this.add_resize_handle && this.resize_handle_el) {
+					this.resize_handle_el.remove();
+					this.resize_handle_el = undefined;
 				}
 			}
-
-
 		}
 
 		if (widgets.size !== update.startState.field(annotationGutterMarkers).size) {
 			if (widgets.size === 0) {
-				if (this.fold_button)
-					this.fold_button.style.display = "none";
-				if (this.resize_handle)
-					this.resize_handle.style.display = "none";
-				if (this.hide_on_empty)
+				if (this.fold_button_el) {
+					this.fold_button_el.style.display = "none";
+				}
+				if (this.resize_handle_el) {
+					this.resize_handle_el.style.display = "none";
+				}
+				if (this.hide_on_empty) {
 					this.dom.style.width = "0";
+				}
 			} else {
-				if (this.fold_button)
-					this.fold_button.style.display = "";
-				if (this.resize_handle)
-					this.resize_handle.style.display = "";
-				if (!this.folded)
+				if (this.fold_button_el) {
+					this.fold_button_el.style.display = "";
+				}
+				if (this.resize_handle_el) {
+					this.resize_handle_el.style.display = "";
+				}
+				if (!this.folded) {
 					this.dom.style.width = this.width + "px";
+				}
 			}
 		}
 
@@ -561,8 +557,8 @@ class AnnotationSingleGutterView extends SingleGutterView {
 	}
 
 	destroy() {
-		this.fold_button?.remove();
-		this.resize_handle?.remove();
+		this.fold_button_el?.remove();
+		this.resize_handle_el?.remove();
 
 		super.destroy();
 	}
