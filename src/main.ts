@@ -1,50 +1,40 @@
 import {
-	type MarkdownFileInfo,
-	type MarkdownPostProcessor,
-	MarkdownPreviewRenderer,
-	MarkdownView,
-	Notice,
-	Plugin,
-	TFile,
+	type MarkdownFileInfo, type MarkdownPostProcessor,
+	MarkdownPreviewRenderer, MarkdownView,
+	Notice, Plugin, TFile,
 } from "obsidian";
 
-import {type EditorState, type Extension, Prec} from "@codemirror/state";
-import {EditorView} from "@codemirror/view";
+import { type EditorState, type Extension, Prec } from "@codemirror/state";
+import { EditorView } from "@codemirror/view";
+import { type PluginSettings } from "./types";
 
-import {around} from "monkey-around";
+import { Database } from "./database";
+import { COMMENTATOR_GLOBAL } from "./global";
+import { beforePluginUninstallPatch, syncMarkdownViewCustomStatePatch } from "./patches";
 
-import {type CriticMarkupRange, getRangesInText, RANGE_PROTOTYPE_MAPPER, rangeParser, text_copy} from "./editor/base";
-
-import {cmenuGlobalCommands, cmenuViewportCommands, commands} from "./editor/uix";
-import {bracketMatcher, editorKeypressCatcher, rangeCorrecter} from "./editor/uix/extensions";
-
+import { type CriticMarkupRange, getRangesInText, RANGE_PROTOTYPE_MAPPER, rangeParser, text_copy } from "./editor/base";
+import { cmenuGlobalCommands, cmenuViewportCommands, commands } from "./editor/uix";
+import { bracketMatcher, editorKeypressCatcher, getEditMode, rangeCorrecter, focusAnnotation } from "./editor/uix/extensions";
 import {
 	annotationGutter, annotationGutterCompartment, diffGutter, diffGutterCompartment,
-	annotationGutterFoldButtonAnnotation, annotationGutterResizeHandleAnnotation, annotationGutterWidthAnnotation,
-	annotationGutterHideEmptyAnnotation,
+	annotationGutterFoldButtonAnnotation, annotationGutterResizeHandleAnnotation,
+	annotationGutterWidthAnnotation, annotationGutterHideEmptyAnnotation, annotationGutterView,
 } from "./editor/renderers/gutters";
-import {livepreviewRenderer, focusRenderer, markupFocusState} from "./editor/renderers/live-preview";
-import {postProcess, postProcessorRerender, postProcessorUpdate} from "./editor/renderers/post-process";
+import { livepreviewRenderer, focusRenderer, markupFocusState } from "./editor/renderers/live-preview";
+import { postProcess, postProcessorRerender, postProcessorUpdate } from "./editor/renderers/post-process";
 import {
-	type MetadataStatusBarButton,
-	metadataStatusBarButton,
-	previewModeStatusBarButton,
-	type StatusBarButton,
-	suggestionModeStatusBarButton,
+	type MetadataStatusBarButton, type StatusBarButton,
+	metadataStatusBarButton, previewModeStatusBarButton, suggestionModeStatusBarButton,
 } from "./editor/status-bar";
-import {type HeaderButton, editModeHeaderButton, previewModeHeaderButton} from "./editor/view-header";
+import { type HeaderButton, editModeHeaderButton, previewModeHeaderButton } from "./editor/view-header";
 
-import {CommentatorSettings} from "./ui/settings";
-import {COMMENTATOR_ANNOTATIONS_VIEW, CommentatorAnnotationsView} from "./ui/view.svelte";
+import { CommentatorSettings } from "./ui/settings";
+import { COMMENTATOR_ANNOTATIONS_VIEW, CommentatorAnnotationsView } from "./ui/view.svelte";
 
-import {Database} from "./database";
 
 import {
-	DATABASE_VERSION,
-	DEFAULT_SETTINGS,
-	REQUIRES_DATABASE_REINDEX,
-	REQUIRES_EDITOR_RELOAD,
-	REQUIRES_FULL_RELOAD,
+	DATABASE_VERSION, DEFAULT_SETTINGS, REQUIRES_DATABASE_REINDEX,
+	REQUIRES_EDITOR_RELOAD, REQUIRES_FULL_RELOAD,
 } from "./constants";
 import {
 	annotationGutterIncludedTypes, annotationGutterIncludedTypesState,
@@ -53,13 +43,9 @@ import {
 	hideEmptyDiffGutter, hideEmptyDiffGutterState,
 	previewMode, previewModeState,
 } from "./editor/settings";
-import {getEditMode} from "./editor/uix/extensions/editing-modes";
-import {COMMENTATOR_GLOBAL} from "./global";
-import {type PluginSettings} from "./types";
-import {debugRangeset, iterateAllCMInstances, sendAnnotationToAllCMInstances, updateAllCompartments, updateCompartment} from "./util/cm-util";
-import {objectDifference} from "./util/util";
-import {focusAnnotation} from "./editor/uix/extensions/focus-annotation";
-import {syncEditorPersistentState} from "./patches";
+
+import { debugRangeset, iterateAllCMInstances, sendAnnotationToAllCMInstances, updateAllCompartments, updateCompartment} from "./util/cm-util";
+import { objectDifference } from "./util/util";
 
 export default class CommentatorPlugin extends Plugin {
 	editorExtensions: Extension[] = [];
