@@ -1,8 +1,5 @@
-import {MarkdownView, Menu, MenuItem} from "obsidian";
+import {MarkdownView, Menu, MenuItem, type Plugin} from "obsidian";
 import {around} from "monkey-around";
-
-import type CommentatorPlugin from "./main";
-import {annotationGutterView} from "./editor/renderers/gutters";
 
 /**
  * Keep the context menu open after clicking on a menu item.
@@ -37,20 +34,27 @@ export const stickyContextMenuPatch = (onSubmenu = false) => {
 }
 
 /**
- * This patch extends the MarkdownView to synchronize config values added by this plugin to the persistent state.
+ * This patch extends the MarkdownView to synchronize config values added by your plugin to the persistent state.
  * It also ensures that these values are correctly set to the editor _before_ it is (re)initialized.
- * @param plugin - The Commentator plugin instance.
+ * @param setState - Get persisted values from the state and load them into the view
+ * @param getState - Get current values from the view and store in the state
+ * @param beforeEditorReload - Synchronize values from state before the codemirror instance is initialized
+ * @param afterEditorReload - Synchronize values from state after the codemirror instance is initialized
+ * @remarks Any state values set by this patch will be automatically removed once this patch is uninstalled.
  */
-export const syncEditorPersistentState = (plugin: CommentatorPlugin) => {
+export const syncMarkdownViewCustomStatePatch = (
+    setState: (view: MarkdownView, state: Record<string, unknown>) => void | Promise<void>,
+    getState: (view: MarkdownView, state: Record<string, unknown>) => void,
+    beforeEditorReload: (view: MarkdownView) => void,
+    afterEditorReload: (view: MarkdownView) => void = () => {}
+) => {
     return around(MarkdownView.prototype, {
         setState: (oldMethod) => {
-            return async function (this: MarkdownView, viewState, eState?: any){
-                // EXPL: If editMode.(width) is undefined (e.g. new view), set initial value to be inherited/default
-                if (viewState && plugin.settings.annotation_gutter && this.editMode.annotationGutterWidth === undefined) {
-                    this.editMode.annotationGutterWidth = viewState['annotationGutterWidth'] ?? plugin.settings.annotation_gutter_width;
-                    this.editMode.annotationGutterFolded = viewState['annotationGutterFolded'] ?? plugin.settings.annotation_gutter_default_fold_state;
+            return async function (this: MarkdownView, ...args){
+                if (args[0]) {
+                    await setState(this, args[0]);
                 }
-                return oldMethod && oldMethod.apply(this, [viewState, eState]);
+                return oldMethod && oldMethod.apply(this, args);
             }
         },
 
@@ -58,17 +62,7 @@ export const syncEditorPersistentState = (plugin: CommentatorPlugin) => {
             return function (this: MarkdownView) {
                 const state = oldMethod && oldMethod.apply(this);
                 if (state) {
-                    if (plugin.settings.annotation_gutter) {
-                        // EXPL: When folding or resizing the gutter, requestSaveLayout is called to store the values
-                        //		The following lines extract the new values from the gutters state
-                        const gutter = this.editMode.cm.plugin(annotationGutterView)?.gutters[0];
-                        if (gutter) {
-                            this.editMode.annotationGutterWidth = gutter.width;
-                            this.editMode.annotationGutterFolded = gutter.folded;
-                        }
-                        state['annotationGutterFolded' as keyof typeof state] = this.editMode.annotationGutterFolded;
-                        state['annotationGutterWidth' as keyof typeof state] = this.editMode.annotationGutterWidth;
-                    }
+                    getState(this, state);
                 }
                 return state;
             }
@@ -76,17 +70,17 @@ export const syncEditorPersistentState = (plugin: CommentatorPlugin) => {
 
         // EXPL: Called on every file change, particularly hot path code
         //		 If clear is enabled, the extensions will be reloaded (guaranteed to be synchronous)
-        //       Before the annotation gutter is initialized, set the inherited width/fold data in advance
-        //       (The other alternative is updating gutter once loaded, and forcing a jarring re-render)
-        // TODO: Find another way to communicate 'new' values to the gutter on initialization without animation
         setData: (oldMethod) => {
             return async function (this: MarkdownView, ...args) {
-                // NOTE: Checking via args[1] (`clear`) to avoid potential errors due to future internal API changes
-                if (args[1] && plugin.annotation_gutter_config !== undefined) {
-                    plugin.annotation_gutter_config.width = this.editMode.annotationGutterWidth;
-                    plugin.annotation_gutter_config.foldState = this.editMode.annotationGutterFolded;
+                // NOTE: Checking via args[1] (`clear`) will only execute syncState if the file is changed
+                if (args[1]) {
+                    beforeEditorReload(this);
                 }
-                return oldMethod && oldMethod.apply(this, args);
+                const output = oldMethod && oldMethod.apply(this, args);
+                if (args[1]) {
+                    afterEditorReload(this);
+                }
+                return output;
             };
         },
 

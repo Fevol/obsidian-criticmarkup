@@ -158,9 +158,39 @@ export default class CommentatorPlugin extends Plugin {
 			annotationGutterIncludedTypes.of(annotationGutterIncludedTypesState.of(this.settings.annotation_gutter_included_types))
 		);
 
-		// EXPL: Attach extra variables to the editor state to be persisted across reloads
-		//		 If this plugin gets uninstalled or disabled, the state automatically gets cleared on future reloads
-		this.register(syncEditorPersistentState(this));
+		this.register(
+			// TODO: Find another way to communicate 'new' values to the gutter on initialization without animation
+			syncMarkdownViewCustomStatePatch(
+				(view, state)	=> {
+					// EXPL: If editMode.(width) is undefined (e.g. new view), set initial value to be inherited/default
+					if (this.settings.annotation_gutter && view.editMode.annotationGutterWidth === undefined) {
+						view.editMode.annotationGutterWidth = state['annotationGutterWidth'] as number ?? this.settings.annotation_gutter_width;
+						view.editMode.annotationGutterFolded = state['annotationGutterFolded'] as boolean ?? this.settings.annotation_gutter_default_fold_state;
+					}
+				},
+				(view, state) => {
+					if (this.settings.annotation_gutter) {
+						// EXPL: When folding or resizing the gutter, requestSaveLayout is called to store the values
+						//		 The following lines extract the new values from the gutters state
+						const gutter = view.editMode.cm.plugin(annotationGutterView)?.gutters[0];
+						if (gutter) {
+							view.editMode.annotationGutterWidth = gutter.width;
+							view.editMode.annotationGutterFolded = gutter.folded;
+						}
+						state.annotationGutterFolded = view.editMode.annotationGutterFolded;
+						state.annotationGutterWidth = view.editMode.annotationGutterWidth;
+					}
+				},
+				// EXPL: Before the annotation gutter is initialized, set the inherited width/fold data in advance
+				// 		 (The other alternative is updating gutter once loaded, and forcing a jarring re-render)
+				(view) => {
+					if (this.annotation_gutter_config !== undefined) {
+						this.annotation_gutter_config.width = view.editMode.annotationGutterWidth;
+						this.annotation_gutter_config.foldState = view.editMode.annotationGutterFolded;
+					}
+				}
+
+		));
 	}
 
 	async updateEditorExtension() {
