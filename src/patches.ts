@@ -25,7 +25,9 @@ export const stickyContextMenuPatch = (onSubmenu = false) => {
         },
         hide: (oldMethod) => {
             return function(this: Menu) {
-                patch();
+                if (!this.parentMenu) {
+                    patch();
+                }
                 return oldMethod && oldMethod.apply(this);
             };
         },
