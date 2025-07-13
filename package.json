@@ -1,6 +1,6 @@
 {
     "name": "obsidian-criticmarkup",
-    "version": "0.2.3",
+    "version": "0.2.4",
     "type": "module",
     "description": "A CriticMarkup plugin for Obsidian",
     "main": "main.js",
