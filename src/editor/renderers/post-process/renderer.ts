@@ -1,5 +1,5 @@
 import { decodeHTML, DecodingMode } from "entities";
-import {type MarkdownPostProcessorContext, MarkdownView} from "obsidian";
+import {type MarkdownPostProcessorContext, MarkdownView, sanitizeHTMLToDom} from "obsidian";
 
 import { type PluginSettings, PreviewMode } from "../../../types";
 
@@ -38,7 +38,7 @@ export async function postProcess(el: HTMLElement, ctx: MarkdownPostProcessorCon
 	let start_char: number | null = null, end_char: number | null = null;
 
 	// Undo HTML encoding of specific characters
-	let element_contents = decodeHTML(el.innerHTML, DecodingMode.Strict);
+	let element_contents = decodeHTML(el.getHTML(), DecodingMode.Strict);
 
 	let preview_mode = settings.default_preview_mode;
 	if (ctx) {
@@ -114,11 +114,11 @@ export async function postProcess(el: HTMLElement, ctx: MarkdownPostProcessorCon
 						left,
 						element_contents,
 					);
+					el.empty();
 					if (new_el instanceof HTMLElement) {
-						el.innerHTML = "";
 						el.appendChild(new_el);
 					} else {
-						el.innerHTML = new_el;
+						el.append(sanitizeHTMLToDom(new_el));
 					}
 
 					return;
@@ -172,7 +172,7 @@ export async function postProcess(el: HTMLElement, ctx: MarkdownPostProcessorCon
 	if (missing_range && left_outside && right_outside && missing_range.type === SuggestionType.SUBSTITUTION) {
 		const missing_range_middle = element_contents.indexOf(CM_All_Brackets[SuggestionType.SUBSTITUTION][1]);
 		const TempRange = new SubstitutionRange(-Infinity, missing_range_middle, Infinity, element_contents);
-		el.innerHTML = rangePostProcess(TempRange, true, preview_mode, "span") as string;
+		el.append(sanitizeHTMLToDom(rangePostProcess(TempRange, true, preview_mode, "span") as string));
 		return;
 	}
 
@@ -223,7 +223,7 @@ export async function postProcess(el: HTMLElement, ctx: MarkdownPostProcessorCon
 	}
 	new_element.push(element_contents.slice(previous_start));
 
-	el.innerHTML = "";
+	el.empty();
 	const to_reinsert: HTMLElement[] = [];
 	let str = "";
 	for (const child of new_element) {
@@ -234,7 +234,7 @@ export async function postProcess(el: HTMLElement, ctx: MarkdownPostProcessorCon
 			to_reinsert.push(child);
 		}
 	}
-	el.innerHTML = str;
+	el.append(sanitizeHTMLToDom(str));
 	el.querySelectorAll("placeholder").forEach((placeholder, i) => {
 		placeholder.replaceWith(to_reinsert[i]);
 	});
