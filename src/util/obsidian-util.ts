@@ -174,11 +174,7 @@ export function menuSingleChoiceExclusive<T>(
 					for (const subitem of menu.items) {
 						const is_active = subitem === item;
 						subitem.dom.classList.toggle("mod-checked", is_active);
-						if (subitem.checkIconEl) {
-							subitem.checkIconEl.style.display = is_active ? "flex" : "none";
-						} else {
-							subitem.setChecked(is_active);
-						}
+						subitem.setChecked(is_active);
 					}
 				});
 		});

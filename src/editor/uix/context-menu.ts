@@ -134,13 +134,7 @@ export const cmenuViewportCommands: (plugin: CommentatorPlugin) => EventRef = (p
 							.setChecked((current_settings & value) !== 0)
 							.onClick(() => {
 								current_settings ^= value;
-								const is_active = (current_settings & value) !== 0;
-								// FIXME: After calling .setChecked(false) once, the icon will not show up again when calling .setChecked(true)
-								// 		the code below bypasses this issue by just hiding it via display style
-								if (item.checkIconEl)
-									item.checkIconEl.style.display = is_active ? "flex" : "none";
-								else
-									item.setChecked(is_active);
+                                item.setChecked((current_settings & value) !== 0);
 								editor_cm.dispatch(editor_cm.state.update({
 									effects: [annotationGutterIncludedTypes.reconfigure(annotationGutterIncludedTypesState.of(current_settings))],
 								}));

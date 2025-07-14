@@ -6,7 +6,7 @@ import {around} from "monkey-around";
  * @param onSubmenu - Only keep the menu open if the item is a submenu.
  */
 export const stickyContextMenuPatch = (onSubmenu = false) => {
-    const patch = around(Menu.prototype, {
+    const menu_patch = around(Menu.prototype, {
         onEnter: (oldMethod) => {
             return function(this: Menu, e: KeyboardEvent) {
                 const selectedItem = this.items[this.selected];
@@ -21,18 +21,36 @@ export const stickyContextMenuPatch = (onSubmenu = false) => {
                     return oldMethod && oldMethod.apply(this, [e]);
                 }
             };
-            // return () => {};
         },
         hide: (oldMethod) => {
             return function(this: Menu) {
+                // EXPL: If the main menu is hidden (the top-level context menu), disable both patches again
                 if (!this.parentMenu) {
-                    patch();
+                    combined_patch();
                 }
                 return oldMethod && oldMethod.apply(this);
             };
         },
     });
-    return patch;
+    const menu_item_patch = around(MenuItem.prototype, {
+        setChecked: (oldMethod) => {
+            return function(this: MenuItem, ...args) {
+                // FIXME: After calling .setChecked(false) once, the icon will not show up again when calling .setChecked(true)
+                // 		  the code below bypasses this issue by completely removing the icon element
+                if (this.checkIconEl) {
+                    this.checkIconEl.remove();
+                    this.checkIconEl = undefined;
+                }
+                return oldMethod && oldMethod.apply(this, args);
+            };
+        }
+    });
+
+    let combined_patch = () => {
+        menu_patch();
+        menu_item_patch();
+    }
+    return combined_patch;
 }
 
 /**

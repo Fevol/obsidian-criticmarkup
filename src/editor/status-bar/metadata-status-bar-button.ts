@@ -47,12 +47,7 @@ export class MetadataStatusBarButton {
 				item.setDisabled(!this.plugin.settings.add_metadata);
 				item.onClick(async () => {
 					await this.plugin.setSetting(setting, !this.plugin.settings[setting]);
-					// FIXME: After calling .setChecked(false) once, the icon will not show up again when calling .setChecked(true)
-					// 		the code below bypasses this issue by just hiding it via display style
-					if (item.checkIconEl)
-						item.checkIconEl.style.display = this.plugin.settings[setting] ? "flex" : "none";
-					else
-						item.setChecked(this.plugin.settings[setting] as boolean);
+					item.setChecked(this.plugin.settings[setting] as boolean)
 				});
 				item.dom.addClass("cmtr-submenu-nested");
 			});
