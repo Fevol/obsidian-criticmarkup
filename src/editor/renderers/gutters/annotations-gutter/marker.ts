@@ -143,12 +143,13 @@ class AnnotationNode extends Component {
 			}
 			this.annotation_view.empty();
 			if (this.range.type !== SuggestionType.SUBSTITUTION) {
+				let description = "";
 				switch (this.range.type) {
 					case SuggestionType.ADDITION:
-						this.annotation_view.appendChild(createSpan({ cls: "cmtr-anno-gutter-annotation-desc", text: "Added: " }));
+						description = "Added: ";
 						break;
 					case SuggestionType.DELETION:
-						this.annotation_view.appendChild(createSpan({ cls: "cmtr-anno-gutter-annotation-desc", text: "Deleted: " }));
+						description = "Deleted: ";
 						break;
 					case SuggestionType.HIGHLIGHT:
 						break;
@@ -157,7 +158,7 @@ class AnnotationNode extends Component {
 				}
 				const contents = createDiv({cls: "cmtr-anno-gutter-annotation-content"});
 				MarkdownRenderer.render(app, this.text || "&nbsp;", contents, "", this).then(() => {
-					(contents.children[0] ?? contents).prepend(createSpan({ cls: "cmtr-anno-gutter-annotation-desc", text: "Comment: " }));
+					(contents.children[0] ?? contents).prepend(createSpan({ cls: "cmtr-anno-gutter-annotation-desc", text: description }));
 					this.annotation_view.append(...contents.childNodes as unknown as Node[]);
 					contents.remove();
 				});
