@@ -4,7 +4,7 @@ import { type ECommand, EditMode } from "../../types";
 
 import type CommentatorPlugin from "../../main";
 import {
-	acceptSuggestions,
+	acceptSuggestions, applyToText,
 	CM_SuggestionTypes,
 	mark_editor_ranges,
 	rangeParser,
@@ -22,6 +22,8 @@ import {
 import { getEditMode } from "./extensions/editing-modes";
 import { showProgressBarNotice } from "../../util/obsidian-util";
 import { annotationGutterFoldAnnotation } from "../renderers/gutters";
+import {pathWithoutExtension} from "../../util/util";
+import type {SelectionRange} from "@codemirror/state";
 
 export const debug_application_commands = (plugin: CommentatorPlugin) => [
 	{
@@ -110,8 +112,7 @@ export const editor_commands: (plugin: CommentatorPlugin) => ECommand[] = (plugi
 			if (checking || !contains_range)
 				return contains_range;
 			const selections = editor.cm.state.selection.ranges;
-			// @ts-expect-error Somehow selections is any (while ranges is defined)
-			const changes = selections.map(selection =>
+			const changes = selections.map((selection: SelectionRange) =>
 				rejectSuggestions(editor.cm.state, selection.from, selection.to)
 			);
 			editor.cm.dispatch(editor.cm.state.update({
@@ -198,6 +199,29 @@ export const editor_commands: (plugin: CommentatorPlugin) => ECommand[] = (plugi
 			}));
 		},
 	},
+	{
+		id: "save-clean-copy",
+		name: Platform.isMacOS ? "Duplicate current file without markup" : "Make a copy of the current file without markup",
+		icon: "copy",
+		editor_context: true,
+		regular_callback: async (editor: Editor, view: MarkdownView) => {
+			if (view.file) {
+				const new_path = plugin.app.vault.getAvailablePath(pathWithoutExtension(view.file.path), view.file.extension)
+				const original_content = await plugin.app.vault.read(view.file);
+				const new_file = await plugin.app.vault.copy(view.file, new_path);
+				const new_content = applyToText(
+					original_content,
+					(range, text) => range.unwrap(),
+					editor.cm.state.field(rangeParser).ranges.ranges
+				);
+				await plugin.app.vault.modify(new_file, new_content)
+				await plugin.app.workspace.getLeaf("tab").openFile(new_file, {
+					active: true,
+					eState: { rename: "all"}
+				});
+			}
+		}
+	}
 ];
 
 export const application_commmands = (plugin: CommentatorPlugin): ECommand[] => [
@@ -208,7 +232,7 @@ export const application_commmands = (plugin: CommentatorPlugin): ECommand[] => 
 		regular_callback: async () => {
 			await plugin.activateView();
 		},
-	},
+	}
 ];
 
 export const commands: (plugin: CommentatorPlugin) => ECommand[] = (plugin) =>
