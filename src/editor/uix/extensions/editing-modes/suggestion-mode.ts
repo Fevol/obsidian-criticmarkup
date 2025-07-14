@@ -132,7 +132,7 @@ function applySuggestion(tr: Transaction, settings: PluginSettings): Transaction
 		const changes = [];
 		const selections: SelectionRange[] = [];
 
-		const metadata = generate_metadata();
+		const metadata = generate_metadata(settings);
 
 		const backwards_delete = (latest_event as KeyboardEvent)?.key === "Backspace";
 		const group_delete = (latest_event as KeyboardEvent)?.ctrlKey;

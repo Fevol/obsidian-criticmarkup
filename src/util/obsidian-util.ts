@@ -22,7 +22,7 @@ export function openSettingTab(app: App, plugin_id: string = "commentator") {
 export async function getObsidianData(app: App) {
 	let framework_version;
 	if (Platform.isMobileApp) {
-		// @ts-ignore (Capacitor exists)
+		// @ts-expect-error (Capacitor exists)
 		const capacitor_info = await Capacitor.nativePromise("App", "getInfo");
 		if (capacitor_info)
 			framework_version = capacitor_info.version + " (" + capacitor_info.build + ")";

@@ -1,5 +1,6 @@
 import DiffMatchPatch from "diff-match-patch";
 import { create_suggestion } from "../edit-util/range-create";
+import type {PluginSettings} from "../../../types";
 
 DiffMatchPatch.DIFF_DELETE = -1;
 DiffMatchPatch.DIFF_INSERT = 1;
@@ -46,7 +47,7 @@ export function generateTextDiff(oldText: string, newText: string) {
 	return changes;
 }
 
-export function generateCriticMarkupPatchFromDiff(oldText: string, newText: string) {
+export function generateCriticMarkupPatchFromDiff(settings: PluginSettings, oldText: string, newText: string) {
 	const diff = generateTextDiff(oldText, newText);
 	let output = "";
 	let offset = 0;
@@ -54,7 +55,7 @@ export function generateCriticMarkupPatchFromDiff(oldText: string, newText: stri
 		if (change.from > offset)
 			output += oldText.slice(offset, change.from);
 		if (change.insert)
-			output += create_suggestion(change.insert, oldText.slice(change.from, change.to));
+			output += create_suggestion(settings, change.insert, oldText.slice(change.from, change.to));
 		offset = change.to;
 	}
 	if (offset < oldText.length)

@@ -39,8 +39,12 @@ declare module "@codemirror/view" {
 
 export function sameMarkers(a: readonly GutterMarker[], b: readonly GutterMarker[]): boolean {
 	if (a.length != b.length) return false;
-	// @ts-ignore (compare does exist on marker)
-	for (let i = 0; i < a.length; i++) if (!a[i].compare(b[i])) return false;
+	for (let i = 0; i < a.length; i++) {
+		// @ts-expect-error (compare does exist on marker)
+		if (!a[i].compare(b[i])) {
+			return false;
+		}
+	}
 	return true;
 }
 
@@ -250,7 +254,6 @@ export class UpdateContext {
 	}
 
 	widget(view: EditorView, block: BlockInfo) {
-		// @ts-ignore (Block contains widget)
 		const marker = this.gutter.config.widgetMarker(view, block.widget!, block);
 		if (marker) this.addElement(view, block, [marker]);
 	}

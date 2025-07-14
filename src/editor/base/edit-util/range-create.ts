@@ -1,5 +1,6 @@
 import { CM_All_Brackets, type MetadataFields, SuggestionType } from "../ranges";
 import { generate_metadata } from "./metadata";
+import type {PluginSettings} from "../../../types";
 
 export function construct_suggestion(
 	inserted: string,
@@ -47,10 +48,10 @@ export function construct_range(
 	return { insert: output, start_offset, end_offset };
 }
 
-export function create_suggestion(inserted: string, deleted: string = "") {
-	return construct_suggestion(inserted, deleted, generate_metadata()).insert;
+export function create_suggestion(settings: PluginSettings, inserted: string, deleted: string = "") {
+	return construct_suggestion(inserted, deleted, generate_metadata(settings)).insert;
 }
 
-export function create_range(type: SuggestionType, inserted: string, deleted: string = "") {
-	return construct_range(inserted, deleted, type, generate_metadata()).insert;
+export function create_range(settings: PluginSettings, type: SuggestionType, inserted: string, deleted: string = "") {
+	return construct_range(inserted, deleted, type, generate_metadata(settings)).insert;
 }

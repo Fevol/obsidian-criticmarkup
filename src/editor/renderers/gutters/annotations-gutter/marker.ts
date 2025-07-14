@@ -13,6 +13,7 @@ import { annotationGutterIncludedTypes, annotationGutterIncludedTypesState } fro
 import { annotationGutterFocusThreadAnnotation, annotationGutterFoldAnnotation } from "./annotation-gutter";
 
 import { stickyContextMenuPatch } from "../../../../patches";
+import { pluginSettingsField } from "../../../uix";
 
 class AnnotationNode extends Component {
 	text: string;
@@ -183,13 +184,14 @@ class AnnotationNode extends Component {
 
 		// EXPL: The annotation gets updated with new text
 		else {
+			const settings = this.marker.view.state.field(pluginSettingsField);
 			this.text = this.new_text;
 			setTimeout(() =>
 				this.marker.view.dispatch({
 					changes: {
 						from: this.range.from,
 						to: this.range.to,
-						insert: create_range(SuggestionType.COMMENT, this.new_text!),
+						insert: create_range(settings, SuggestionType.COMMENT, this.new_text!),
 					},
 				})
 			);

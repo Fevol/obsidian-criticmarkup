@@ -1,8 +1,9 @@
 import { type Editor, type MarkdownView, Platform } from "obsidian";
 
-import { type ECommand, EditMode } from "../../types";
-
 import type CommentatorPlugin from "../../main";
+import { type ECommand, EditMode } from "../../types";
+import { type SelectionRange } from "@codemirror/state";
+
 import {
 	acceptSuggestions, applyToText,
 	CM_SuggestionTypes,
@@ -23,7 +24,6 @@ import { getEditMode } from "./extensions/editing-modes";
 import { showProgressBarNotice } from "../../util/obsidian-util";
 import { annotationGutterFoldAnnotation } from "../renderers/gutters";
 import {pathWithoutExtension} from "../../util/util";
-import type {SelectionRange} from "@codemirror/state";
 
 export const debug_application_commands = (plugin: CommentatorPlugin) => [
 	{
@@ -188,7 +188,7 @@ export const editor_commands: (plugin: CommentatorPlugin) => ECommand[] = (plugi
 			// TODO: Do not diff on comments
 			const oldText = ranges.unwrap_in_range(editor.cm.state.doc, selection.from, selection.to).output;
 
-			const diff = generateCriticMarkupPatchFromDiff(oldText, newText);
+			const diff = generateCriticMarkupPatchFromDiff(plugin.settings, oldText, newText);
 
 			editor.cm.dispatch(editor.cm.state.update({
 				changes: [{

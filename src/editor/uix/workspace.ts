@@ -1,8 +1,8 @@
-import {type CriticMarkupRangeEntry, type CriticMarkupRange, groupRangeEntryByPath} from "../base";
-import {type App, type MarkdownView, Notice, TFile} from "obsidian";
+import { type CriticMarkupRangeEntry, type CriticMarkupRange, groupRangeEntryByPath } from "../base";
+import { type App, type MarkdownView, Notice, TFile } from "obsidian";
 import type CommentatorPlugin from "../../main";
-import {showProgressBarNotice} from "../../util/obsidian-util";
-import {centerRangeInEditorView} from "./editor";
+import { showProgressBarNotice } from "../../util/obsidian-util";
+import { centerRangeInEditorView } from "./editor";
 
 
 export async function applyRangeEditsToVault(plugin: CommentatorPlugin, ranges: CriticMarkupRangeEntry[], fn: (app: App, file: TFile, value: CriticMarkupRange[]) => Promise<void>, include_replies: boolean = true) {

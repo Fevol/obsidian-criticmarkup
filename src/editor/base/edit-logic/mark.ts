@@ -13,6 +13,7 @@ import {
 	SubstitutionRange,
 	SuggestionType,
 } from "../ranges";
+import {pluginSettingsField} from "../../uix";
 
 export enum MarkAction {
 	REGULAR = "regular",
@@ -495,7 +496,7 @@ export function mark_editor_ranges(editor: Editor, type: MarkType, settings: Plu
 			selection.to,
 			"",
 			type,
-			generate_metadata(),
+			generate_metadata(settings),
 		);
 		changes.push(...edits);
 		resulting_selections.push(EditorSelection.range(edits[0].start, edits[edits.length - 1].end));

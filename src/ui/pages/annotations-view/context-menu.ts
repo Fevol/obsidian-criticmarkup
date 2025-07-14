@@ -1,16 +1,13 @@
-import {MarkdownView, Menu, TFile} from "obsidian";
 import type CommentatorPlugin from "../../../main";
-import {
-    addCommentToView,
-    applyToFile, CommentRange,
-    type CriticMarkupRangeEntry,
-    groupRangeEntryByPath,
-    SuggestionType
-} from "../../../editor/base";
-import {applyRangeEditsToVault, centerRangeInEditorView} from "../../../editor/uix";
-import {annotationGutterFocusAnnotation} from "../../../editor/renderers/gutters/annotations-gutter";
-import {EditorSelection} from "@codemirror/state";
+import { MarkdownView, Menu, TFile } from "obsidian";
+import { EditorSelection } from "@codemirror/state";
 
+import {
+    addCommentToView, applyToFile, CommentRange,
+    type CriticMarkupRangeEntry, groupRangeEntryByPath, SuggestionType
+} from "../../../editor/base";
+import { applyRangeEditsToVault, centerRangeInEditorView } from "../../../editor/uix";
+import { annotationGutterFocusAnnotation } from "../../../editor/renderers/gutters";
 
 export function onContextMenu(
     plugin: CommentatorPlugin,

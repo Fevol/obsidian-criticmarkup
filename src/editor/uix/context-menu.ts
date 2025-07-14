@@ -1,7 +1,7 @@
-import type { App, EventRef, MarkdownView } from "obsidian";
+import type { EventRef, MarkdownView } from "obsidian";
 import type { SelectionRange } from "@codemirror/state";
+import type CommentatorPlugin from "../../main";
 
-import { COMMENTATOR_GLOBAL } from "../../global";
 import { acceptSuggestions, addCommentToView, isCursor, rangeParser, rejectSuggestions } from "../base";
 
 import { annotationGutterIncludedTypes, annotationGutterIncludedTypesState } from "../settings";
@@ -10,8 +10,8 @@ import { AnnotationInclusionType } from "../../constants";
 
 import { stickyContextMenuPatch } from "../../patches";
 
-export const cmenuGlobalCommands: (app: App) => EventRef = (app) =>
-	app.workspace.on("editor-menu", (menu, editor) => {
+export const cmenuGlobalCommands: (plugin: CommentatorPlugin) => EventRef = (plugin) =>
+	plugin.app.workspace.on("editor-menu", (menu, editor) => {
 		const ranges = editor.cm.state.field(rangeParser).ranges;
 		menu.addItem((item) => {
 			item.setTitle("Add comment")
@@ -70,7 +70,7 @@ export const cmenuGlobalCommands: (app: App) => EventRef = (app) =>
 							.setIcon("lucide-user")
 							.onClick(() => {
 								editor.cm.dispatch(editor.cm.state.update({
-									changes: range.add_metadata("author", COMMENTATOR_GLOBAL.PLUGIN_SETTINGS.author),
+									changes: range.add_metadata("author", plugin.settings.author),
 								}));
 							});
 					});
@@ -97,10 +97,9 @@ export const cmenuGlobalCommands: (app: App) => EventRef = (app) =>
 		}
 	});
 
-export const cmenuViewportCommands: (app: App) => EventRef = (app) =>
-	app.workspace.on("markdown-viewport-menu", (menu, view, sectionName, menuItem) => {
-		// FIXME: Wait till next update of obsidian-typings (I forgot what I had to wait for :w )
-		if (app.plugins.plugins.commentator.settings.annotation_gutter) {
+export const cmenuViewportCommands: (plugin: CommentatorPlugin) => EventRef = (plugin) =>
+	plugin.app.workspace.on("markdown-viewport-menu", (menu, view, sectionName, menuItem) => {
+		if (plugin.settings.annotation_gutter) {
 			const editor_cm = (view as unknown as MarkdownView).editor.cm;
 			let current_settings = editor_cm.state.field(annotationGutterIncludedTypesState);
 			stickyContextMenuPatch(true);

@@ -4,17 +4,16 @@ import {
 	Notice, Plugin, TFile,
 } from "obsidian";
 
-import { type EditorState, type Extension, Prec } from "@codemirror/state";
+import { type EditorState, type Extension, Prec, StateField} from "@codemirror/state";
 import { EditorView } from "@codemirror/view";
 import { type PluginSettings } from "./types";
 
 import { Database } from "./database";
-import { COMMENTATOR_GLOBAL } from "./global";
 import { beforePluginUninstallPatch, syncMarkdownViewCustomStatePatch } from "./patches";
 
 import { type CriticMarkupRange, getRangesInText, RANGE_PROTOTYPE_MAPPER, rangeParser, text_copy } from "./editor/base";
 import { cmenuGlobalCommands, cmenuViewportCommands, commands } from "./editor/uix";
-import { bracketMatcher, editorKeypressCatcher, getEditMode, rangeCorrecter, focusAnnotation } from "./editor/uix/extensions";
+import { bracketMatcher, editorKeypressCatcher, getEditMode, rangeCorrecter, focusAnnotation, providePluginSettingsExtension } from "./editor/uix/extensions";
 import {
 	annotationGutter, annotationGutterCompartment, diffGutter, diffGutterCompartment,
 	annotationGutterFoldButtonAnnotation, annotationGutterResizeHandleAnnotation,
@@ -75,7 +74,7 @@ export default class CommentatorPlugin extends Plugin {
 		async (file, state?: EditorState) => {
 			return state ?
 				state.field(rangeParser).ranges.ranges :
-				getRangesInText(await this.app.vault.cachedRead(file as TFile));
+				getRangesInText(await this.app.vault.cachedRead(file as TFile), this.settings);
 		},
 		this.settings.database_workers,
 		(data: CriticMarkupRange[]) => {
@@ -130,6 +129,7 @@ export default class CommentatorPlugin extends Plugin {
 		if (this.settings.tag_correcter)
 			this.editorExtensions.push(rangeCorrecter);
 
+		this.editorExtensions.push(providePluginSettingsExtension(this));
 		this.editorExtensions.push(EditorView.domEventHandlers({
 			copy: text_copy.bind(null, this.settings),
 		}));
@@ -248,8 +248,8 @@ export default class CommentatorPlugin extends Plugin {
 			postProcessorRerender(this.app);
 		}
 
-		this.registerEvent(cmenuGlobalCommands(this.app));
-		this.registerEvent(cmenuViewportCommands(this.app));
+		this.registerEvent(cmenuGlobalCommands(this));
+		this.registerEvent(cmenuViewportCommands(this));
 		for (const command of commands(this)) {
 			this.addCommand(command);
 		}
@@ -263,7 +263,6 @@ export default class CommentatorPlugin extends Plugin {
 		const original_settings = this.settings;
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, new_settings);
 		this.previous_settings = Object.assign({}, original_settings, this.settings);
-		COMMENTATOR_GLOBAL.PLUGIN_SETTINGS = this.settings;
 
 		// EXPL: Do not migrate new installs, immediately save settings
 		if (new_settings === null)
@@ -333,7 +332,6 @@ export default class CommentatorPlugin extends Plugin {
 
 		this.database.unload();
 
-		COMMENTATOR_GLOBAL.PLUGIN_SETTINGS = undefined!;
 		if (process.env.NODE_ENV === "development") {
 			// @ts-expect-error Remove debug variable from window
 			window["COMMENTATOR_DEBUG"] = undefined;
@@ -345,7 +343,6 @@ export default class CommentatorPlugin extends Plugin {
 	}
 
 	async setSettings() {
-		COMMENTATOR_GLOBAL.PLUGIN_SETTINGS = this.settings;
 		await this.saveData(this.settings);
 
 		this.changed_settings = objectDifference(this.settings, this.previous_settings);

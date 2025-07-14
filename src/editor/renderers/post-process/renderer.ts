@@ -53,7 +53,7 @@ export async function postProcess(el: HTMLElement, ctx: MarkdownPostProcessorCon
 
 		const lines = ctx.getSectionInfo(el);
 		if (lines) {
-			const all_ranges = getRangesInText(lines.text);
+			const all_ranges = getRangesInText(lines.text, plugin.settings);
 
 			// We have access to the endlines, so we can determine which range(s) the element belongs to
 			const endlines = [...lines.text.matchAll(/\n/g)].map((m) => m.index!);
@@ -140,7 +140,7 @@ export async function postProcess(el: HTMLElement, ctx: MarkdownPostProcessorCon
 
 	// Part of the block is one or more CriticMarkup ranges
 
-	const element_ranges = getRangesInText(element_contents);
+	const element_ranges = getRangesInText(element_contents, plugin.settings);
 
 	// If markup exists in heading or similar, the text might get duplicated into a data-... field
 	// Fix: if two duplicate ranges adjacent to each other, remove the former

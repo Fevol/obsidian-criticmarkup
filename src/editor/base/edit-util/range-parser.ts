@@ -14,9 +14,10 @@ import {
 } from "../ranges";
 
 import { DocInput } from "@codemirror/language";
-import { COMMENTATOR_GLOBAL } from "../../../global";
 import { fullReloadEffect } from "../../settings";
 import { criticmarkupLanguage } from "../parser";
+import type { PluginSettings } from "../../../types";
+import { pluginSettingsField } from "../../uix";
 
 interface ParserData {
 	tree: Tree;
@@ -30,7 +31,8 @@ export const rangeParser: StateField<ParserData> = StateField.define({
 	create(state) {
 		const text = state.doc.toString();
 		const tree = criticmarkupLanguage.parser.parse(text);
-		const ranges = new CriticMarkupRanges(cursorGenerateRanges(tree, text));
+		const settings = state.field(pluginSettingsField);
+		const ranges = new CriticMarkupRanges(cursorGenerateRanges(tree, text, settings));
 		return {
 			tree,
 			fragments: TreeFragment.addTree(tree),
@@ -41,6 +43,7 @@ export const rangeParser: StateField<ParserData> = StateField.define({
 	},
 
 	update(value: ParserData, tr) {
+		const settings = tr.state.field(pluginSettingsField);
 		if (tr.effects.some(effect => effect.is(fullReloadEffect)))
 			return this.create(tr.state) as ParserData;
 
@@ -81,7 +84,7 @@ export const rangeParser: StateField<ParserData> = StateField.define({
 					return true;
 				});
 
-			for (const range of cursorGenerateRanges(tree, text, changed_range.fromB, changed_range.toB))
+			for (const range of cursorGenerateRanges(tree, text, settings, changed_range.fromB, changed_range.toB))
 				inserted_set.set(range.from, range);
 			offsets.push([
 				changed_range.toA,
@@ -160,9 +163,9 @@ export const rangeParser: StateField<ParserData> = StateField.define({
 	},
 });
 
-function constructRangeFromSyntaxNode(range: SyntaxNode, text: string) {
+function constructRangeFromSyntaxNode(settings: PluginSettings, range: SyntaxNode, text: string) {
 	const metadata =
-		(COMMENTATOR_GLOBAL.PLUGIN_SETTINGS.enable_metadata && range.firstChild?.type.name.startsWith("MDSep")) ?
+		(settings.enable_metadata && range.firstChild?.type.name.startsWith("MDSep")) ?
 			range.firstChild!.from :
 			undefined;
 	let middle = undefined;
@@ -175,7 +178,7 @@ function constructRangeFromSyntaxNode(range: SyntaxNode, text: string) {
 	return constructRange(range.from, range.to, range.type.name, text.slice(range.from, range.to), middle, metadata);
 }
 
-export function cursorGenerateRanges(tree: Tree, text: string, start = 0, to = text.length) {
+export function cursorGenerateRanges(tree: Tree, text: string, settings: PluginSettings, start = 0, to = text.length) {
 	const ranges: CriticMarkupRange[] = [];
 
 	let previous_range: CriticMarkupRange | undefined = undefined;
@@ -192,7 +195,7 @@ export function cursorGenerateRanges(tree: Tree, text: string, start = 0, to = t
 		do {
 			const range = cursor.node;
 			if (range.type.name === "⚠") continue;
-			const new_range = constructRangeFromSyntaxNode(range, text);
+			const new_range = constructRangeFromSyntaxNode(settings, range, text);
 			if (new_range) {
 				if (
 					new_range.type === SuggestionType.COMMENT && previous_range &&
@@ -216,9 +219,9 @@ export function selectionContainsRanges(state: EditorState) {
 		false;
 }
 
-export function getRangesInText(text: string) {
+export function getRangesInText(text: string, settings: PluginSettings) {
 	const tree = criticmarkupLanguage.parser.parse(text);
-	return cursorGenerateRanges(tree, text);
+	return cursorGenerateRanges(tree, text, settings);
 }
 
 export function constructRange(

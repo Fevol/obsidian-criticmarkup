@@ -1,7 +1,7 @@
 import { Modal } from "obsidian";
 import { mount, unmount } from "svelte";
 
-import CommentatorPlugin from "../../main";
+import type CommentatorPlugin from "../../main";
 import DateRangeModalView from "./DateRangeModal.svelte";
 
 export class DaterangeModal extends Modal {

@@ -1,5 +1,5 @@
-import { COMMENTATOR_GLOBAL } from "../../../global";
 import { CriticMarkupRange, type METADATA_TYPE, type MetadataFields } from "../ranges";
+import type { PluginSettings } from "../../../types";
 
 export type MetadataCompatibility = {
 	[key in METADATA_TYPE]?: MetadataMergeAction;
@@ -21,13 +21,13 @@ export enum MetadataMergeAction {
 	NEW = "new",
 }
 
-export function generate_metadata(): MetadataFields | undefined {
+export function generate_metadata(settings: PluginSettings): MetadataFields | undefined {
 	let metadata: MetadataFields | undefined = undefined;
-	if (COMMENTATOR_GLOBAL.PLUGIN_SETTINGS.add_metadata) {
+	if (settings.add_metadata) {
 		metadata = {};
-		if (COMMENTATOR_GLOBAL.PLUGIN_SETTINGS.add_author_metadata)
-			metadata.author = COMMENTATOR_GLOBAL.PLUGIN_SETTINGS.author || undefined;
-		if (COMMENTATOR_GLOBAL.PLUGIN_SETTINGS.add_timestamp_metadata)
+		if (settings.add_author_metadata)
+			metadata.author = settings.author || undefined;
+		if (settings.add_timestamp_metadata)
 			metadata.time = Math.floor(Date.now() / 1000);
 		if (Object.keys(metadata).length === 0)
 			metadata = undefined;

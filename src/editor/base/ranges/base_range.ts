@@ -47,7 +47,7 @@ export abstract class CriticMarkupRange {
 				this.fields = JSON.parse(metadata_text);
 				for (const key in this.fields) {
 					if (key in shortHandMapping) {
-						// @ts-ignore (This is a pain to type, the ts-ignore is 100% worth it)
+						// @ts-expect-error (This is a pain to type, the ts-ignore is 100% worth it)
 						this.fields[shortHandMapping[key]] = this.fields[key];
 						delete this.fields[key as keyof typeof this.fields];
 					}
