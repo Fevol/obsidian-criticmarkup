@@ -143,26 +143,37 @@ class AnnotationNode extends Component {
 			}
 			this.annotation_view.empty();
 			if (this.range.type !== SuggestionType.SUBSTITUTION) {
-				MarkdownRenderer.render(app, this.text || "&nbsp;", this.annotation_view, "", this);
 				switch (this.range.type) {
 					case SuggestionType.ADDITION:
-						this.annotation_view.children[0].prepend(createSpan({ cls: "cmtr-anno-gutter-annotation-desc", text: "Added: " }));
+						this.annotation_view.appendChild(createSpan({ cls: "cmtr-anno-gutter-annotation-desc", text: "Added: " }));
 						break;
 					case SuggestionType.DELETION:
-						this.annotation_view.children[0].prepend(createSpan({ cls: "cmtr-anno-gutter-annotation-desc", text: "Deleted: " }));
+						this.annotation_view.appendChild(createSpan({ cls: "cmtr-anno-gutter-annotation-desc", text: "Deleted: " }));
 						break;
 					case SuggestionType.HIGHLIGHT:
 						break;
 					case SuggestionType.COMMENT:
 						break;
 				}
+				const contents = createDiv({cls: "cmtr-anno-gutter-annotation-content"});
+				MarkdownRenderer.render(app, this.text || "&nbsp;", contents, "", this).then(() => {
+					(contents.children[0] ?? contents).prepend(createSpan({ cls: "cmtr-anno-gutter-annotation-desc", text: "Comment: " }));
+					this.annotation_view.append(...contents.childNodes as unknown as Node[]);
+					contents.remove();
+				});
 			} else {
 				const text_slices = this.range.unwrap_parts();
-				MarkdownRenderer.render(app, text_slices[0] || "&nbsp;", this.annotation_view, "", this);
-				this.annotation_view.children[0].prepend(createSpan({ cls: "cmtr-anno-gutter-annotation-desc", text: "Changed: " }));
-				const childIdx = this.annotation_view.children.length;
-				MarkdownRenderer.render(app, text_slices[1] || "&nbsp;", this.annotation_view, "", this);
-				this.annotation_view.children[childIdx].prepend(createSpan({ cls: "cmtr-anno-gutter-annotation-desc", text: "To: " }));
+				const contents_from = createDiv(), contents_to = createDiv();
+				MarkdownRenderer.render(app, text_slices[0] || "&nbsp;", contents_from, "", this).then(() => {
+					(contents_from.children[0] ?? contents_from).prepend(createSpan({ cls: "cmtr-anno-gutter-annotation-desc", text: "Changed: " }));
+					this.annotation_view.append(...contents_from.childNodes as unknown as Node[]);
+					MarkdownRenderer.render(app, text_slices[1] || "&nbsp;", contents_to, "", this).then(() => {
+						(contents_to.children[0] ?? contents_to).prepend(createSpan({ cls: "cmtr-anno-gutter-annotation-desc", text: "To: " }));
+						this.annotation_view.append(...contents_to.childNodes as unknown as Node[]);
+						contents_from.remove();
+						contents_to.remove();
+					});
+				})
 			}
 
 			this.annotation_view.addClass("cmtr-anno-gutter-annotation-" + this.range.type);
