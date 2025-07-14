@@ -1,12 +1,11 @@
 import { EditorView, WidgetType } from "@codemirror/view";
 
-import { Component, MarkdownRenderer, Menu, setIcon } from "obsidian";
+import { App, Component, editorInfoField, MarkdownRenderer, Menu, setIcon } from "obsidian";
 
-import { COMMENTATOR_GLOBAL } from "../../../global";
 import { addCommentToView, CM_All_Brackets, CommentRange, CriticMarkupRange } from "../../base";
 import { annotationGutterFocusAnnotation } from "../gutters/annotations-gutter";
 
-export function renderCommentWidget(range: CommentRange, text?: string, unwrap = false) {
+export function renderCommentWidget(app: App, range: CommentRange, text?: string, unwrap = false) {
 	let str = text ?? range.text;
 	if (!text && unwrap) {
 		if (range.to >= str.length && !str.endsWith(CM_All_Brackets[range.type].at(-1)!))
@@ -25,7 +24,7 @@ export function renderCommentWidget(range: CommentRange, text?: string, unwrap =
 
 		tooltip = document.createElement("div");
 		tooltip.classList.add("cmtr-comment-tooltip");
-		MarkdownRenderer.render(COMMENTATOR_GLOBAL.app, str, tooltip, "", component);
+		MarkdownRenderer.render(app, str, tooltip, "", component);
 		component.load();
 		icon!.appendChild(tooltip);
 
@@ -53,16 +52,16 @@ export class CommentIconWidget extends WidgetType {
 	component: Component;
 	focused = false;
 
-	constructor(public range: CriticMarkupRange, public annotation_gutter = false) {
+	constructor(private view: EditorView, public range: CriticMarkupRange, public annotation_gutter = false) {
 		super();
 		this.component = new Component();
 	}
 
 	renderTooltip() {
 		if (!this.tooltip) {
-			this.tooltip = document.createElement("div");
-			this.tooltip.classList.add("cmtr-comment-tooltip");
-			MarkdownRenderer.render(COMMENTATOR_GLOBAL.app, this.range.text, this.tooltip, "", this.component);
+			this.tooltip = createDiv({ cls: "cmtr-comment-tooltip" });
+			const { app } = this.view.state.field(editorInfoField);
+			MarkdownRenderer.render(app, this.range.unwrap(), this.tooltip, "", this.component);
 			this.component.load();
 			this.icon!.appendChild(this.tooltip);
 
@@ -73,11 +72,11 @@ export class CommentIconWidget extends WidgetType {
 		}
 	}
 
-	focusAnnotation(view: EditorView, e: Event) {
+	focusAnnotation(e: Event) {
 		// TODO: Check if this is (much) worse than directly invoking the focus annotation function from the gutter plugin instance
 		//      The other options can piggy-back on already existing transactions, and just annotating them
 		//      However, this one doesn't have one (except if clicking on the widget _is_ a transaction)
-		view.dispatch({ annotations: [ annotationGutterFocusAnnotation.of({ from: this.range.from, to: this.range.to }) ] });
+		this.view.dispatch({ annotations: [ annotationGutterFocusAnnotation.of({ from: this.range.from, to: this.range.to }) ] });
 	}
 
 	unrenderTooltip() {
@@ -99,8 +98,7 @@ export class CommentIconWidget extends WidgetType {
 		// this.icon.appendChild(line);
 
 		if (this.annotation_gutter) {
-			this.icon.onclick = (e) => this.focusAnnotation(view, e);
-
+			this.icon.onclick = (e) => this.focusAnnotation(e);
 			this.icon.oncontextmenu = (e) => {
 				e.preventDefault();
 
@@ -108,7 +106,7 @@ export class CommentIconWidget extends WidgetType {
 				menu.addItem((item) => {
 					item.setTitle("Focus annotation")
 						.setIcon("eye")
-						.onClick(this.focusAnnotation.bind(this, view));
+						.onClick((e) => this.focusAnnotation(e));
 				});
 				menu.addItem((item) => {
 					item.setTitle("Add comment")
@@ -121,22 +119,22 @@ export class CommentIconWidget extends WidgetType {
 
 				menu.showAtMouseEvent(e);
 			};
-		} else {
-			if (this.range.length) {
-				this.icon.onmouseenter = () => {
-					this.renderTooltip();
-				};
-				this.icon.onclick = () => {
-					this.renderTooltip();
-					this.focused = true;
-				};
+		}
 
-				this.icon.onmouseleave = () => {
-					this.unrenderTooltip();
-					// TODO: Find a better way to check if the tooltip is still focused (requires a document.click listener -> expensive?); .onblur does not work
-					this.focused = false;
-				};
-			}
+		if (this.range.length) {
+			this.icon.onmouseenter = () => {
+				this.renderTooltip();
+			};
+			this.icon.onclick = () => {
+				this.renderTooltip();
+				this.focused = true;
+			};
+
+			this.icon.onmouseleave = () => {
+				this.unrenderTooltip();
+				// TODO: Find a better way to check if the tooltip is still focused (requires a document.click listener -> expensive?); .onblur does not work
+				this.focused = false;
+			};
 		}
 
 		// this.icon.onblur = () => {

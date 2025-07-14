@@ -1,7 +1,8 @@
 import { decodeHTML, DecodingMode } from "entities";
-import {type MarkdownPostProcessorContext, MarkdownView, sanitizeHTMLToDom} from "obsidian";
+import { App, type MarkdownPostProcessorContext, MarkdownView, sanitizeHTMLToDom } from "obsidian";
 
-import { type PluginSettings, PreviewMode } from "../../../types";
+import { PreviewMode } from "../../../types";
+import type CommentatorPlugin from "../../../main";
 
 import {
 	CM_All_Brackets,
@@ -13,13 +14,13 @@ import {
 	SuggestionType,
 } from "../../base";
 import { renderCommentWidget } from "../live-preview";
-import {COMMENTATOR_GLOBAL} from "../../../global";
-import {previewModeState} from "../../settings";
+import { previewModeState } from "../../settings";
 
 // FIXME: Extracted due to renderCommentWidget function importing obsidian package, which could not be marked as external in the inlinepluginworker
 // FIXME: Extracted due to renderCommentWidget function importing obsidian package, which could not be marked as external in the inlinepluginworker
 // FIXME: Extracted due to renderCommentWidget function importing obsidian package, which could not be marked as external in the inlinepluginworker
 export function rangePostProcess(
+	app: App,
 	range: CriticMarkupRange,
 	unwrap: boolean = true,
 	previewMode: PreviewMode = PreviewMode.ALL,
@@ -28,23 +29,23 @@ export function rangePostProcess(
 	text?: string,
 ) {
 	if (range.type === SuggestionType.COMMENT)
-		return renderCommentWidget(range as CommentRange, text, unwrap);
+		return renderCommentWidget(app, range as CommentRange, text, unwrap);
 	else
 		return range.postprocess(unwrap, previewMode, tag, left, text);
 }
 
-export async function postProcess(el: HTMLElement, ctx: MarkdownPostProcessorContext, settings: PluginSettings) {
+export async function postProcess(el: HTMLElement, ctx: MarkdownPostProcessorContext, plugin: CommentatorPlugin) {
 	let ranges_in_range: CriticMarkupRange[] | null = null;
 	let start_char: number | null = null, end_char: number | null = null;
 
 	// Undo HTML encoding of specific characters
 	let element_contents = decodeHTML(el.getHTML(), DecodingMode.Strict);
 
-	let preview_mode = settings.default_preview_mode;
+	let preview_mode = plugin.settings.default_preview_mode;
 	if (ctx) {
 		// FIXME: Temporarily getting preview mode from the leaf editor state
-		if (COMMENTATOR_GLOBAL.app.workspace.activeLeaf?.view instanceof MarkdownView) {
-			const view = COMMENTATOR_GLOBAL.app.workspace.activeLeaf.view;
+		if (plugin.app.workspace.activeLeaf?.view instanceof MarkdownView) {
+			const view = plugin.app.workspace.activeLeaf.view;
 			if (view.previewMode.docId === ctx.docId) {
 				preview_mode = view.editor.cm.state.field(previewModeState);
 			}
@@ -107,6 +108,7 @@ export async function postProcess(el: HTMLElement, ctx: MarkdownPostProcessorCon
 
 					// FIXME: Unwrap is still the issue: find when to remove brackets correctly
 					const new_el = rangePostProcess(
+						plugin.app,
 						range,
 						false,
 						preview_mode,
@@ -172,7 +174,7 @@ export async function postProcess(el: HTMLElement, ctx: MarkdownPostProcessorCon
 	if (missing_range && left_outside && right_outside && missing_range.type === SuggestionType.SUBSTITUTION) {
 		const missing_range_middle = element_contents.indexOf(CM_All_Brackets[SuggestionType.SUBSTITUTION][1]);
 		const TempRange = new SubstitutionRange(-Infinity, missing_range_middle, Infinity, element_contents);
-		el.append(sanitizeHTMLToDom(rangePostProcess(TempRange, true, preview_mode, "span") as string));
+		el.append(sanitizeHTMLToDom(rangePostProcess(plugin.app, TempRange, true, preview_mode, "span") as string));
 		return;
 	}
 
@@ -192,14 +194,14 @@ export async function postProcess(el: HTMLElement, ctx: MarkdownPostProcessorCon
 		} else {
 			TempRange = new RANGE_PROTOTYPE_MAPPER[missing_range.type](-Infinity, missing_range_end, element_contents);
 		}
-		new_element.push(rangePostProcess(TempRange, true, preview_mode, "span"));
+		new_element.push(rangePostProcess(plugin.app, TempRange, true, preview_mode, "span"));
 		previous_start = TempRange.to;
 	}
 
 	// DEFAULT: Ranges get processed as normal (ranges which exists completely within the block)
 	for (const range of element_ranges) {
 		new_element.push(element_contents.slice(previous_start, range.from));
-		new_element.push(rangePostProcess(range, true, preview_mode, "span"));
+		new_element.push(rangePostProcess(plugin.app, range, true, preview_mode, "span"));
 		previous_start = range.to;
 	}
 
@@ -218,7 +220,7 @@ export async function postProcess(el: HTMLElement, ctx: MarkdownPostProcessorCon
 			);
 		}
 		new_element.push(element_contents.slice(previous_start, missing_range_start));
-		new_element.push(rangePostProcess(TempRange, true, settings.default_preview_mode, "span"));
+		new_element.push(rangePostProcess(plugin.app, TempRange, true, plugin.settings.default_preview_mode, "span"));
 		previous_start = Infinity;
 	}
 	new_element.push(element_contents.slice(previous_start));

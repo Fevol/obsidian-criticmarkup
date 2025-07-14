@@ -1,4 +1,7 @@
+import { editorEditorField } from "obsidian";
+import type {VimEditor} from "obsidian-typings";
 import { EditorSelection, EditorState, type Extension, SelectionRange, Transaction } from "@codemirror/state";
+import { EditorView } from "@codemirror/view";
 import { type PluginSettings } from "../../../../types";
 
 import {
@@ -16,7 +19,6 @@ import {
 	SuggestionType,
 } from "../../../base";
 
-import { COMMENTATOR_GLOBAL } from "../../../../global";
 import { latest_event } from "../keypress-catcher";
 import { cursor_transaction_pass_syntax } from "./cursor_movement";
 
@@ -92,11 +94,12 @@ export const suggestionMode = (settings: PluginSettings): Extension =>
 
 // TODO: Functionality: Double click mouse should also floodfill (problem: no specific userevent attached)
 function applySuggestion(tr: Transaction, settings: PluginSettings): Transaction {
+	const editor = tr.startState.field(editorEditorField) as EditorView & { cm: VimEditor };
 	const userEvents = getUserEvents(tr);
-	const vim_mode = COMMENTATOR_GLOBAL.app.workspace.activeEditor?.editor?.cm.cm !== undefined;
+	const vim_mode = editor.cm  !== undefined;
 
 	// TODO: Resolve used vim cursor movements since they do not receive user event annotations
-	if (!tr.docChanged && tr.selection && vim_mode) {
+	if (vim_mode && !tr.docChanged && tr.selection) {
 		if (cursorMoved(tr)) {
 			userEvents.push(
 				tr.startState.selection.ranges[0].from < tr.selection!.ranges[0].from ?
@@ -104,12 +107,7 @@ function applySuggestion(tr: Transaction, settings: PluginSettings): Transaction
 					"select.backward",
 			);
 		}
-		if (
-			vim_action_resolver[
-				COMMENTATOR_GLOBAL.app.workspace.activeEditor?.editor?.cm.cm?.state.vim.lastMotion
-					?.name as keyof typeof vim_action_resolver
-			]?.group
-		) {
+		if (vim_action_resolver[editor.cm.state.vim.lastMotion?.name as keyof typeof vim_action_resolver]?.group) {
 			userEvents.push("select.group");
 		}
 	}

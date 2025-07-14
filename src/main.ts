@@ -214,8 +214,6 @@ export default class CommentatorPlugin extends Plugin {
 			};
 		}
 
-		COMMENTATOR_GLOBAL.app = this.app;
-
 
 		this.registerView(COMMENTATOR_ANNOTATIONS_VIEW, (leaf) => new CommentatorAnnotationsView(leaf, this));
 
@@ -243,7 +241,7 @@ export default class CommentatorPlugin extends Plugin {
 		if (this.settings.post_processor) {
 			// TODO: Run postprocessor before any other MD postprocessors
 			this.postProcessor = this.registerMarkdownPostProcessor(
-				async (el, ctx) => postProcess(el, ctx, this.settings),
+				async (el, ctx) => postProcess(el, ctx, this),
 				-99999,
 			);
 			// Full postprocessor rerender on enabling the plugin?
@@ -335,8 +333,9 @@ export default class CommentatorPlugin extends Plugin {
 
 		this.database.unload();
 
+		COMMENTATOR_GLOBAL.PLUGIN_SETTINGS = undefined!;
 		if (process.env.NODE_ENV === "development") {
-			// @ts-expect-error Add debug variable to window
+			// @ts-expect-error Remove debug variable from window
 			window["COMMENTATOR_DEBUG"] = undefined;
 		}
 	}
@@ -371,7 +370,7 @@ export default class CommentatorPlugin extends Plugin {
 		if (this.changed_settings.post_processor !== undefined) {
 			if (this.changed_settings.post_processor) {
 				this.postProcessor = this.registerMarkdownPostProcessor(
-					(el, ctx) => postProcess(el, ctx, this.settings),
+					(el, ctx) => postProcess(el, ctx, this),
 					-99999,
 				);
 			} else {

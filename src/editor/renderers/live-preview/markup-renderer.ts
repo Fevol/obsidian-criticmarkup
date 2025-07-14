@@ -1,6 +1,6 @@
 import {type EditorSelection, type Extension, Range, RangeSet, StateField, Transaction} from "@codemirror/state";
 import {Decoration, type DecorationSet, EditorView} from "@codemirror/view";
-import {editorLivePreviewField} from "obsidian";
+import {editorEditorField, editorLivePreviewField} from "obsidian";
 
 import {CriticMarkupRange, rangeParser, SubstitutionRange, SuggestionType} from "../../base";
 import {editModeValueState, fullReloadEffect, previewModeState} from "../../settings";
@@ -90,6 +90,7 @@ function hideSyntax(
 }
 
 export function constructDecorations(
+    view: EditorView,
     ranges: CriticMarkupRange[],
     selections: EditorSelection | null,
     preview_mode: PreviewMode,
@@ -128,7 +129,7 @@ export function constructDecorations(
                     // EXPL: Comment ranges are only shown as icons in live preview mode
                     decorations.push(
                         Decoration.replace({
-                            widget: new CommentIconWidget(range, settings.annotation_gutter),
+                            widget: new CommentIconWidget(view, range, settings.annotation_gutter),
                         }).range(range.from, range.to),
                     );
                 } else {
@@ -210,9 +211,11 @@ export const livepreviewRenderer = (settings: PluginSettings) =>
             const edit_mode = state.facet(editModeValueState);
 
             const parsed_ranges = state.field(rangeParser);
+            const editor = state.field(editorEditorField);
 
             return RangeSet.of<Decoration>(
                 constructDecorations(
+                    editor,
                     parsed_ranges.ranges.ranges,
                     /*state.selection*/ null,
                     preview_mode,
@@ -234,6 +237,7 @@ export const livepreviewRenderer = (settings: PluginSettings) =>
             const edit_mode = tr.state.facet(editModeValueState);
 
             const parsed_cm_ranges = tr.state.field(rangeParser);
+            const editor = tr.state.field(editorEditorField);
 
             // EXPL: SETTING CHANGES
             //  All decorations need to be reloaded
@@ -247,6 +251,7 @@ export const livepreviewRenderer = (settings: PluginSettings) =>
             ) {
                 return RangeSet.of<Decoration>(
                     constructDecorations(
+                        editor,
                         parsed_cm_ranges.ranges.ranges,
                         tr.state.selection,
                         preview_mode,
@@ -272,6 +277,7 @@ export const livepreviewRenderer = (settings: PluginSettings) =>
                     },
                 }).map(tr.changes).update({
                     add: constructDecorations(
+                        editor,
                         parsed_cm_ranges.inserted_ranges,
                         tr.state.selection,
                         preview_mode,
@@ -308,6 +314,7 @@ export const livepreviewRenderer = (settings: PluginSettings) =>
                         return !(range && from < range.to && range.from < to);
                     },
                     add: constructDecorations(
+                        editor,
                         cm_ranges_in_selections,
                         tr.newSelection,
                         preview_mode,

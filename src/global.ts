@@ -4,9 +4,7 @@ import { type PluginSettings } from "./types";
 // eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace COMMENTATOR_GLOBAL {
 	/**
-	 * Trading one global for an admittedly worse global
-	 * Passing the App instance to CM plugins is just a major PitA
+	 * @todo Figure out how to get plugin settings to all the required places
 	 */
-	export let app: App;
 	export let PLUGIN_SETTINGS: PluginSettings;
 }

@@ -1,3 +1,4 @@
+import { editorInfoField } from "obsidian";
 import { EditorSelection, EditorState, type Extension, SelectionRange, Transaction } from "@codemirror/state";
 import { type PluginSettings } from "../../../../types";
 
@@ -11,7 +12,6 @@ import {
 	rangeParser,
 } from "../../../base";
 
-import { COMMENTATOR_GLOBAL } from "../../../../global";
 import { latest_event } from "../keypress-catcher";
 import { cursor_transaction_pass_syntax } from "./cursor_movement";
 
@@ -24,7 +24,8 @@ export const editMode = (settings: PluginSettings): Extension =>
 
 function applyCorrectedEdit(tr: Transaction, settings: PluginSettings): Transaction {
 	const userEvents = getUserEvents(tr);
-	const vim_mode = COMMENTATOR_GLOBAL.app.workspace.activeEditor?.editor?.cm.cm !== undefined;
+	const { app } = tr.startState.field(editorInfoField);
+	const vim_mode = app.workspace.activeEditor?.editor?.cm.cm !== undefined;
 
 	if (!tr.docChanged && vim_mode) {
 		if (cursorMoved(tr)) {
