@@ -53,7 +53,7 @@ body:
         - label: Windows
 
   - type: input
-    id: obsidian-version
+    id: app-version
     attributes:
       label: Obsidian App Version
       description: Which Obsidian App version are you using?
@@ -62,7 +62,7 @@ body:
       required: true
 
   - type: input
-    id: obsidian-version
+    id: installer-version
     attributes:
       label: Obsidian Installer Version
       description: |
@@ -84,7 +84,7 @@ body:
   - type: checkboxes
     id: other-plugins-disabled
     attributes:
-      label: Checks
+      label: Additional Checks
       description: Please confirm
       options:
         - label: I have tried to reproduce the bug with all other plugins disabled.
