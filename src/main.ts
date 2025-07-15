@@ -74,7 +74,7 @@ export default class CommentatorPlugin extends Plugin {
 		async (file, state?: EditorState) => {
 			return state ?
 				state.field(rangeParser).ranges.ranges :
-				getRangesInText(await this.app.vault.cachedRead(file as TFile), this.settings);
+				getRangesInText(await this.app.vault.cachedRead(file), this.settings);
 		},
 		this.settings.database_workers,
 		(data: CriticMarkupRange[]) => {

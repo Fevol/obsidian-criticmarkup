@@ -26,19 +26,19 @@ import { EditorView, keymap, placeholder, ViewUpdate } from "@codemirror/view";
 import { around } from "monkey-around";
 
 function resolveEditorPrototype(app: App) {
-	// Create a temporary editor to resolve the prototype of ScrollableMarkdownEditor
+	// EXPL: Create a temporary editor to resolve the prototype of ScrollableMarkdownEditor
 	const widgetEditorView = app.embedRegistry.embedByExtension.md(
 		{ app, containerEl: createDiv() },
 		null as unknown as TFile,
 		"",
 	) as WidgetEditorView;
 
-	// Mark as editable to instantiate the editor
+	// EXPL: Mark as editable to instantiate the editor
 	widgetEditorView.editable = true;
 	widgetEditorView.showEditor();
 	const MarkdownEditor = Object.getPrototypeOf(Object.getPrototypeOf(widgetEditorView.editMode!));
 
-	// Unload to remove the temporary editor
+	// EXPL: Unload to remove the temporary editor
 	widgetEditorView.unload();
 
 	return MarkdownEditor.constructor as Constructor<MarkdownScrollableEditView>;
@@ -98,7 +98,7 @@ export class EmbeddableMarkdownEditor extends resolveEditorPrototype(app) implem
 	constructor(app: App, container: HTMLElement, options: Partial<MarkdownEditorProps>) {
 		super(app, container, {
 			app,
-			// This mocks the MarkdownView functions, which is required for proper functioning of scrolling
+			// EXPL: This mocks the MarkdownView functions, which is required for proper functioning of scrolling
 			onMarkdownScroll: () => {},
 			getMode: () => "source",
 		});
@@ -120,27 +120,27 @@ export class EmbeddableMarkdownEditor extends resolveEditorPrototype(app) implem
 			return true;
 		});
 
-		// Since the commands expect that this is a MarkdownView (with editMode as the Editor itself),
+		// NOTE: Since the commands expect that this is a MarkdownView (with editMode as the Editor itself),
 		//   we need to mock this by setting both the editMode and editor to this instance and its containing view respectively
-		// @ts-expect-error (editMode is normally a MarkdownSubView)
+		// @ts-expect-error editMode is normally a MarkdownSubView
 		this.owner.editMode = this;
 		this.owner.editor = this.editor;
 
 		this.set(options.value || "", true);
 		this.register(
 			around(this.app.workspace, {
-				// @ts-expect-error (Incorrectly matches the deprecated setActiveLeaf method)
+				// @ts-expect-error Incorrectly matches the deprecated setActiveLeaf method
 				setActiveLeaf:
 					(oldMethod: (leaf: WorkspaceLeaf, params?: { focus?: boolean }) => void) =>
 					(leaf: WorkspaceLeaf, params: { focus?: boolean }) => {
-						// If the editor is currently focused, prevent the workspace setting the focus to a workspaceLeaf instead
+						// EXPL: If the editor is currently focused, prevent the workspace setting the focus to a workspaceLeaf instead
 						if (!this.activeCM.hasFocus)
 							oldMethod.call(this.app.workspace, leaf, params);
 					},
 			}),
 		);
 
-		// Execute onBlur when the editor loses focus
+		// EXPL: Execute onBlur when the editor loses focus
 		// NOTE: Apparently Chrome does a weird thing where removing an element from the DOM triggers a blur event
 		// 		 (Hence why the ._loaded check is necessary)
 		if (this.options.onBlur !== defaultProperties.onBlur) {
@@ -149,8 +149,8 @@ export class EmbeddableMarkdownEditor extends resolveEditorPrototype(app) implem
 			});
 		}
 
-		// Whenever the editor is focused, set the activeEditor to the mocked view (this.owner)
-		// This allows for the editorCommands to actually work
+		// EXPL: Whenever the editor is focused, set the activeEditor to the mocked view (this.owner)
+		// 	 	 This allows for the editorCommands to actually work
 		this.editor?.cm.contentDOM.addEventListener("focusin", () => {
 			this.app.keymap.pushScope(this.scope);
 			this.app.workspace.activeEditor = this.owner;
@@ -180,7 +180,7 @@ export class EmbeddableMarkdownEditor extends resolveEditorPrototype(app) implem
 		const extensions = super.buildLocalExtensions();
 		if (this.options.placeholder) extensions.push(placeholder(this.options.placeholder));
 
-		/* Editor extension for handling specific user inputs */
+		// EXPL: Editor extension for handling specific user inputs can be added here
 		extensions.push(EditorView.domEventHandlers({
 			paste: (event) => {
 				this.options.onPaste(event, this);
@@ -207,7 +207,8 @@ export class EmbeddableMarkdownEditor extends resolveEditorPrototype(app) implem
 			},
 		])));
 
-		/* Additional Editor extensions (renderers, ...) */
+		// EXPL: Any additional extensions that should be applied to the editor can be added here
+		//		 Keep in mind that editorExtensions provided by your or other plugins are not applied, so you will need to re-add them manually
 
 		return extensions;
 	}
