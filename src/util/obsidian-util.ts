@@ -18,24 +18,47 @@ export function openSettingTab(app: App, plugin_id: string = "commentator") {
  * @param app - Obsidian app instance
  * @async
  * @returns \{platform: string, plugin_version: string, obsidian_version: string, framework_version: string}
+ * @remarks Added plugins and operating system info based on RyotaUshio's https://gist.github.com/RyotaUshio/c3faf7513cecc02f0103f4b420ab9752#file-obsidian-debug-info-ts-L54
  */
 export async function getObsidianData(app: App) {
-	let framework_version;
+	let framework_version, operating_system;
 	if (Platform.isMobileApp) {
-		// @ts-expect-error (Capacitor exists)
-		const capacitor_info = await Capacitor.nativePromise("App", "getInfo");
-		if (capacitor_info)
-			framework_version = capacitor_info.version + " (" + capacitor_info.build + ")";
+		// @ts-expect-error (nativePromise exists and is used internally)
+		const app_info = await window.Capacitor.nativePromise("App", "getInfo");
+		if (app_info) {
+			framework_version = app_info.version + " (" + app_info.build + ")";
+		}
+
+		// @ts-expect-error (nativePromise exists and is used internally)
+		const device_info = await window.Capacitor.nativePromise("Device", "getInfo");
+		if (device_info) {
+			operating_system = `${device_info.platform} ${device_info.osVersion} (${device_info.manufacturer} ${device_info.model})`;
+		} else {
+			operating_system = navigator.userAgent.match(/(Android|iOS) ([\d.]+)/)?.[0] || "unknown";
+		}
+	} else if (Platform.isDesktopApp) {
+		const os = require("os") as typeof import("os");
+		operating_system = os.version() + " " + os.release();
+		framework_version = navigator.userAgent.match(/obsidian\/([\d.]+\d+)/)?.[1] || "unknown";
 	} else {
+		operating_system = navigator.userAgent.match(/(Windows|Mac OS X|Linux) ([\d.]+)/)?.[0] || "unknown";
 		framework_version = navigator.userAgent.match(/obsidian\/([\d.]+\d+)/)?.[1] || "unknown";
 	}
 
+	const other_plugins = Object.values(app.plugins.plugins)
+		.filter((plugin) => plugin.manifest.id !== "commentator")
+		.map((plugin) => {
+			return plugin.manifest.id + (plugin.manifest.version ? ` (v${plugin.manifest.version})` : "");
+		});
+
 	return {
 		plugin_version: app.plugins.plugins["commentator"].manifest.version,
+		other_plugins,
+		operating_system: operating_system!,
 		platform: Platform.isMobileApp ?
 			(Platform.isAndroidApp ? "Android" : Platform.isIosApp ? "iOS" : "mobile") :
 			(Platform.isMacOS ? "macOS" : "Desktop"),
-		framework_version,
+		framework_version: framework_version!,
 		obsidian_version: apiVersion,
 	};
 }
@@ -48,30 +71,20 @@ export async function getObsidianData(app: App) {
  * @param data - Debug information
  * @returns {string} - URL to create a new issue on GitHub
  */
-export async function generateGithubIssueLink(app: App, title: string, data: Record<string, string> = {}) {
-	const title_string = title ? `[BUG] ${title} – ADD A TITLE HERE` : "[BUG] ADD A TITLE HERE";
-	try {
-		const base_data = await getObsidianData(app);
-		const issue_data = { ...base_data, ...data };
-		const data_string = Object.entries(issue_data).map(([key, value]) => `**${key}**: ${JSON.stringify(value)}`)
-			.join("\n");
+export async function generateGithubIssueLink(app: App, title: string, data: Record<string, string> = {}): Promise<string> {
+	const base_data = await getObsidianData(app);
+	const issue_data = { ...base_data, ...data };
 
-		return `https://github.com/Fevol/obsidian-criticmarkup/issues/new?` +
-			new URLSearchParams({
-				title: title_string,
-				body:
-					`# User report\n**Description:** ADD A SHORT DESCRIPTION HERE \n\n\n\n---\n# Debugger data (do not alter)\n${data_string}`,
-				labels: `bug`,
-			});
-	} catch (e) {
-		return "https://github.com/Fevol/obsidian-criticmarkup/issues/new?" +
-			new URLSearchParams({
-				title: title_string,
-				body:
-					`# User report\n**Description:** ADD A SHORT DESCRIPTION HERE \n\n\n\n---\n# Debugger data (do not alter)\n**Error while generating debugger data:** ${e}`,
-				labels: `bug`,
-			});
-	}
+	return `https://github.com/Fevol/obsidian-criticmarkup/issues/new?` +
+		new URLSearchParams({
+			title: title,
+			template: "bug-report.yml",
+			"installer-version": issue_data.framework_version,
+			"app-version": issue_data.obsidian_version,
+			"commentator-version": issue_data.plugin_version,
+			"operating-systems": issue_data.operating_system,
+			"installed-plugins": issue_data.other_plugins.join(", "),
+		});
 }
 
 /**
