@@ -119,13 +119,17 @@ export function asArray<T>(val: T | readonly T[]) {
 	return (Array.isArray(val) ? val : [val]) as readonly T[];
 }
 
+interface PersistentGutterMarker extends GutterMarker {
+	preventUnload?: boolean; // MODF: Prevents unloading of a marker if it used in both old and new GutterElement
+}
+
 export class GutterElement {
 	dom: HTMLElement;
 	height: number = -1;
 	above: number = 0;
-	markers: readonly GutterMarker[] = [];
+	markers: readonly PersistentGutterMarker[] = [];
 
-	constructor(view: EditorView, height: number, above: number, markers: readonly GutterMarker[]) {
+	constructor(view: EditorView, height: number, above: number, markers: readonly PersistentGutterMarker[]) {
 		this.dom = document.createElement("div");
 		this.dom.className = "cm-gutterElement";
 		this.update(view, height, above, markers);
@@ -174,10 +178,10 @@ export class GutterElement {
 						//			element get removed, and then re-added to the new GutterElement.
 						//		A more sane solution would be to change the StateField to construct new Markers
 						//		for _all_ markers in a single line, but this requires much more effort.
-						if (!(next as unknown as any).preventUnload) {
+						if (!next.preventUnload) {
 							next.destroy(domPos!);
 						}
-						(next as any).preventUnload = false;
+						next.preventUnload = false;
 						// ORIGINAL: next.destroy(domPos!)
 						const after = domPos.nextSibling;
 						domPos.remove();
