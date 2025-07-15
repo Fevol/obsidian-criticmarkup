@@ -9,6 +9,8 @@ body:
         ## User Report
         
         Please describe the issue you encountered as clearly as possible.
+        Always check the [console log](https://help.obsidian.md/resources#Capture+console+logs) for errors (open with `Mod/Ctrl+Shift+I`).
+        Include any relevant error messages in your report; make sure to remove any sensitive information before submitting.
 
   - type: textarea
     id: reproduce
@@ -50,16 +52,17 @@ body:
   - type: markdown
     attributes:
       value: |
-          ## Debugger Data
+          ## Additional Data
         
           If you have opened an issue via Commentator's settings, the following data will have been automatically filled in.
+          Feel free to remove any information that you do not want to share, but please keep as much as possible.
 
   - type: input
     id: operating-systems
     attributes:
       label: Which Operating Systems are you using?
       description: You may supply more than one.
-      placeholder: Android, iOS, Linux, macOS, Windows
+      placeholder: Windows, Linux, macOS, Android, iOS
 
   - type: input
     id: app-version
@@ -79,7 +82,7 @@ body:
         (You can find this in the Obsidian settings under `General > App`.)
       placeholder: 1.8.10
     validations:
-      required: true
+      required: false
 
   - type: input
     id: commentator-version
@@ -90,11 +93,34 @@ body:
     validations:
       required: true
 
+  - type: input
+    id: installed-plugins
+    attributes:
+      label: Enabled Plugins
+      description: What other plugins do you have enabled?
+      placeholder: translate (0.2.0), tasks (7.0.0), etc.
+    validations:
+      required: false
+
+  - type: markdown
+    attributes:
+      value: |
+        ## Final Checks
+        
+        The following checkboxes are not required by any means, and can be safely ignored if they do not apply to your situation.
+        But, if you did try any of these, they give us an idea of what other steps you have taken to try and resolve the issue.
+
   - type: checkboxes
-    id: other-plugins-disabled
+    id: final-checks
     attributes:
       label: Additional Checks
-      description: Please confirm
+      description: Please check the checkboxes that apply.
       options:
+        - label: I tried reloading Obsidian to see if the bug persists.
+          required: false
         - label: I have tried to reproduce the bug with all other plugins disabled.
+          required: false
+        - label: I tried to reproduce the error in the sandbox vault.
+          required: false
+        - label: I have checked other issues to see if something similar has already been reported.
           required: false
