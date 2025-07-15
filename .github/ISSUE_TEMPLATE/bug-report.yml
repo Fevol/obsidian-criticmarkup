@@ -1,0 +1,91 @@
+# Based on Tasks Plugin's issue templates (https://github.com/obsidian-tasks-group/obsidian-tasks/blob/main/.github/ISSUE_TEMPLATE/bug-report.yaml)
+name: Bug Report
+description: File a bug report for the Commentator plugin for Obsidian.
+labels: ["type: bug"]
+body:
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: |
+        What *exact* steps are required to reproduce the issue?
+        The more detail you provide, the easier and faster it will be to narrow down and fix the bug.
+        If this is an editor issue, include a minimal example of the situation that causes the bug.
+      placeholder: |
+        Example of steps to reproduce a bug in the Commentator plugin:
+        1. Launch Obsidian Sandbox via the `Open Sandbox Vault` command.
+        2. Install the Commentator plugin.
+        3. Create a new note called `Example note`.
+        4. Enable suggestion mode and type in `Test comment`.
+        5. An error appears in the developer console (`Mod/Ctrl+Shift+I`).
+        6. etc
+    validations:
+      required: true
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: Current behaviour
+      description: |
+        Tell us what happens instead of the expected behavior.
+        If possible, add screenshots showing the issue.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: Tell us what *should* happen, when **exactly** following the steps above.
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: operating-systems
+    attributes:
+      label: Which Operating Systems are you using?
+      description: You may select more than one.
+      options:
+        - label: Android
+        - label: iOS
+        - label: Linux
+        - label: macOS
+        - label: Windows
+
+  - type: input
+    id: obsidian-version
+    attributes:
+      label: Obsidian App Version
+      description: Which Obsidian App version are you using?
+      placeholder: 1.8.10
+    validations:
+      required: true
+
+  - type: input
+    id: obsidian-version
+    attributes:
+      label: Obsidian Installer Version
+      description: |
+        Which Obsidian Installer version are you using?
+        (You can find this in the Obsidian settings under `General > App`.)
+      placeholder: 1.8.10
+    validations:
+      required: true
+
+  - type: input
+    id: commentator-version
+    attributes:
+      label: Commentator Plugin Version
+      description: Which Commentator version are you using?
+      placeholder: 0.2.4
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: other-plugins-disabled
+    attributes:
+      label: Checks
+      description: Please confirm
+      options:
+        - label: I have tried to reproduce the bug with all other plugins disabled.
+          required: false

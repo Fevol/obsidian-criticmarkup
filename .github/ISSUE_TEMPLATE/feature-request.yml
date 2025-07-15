@@ -1,0 +1,50 @@
+# Based on Tasks Plugin's issue templates (https://github.com/obsidian-tasks-group/obsidian-tasks/blob/main/.github/ISSUE_TEMPLATE/bug-report.yaml)
+name: Feature Request
+description: Request a new feature
+labels: ["type: enhancement"]
+body:
+  - type: checkboxes
+    id: no-invalid-issues
+    attributes:
+      label: "Please fill out the following checks"
+      options:
+        - label: "I checked for existing [similar feature requests](https://github.com/Fevol/obsidian-criticmarkup/issues?q=is%3Aissue%20state%3Aopen%20label%3Aenhancement)."
+          required: true
+        - label: "My feature request consists of only a single feature."
+          required: true
+
+  - type: textarea
+    id: feature-description
+    validations:
+      required: true
+    attributes:
+      label: "Feature description"
+      description: "A clear and concise description of what the feature request is."
+      placeholder: "I would like..."
+
+  - type: textarea
+    id: solution
+    validations:
+      required: true
+    attributes:
+      label: "Solution"
+      description: "A clear and concise description of what you want to happen, and why."
+      placeholder: "In my use-case, ..."
+
+  - type: textarea
+    id: alternatives
+    validations:
+      required: false
+    attributes:
+      label: "Alternatives"
+      description: "A clear and concise description of any alternative solutions or features you've considered."
+      placeholder: "I have considered..."
+
+  - type: textarea
+    id: additional-context
+    validations:
+      required: false
+    attributes:
+      label: "Additional Context"
+      description: "Add any other context or screenshots about the feature request here."
+      placeholder: "..."

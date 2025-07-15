@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Discord Thread
+    url: https://discord.com/channels/686053708261228577/1286804426828288050
+    about: Ask questions directly in the Commentator thread in the official Obsidian Discord server.
+  - name: GitHub Discussions
+    url: https://github.com/Fevol/obsidian-criticmarkup/discussions/new/choose
+    about: Ask questions in the GitHub Discussions section of this repository.
