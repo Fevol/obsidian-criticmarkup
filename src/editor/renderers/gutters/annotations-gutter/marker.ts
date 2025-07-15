@@ -186,15 +186,15 @@ class AnnotationNode extends Component {
 		else {
 			const settings = this.marker.view.state.field(pluginSettingsField);
 			this.text = this.new_text;
-			setTimeout(() =>
+			window.setTimeout(() => {
 				this.marker.view.dispatch({
 					changes: {
 						from: this.range.from,
 						to: this.range.to,
 						insert: create_range(settings, SuggestionType.COMMENT, this.new_text!),
 					},
-				})
-			);
+				});
+			});
 		}
 	}
 
@@ -407,7 +407,7 @@ export class AnnotationMarker extends GutterMarker {
 		}
 
 		if (scroll) {
-			setTimeout(() => {
+			window.setTimeout(() => {
 				const top = this.view.lineBlockAt(this.annotations[0].from).top - 100;
 				this.view.scrollDOM.scrollTo({top, behavior: "smooth"});
 			}, 200);

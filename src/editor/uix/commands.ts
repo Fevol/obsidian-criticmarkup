@@ -41,7 +41,7 @@ export const debug_application_commands = (plugin: CommentatorPlugin) => [
 			const progressBarUpdate = showProgressBarNotice("Test progress bar", "Test progress bar finished", 10, 1000, "Test");
 			for (let i = 0; i < 10; i++) {
 				progressBarUpdate(i + 1);
-				await new Promise(resolve => setTimeout(resolve, 300));
+				await new Promise(resolve => window.setTimeout(resolve, 300));
 			}
 		}
 	},

@@ -148,7 +148,7 @@ export function showProgressBarNotice(initialMessage: string, finishedMessage: s
 		if (val >= numOperations) {
 			notice.setMessage(finishedMessage);
 			notice.noticeEl.addClass("mod-success");
-			setTimeout(() => {
+			window.setTimeout(() => {
 				notice.hide();
 			}, duration);
 		} else {

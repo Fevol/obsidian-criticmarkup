@@ -108,7 +108,7 @@ export class AnnotationGutterView extends GutterView {
 		marker.focus_annotation(index, scroll);
 
 		if (focus_markup) {
-			setTimeout(() => {
+			window.setTimeout(() => {
 				this.view.dispatch(
 					this.view.state.update({
 						effects: [

@@ -28,7 +28,7 @@ export function addCommentToView(editor: EditorView, range: CriticMarkupRange | 
     // FIXME: A more canonical way is required to wait till the CM state update (the new comment element needs to be rendered)
     //   Some attempts that did not work:
     //    - using `sequential` in the `update` method
-    setTimeout(() => { editor.dispatch(editor.state.update({
+    window.setTimeout(() => { editor.dispatch(editor.state.update({
         annotations: [
             annotationGutterFocusAnnotation.of({
                 from: cursor,
