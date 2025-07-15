@@ -14,21 +14,19 @@ export function renderCommentWidget(app: App, range: CommentRange, text?: string
 			str = range.unwrap();
 	}
 
-	const icon = document.createElement("span");
-	icon.classList.add("cmtr-comment-icon");
+	const icon = createSpan({ cls: "cmtr-comment-icon" });
 	setIcon(icon, "message-square");
 	let tooltip: HTMLElement | null = null;
 	const component = new Component();
 	icon.onmouseenter = () => {
 		if (tooltip) return;
 
-		tooltip = document.createElement("div");
-		tooltip.classList.add("cmtr-comment-tooltip");
+		tooltip = createDiv({ cls: "cmtr-comment-tooltip" });
 		MarkdownRenderer.render(app, str, tooltip, "", component);
 		component.load();
 		icon!.appendChild(tooltip);
 
-		// Set tooltip position
+		// EXPL: Sets the tooltip position
 		const icon_rect = icon!.getBoundingClientRect();
 		const tooltip_rect = tooltip.getBoundingClientRect();
 		tooltip.style.left = icon_rect.x - tooltip_rect.x + 12 + "px";
@@ -88,14 +86,11 @@ export class CommentIconWidget extends WidgetType {
 	}
 
 	toDOM(view: EditorView): HTMLElement {
-		this.icon = document.createElement("span");
-		this.icon.classList.add("cmtr-comment-icon");
+		this.icon = createSpan({ cls: "cmtr-comment-icon" });
 		setIcon(this.icon, "message-square");
 
 		// DEBUG: Add line under icon to check alignment of annotation gutter element with widget
-		// const line = document.createElement('div');
-		// line.classList.add('cmtr-debug-comment-line');
-		// this.icon.appendChild(line);
+		// this.icon.appendChild(createDiv({ cls: "cmtr-debug-comment-line" }));
 
 		if (this.annotation_gutter) {
 			this.icon.onclick = (e) => this.focusAnnotation(e);

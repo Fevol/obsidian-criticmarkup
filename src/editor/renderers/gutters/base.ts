@@ -1,5 +1,5 @@
 /**
- * This file is largely identical to the gutter defined in @codemirror/view/gutter
+ * NOTE: This file is intentionally kept largely identical to the gutter defined in @codemirror/view/gutter
  * The only changes are:
  *   1. Extracted createGutters/insertGutters/getUpdateContexts methods so they can be overridden
  *   2. Added consts were necessary and formatted code

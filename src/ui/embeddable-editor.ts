@@ -28,7 +28,7 @@ import { around } from "monkey-around";
 function resolveEditorPrototype(app: App) {
 	// Create a temporary editor to resolve the prototype of ScrollableMarkdownEditor
 	const widgetEditorView = app.embedRegistry.embedByExtension.md(
-		{ app, containerEl: document.createElement("div") },
+		{ app, containerEl: createDiv() },
 		null as unknown as TFile,
 		"",
 	) as WidgetEditorView;
