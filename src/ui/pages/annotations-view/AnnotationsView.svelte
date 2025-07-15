@@ -4,6 +4,7 @@
     import {onDestroy, onMount} from "svelte";
     import {Icon, View, StateButton, NavHeader, Button, Input, VirtualList} from "../../components";
     import AnnotationThread from "./AnnotationThread.svelte";
+    import type { CommentatorAnnotationsViewState } from "../../view.svelte"
 
     import {TFile, Menu, debounce} from "obsidian";
 
@@ -24,7 +25,7 @@
         author_filter?: AuthorFilter;
         date_filter?: number[] | undefined;
 
-        sync_props: (args: Record<string, unknown>[]) => void;
+        sync_props: (args: CommentatorAnnotationsViewState) => void;
     }
 
     let {

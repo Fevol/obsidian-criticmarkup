@@ -285,7 +285,7 @@ export default class CommentatorPlugin extends Plugin {
 
 					// EXPL: Migrate settings from 0.2.x to 0.2.3, suggestion and comment gutter settings were renamed
 					if (old_version.localeCompare("0.2.3", undefined, {numeric: true}) < 0) {
-						if ((new_settings as any).suggestion_gutter_hide_empty) {
+						if ((new_settings as unknown as any).suggestion_gutter_hide_empty) {
 							const settings_migrations = [
 								["suggestion_gutter", "diff_gutter"],
 								["suggestion_gutter_hide_empty", "diff_gutter_hide_empty"],
@@ -299,12 +299,12 @@ export default class CommentatorPlugin extends Plugin {
 
 							for (const [old_key, new_key] of settings_migrations) {
 								if (old_key in this.settings) {
-									(this.settings as unknown as any)[new_key] = this.settings[old_key];
+									(this.settings as unknown as Record<string, unknown>)[new_key] = this.settings[old_key];
 									delete this.settings[old_key];
 								}
 							}
 
-							if (this.settings.comment_style as any === "block") {
+							if (this.settings.comment_style as unknown === "block") {
 								this.settings.comment_style = "icon";
 								this.settings.annotation_gutter = true;
 							}

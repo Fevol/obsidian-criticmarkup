@@ -6,7 +6,7 @@ import type CommentatorPlugin from "../main";
 
 export const COMMENTATOR_ANNOTATIONS_VIEW = "commentator-annotations-view";
 
-interface CommentatorAnnotationsViewState {
+export interface CommentatorAnnotationsViewState {
 	range_type_filter: number;
 	location_filter: number;
 	content_filter: number;
@@ -76,9 +76,9 @@ export class CommentatorAnnotationsView extends ItemView {
 				props: {
 					...this.props,
 					// TODO: Find a more canonical way to get props synced from the view to the mounter
-					sync_props: (props: Record<string, unknown>[]) => {
+					sync_props: (props: CommentatorAnnotationsViewState) => {
 						for (const [key, value] of Object.entries(props)) {
-							this.props[key as keyof typeof this.props] = value as unknown as any;
+							this.props[key as keyof typeof this.props] = value;
 						}
 					}
 				},

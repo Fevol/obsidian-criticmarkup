@@ -174,7 +174,7 @@ export class GutterElement {
 						//			element get removed, and then re-added to the new GutterElement.
 						//		A more sane solution would be to change the StateField to construct new Markers
 						//		for _all_ markers in a single line, but this requires much more effort.
-						if (!(next as any).preventUnload) {
+						if (!(next as unknown as any).preventUnload) {
 							next.destroy(domPos!);
 						}
 						(next as any).preventUnload = false;
