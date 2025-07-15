@@ -40,17 +40,12 @@ body:
     validations:
       required: true
 
-  - type: checkboxes
+  - type: input
     id: operating-systems
     attributes:
       label: Which Operating Systems are you using?
-      description: You may select more than one.
-      options:
-        - label: Android
-        - label: iOS
-        - label: Linux
-        - label: macOS
-        - label: Windows
+      description: You may supply more than one.
+      placeholder: Android, iOS, Linux, macOS, Windows
 
   - type: input
     id: app-version
