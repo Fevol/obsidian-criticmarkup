@@ -4,13 +4,11 @@ description: File a bug report for the Commentator plugin for Obsidian.
 labels: ["type: bug"]
 body:
   - type: markdown
-    id: user-report
-    value: |
-      ## User Report
-      
-      Please describe the issue you encountered as clearly as possible.
-    validations:
-      required: false
+    attributes:
+      value: |
+        ## User Report
+        
+        Please describe the issue you encountered as clearly as possible.
 
   - type: textarea
     id: reproduce
@@ -50,13 +48,11 @@ body:
       required: true
 
   - type: markdown
-    id: debugger-data
-    value: |
-        ## Debugger Data
-      
-        If you have opened an issue via Commentator's settings, the following data will have been automatically filled in.
-    validations:
-      required: false
+    attributes:
+      value: |
+          ## Debugger Data
+        
+          If you have opened an issue via Commentator's settings, the following data will have been automatically filled in.
 
   - type: input
     id: operating-systems
