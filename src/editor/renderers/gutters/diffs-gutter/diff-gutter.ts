@@ -2,10 +2,9 @@
  * This is almost identical to the gutter defined in @codemirror/view/gutter,
  * with the exception of having the gutter be correctly hidden when there are no suggestions in the note
  */
-import { type Extension, Facet } from "@codemirror/state";
+import {Annotation, type Extension, Facet } from "@codemirror/state";
 import { EditorView, ViewUpdate } from "@codemirror/view";
 import { rangeParser } from "../../../base";
-import { hideEmptyDiffGutterState } from "../../../settings";
 import {
 	createGutter,
 	createGutterViewPlugin,
@@ -19,7 +18,9 @@ const unfixGutters = Facet.define<boolean, boolean>({
 	combine: values => values.some(x => x),
 });
 
-const activeGutters = Facet.define<Required<GutterConfig>>();
+const activeGutters = Facet.define<Required<DiffGutterConfig>>();
+
+export const diffGutterHideEmptyAnnotation = Annotation.define<boolean>();
 
 class DiffGutterView extends GutterView {
 	constructor(view: EditorView) {
@@ -45,23 +46,31 @@ class DiffGutterView extends GutterView {
 	}
 }
 
+export interface DiffGutterConfig extends GutterConfig {
+	/**
+	 * Whether the gutter should be hidden when empty
+	 */
+	hideOnEmpty: boolean;
+}
+
 class DiffSingleGutterView extends SingleGutterView {
 	hide_on_empty: boolean = false;
 	showing: boolean = true;
 
-	constructor(public view: EditorView, public config: Required<GutterConfig>) {
+	constructor(public view: EditorView, public config: Required<DiffGutterConfig>) {
 		super(view, config);
-
-		if (view.state.facet(hideEmptyDiffGutterState))
-			this.hide_on_empty = true;
+		this.hide_on_empty = config.hideOnEmpty;
 	}
 
 	update(update: ViewUpdate) {
 		const result = super.update(update);
 
-		const hide_on_empty = update.state.facet(hideEmptyDiffGutterState);
-		if (hide_on_empty !== update.startState.facet(hideEmptyDiffGutterState))
-			this.hide_on_empty = hide_on_empty;
+		for (const transaction of update.transactions) {
+			const hide_on_empty = transaction.annotation(diffGutterHideEmptyAnnotation);
+			if (hide_on_empty !== undefined) {
+				this.hide_on_empty = hide_on_empty;
+			}
+		}
 
 		if (this.showing && this.hide_on_empty && update.state.field(rangeParser).ranges.empty()) {
 			this.dom.parentElement!.classList.add("gutter-hidden");

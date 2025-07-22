@@ -15,9 +15,11 @@ import { type CriticMarkupRange, getRangesInText, RANGE_PROTOTYPE_MAPPER, rangeP
 import { cmenuGlobalCommands, cmenuViewportCommands, commands } from "./editor/uix";
 import { bracketMatcher, editorKeypressCatcher, getEditMode, rangeCorrecter, focusAnnotation, providePluginSettingsExtension } from "./editor/uix/extensions";
 import {
-	annotationGutter, annotationGutterCompartment, diffGutter, diffGutterCompartment,
+	annotationGutter, annotationGutterCompartment,
 	annotationGutterFoldButtonAnnotation, annotationGutterResizeHandleAnnotation,
 	annotationGutterWidthAnnotation, annotationGutterHideEmptyAnnotation, annotationGutterView,
+	diffGutter, diffGutterCompartment,
+	diffGutterHideEmptyAnnotation,
 } from "./editor/renderers/gutters";
 import { livepreviewRenderer, focusRenderer, markupFocusState } from "./editor/renderers/live-preview";
 import { postProcess, postProcessorRerender, postProcessorUpdate } from "./editor/renderers/post-process";
@@ -39,11 +41,10 @@ import {
 	annotationGutterIncludedTypes, annotationGutterIncludedTypesState,
 	editMode, editModeValue, editModeValueState,
 	fullReloadEffect,
-	hideEmptyDiffGutter, hideEmptyDiffGutterState,
 	previewMode, previewModeState,
 } from "./editor/settings";
 
-import { debugRangeset, iterateAllCMInstances, sendAnnotationToAllCMInstances, updateAllCompartments, updateCompartment} from "./util/cm-util";
+import { debugRangeset, iterateAllCMInstances, sendAnnotationToAllCMInstances, updateCompartment} from "./util/cm-util";
 import { objectDifference } from "./util/util";
 
 export default class CommentatorPlugin extends Plugin {
@@ -133,10 +134,6 @@ export default class CommentatorPlugin extends Plugin {
 		this.editorExtensions.push(EditorView.domEventHandlers({
 			copy: text_copy.bind(null, this.settings),
 		}));
-
-		this.editorExtensions.push(
-			hideEmptyDiffGutter.of(hideEmptyDiffGutterState.of(this.settings.diff_gutter_hide_empty))
-		);
 
 		this.editorExtensions.push(previewMode.of(previewModeState.of(this.settings.default_preview_mode)));
 		this.editorExtensions.push(editModeValue.of(editModeValueState.of(this.settings.default_edit_mode)));
@@ -385,13 +382,7 @@ export default class CommentatorPlugin extends Plugin {
 		}
 
 		if (this.changed_settings.diff_gutter_hide_empty !== undefined) {
-			updateAllCompartments(
-				this.app,
-				this.editorExtensions,
-				hideEmptyDiffGutter,
-				hideEmptyDiffGutterState,
-				this.settings.diff_gutter_hide_empty,
-			);
+			sendAnnotationToAllCMInstances(this.app, diffGutterHideEmptyAnnotation.of(this.settings.diff_gutter_hide_empty));
 		}
 
 		if (this.changed_settings.annotation_gutter_fold_button !== undefined) {

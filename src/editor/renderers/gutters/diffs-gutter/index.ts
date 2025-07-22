@@ -2,7 +2,7 @@ import { Menu } from "obsidian";
 import { Compartment } from "@codemirror/state";
 
 import { acceptSuggestions, rejectSuggestions } from "../../../base";
-import { diff_gutter } from "./diff-gutter";
+import { diff_gutter, diffGutterHideEmptyAnnotation } from "./diff-gutter";
 import { diffGutterMarkers } from "./marker";
 
 export const diffGutter = /*(plugin: CommentatorPlugin) => */ [
@@ -38,4 +38,4 @@ export const diffGutter = /*(plugin: CommentatorPlugin) => */ [
 export const diffGutterCompartment = new Compartment();
 
 
-export { diffGutterMarkers };
+export { diffGutterMarkers, diffGutterHideEmptyAnnotation };

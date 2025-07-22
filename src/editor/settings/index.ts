@@ -28,9 +28,6 @@ export function attachValue<T>(value: T, effect: StateEffectType<T>) {
 export const annotationGutterIncludedTypesState = Facet.define<number, number>({ combine: values => values[0] });
 export const annotationGutterIncludedTypes = new Compartment();
 
-export const hideEmptyDiffGutterState = Facet.define<boolean, boolean>({ combine: values => values[0] });
-export const hideEmptyDiffGutter = new Compartment();
-
 export const previewModeState = Facet.define<PreviewMode, PreviewMode>({ combine: values => values[0] });
 export const previewMode = new Compartment();
 
