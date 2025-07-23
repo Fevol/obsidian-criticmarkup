@@ -1,3 +1,8 @@
+// EXPL: Exclude annotation gutter width from the line width setting, if enabled
+.markdown-source-view.mod-cm6.is-readable-line-width .cm-sizer {
+  max-width: calc(var(--file-line-width) + var(--cmtr-anno-gutter-width, 0));
+}
+
 .cm-gutters.cm-gutters.cm-gutters.cm-gutters:has(
     .is-minimal.cmtr-anno-gutter
   ) {
@@ -8,7 +13,6 @@
 .cm-gutters.cm-gutters:has(> .cmtr-anno-gutter) {
   padding-inline-end: 0;
   margin-inline-end: 0;
-  margin-inline-start: 24px;
 }
 
 .cmtr-anno-gutter {
@@ -146,9 +150,15 @@
 // ================================================
 
 .cmtr-anno-gutter-button {
-  position: absolute;
-  top: calc(var(--file-margins) + 20px);
+  position: fixed;
+  top: calc(var(--file-margins) + 60px);
+  transform: translateX(-36px);
   z-index: 1000;
+
+}
+
+.cmtr-anno-gutter-button a {
+  position: absolute;
   color: var(--text-faint);
   transition:
           color 200ms ease-in-out 0ms,
@@ -156,6 +166,6 @@
           rotate 200ms ease-in-out;
 }
 
-.cmtr-anno-gutter-button:hover {
+.cmtr-anno-gutter-button a:hover {
   color: var(--text-normal);
 }
