@@ -35,16 +35,6 @@
   border-style: dashed;
 }
 
-.cmtr-view-range-author {
-  font-size: var(--font-smallest);
-  color: var(--text-faint);
-}
-
-.cmtr-view-range-time {
-  font-size: var(--font-smallest);
-  color: var(--text-faint);
-}
-
 .cmtr-view-range:hover {
   box-shadow: unset;
   outline: 2px dashed var(--interactive-accent-hover);
@@ -78,16 +68,6 @@
   padding: 0 var(--size-4-1);
   padding-left: 30px;
   min-height: 2em;
-}
-
-.cmtr-view-range-reply-author {
-  font-size: var(--font-smallest);
-  color: var(--text-faint);
-}
-
-.cmtr-view-range-reply-time {
-  font-size: var(--font-smallest);
-  color: var(--text-faint);
 }
 
 .cmtr-view-suggestion-buttons {

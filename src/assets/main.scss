@@ -94,3 +94,32 @@ DEFAULT: hidden
   width: 100%;
   border-bottom: 1px dashed red;
 }
+
+// TODO: Fix slight misalignment of icon with rest of content
+.cmtr-metadata-info {
+  font-size: var(--font-smallest);
+  color: var(--text-faint);
+
+  display: flex;
+  gap: 0.6em;
+  flex-wrap: wrap;
+  flex-direction: row;
+  align-items: center;
+}
+
+
+.cmtr-metadata-info-field {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: baseline;
+}
+
+.cmtr-metadata-info-separator {
+  line-height: 0.1;
+}
+
+.cmtr-metadata-info-icon {
+  display: flex;
+  margin-right: 0.25em;
+  --icon-size: var(--font-smallest);
+}

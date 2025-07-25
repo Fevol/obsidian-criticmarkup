@@ -2,8 +2,9 @@
     import type CommentatorPlugin from "../../../main";
     import { type CriticMarkupRangeEntry, SUGGESTION_ICON_MAPPER, SuggestionType } from "../../../editor/base";
     import { MarkdownRenderer, Icon } from "../../components";
-    import {onContextMenu} from "./context-menu";
+    import { onContextMenu } from "./context-menu";
     import AnnotationThreadQuickActions from "./AnnotationThreadQuickActions.svelte";
+    import { createMetadataInfoElement } from "../../snippets";
 
     interface Props {
         plugin: CommentatorPlugin;
@@ -69,21 +70,7 @@
 		<Icon size={24} icon={SUGGESTION_ICON_MAPPER[row.range.type]} />
 		<div>
 			<span class="cmtr-view-range-title">{row.path}</span>
-			<div>
-				{#if row.range.fields.author}
-                    <span class="cmtr-view-range-author">
-                      {row.range.fields.author}
-                    </span>
-				{/if}
-
-				{#if row.range.fields.time}
-                    <span class="cmtr-view-range-time">
-                      {window.moment
-                          .unix(row.range.fields.time)
-                          .format("MMM DD YYYY, HH:mm")}
-                    </span>
-				{/if}
-			</div>
+			{@html createMetadataInfoElement(row.range, "", "icon").outerHTML}
 		</div>
 	</div>
 
@@ -130,20 +117,8 @@
 						/>
 					{/if}
 
-					<div class="cmtr-view-range-reply-top">
-						{#if reply.fields.author}
-                        <span class="cmtr-view-range-reply-author">
-                          {reply.fields.author}
-                        </span>
-						{/if}
-						{#if reply.fields.time}
-                        <span class="cmtr-view-range-reply-time">
-                          {window.moment
-                              .unix(reply.fields.time)
-                              .format("MMM DD YYYY, HH:mm")}
-                        </span>
-						{/if}
-					</div>
+					{@html createMetadataInfoElement(reply, "cmtr-view-range-reply-top").outerHTML}
+
 					<div class="cmtr-view-range-reply-text">
 						<MarkdownRenderer
 							{plugin}

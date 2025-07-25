@@ -14,6 +14,7 @@ import { annotationGutterFocusThreadAnnotation, annotationGutterFoldAnnotation }
 
 import { stickyContextMenuPatch } from "../../../../patches";
 import { pluginSettingsField } from "../../../uix";
+import { createMetadataInfoElement } from "../../../../ui/snippets";
 
 class AnnotationNode extends Component {
 	text: string;
@@ -35,8 +36,10 @@ class AnnotationNode extends Component {
 		this.annotation_container.addEventListener("dblclick", this.renderSource.bind(this));
 		this.annotation_container.addEventListener("contextmenu", this.onCommentContextmenu.bind(this));
 
-		if (this.range.metadata)
-			this.renderMetadata();
+		if (this.range.metadata) {
+			this.metadata_view = createMetadataInfoElement(this.range);
+			this.annotation_container.appendChild(this.metadata_view);
+		}
 
 		this.annotation_view = this.annotation_container.createDiv({ cls: "cmtr-anno-gutter-annotation-view" });
 		this.renderPreview();
@@ -51,45 +54,6 @@ class AnnotationNode extends Component {
 
 		this.annotation_container.remove();
 		this.editMode = null;
-	}
-
-	renderMetadata() {
-		this.metadata_view = this.annotation_container.createDiv({ cls: "cmtr-anno-gutter-annotation-metadata" });
-		if (this.range.fields.author) {
-			const authorLabel = createSpan({
-				cls: "cmtr-anno-gutter-annotation-author-label",
-				text: "Author: ",
-			});
-			this.metadata_view.appendChild(authorLabel);
-
-			const author = createSpan({
-				cls: "cmtr-anno-gutter-annotation-author-name",
-				text: this.range.fields.author,
-			});
-			this.metadata_view.appendChild(author);
-		}
-
-		if (this.range.fields.time) {
-			if (this.metadata_view.children.length > 0) {
-				const separator = createSpan({
-					cls: "cmtr-anno-gutter-annotation-metadata-separator",
-					text: " • ",
-				});
-				this.metadata_view.appendChild(separator);
-			}
-
-			const timeLabel = createSpan({
-				cls: "cmtr-anno-gutter-annotation-time-label",
-				text: "Updated at: ",
-			});
-			this.metadata_view.appendChild(timeLabel);
-
-			const time = createSpan({
-				cls: "cmtr-anno-gutter-annotation-time",
-				text: window.moment.unix(this.range.fields.time!).format("MMM DD YYYY, HH:mm"),
-			});
-			this.metadata_view.appendChild(time);
-		}
 	}
 
 	renderSource(e?: MouseEvent) {
@@ -116,7 +80,6 @@ class AnnotationNode extends Component {
 						this.new_text = editor.get();
 						this.renderPreview();
 					},
-					// TODO: Get a reference to the plugin somehow
 					filteredExtensions: [app.plugins.plugins["commentator"].editorExtensions],
 					onBlur: this.renderPreview.bind(this),
 				}),
@@ -386,8 +349,9 @@ export class AnnotationMarker extends GutterMarker {
 		this.annotation_thread = createDiv({ cls: "cmtr-anno-gutter-thread" });
 		this.annotation_thread.addEventListener("click", this.onCommentThreadClick.bind(this));
 
-		for (const range of this.annotations)
+		for (const range of this.annotations) {
 			this.component.addChild(new AnnotationNode(range, this));
+		}
 		this.component.load();
 
 		return this.annotation_thread;
