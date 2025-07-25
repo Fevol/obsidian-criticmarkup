@@ -356,6 +356,15 @@ class AnnotationSingleGutterView extends SingleGutterView {
 
 		this.folded = config.foldState;
 		this.width = config.width;
+		// EXPL: If the gutter takes up too much space, fold it by default (even if the user has allowed it to be unfoled in the past)
+		// if (this.view.dom.clientWidth - this.width < 200) {
+		// 	this.folded = true;
+		// }
+		// TODO: This is specifically done for popovers, there may be a better fix for this
+		if (this.view.dom.parentElement?.parentElement?.parentElement?.classList.contains("markdown-embed")) {
+			this.folded = true;
+		}
+
 		this.hide_on_empty = config.hideOnEmpty;
 		this.add_fold_button = config.includeFoldButton;
 		this.add_resize_handle = config.includeResizeHandle;

@@ -157,6 +157,13 @@
 
 }
 
+// EXPL: If the gutter is placed inside an embed, it should be positioned absolutely
+.markdown-embed .cmtr-anno-gutter-button {
+  position: absolute;
+  top: 0;
+}
+
+
 .cmtr-anno-gutter-button a {
   position: absolute;
   color: var(--text-faint);
