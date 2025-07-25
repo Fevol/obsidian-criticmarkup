@@ -20,11 +20,11 @@
   transition: width 400ms ease-in-out;
 }
 
-.cmtr-anno-gutter-moving .cmtr-anno-gutter {
+.cmtr-anno-gutter-resizing .cmtr-anno-gutter {
   transition: width 50ms ease-out;
 }
 
-.cmtr-anno-gutter-moving.cmtr-anno-gutter-button {
+.cmtr-anno-gutter-resizing .cmtr-anno-gutter-button {
   transition: right 50ms ease-out;
 }
 

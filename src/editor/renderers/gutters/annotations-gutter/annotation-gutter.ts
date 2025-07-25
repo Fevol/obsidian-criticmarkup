@@ -50,6 +50,7 @@ export class AnnotationGutterView extends GutterView {
 	constructor(view: EditorView) {
 		super(view, unfixGutters, activeGutters);
 		// FIXME: this still causes a layout shift
+		// EXPL: If the gutter is not inside a Markdown View, hide it and remove it from the gutter extension from the view
 		if (!view.dom.parentElement!.classList.contains("markdown-source-view")) {
 			// NOTE: Prevents gutter from appearing for a brief second (until setImmediate kicks in)
 			this.dom.style.display = 'none';
@@ -415,14 +416,13 @@ class AnnotationSingleGutterView extends SingleGutterView {
 				//		 (Trust me, it is _much_ worse without this bodge)
 				if (isReadableLineWidth) {
 					temporarySheet.deleteRule(temporarySheet.cssRules.length - 1);
-					temporarySheet.insertRule(`.cm-line { width: ${this.view.contentDOM.clientWidth}px !important; }`, temporarySheet.cssRules.length);
+					temporarySheet.insertRule(`.cmtr-anno-gutter-resizing .cm-line { width: ${this.view.contentDOM.clientWidth}px !important; }`, temporarySheet.cssRules.length);
 					this.gutter_position = this.view.scrollDOM.getBoundingClientRect().right - this.view.contentDOM.getBoundingClientRect().right + ANNOTATION_GUTTER_MARGIN;
 				}
 			}, 25);
 
 			this.resize_handle_el!.classList.toggle("cmtr-anno-gutter-resize-handle-hover", true);
-			this.fold_button_el?.classList.toggle("cmtr-anno-gutter-moving", true);
-			this.gutterDom.classList.toggle("cmtr-anno-gutter-moving", true);
+			this.view.scrollDOM.classList.toggle("cmtr-anno-gutter-resizing", true);
 
 			let currentWidth = parseInt(this.dom.style.width.slice(0, -2));
 			const onMouseMove = (evt: MouseEvent) => {
@@ -437,8 +437,7 @@ class AnnotationSingleGutterView extends SingleGutterView {
 				document.removeEventListener("mousemove", onMouseMove);
 				document.removeEventListener("mouseup", onMouseStop);
 				this.resize_handle_el!.classList.toggle("cmtr-anno-gutter-resize-handle-hover", false);
-				this.fold_button_el?.classList.toggle("cmtr-anno-gutter-moving", false);
-				this.gutterDom.classList.toggle("cmtr-anno-gutter-moving", false);
+				this.view.scrollDOM.classList.toggle("cmtr-anno-gutter-resizing", false);
 
 				if (isReadableLineWidth) {
 					temporarySheet.deleteRule(temporarySheet.cssRules.length - 1);
