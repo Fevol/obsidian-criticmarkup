@@ -126,6 +126,7 @@ export function constructDecorations(
 
             if (!(show_comment && in_range) && range.type === SuggestionType.COMMENT && settings.comment_style !== "inline") {
                 if (settings.comment_style === "icon" && range.base_range === range) {
+                    // FIXME: Widget is unnecessarily destroyed from selection changes
                     // EXPL: Comment ranges are only shown as icons in live preview mode
                     decorations.push(
                         Decoration.replace({

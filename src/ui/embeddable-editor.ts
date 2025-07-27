@@ -11,13 +11,7 @@
  * Make sure to also check out the original source code here: https://github.com/mgmeyers/obsidian-kanban/blob/main/src/components/Editor/MarkdownEditor.tsx
  */
 
-import {
-	App,
-	type Constructor,
-	Scope,
-	TFile,
-	WorkspaceLeaf,
-} from "obsidian";
+import { App, type Constructor, Scope, TFile, WorkspaceLeaf } from "obsidian";
 import type { MarkdownScrollableEditView, WidgetEditorView } from "obsidian-typings"
 
 import { EditorSelection, type Extension, Prec } from "@codemirror/state";
@@ -44,10 +38,10 @@ function resolveEditorPrototype(app: App) {
 	return MarkdownEditor.constructor as Constructor<MarkdownScrollableEditView>;
 }
 
-interface MarkdownEditorProps {
+export interface MarkdownEditorProps {
 	cursorLocation: { anchor: number; head: number };
 	value: string;
-	cls: string;
+	cls: string | string[] | undefined;
 	placeholder: string;
 	focus: boolean;
 
@@ -61,7 +55,7 @@ interface MarkdownEditorProps {
 	onChange: (update: ViewUpdate) => void;
 }
 
-const defaultProperties: MarkdownEditorProps = {
+export const defaultMarkdownEditorProps: MarkdownEditorProps = {
 	cursorLocation: { anchor: 0, head: 0 },
 	value: "",
 	cls: "",
@@ -70,7 +64,9 @@ const defaultProperties: MarkdownEditorProps = {
 	filteredExtensions: [],
 
 	onEnter: (editor, mod, shift) => {
-		if (mod) editor.options.onSubmit(editor);
+		if (mod) {
+			editor.options.onSubmit(editor);
+		}
 		return mod;
 	},
 	onEscape: (editor) => {
@@ -102,7 +98,7 @@ export class EmbeddableMarkdownEditor extends resolveEditorPrototype(app) implem
 			onMarkdownScroll: () => {},
 			getMode: () => "source",
 		});
-		this.options = { ...defaultProperties, ...options };
+		this.options = { ...defaultMarkdownEditorProps, ...options };
 		this.initial_value = this.options.value!;
 		this.scope = new Scope(this.app.scope);
 		// NOTE: Custom keys can be added to the scope to override default behaviour,
@@ -134,8 +130,9 @@ export class EmbeddableMarkdownEditor extends resolveEditorPrototype(app) implem
 					(oldMethod: (leaf: WorkspaceLeaf, params?: { focus?: boolean }) => void) =>
 					(leaf: WorkspaceLeaf, params: { focus?: boolean }) => {
 						// EXPL: If the editor is currently focused, prevent the workspace setting the focus to a workspaceLeaf instead
-						if (!this.activeCM.hasFocus)
+						if (!this.activeCM.hasFocus) {
 							oldMethod.call(this.app.workspace, leaf, params);
+						}
 					},
 			}),
 		);
@@ -143,9 +140,11 @@ export class EmbeddableMarkdownEditor extends resolveEditorPrototype(app) implem
 		// EXPL: Execute onBlur when the editor loses focus
 		// NOTE: Apparently Chrome does a weird thing where removing an element from the DOM triggers a blur event
 		// 		 (Hence why the ._loaded check is necessary)
-		if (this.options.onBlur !== defaultProperties.onBlur) {
+		if (this.options.onBlur !== defaultMarkdownEditorProps.onBlur) {
 			this.editor?.cm.contentDOM.addEventListener("blur", () => {
-				if (this._loaded) this.options.onBlur(this);
+				if (this._loaded) {
+					this.options.onBlur(this);
+				}
 			});
 		}
 
@@ -158,7 +157,9 @@ export class EmbeddableMarkdownEditor extends resolveEditorPrototype(app) implem
 
 		this.editorEl.classList.remove("markdown-source-view");
 
-		if (options.cls) this.editorEl.classList.add(options.cls);
+		if (options.cls) {
+			this.editorEl.classList.add(...([] as string[]).concat(options.cls));
+		}
 		if (options.cursorLocation) {
 			this.editor?.cm.dispatch({
 				selection: EditorSelection.range(options.cursorLocation.anchor, options.cursorLocation.head),
@@ -168,7 +169,9 @@ export class EmbeddableMarkdownEditor extends resolveEditorPrototype(app) implem
 
 	onUpdate(update: ViewUpdate, changed: boolean) {
 		super.onUpdate(update, changed);
-		if (changed) this.options.onChange(update);
+		if (changed) {
+			this.options.onChange(update);
+		}
 	}
 
 	/**
@@ -178,7 +181,9 @@ export class EmbeddableMarkdownEditor extends resolveEditorPrototype(app) implem
 	 */
 	buildLocalExtensions(): Extension[] {
 		const extensions = super.buildLocalExtensions();
-		if (this.options.placeholder) extensions.push(placeholder(this.options.placeholder));
+		if (this.options.placeholder) {
+			extensions.push(placeholder(this.options.placeholder));
+		}
 
 		// EXPL: Editor extension for handling specific user inputs can be added here
 		extensions.push(EditorView.domEventHandlers({
@@ -207,7 +212,7 @@ export class EmbeddableMarkdownEditor extends resolveEditorPrototype(app) implem
 			},
 		])));
 
-		// EXPL: Any additional extensions that should be applied to the editor can be added here
+		// NOTE: Any additional extensions that should be applied to the editor can be added here
 		//		 Keep in mind that editorExtensions provided by your or other plugins are not applied, so you will need to re-add them manually
 
 		return extensions;
@@ -229,11 +234,13 @@ export class EmbeddableMarkdownEditor extends resolveEditorPrototype(app) implem
 	 * Ensure that the editor is properly destroyed when the view is closed
 	 */
 	destroy(): void {
-		if (this._loaded)
+		if (this._loaded) {
 			this.unload();
+		}
 		this.app.keymap.popScope(this.scope);
-		if (this.app.workspace.activeEditor === this.owner)
+		if (this.app.workspace.activeEditor === this.owner) {
 			this.app.workspace.activeEditor = null;
+		}
 		this.containerEl.empty();
 		super.destroy();
 	}
@@ -251,6 +258,8 @@ export class EmbeddableMarkdownEditor extends resolveEditorPrototype(app) implem
 	 */
 	onload() {
 		super.onload();
-		if (this.options.focus) this.editor?.focus();
+		if (this.options.focus) {
+			this.editor?.focus();
+		}
 	}
 }

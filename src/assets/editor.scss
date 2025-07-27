@@ -1,4 +1,12 @@
 // ================================================
+//           Commentator Editor Variables
+// ================================================
+
+:root {
+  --cmtr-comment-tooltip-width: 250px;
+}
+
+// ================================================
 //           CriticMarkup Editor Styles
 // ================================================
 
@@ -112,45 +120,57 @@
 // ================================================
 
 
-.cmtr-comment-icon {
-  padding: 0 0 var(--size-4-2) 0;
-}
-
 .cmtr-comment-icon:hover {
   cursor: pointer;
 }
 
-.cmtr-comment-icon svg {
+.cmtr-comment-icon > svg {
   color: var(--comment-border-color);
   stroke-width: 4px;
   transition: stroke-width 150ms ease-in-out;
 }
 
-.cmtr-comment-icon:hover svg {
+.cmtr-comment-icon:hover > svg {
   stroke-width: 5px;
 }
 
-.cmtr-comment-tooltip {
-  max-height: var(--popover-height);
-  max-width: var(--popover-width);
-  overflow-y: scroll;
-
-  position: absolute;
-  z-index: 10000;
-  border: 4px solid var(--comment-border-color);
-
-  // Fancy notes:
-  filter: drop-shadow(4px 4px 0px var(--comment-inverse-color));
-
-  //border: 1px solid var(--background-modifier-border);
-  background-color: var(--background-primary-alt);
-  padding: var(--size-4-2);
-  border-radius: var(--radius-l);
+.cmtr-comment-icon-focused > svg {
+  fill: color-mix(
+    in srgb-linear,
+    var(--comment-border-color),
+    white 30%
+  );
 }
 
-.cmtr-comment-tooltip * {
+.popover.hover-popover.cmtr-comment-tooltip {
+  cursor: initial;
+  display: flex;
+  flex-direction: column;
+
+  width: calc(var(--cmtr-comment-tooltip-width));
+  font-size: var(--font-smallest);
+  line-height: var(--line-height-normal);
+}
+
+.cmtr-comment-tooltip .markdown-source-view.mod-cm6 {
+  font-size: 1em;
+}
+
+.cmtr-comment-tooltip-preview > *, .cmtr-comment-tooltip-editor > * {
   margin-block-start: 0.25em;
   margin-block-end: 0.25em;
+}
+
+.cmtr-comment-tooltip-range {
+  padding: 0.5em;
+}
+
+.cmtr-comment-tooltip-reply {
+  border-top: 1px dashed var(--background-modifier-border);
+}
+
+.popover.hover-popover.cmtr-comment-tooltip > * {
+  width: unset;
 }
 
 // ================================================

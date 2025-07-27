@@ -5,8 +5,7 @@ import { Component, editorEditorField, editorInfoField, MarkdownRenderer, Menu, 
 
 import { EmbeddableMarkdownEditor } from "../../../../ui/embeddable-editor";
 
-import { acceptSuggestions, addCommentToView, CriticMarkupRange, rangeParser, rejectSuggestions, SuggestionType } from "../../../base";
-import { create_range } from "../../../base/edit-util/range-create";
+import { acceptSuggestions, addCommentToView, create_range, CriticMarkupRange, rangeParser, rejectSuggestions, SuggestionType } from "../../../base";
 
 import { AnnotationInclusionType } from "../../../../constants";
 import { annotationGutterIncludedTypes, annotationGutterIncludedTypesState } from "../../../settings";
