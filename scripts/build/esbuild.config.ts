@@ -15,6 +15,7 @@ const prod = process.argv[2] === "production";
 const dev = process.argv[2] === "development";
 const dev_watch = process.argv[2] === "development-watch";
 const verbose = process.argv.some((arg) => arg === "verbose");
+const debug = process.argv.some((arg) => arg === "debug");
 
 const dir = prod ? "./" : process.env.OUTDIR || "./";
 
@@ -53,7 +54,7 @@ const context = await esbuild.context({
 	format: "cjs",
 	target: "esnext",
 	logLevel: "info",
-	sourcemap: (prod || dev) ? false : "inline",
+	sourcemap: (debug) ? "inline" : false,
 	treeShaking: true,
 	minify: prod,
 	outdir: dir,
@@ -76,12 +77,14 @@ const context = await esbuild.context({
 		}),
 		inlineWorkerPlugin({
 			platform: "browser",
+			legalComments: 'none',
 			external: ["obsidian", ...builtinModules],
 			format: "cjs",
 			treeShaking: true,
 			minify: prod,
+			minifyWhitespace: true,
 			bundle: true,
-			sourcemap: "inline",
+			sourcemap: false,
 		}),
 	],
 });

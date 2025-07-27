@@ -1,4 +1,5 @@
 import { EditorState, StateField } from "@codemirror/state";
+import { DocInput } from "@codemirror/language";
 import { Interval, Node } from "@flatten-js/interval-tree";
 import { type ChangedRange, type SyntaxNode, type Tree, TreeFragment } from "@lezer/common";
 
@@ -13,7 +14,6 @@ import {
 	SuggestionType,
 } from "../ranges";
 
-import { DocInput } from "@codemirror/language";
 import { fullReloadEffect } from "../../settings";
 import { criticmarkupLanguage } from "../parser";
 import type { PluginSettings } from "../../../types";

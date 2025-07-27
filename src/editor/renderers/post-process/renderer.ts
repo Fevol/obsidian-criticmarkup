@@ -16,9 +16,6 @@ import {
 import { renderCommentWidget } from "../live-preview";
 import { previewModeState } from "../../settings";
 
-// FIXME: Extracted due to renderCommentWidget function importing obsidian package, which could not be marked as external in the inlinepluginworker
-// FIXME: Extracted due to renderCommentWidget function importing obsidian package, which could not be marked as external in the inlinepluginworker
-// FIXME: Extracted due to renderCommentWidget function importing obsidian package, which could not be marked as external in the inlinepluginworker
 export function rangePostProcess(
 	app: App,
 	range: CriticMarkupRange,
