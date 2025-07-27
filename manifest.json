@@ -1,7 +1,7 @@
 {
     "id": "commentator",
     "name": "Commentator",
-    "version": "0.2.4",
+    "version": "0.2.5",
     "minAppVersion": "1.7.5",
     "description": "Suggest edits, add comments, and annotate your notes using CriticMarkup syntax.",
     "author": "kometenstaub and Fevol",
