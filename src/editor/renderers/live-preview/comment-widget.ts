@@ -194,7 +194,7 @@ export class CommentIconWidget extends WidgetType {
 			const { app } = this.view.state.field(editorInfoField);
 
 			this.tooltip = createDiv({ cls: "cmtr-comment-tooltip popover hover-popover" });
-			this.component.registerDomEvent(document, "click", (e: MouseEvent) => {
+			this.component.registerDomEvent(this.view.dom.doc, "click", (e: MouseEvent) => {
 				if (this.tooltip && !(this.context_menu && this.context_menu.dom.contains(e.target as HTMLElement))) {
 					if (!this.tooltip.contains(e.target as HTMLElement)) {
 						this.unrenderTooltip();
@@ -217,7 +217,7 @@ export class CommentIconWidget extends WidgetType {
 				this.tooltip.appendChild(this.renderRange(app, reply, ["cmtr-comment-tooltip-range", "cmtr-comment-tooltip-reply"]));
 			}
 			this.component.load();
-			document.body.appendChild(this.tooltip);
+			this.view.dom.doc.body.appendChild(this.tooltip);
 
 			// EXPL: Set tooltip position and avoid clipping outside editor area
 			const icon_rect = this.icon!.getBoundingClientRect();

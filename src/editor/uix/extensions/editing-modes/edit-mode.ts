@@ -142,7 +142,7 @@ function applyCorrectedEdit(tr: Transaction, settings: PluginSettings): Transact
 		isUserEvent("select", userEvents) && cursorMoved(tr) &&
 		settings.alternative_cursor_movement /*&& tr.startState.field(editorLivePreviewField)*/
 	) {
-		if (latest_event instanceof KeyboardEvent) {
+		if (latest_event && latest_event.instanceOf(KeyboardEvent)) {
 			const result = cursor_transaction_pass_syntax(tr, userEvents, vim_mode, settings, latest_event);
 			if (result)
 				return tr.startState.update(result);

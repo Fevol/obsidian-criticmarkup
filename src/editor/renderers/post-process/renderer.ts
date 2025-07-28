@@ -114,10 +114,10 @@ export async function postProcess(el: HTMLElement, ctx: MarkdownPostProcessorCon
 						element_contents,
 					);
 					el.empty();
-					if (new_el instanceof HTMLElement) {
-						el.appendChild(new_el);
-					} else {
+					if (typeof new_el === "string") {
 						el.append(sanitizeHTMLToDom(new_el));
+					} else {
+						el.appendChild(new_el);
 					}
 
 					return;

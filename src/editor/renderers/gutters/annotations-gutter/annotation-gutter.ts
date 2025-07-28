@@ -110,7 +110,7 @@ export class AnnotationGutterView extends GutterView {
 		marker.focus_annotation(index, scroll);
 
 		if (focus_markup) {
-			window.setTimeout(() => {
+			activeWindow.setTimeout(() => {
 				this.view.dispatch(
 					this.view.state.update({
 						effects: [
@@ -410,7 +410,7 @@ class AnnotationSingleGutterView extends SingleGutterView {
 		this.resize_handle_el.addEventListener("mousedown", (e) => {
 			let initialPosition = e.clientX;
 			let isReadableLineWidth = this.view.state.field(editorInfoField).app.vault.getConfig("readableLineLength");
-			const temporarySheet = document.styleSheets[0];
+			const temporarySheet = this.view.dom.doc.styleSheets[0];
 
 			// EXPL: Debounce to prevent excessive state updates and DOM redraws while dragging the handle
 			const setWidth = debounce((width: number) => {
@@ -443,8 +443,8 @@ class AnnotationSingleGutterView extends SingleGutterView {
 			}
 
 			const onMouseStop = () => {
-				document.removeEventListener("mousemove", onMouseMove);
-				document.removeEventListener("mouseup", onMouseStop);
+				this.view.dom.doc.removeEventListener("mousemove", onMouseMove);
+				this.view.dom.doc.removeEventListener("mouseup", onMouseStop);
 				this.resize_handle_el!.classList.toggle("cmtr-anno-gutter-resize-handle-hover", false);
 				this.view.scrollDOM.classList.toggle("cmtr-anno-gutter-resizing", false);
 
@@ -453,8 +453,8 @@ class AnnotationSingleGutterView extends SingleGutterView {
 				}
 			}
 
-			document.addEventListener("mousemove", onMouseMove);
-			document.addEventListener("mouseup", onMouseStop);
+			this.view.dom.doc.addEventListener("mousemove", onMouseMove);
+			this.view.dom.doc.addEventListener("mouseup", onMouseStop);
 
 			return true;
 		});

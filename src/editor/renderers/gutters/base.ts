@@ -5,6 +5,7 @@
  *   2. Added consts were necessary and formatted code
  *   3. Changed default insert location of the DOM (to be similar to Obsidian's gutter)
  *   4. Extracted activeGutters and unfixGutters Facets so multiple independent gutters can be defined
+ *   5. Use Obsidian-specific `createDiv` API instead of `document.createElement` to avoid having to get the correct document
  */
 
 import { type Extension, Facet, type RangeCursor, RangeSet } from "@codemirror/state";
@@ -20,7 +21,7 @@ import {
 	WidgetType,
 } from "@codemirror/view";
 
-// Set EditorView class to have scaleX and scaleY properties
+// MODF: Set EditorView class to have scaleX and scaleY properties
 // TODO: REMINDER, uncomment scaleX/scaleY factors when Obsidian updates to upstream CodeMirror
 declare module "@codemirror/view" {
 	interface EditorView {
@@ -29,7 +30,7 @@ declare module "@codemirror/view" {
 	}
 }
 
-// Declare that BlockInfo has WidgetType
+// MODF: Declare that BlockInfo has WidgetType
 // TODO: Uncomment widget code when Obsidian updates to upstream CodeMirror
 declare module "@codemirror/view" {
 	interface WidgetType {
@@ -130,7 +131,7 @@ export class GutterElement {
 	markers: readonly PersistentGutterMarker[] = [];
 
 	constructor(view: EditorView, height: number, above: number, markers: readonly PersistentGutterMarker[]) {
-		this.dom = document.createElement("div");
+		this.dom = createDiv(); // MODF: createDiv instead of document.createElement
 		this.dom.className = "cm-gutterElement";
 		this.update(view, height, above, markers);
 	}
@@ -201,7 +202,7 @@ export class GutterElement {
 	}
 
 	destroy() {
-		this.setMarkers(null, []); // The first argument is not used except for creating markers
+		this.setMarkers(null, []); // EXPL: The first argument is not used except for creating markers
 	}
 }
 
@@ -237,18 +238,18 @@ export class UpdateContext {
 	line(view: EditorView, line: BlockInfo, extraMarkers: readonly GutterMarker[]) {
 		let localMarkers: GutterMarker[] = [];
 
-		// advanceCursor will place all GutterMarkers between the last this.cursor position and line.from into localMarkers
+		// EXPL: advanceCursor will place all GutterMarkers between the last this.cursor position and line.from into localMarkers
 
-		// Widgets that are not part of the same 'viewport' block as the document line block will be skipped
-		// See annotation-gutter.ts for a more eloquent, analytical and in-depth explanation
-		// MODIFICATION: Markers are collected up until the end of the block
+		// EXPL: Widgets that are not part of the same 'viewport' block as the document line block will be skipped
+		// NOTE: See annotation-gutter.ts for a more eloquent, analytical and in-depth explanation
+		// MODF: Markers are collected up until the end of the block
 		advanceCursor(this.cursor, localMarkers, line.to);
 
-		// MODIFICATION: Disabled adding extraMarkers, this particularly breaks when using the line-numbers gutter
+		// MODF: Disabled adding extraMarkers, this particularly breaks when using the line-numbers gutter
 		// TODO: Verify whether having cm-active is desirable (and to use it without causing issues for the gutters)
 		// if (extraMarkers.length) localMarkers = localMarkers.concat(extraMarkers);
 
-		// Only happens when we set lineMarker in config
+		// EXPL: Only happens when we set lineMarker in config
 		const forLine = this.gutter.config.lineMarker(view, line, localMarkers);
 		if (forLine) localMarkers.unshift(forLine);
 
@@ -264,7 +265,7 @@ export class UpdateContext {
 
 	finish() {
 		const gutter = this.gutter;
-		// Removes the elements that are outside the viewport (from the bottom, on scroll-up)
+		// EXPL: Removes the elements that are outside the viewport (from the bottom, on scroll-up)
 		while (gutter.elements.length > this.i) {
 			const last = gutter.elements.pop()!;
 			gutter.dom.removeChild(last.dom);
@@ -289,7 +290,7 @@ export class SingleGutterView {
 
 	constructor(public view: EditorView, public config: Required<GutterConfig>) {
 		// Initialised dom for the gutter
-		this.dom = document.createElement("div");
+		this.dom = createDiv(); // MODF: createDiv instead of document.createElement
 		this.dom.className = "cm-gutter" + (this.config.class ? " " + this.config.class : "");
 		for (const prop in config.domEventHandlers) {
 			this.dom.addEventListener(prop, (event: Event) => {
@@ -306,7 +307,7 @@ export class SingleGutterView {
 			});
 		}
 
-		// Constructs markers as rangeSet
+		// EXPL: Constructs markers as rangeSet
 		this.markers = asArray(config.markers(view));
 		if (config.initialSpacer) {
 			this.spacer = new GutterElement(view, 0, 0, [config.initialSpacer(view)]);
@@ -344,10 +345,10 @@ export class GutterView {
 		public activeGutters: Facet<Required<GutterConfig>>,
 	) {
 		this.prevViewport = view.viewport;
-		this.dom = document.createElement("div");
+		this.dom = createDiv(); // MODF: createDiv instead of document.createElement
 		this.dom.className = "cm-gutters";
 		// TODO: Check if there is a way to respect this attribute
-		// MODIFICATION: Removed aria-hidden attribute, since annotations can claim focus (on their inputs)
+		// MODF: Removed aria-hidden attribute, since annotations can claim focus (on their inputs)
 		// this.dom.setAttribute("aria-hidden", "true");
 		this.dom.style.minHeight = (this.view.contentHeight /** / this.view.scaleY*/) + "px";
 		this.gutters = this.createGutters(view);
@@ -391,10 +392,10 @@ export class GutterView {
 	}
 
 	update(update: ViewUpdate) {
-		// updateGutters executes the viewUpdate on the active gutters
+		// EXPL: updateGutters executes the viewUpdate on the active gutters
 		if (this.updateGutters(update)) {
-			// If (and only if) the gutters have changed in a meaningful way -- i.e. markers got removed/added within SingleGutterView
-			// Then need to rerender these positions
+			// EXPL: If (and only if) the gutters have changed in a meaningful way -- i.e. markers got removed/added within SingleGutterView
+			// 		 Then need to rerender these positions
 
 			/** Detach during sync when the viewport changed significantly
 			 * 	(such as during scrolling), since for large updates that is faster.
@@ -412,26 +413,26 @@ export class GutterView {
 	}
 
 	syncGutters(detach: boolean) {
-		// Detach is almost always true except for the construction of the function (?)
+		// NOTE: Detach is almost always true except for the construction of the function (?)
 
-		// after is a hidden element AFTER the gutter containing nothing
-		// Not sure what the usage is
+		// EXPL: after is a hidden element AFTER the gutter containing nothing
+		// TODO: Not sure what the usage is
 		const after = this.dom.nextSibling;
 
-		// Always detach -> Always fully rerender all SingleGutterViews and 'big' gutter
+		// EXPL: Always detach -> Always fully rerender all SingleGutterViews and 'big' gutter
 		if (detach) this.dom.remove();
 
 		const lineClasses = RangeSet.iter(this.view.state.facet(gutterLineClass), this.view.viewport.from);
 		let classSet: GutterMarker[] = [];
 
-		// Prepares context for each gutter (with individual cursor, height and ...)
+		// EXPL: Prepares context for each gutter (with individual cursor, height and ...)
 		const contexts = this.getUpdateContexts();
 
-		// Loop over all blocks (lines) in the viewport
+		// EXPL: Loop over all blocks (lines) in the viewport
 		for (const line of this.view.viewportLineBlocks) {
 			if (classSet.length) classSet = [];
 
-			// ??? If line consists of multiple blocks, does not happen
+			// TODO: ??? If line consists of multiple blocks, does not happen
 			if (Array.isArray(line.type)) {
 				let first = true;
 				for (const b of line.type) {
@@ -445,7 +446,7 @@ export class GutterView {
 							cx.widget(this.view, b);
 					}
 				}
-			} // If block consists of text
+			} // EXPL: If block consists of text
 			else if (line.type == BlockType.Text) {
 				advanceCursor(lineClasses, classSet, line.from);
 				for (const cx of contexts)
@@ -458,11 +459,11 @@ export class GutterView {
 			// }
 		}
 
-		// ???
+		// EXPL: Finish all contexts, removing elements that are outside the viewport
 		for (const cx of contexts)
 			cx.finish();
 
-		// Re-insert the DOM gutter
+		// EXPL: Re-insert the DOM gutter
 		if (detach)
 			this.insertDetachedGutters(after as HTMLElement);
 	}
@@ -478,13 +479,13 @@ export class GutterView {
 				update.view.viewport.to,
 			);
 		if (prev == cur) {
-			// Updates all gutters, results in syncGutters if change === True
+			// EXPL: Updates all gutters, results in syncGutters if change === True
 			for (const gutter of this.gutters) {
 				if (gutter.update(update))
 					change = true;
 			}
 		} else {
-			// This code only executes on gutter being added or removed (specifically: switching source/LP mode?)
+			// EXPL: This code only executes on gutter being added or removed (specifically: switching source/LP mode?)
 			change = true;
 			const gutters = [];
 			for (const conf of cur) {
