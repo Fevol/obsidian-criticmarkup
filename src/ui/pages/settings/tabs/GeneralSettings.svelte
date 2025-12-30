@@ -5,6 +5,7 @@
     Dropdown,
     Slider,
     Toggle,
+    TextArea,
   } from "../../../components";
 
   import { openGithubIssueLink } from "../../../../util/obsidian-util";
@@ -102,6 +103,35 @@
       value={plugin.settings.enable_metadata}
       onChange={(value) => {
         plugin.settings.enable_metadata = value;
+        plugin.saveSettings();
+      }}
+    />
+  {/snippet}
+</SettingItem>
+
+<SettingItem
+  name="Excluded Folders"
+  description="Folders to exclude from annotation collection (one per line)"
+  notices={[
+    {
+      type: "info",
+      text: "Files in these folders will not appear in the annotations view (e.g., <code>_templates/</code>)",
+    },
+    {
+      type: "warning",
+      text: "Changing this setting results in a re-indexation of the entire vault",
+    },
+  ]}
+>
+  {#snippet control()}
+    <TextArea
+      value={plugin.settings.excluded_folders.join("\n")}
+      placeholder="_templates/&#10;archive/"
+      onChange={(value) => {
+        plugin.settings.excluded_folders = value
+          .split("\n")
+          .map(f => f.trim())
+          .filter(f => f.length > 0);
         plugin.saveSettings();
       }}
     />

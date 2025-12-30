@@ -73,6 +73,10 @@ export default class CommentatorPlugin extends Plugin {
 		"Vault-wide cache for Commentator plugin",
 		() => [],
 		async (file, state?: EditorState) => {
+			// Skip files in excluded folders
+			if (this.isFileExcluded(file.path)) {
+				return [];
+			}
 			return state ?
 				state.field(rangeParser).ranges.ranges :
 				getRangesInText(await this.app.vault.cachedRead(file), this.settings);
@@ -422,6 +426,15 @@ export default class CommentatorPlugin extends Plugin {
 	async setSetting<K extends keyof PluginSettings>(key: K, value: PluginSettings[K]) {
 		this.settings[key] = value;
 		await this.saveSettings();
+	}
+
+	/**
+	 * Check if a file path is in an excluded folder
+	 */
+	isFileExcluded(filePath: string): boolean {
+		return this.settings.excluded_folders.some(folder =>
+			filePath.startsWith(folder)
+		);
 	}
 
 	async activateView() {

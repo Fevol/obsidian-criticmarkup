@@ -88,6 +88,8 @@ export const DEFAULT_SETTINGS: PluginSettings = {
 
 	author: "",
 
+	excluded_folders: [],
+
 	suggestion_mode_operations: {
 		cursor_movement: {
 			[SuggestionType.ADDITION]: RANGE_CURSOR_MOVEMENT_OPTION.IGNORE_METADATA,
@@ -122,6 +124,7 @@ export const REQUIRES_EDITOR_RELOAD: Set<string> = new Set([
 
 export const REQUIRES_DATABASE_REINDEX: Set<string> = new Set([
 	"enable_metadata",
+	"excluded_folders",
 ]);
 
 export enum AnnotationInclusionType {

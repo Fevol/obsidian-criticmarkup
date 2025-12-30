@@ -42,6 +42,13 @@ export function filterRanges(
 
     let basic_ranges = items;
 
+    // EXPL: Filter out excluded folders
+    if (plugin.settings.excluded_folders.length > 0) {
+        basic_ranges = basic_ranges.filter(([key, _]) =>
+            !plugin.settings.excluded_folders.some(folder => key.startsWith(folder))
+        );
+    }
+
     // EXPL: Filter by location (vault, folder, file)
     if (location_filter !== LocationFilter.VAULT) {
         if (active_file) {

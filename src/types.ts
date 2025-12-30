@@ -268,6 +268,11 @@ export interface PluginSettings {
 	author?: string;
 
 	/**
+	 * Folders to exclude from annotation collection (e.g., "_templates/")
+	 */
+	excluded_folders: string[];
+
+	/**
 	 * Cursor movement options for ranges when in suggestion mode
 	 */
 	suggestion_mode_operations: {
