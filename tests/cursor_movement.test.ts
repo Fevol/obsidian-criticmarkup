@@ -1,7 +1,7 @@
 import { EditorState } from "@codemirror/state";
 import { EditorView } from "@codemirror/view";
 
-import { suggestionMode } from "../src/editor/uix/extensions";
+import { providePluginSettingsExtension, suggestionMode } from "../src/editor/uix/extensions";
 
 import {
 	applyToText,
@@ -11,7 +11,7 @@ import {
 	SubstitutionRange,
 } from "../src/editor/base";
 
-import { App } from "obsidian";
+import { App, editorEditorField, editorInfoField, editorLivePreviewField } from "obsidian";
 import { DEFAULT_SETTINGS } from "../src/constants";
 
 const test_cases = [
@@ -40,6 +40,17 @@ global.app = <Partial<App>> {
 		activeEditor: null,
 	},
 };
+
+// rangeParser reads the (plugin-provided) pluginSettingsField, so initialise it before building
+// any EditorState. providePluginSettingsExtension also returns the field to add as an extension.
+// The editor* fields are normally injected by Obsidian; the suggestion-mode transaction filter
+// reads them, so they must be present in the test state too.
+const editorEnvironment = [
+	providePluginSettingsExtension({ settings: DEFAULT_SETTINGS } as any),
+	editorEditorField,
+	editorInfoField,
+	editorLivePreviewField,
+];
 
 const movement_directions = ["ArrowLeft", "ArrowRight", "Mod-ArrowLeft", "Mod-ArrowRight"];
 
@@ -141,7 +152,7 @@ for (let test_case of test_cases) {
 		const view = new EditorView({
 			state: EditorState.create({
 				doc: test_case,
-				extensions: [rangeParser, suggestionMode(DEFAULT_SETTINGS)],
+				extensions: [...editorEnvironment, rangeParser, suggestionMode(DEFAULT_SETTINGS)],
 			}),
 		});
 
@@ -152,7 +163,7 @@ for (let test_case of test_cases) {
 		const actual_view = new EditorView({
 			state: EditorState.create({
 				doc: unwrapped_string,
-				extensions: [rangeParser, suggestionMode(DEFAULT_SETTINGS)],
+				extensions: [...editorEnvironment, rangeParser, suggestionMode(DEFAULT_SETTINGS)],
 			}),
 		});
 
